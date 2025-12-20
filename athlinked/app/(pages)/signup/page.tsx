@@ -10,6 +10,7 @@ export default function SignupPage() {
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [generatedOTP, setGeneratedOTP] = useState<string>('');
 
   // Form data
   const [formData, setFormData] = useState({
@@ -41,7 +42,25 @@ export default function SignupPage() {
   const currentSteps =
     selectedUserType === 'athlete' ? athleteSteps : otherSteps;
 
+  // Generate 6-digit OTP
+  const generateOTP = () => {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+  };
+
   const handleContinue = () => {
+    // Determine OTP step based on user type
+    const otpStep = selectedUserType === 'athlete' ? 3 : 2;
+    
+    // If moving to OTP step, generate OTP
+    if (
+      ((selectedUserType === 'athlete' && currentStep === 2) ||
+        (selectedUserType !== 'athlete' && currentStep === 1)) &&
+      !generatedOTP
+    ) {
+      const otp = generateOTP();
+      setGeneratedOTP(otp);
+    }
+
     if (currentStep < currentSteps.length - 1) {
       setCurrentStep(currentStep + 1);
     }
@@ -83,6 +102,7 @@ export default function SignupPage() {
             onToggleConfirmPassword={() =>
               setShowConfirmPassword(!showConfirmPassword)
             }
+            generatedOTP={generatedOTP}
           />
         </div>
       </div>
