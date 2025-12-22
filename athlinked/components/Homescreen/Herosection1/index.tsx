@@ -2,12 +2,20 @@ import Image from 'next/image';
 
 export default function HeroSection() {
   return (
-    <div className="relative h-11/12 w-full overflow-hidden">
+    <div className="relative h-screen w-full overflow-hidden">
+      <Image
+        src="/assets/Homescreen/MobileHeosection1.png"
+        alt="Athletes in action"
+        fill
+        className="object-cover md:hidden"
+        priority
+        quality={80}
+      />
       <Image
         src="/assets/Homescreen/Herosection1.png"
         alt="Athletes in action"
         fill
-        className="object-cover"
+        className="hidden md:block object-cover"
         priority
         quality={80}
       />
