@@ -35,7 +35,7 @@ export default function OTPVerification({
     try {
       // Call backend to verify OTP and create user
       const response = await fetch(
-        'https://roxie-unpesterous-clerkly.ngrok-free.dev/api/signup/verify-otp',
+        'http://localhost:3001/api/signup/verify-otp',
         {
           method: 'POST',
           headers: {

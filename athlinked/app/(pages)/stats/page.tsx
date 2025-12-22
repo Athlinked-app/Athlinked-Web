@@ -30,7 +30,7 @@ export default function StatsPage() {
 
         // Fetch user data from backend
         const response = await fetch(
-          `https://roxie-unpesterous-clerkly.ngrok-free.dev/api/signup/user/${encodeURIComponent(userEmail)}`
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userEmail)}`
         );
         const data = await response.json();
 
