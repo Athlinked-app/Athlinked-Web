@@ -17,11 +17,15 @@ import {
 interface NavigationBarProps {
   activeItem?: string;
   userName?: string;
+  userProfileUrl?: string;
+  userRole?: string;
 }
 
 export default function NavigationBar({
   activeItem = 'stats',
   userName = 'User',
+  userProfileUrl = '/assets/Header/profiledummy.jpeg',
+  userRole = 'Athlete',
 }: NavigationBarProps) {
   const menuItems = [
     { id: 'search', icon: Search, label: 'Search' },
@@ -41,19 +45,23 @@ export default function NavigationBar({
   const displayName = userName?.split(' ')[0] || 'User';
 
   return (
-    <div className="w-72 bg-white flex flex-col border-r border-gray-200">
+    <div className="w-72 bg-white flex flex-col border-r border-gray-200 rounded-lg">
       {/* Athlete Profile Section */}
       <div className="p-6 border-b border-gray-200">
-        <div className="flex flex-col items-center">
-          <div className="text-sm text-gray-600 mb-2 font-medium">Athlete</div>
-          <div className="w-16 h-16 rounded-full bg-gray-300 mb-2 overflow-hidden border-2 border-gray-400">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 md:w-20 md:h-20 rounded-full bg-gray-300 overflow-hidden border border-gray-200">
             <img
-              src="https://via.placeholder.com/64"
+              src={userProfileUrl}
               alt={displayName}
               className="w-full h-full object-cover"
             />
           </div>
-          <div className="font-bold text-gray-900 text-base">{displayName}</div>
+          <div className="flex flex-col leading-tight">
+            <span className="text-sm text-gray-500">{userRole}</span>
+            <span className="text-xl font-semibold text-gray-900">
+              {displayName}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -67,20 +75,22 @@ export default function NavigationBar({
               <li key={item.id}>
                 <a
                   href={
-                    item.id === 'stats'
-                      ? '/stats'
-                      : item.id === 'clips'
-                        ? '/clips'
-                        : '#'
+                    item.id === 'home'
+                      ? '/home'
+                      : item.id === 'stats'
+                        ? '/stats'
+                        : item.id === 'clips'
+                          ? '/clips'
+                          : '#'
                   }
                   className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                     isActive
-                      ? 'bg-yellow-500 text-white'
+                      ? 'bg-[#F5F5F5] text-[#CB9729]'
                       : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <Icon size={20} strokeWidth={2} />
-                  <span className="text-sm font-medium">{item.label}</span>
+                  <span className="text-md font-medium">{item.label}</span>
                 </a>
               </li>
             );

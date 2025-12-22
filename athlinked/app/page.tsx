@@ -1,5 +1,6 @@
-import Hello from './(pages)/Homescreen';
+import Landing from './(pages)/Homescreen';
+
 
 export default function Home() {
-  return <Hello />;
+  return <Landing />;
 }
