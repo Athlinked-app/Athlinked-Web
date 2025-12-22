@@ -66,7 +66,7 @@ export default function SignupPage() {
         };
 
         // Call backend to send OTP via email
-        const response = await fetch('http://localhost:3001/api/signup/start', {
+        const response = await fetch('https://roxie-unpesterous-clerkly.ngrok-free.dev/api/signup/start', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
