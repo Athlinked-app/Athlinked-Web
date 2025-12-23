@@ -49,7 +49,7 @@ export default function LoginPage() {
         );
       }
 
-      router.push('/stats');
+      router.push('/home');
     } catch (error) {
       console.error('Login error:', error);
       setError('Failed to connect to server. Please try again.');

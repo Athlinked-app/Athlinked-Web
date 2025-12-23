@@ -7,6 +7,7 @@ const loginRoutes = require('./login/login.routes');
 const clipsRoutes = require('./clips/clips.routes');
 const commentsRoutes = require('./comments/comments.routes');
 const forgotPasswordRoutes = require('./forgot-password/forgot-password.routes');
+const postsRoutes = require('./posts/posts.routes');
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/api/login', loginRoutes);
 app.use('/api/clips', clipsRoutes);
 app.use('/api/comments', commentsRoutes);
 app.use('/api/forgot-password', forgotPasswordRoutes);
+app.use('/api/posts', postsRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

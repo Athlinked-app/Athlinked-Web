@@ -17,7 +17,8 @@ const storage = multer.diskStorage({
     // Generate unique filename
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
-    cb(null, 'clip-' + uniqueSuffix + ext);
+    const prefix = req.body.post_type === 'video' ? 'post-video-' : req.body.post_type === 'photo' ? 'post-photo-' : 'post-media-';
+    cb(null, prefix + uniqueSuffix + ext);
   },
 });
 

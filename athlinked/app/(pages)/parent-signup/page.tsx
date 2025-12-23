@@ -106,7 +106,7 @@ function ParentSignupContent() {
         if (data.user?.email) {
           localStorage.setItem('userEmail', data.user.email);
         }
-        router.push('/stats');
+        router.push('/home');
       } else {
         setError(data.message || 'Failed to complete signup');
       }

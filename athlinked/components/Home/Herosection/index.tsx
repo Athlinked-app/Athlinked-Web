@@ -9,13 +9,17 @@ import {
   CalendarDays,
   Newspaper,
 } from 'lucide-react';
-import PhotosUploadModal, { PostDetailsModal } from '@/components/Photos';
+import PostUploadModal from '@/components/Post/PostUploadModal';
+import PostDetailsModal from '@/components/Post/PostDetailsModal';
+import ArticleEventModal from '@/components/Post/ArticleEventModal';
 
 type HomeHerosectionProps = {
   userProfileUrl?: string;
   username?: string;
   onPostCreated?: () => void;
 };
+
+type PostType = 'photo' | 'video' | 'article' | 'event';
 
 export default function HomeHerosection({
   userProfileUrl = '/assets/Header/profiledummy.jpeg',
@@ -24,68 +28,188 @@ export default function HomeHerosection({
 }: HomeHerosectionProps) {
   const [showUpload, setShowUpload] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [showArticleEvent, setShowArticleEvent] = useState(false);
+  const [selectedPostType, setSelectedPostType] = useState<PostType | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
-  const [description, setDescription] = useState('');
-  const [privacy, setPrivacy] = useState('Public');
+  const [caption, setCaption] = useState('');
   const [postText, setPostText] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setFilePreview(URL.createObjectURL(file));
-      setDescription('');
-      setPrivacy('Public');
-      setShowUpload(false);
-      setShowDetails(true);
-    }
+  const handleFileSelect = (file: File) => {
+    setSelectedFile(file);
+    setFilePreview(URL.createObjectURL(file));
+    setShowUpload(false);
+    setShowDetails(true);
   };
 
   const resetFileState = () => {
     setSelectedFile(null);
     setFilePreview(null);
-    setDescription('');
-    setPrivacy('Public');
+    setCaption('');
     setShowDetails(false);
   };
 
-  const handlePost = () => {
-    // Create post if there's text or an image
-    const hasText = postText.trim().length > 0;
-    const hasImage = selectedFile && filePreview;
+  const getUserData = async () => {
+    const userIdentifier = localStorage.getItem('userEmail');
+    if (!userIdentifier) {
+      throw new Error('User not logged in');
+    }
 
-    if (hasText || hasImage) {
-      // Create a new post object
-      const newPost = {
-        id: `post-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        username: username,
-        user_profile_url: userProfileUrl,
-        image_url: filePreview || null, // Use the preview URL (blob URL) or null
-        description: hasText ? postText.trim() : (description || null),
-        like_count: 0,
-        comment_count: 0,
-        created_at: new Date().toISOString(),
+    let userResponse;
+    if (userIdentifier.startsWith('username:')) {
+      const username = userIdentifier.replace('username:', '');
+      userResponse = await fetch(
+        `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+      );
+    } else {
+      userResponse = await fetch(
+        `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+      );
+    }
+
+    if (!userResponse.ok) {
+      throw new Error('Failed to fetch user data');
+    }
+
+    const userData = await userResponse.json();
+    if (!userData.success || !userData.user) {
+      throw new Error('User not found');
+    }
+
+    return userData.user;
+  };
+
+  const handleTextPost = async () => {
+    if (!postText.trim()) return;
+
+    setIsUploading(true);
+    try {
+      const userData = await getUserData();
+
+      const response = await fetch('http://localhost:3001/api/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userData.id,
+          post_type: 'photo',
+          caption: postText.trim(),
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setPostText('');
+        if (onPostCreated) {
+          onPostCreated();
+        }
+      } else {
+        alert(data.message || 'Failed to create post');
+      }
+    } catch (error) {
+      console.error('Error creating text post:', error);
+      alert('Failed to create post. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleMediaPost = async () => {
+    if (!selectedFile) return;
+
+    setIsUploading(true);
+    try {
+      const userData = await getUserData();
+
+      const formData = new FormData();
+      formData.append('media', selectedFile);
+      formData.append('user_id', userData.id);
+      formData.append('post_type', selectedPostType!);
+      formData.append('caption', caption);
+
+      const response = await fetch('http://localhost:3001/api/posts', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        resetFileState();
+        if (onPostCreated) {
+          onPostCreated();
+        }
+      } else {
+        alert(data.message || 'Failed to create post');
+      }
+    } catch (error) {
+      console.error('Error creating media post:', error);
+      alert('Failed to create post. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleArticleEventSubmit = async (data: {
+    title: string;
+    body?: string;
+    date?: string;
+    location?: string;
+    caption?: string;
+  }) => {
+    setIsUploading(true);
+    try {
+      const userData = await getUserData();
+
+      const postData: any = {
+        user_id: userData.id,
+        post_type: selectedPostType,
+        caption: data.caption || null,
       };
 
-      // Get existing posts from localStorage
-      const existingPosts = JSON.parse(localStorage.getItem('athlinked_posts') || '[]');
-      
-      // Add new post to the beginning of the array
-      const updatedPosts = [newPost, ...existingPosts];
-      
-      // Save back to localStorage
-      localStorage.setItem('athlinked_posts', JSON.stringify(updatedPosts));
-
-      // Notify parent component to refresh
-      if (onPostCreated) {
-        onPostCreated();
+      if (selectedPostType === 'article') {
+        postData.article_title = data.title;
+        postData.article_body = data.body;
+      } else if (selectedPostType === 'event') {
+        postData.event_title = data.title;
+        postData.event_date = data.date;
+        postData.event_location = data.location;
       }
+
+      const response = await fetch('http://localhost:3001/api/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(postData),
+      });
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text.substring(0, 200));
+        alert('Failed to create post. Server returned invalid response.');
+        return;
+      }
+
+      const result = await response.json();
+      console.log('Create article/event post response:', result);
+      
+      if (result.success) {
+        setShowArticleEvent(false);
+        if (onPostCreated) {
+          onPostCreated();
+        }
+      } else {
+        alert(result.message || 'Failed to create post');
+      }
+    } catch (error) {
+      console.error('Error creating article/event post:', error);
+      alert('Failed to create post. Please try again.');
+    } finally {
+      setIsUploading(false);
     }
-    
-    // Reset all states
-    resetFileState();
-    setPostText('');
   };
 
   const formatSize = (size: number) => {
@@ -98,7 +222,6 @@ export default function HomeHerosection({
   return (
     <div className="w-full">
       <div className="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-4 md:p-5">
-        {/* Top: avatar, search, post button */}
         <div className="flex items-center gap-3">
           <div className="w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden bg-gray-200 border border-gray-200">
             <img
@@ -115,73 +238,109 @@ export default function HomeHerosection({
                 type="text"
                 placeholder="What's on your mind?"
                 value={postText}
-                onChange={(e) => setPostText(e.target.value)}
-                onKeyPress={(e) => {
+                onChange={e => setPostText(e.target.value)}
+                onKeyPress={e => {
                   if (e.key === 'Enter') {
-                    handlePost();
+                    handleTextPost();
                   }
                 }}
                 className="w-full text-gray-700 placeholder:text-gray-400 focus:outline-none"
+                disabled={isUploading}
               />
             </div>
           </div>
 
           <button
-            onClick={handlePost}
-            disabled={!postText.trim() && !selectedFile}
+            onClick={handleTextPost}
+            disabled={!postText.trim() || isUploading}
             className="px-8 py-2 bg-[#CB9729] text-white font-semibold rounded-md hover:bg-[#b78322] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Post
+            {isUploading ? 'Posting...' : 'Post'}
           </button>
         </div>
 
-        {/* Bottom: quick actions */}
         <div className="mt-4 border-t border-gray-200 pt-3">
           <div className="grid grid-cols-4 divide-x divide-gray-200">
             <button
               type="button"
-              onClick={() => setShowUpload(true)}
+              onClick={() => {
+                setSelectedPostType('photo');
+                setShowUpload(true);
+              }}
               className="flex items-center justify-center gap-2 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
             >
               <ImageIcon className="w-5 h-5 text-gray-500" />
               <span className="text-md font-medium">Photos</span>
             </button>
-            <div className="flex items-center justify-center gap-2 py-2 text-gray-700">
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedPostType('video');
+                setShowUpload(true);
+              }}
+              className="flex items-center justify-center gap-2 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+            >
               <Video className="w-5 h-5 text-gray-500" />
               <span className="text-md font-medium">Videos</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 py-2 text-gray-700">
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedPostType('event');
+                setShowArticleEvent(true);
+              }}
+              className="flex items-center justify-center gap-2 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+            >
               <CalendarDays className="w-5 h-5 text-gray-500" />
               <span className="text-md font-medium">Events</span>
-            </div>
-            <div className="flex items-center justify-center gap-2 py-2 text-gray-700">
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedPostType('article');
+                setShowArticleEvent(true);
+              }}
+              className="flex items-center justify-center gap-2 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+            >
               <Newspaper className="w-5 h-5 text-gray-500" />
               <span className="text-md font-medium">Article</span>
-            </div>
+            </button>
           </div>
         </div>
       </div>
 
-      <PhotosUploadModal
-        open={showUpload}
-        onClose={() => setShowUpload(false)}
-        onFileChange={handleFileChange}
-      />
+      {selectedPostType && (
+        <PostUploadModal
+          open={showUpload}
+          postType={selectedPostType as 'photo' | 'video'}
+          onClose={() => setShowUpload(false)}
+          onFileSelect={handleFileSelect}
+        />
+      )}
 
-      <PostDetailsModal
-        open={showDetails}
-        filePreview={filePreview}
-        fileName={selectedFile?.name || 'No file selected'}
-        fileSizeLabel={selectedFile ? formatSize(selectedFile.size) : ''}
-        description={description}
-        privacy={privacy}
-        onDescriptionChange={setDescription}
-        onPrivacyChange={setPrivacy}
-        onClose={resetFileState}
-        onPost={handlePost}
-        onRemoveFile={resetFileState}
-      />
+      {selectedPostType && (selectedPostType === 'photo' || selectedPostType === 'video') && (
+        <PostDetailsModal
+          open={showDetails}
+          postType={selectedPostType}
+          filePreview={filePreview}
+          fileName={selectedFile?.name || 'No file selected'}
+          fileSizeLabel={selectedFile ? formatSize(selectedFile.size) : ''}
+          caption={caption}
+          onCaptionChange={setCaption}
+          onClose={resetFileState}
+          onPost={handleMediaPost}
+          onRemoveFile={resetFileState}
+        />
+      )}
+
+      {selectedPostType && (selectedPostType === 'article' || selectedPostType === 'event') && (
+        <ArticleEventModal
+          open={showArticleEvent}
+          postType={selectedPostType}
+          onClose={() => setShowArticleEvent(false)}
+          onSubmit={handleArticleEventSubmit}
+        />
+      )}
     </div>
   );
 }
-

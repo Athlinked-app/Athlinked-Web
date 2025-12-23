@@ -93,7 +93,7 @@ export default function OTPVerification({
           data.message || 'Welcome! Account created successfully.'
         );
 
-        // Store user identifier in localStorage for stats page
+        // Store user identifier in localStorage
         // Store email if available, otherwise store username
         if (data.user?.email) {
           localStorage.setItem('userEmail', data.user.email);
@@ -105,9 +105,9 @@ export default function OTPVerification({
           localStorage.setItem('userEmail', emailForVerification);
         }
 
-        // Redirect to stats page after a short delay
+        // Redirect to home page after a short delay
         setTimeout(() => {
-          router.push('/stats');
+          router.push('/home');
         }, 1000);
       } else {
         // Display error message from backend
