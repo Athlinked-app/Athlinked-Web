@@ -19,19 +19,28 @@ export default function StatsPage() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // Get user email from localStorage (set after signup)
-        const userEmail = localStorage.getItem('userEmail');
+        // Get user identifier from localStorage (set after signup)
+        const userIdentifier = localStorage.getItem('userEmail');
 
-        if (!userEmail) {
-          console.error('No user email found');
+        if (!userIdentifier) {
+          console.error('No user identifier found');
           setLoading(false);
           return;
         }
 
-        // Fetch user data from backend
-        const response = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userEmail)}`
-        );
+        // Check if it's a username (prefixed with "username:") or email
+        let response;
+        if (userIdentifier.startsWith('username:')) {
+          const username = userIdentifier.replace('username:', '');
+          response = await fetch(
+            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          );
+        } else {
+          response = await fetch(
+            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          );
+        }
+
         const data = await response.json();
 
         if (data.success && data.user) {
@@ -145,7 +154,7 @@ export default function StatsPage() {
           {/* Main Content */}
           <main className="flex-1 p-6 bg-white">
             {/* Athlete Profile Card */}
-            <div className="bg-yellow-500 rounded-lg p-6 mb-6 flex items-center justify-between shadow-sm">
+            <div className="bg-[#CB9729] rounded-lg p-6 mb-6 flex items-center justify-between shadow-sm">
               <div className="flex items-center gap-6">
                 <div className="w-24 h-24 rounded-full bg-white overflow-hidden border-2 border-white shadow-md">
                   <img
@@ -179,7 +188,7 @@ export default function StatsPage() {
                     onClick={() => setActiveSport(sportKey)}
                     className={`px-6 py-2.5 rounded-lg font-medium transition-colors ${
                       activeSport === sportKey
-                        ? 'bg-yellow-500 text-white shadow-sm'
+                        ? 'bg-[#CB9729] text-white shadow-sm'
                         : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
                     }`}
                   >
@@ -222,7 +231,7 @@ export default function StatsPage() {
                     <Edit size={18} />
                     <span>Edit</span>
                   </button>
-                  <button className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors">
+                  <button className="flex items-center gap-2 px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-yellow-600 transition-colors">
                     <Plus size={18} />
                     <span>Add Data</span>
                   </button>

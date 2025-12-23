@@ -115,6 +115,69 @@ async function sendOTPEmail(to, otp) {
   }
 }
 
+/**
+ * Send parent signup link email
+ * @param {string} to - Parent email address
+ * @param {string} username - Child username
+ * @param {string} signupLink - Link to parent signup page
+ * @returns {Promise<object>} Email send result
+ */
+async function sendParentSignupLink(to, username, signupLink) {
+  try {
+    const smtpPass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
+    const smtpUser = process.env.SMTP_USER;
+
+    if (!smtpUser || !smtpPass) {
+      const errorMsg =
+        'SMTP credentials not configured. Please set SMTP_USER and SMTP_PASS (or SMTP_PASSWORD) in .env';
+      console.error('❌', errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    console.log(`📤 Attempting to send parent signup link to: ${to}`);
+
+    const transporter = createTransporter();
+
+    await new Promise((resolve, reject) => {
+      transporter.verify((error, success) => {
+        if (error) {
+          console.error('❌ SMTP verification failed:', error.message);
+          reject(new Error(`SMTP verification failed: ${error.message}`));
+        } else {
+          console.log('✅ SMTP server is ready to send emails');
+          resolve(success);
+        }
+      });
+    });
+
+    const mailOptions = {
+      from: process.env.SMTP_FROM || smtpUser,
+      to,
+      subject: 'Parent Account Signup - AthLinked',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <p>Please click the link below to create your parent account:</p>
+          <p style="word-break: break-all;"><a href="${signupLink}">${signupLink}</a></p>
+        </div>
+      `,
+      text: `Please click the link below to create your parent account: ${signupLink}`,
+    };
+
+    console.log(
+      `📧 Sending parent signup link from ${mailOptions.from} to ${mailOptions.to}`
+    );
+    const info = await transporter.sendMail(mailOptions);
+    console.log(
+      `✅ Parent signup link sent successfully to ${to}, Message ID: ${info.messageId}`
+    );
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('❌ Failed to send parent signup link email:', error);
+    throw new Error(`Failed to send email: ${error.message}`);
+  }
+}
+
 module.exports = {
   sendOTPEmail,
+  sendParentSignupLink,
 };

@@ -103,7 +103,7 @@ export default function UserTypeSelection({
       <button
         onClick={onContinue}
         disabled={!selectedUserType}
-        className="w-full bg-gradient-to-r from-yellow-200 to-yellow-300 hover:from-yellow-300 hover:to-yellow-400 text-gray-800 font-medium py-3 rounded-lg transition-all mb-4 sm:mb-6 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-[#CB9729] hover:bg-[#d4a846] text-gray-800 font-medium py-3 rounded-lg transition-all mb-4 sm:mb-6 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
       >
         Continue
       </button>
@@ -116,7 +116,7 @@ export default function UserTypeSelection({
 
           <div className="text-center text-xs sm:text-sm text-gray-600">
             <span className="text-gray-700">Already have an account? </span>
-            <a href="#" className="text-orange-500 font-medium hover:underline">
+            <a href="#" className="text-[#CB9729] font-medium hover:underline">
               Sign in
             </a>
           </div>

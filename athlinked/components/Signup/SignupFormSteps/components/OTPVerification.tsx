@@ -33,6 +33,21 @@ export default function OTPVerification({
     setVerificationMessage('');
 
     try {
+      // Determine the email to use for OTP verification
+      // If username was used (no @ in email field), use parent_email instead
+      const isUsername = formData.email && !formData.email.includes('@');
+      const emailForVerification = isUsername
+        ? formData.parentEmail
+        : formData.email;
+
+      if (!emailForVerification) {
+        setVerificationMessage(
+          'Email or parent email is required for verification'
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
       // Call backend to verify OTP and create user
       const response = await fetch(
         'http://localhost:3001/api/signup/verify-otp',
@@ -42,13 +57,35 @@ export default function OTPVerification({
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            email: formData.email,
+            email: emailForVerification,
             otp: formData.otp,
           }),
         }
       );
 
-      const data = await response.json();
+      // Check if response is ok and is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text.substring(0, 200));
+        setVerificationMessage(
+          `Server error (Status: ${response.status}). Please check if the backend server is running.`
+        );
+        setIsSubmitting(false);
+        return;
+      }
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError);
+        setVerificationMessage(
+          'Failed to parse server response. Please try again.'
+        );
+        setIsSubmitting(false);
+        return;
+      }
 
       if (data.success) {
         setIsVerified(true);
@@ -56,9 +93,16 @@ export default function OTPVerification({
           data.message || 'Welcome! Account created successfully.'
         );
 
-        // Store user email in localStorage for stats page
+        // Store user identifier in localStorage for stats page
+        // Store email if available, otherwise store username
         if (data.user?.email) {
           localStorage.setItem('userEmail', data.user.email);
+        } else if (data.user?.username) {
+          // For username-based signups, store username with a prefix so we can identify it
+          localStorage.setItem('userEmail', `username:${data.user.username}`);
+        } else {
+          // Fallback to email used for verification
+          localStorage.setItem('userEmail', emailForVerification);
         }
 
         // Redirect to stats page after a short delay
@@ -89,7 +133,11 @@ export default function OTPVerification({
       <div className="space-y-6 mb-6">
         <p className="text-sm text-gray-700 text-center">
           A one time password has been sent to{' '}
-          <span className="font-semibold">{formData.email || 'wd@fj.com'}</span>
+          <span className="font-semibold">
+            {formData.email && !formData.email.includes('@')
+              ? formData.parentEmail || 'parent email'
+              : formData.email || 'your email'}
+          </span>
         </p>
 
         {!isVerified && (
@@ -101,7 +149,7 @@ export default function OTPVerification({
               onChange={e =>
                 onFormDataChange({ ...formData, otp: e.target.value })
               }
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-center text-lg tracking-widest"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-center text-lg tracking-widest text-gray-900"
               maxLength={6}
             />
           </div>
@@ -132,7 +180,7 @@ export default function OTPVerification({
       <button
         onClick={handleContinue}
         disabled={isSubmitting || isVerified}
-        className="w-full bg-gradient-to-r from-yellow-200 to-yellow-300 hover:from-yellow-300 hover:to-yellow-400 text-gray-800 font-medium py-3 rounded-lg transition-all mb-4 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-[#CB9729] hover:bg-[#d4a846] text-gray-800 font-medium py-3 rounded-lg transition-all mb-4 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isSubmitting
           ? 'Creating Account...'
@@ -143,7 +191,7 @@ export default function OTPVerification({
 
       <div className="text-center text-xs sm:text-sm text-gray-600">
         <span className="text-gray-700">Already have an account? </span>
-        <a href="#" className="text-orange-500 font-medium hover:underline">
+        <a href="#" className="text-[#CB9729] font-medium hover:underline">
           Sign in
         </a>
       </div>

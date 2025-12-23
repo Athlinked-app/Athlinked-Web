@@ -61,15 +61,6 @@ async function verifyOtp(req, res) {
       });
     }
 
-    const emailValidation = validateSignup({ email });
-    if (!emailValidation.isValid) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid email format',
-        errors: emailValidation.errors,
-      });
-    }
-
     const result = await signupService.verifyOtpService(
       email.toLowerCase().trim(),
       otp.trim()
@@ -155,8 +146,93 @@ async function getUserByEmail(req, res) {
   }
 }
 
+/**
+ * Controller to get user by username
+ * @param {object} req - Express request object
+ * @param {object} res - Express response object
+ */
+async function getUserByUsername(req, res) {
+  try {
+    const { username } = req.params;
+
+    if (!username) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username is required',
+      });
+    }
+
+    const signupModel = require('./signup.model');
+    const user = await signupModel.findByUsername(
+      username.toLowerCase().trim()
+    );
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Return user data without password
+    const { password, ...userData } = user;
+
+    return res.status(200).json({
+      success: true,
+      user: userData,
+    });
+  } catch (error) {
+    console.error('Get user by username error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
+/**
+ * Controller to handle parent completing signup (setting password)
+ * @param {object} req - Express request object
+ * @param {object} res - Express response object
+ */
+async function parentComplete(req, res) {
+  try {
+    const { username, email, password } = req.body;
+
+    if ((!username && !email) || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username or email and password are required',
+      });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 8 characters long',
+      });
+    }
+
+    const result = await signupService.parentCompleteService(
+      username,
+      email,
+      password
+    );
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Parent complete error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 module.exports = {
   startSignup,
   verifyOtp,
   getUserByEmail,
+  getUserByUsername,
+  parentComplete,
 };

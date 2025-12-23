@@ -20,4 +20,16 @@ router.post('/verify-otp', signupController.verifyOtp);
  */
 router.get('/user/:email', signupController.getUserByEmail);
 
+/**
+ * GET /api/signup/user-by-username/:username
+ * Get user data by username
+ */
+router.get('/user-by-username/:username', signupController.getUserByUsername);
+
+/**
+ * POST /api/signup/parent-complete
+ * Complete parent signup by setting password
+ */
+router.post('/parent-complete', signupController.parentComplete);
+
 module.exports = router;

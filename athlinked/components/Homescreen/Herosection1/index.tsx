@@ -31,10 +31,10 @@ export default function HeroSection() {
           </h1>
 
           <p className="text-lg md:text-2xl text-gray-200 mb-8 font-medium max-w-8xl leading-relaxed">
-            AthLinked is the premier platform for young athletes aged 12-21 to showcase their
-            talent. Here, athletes can connect with college recruiters, scouts, and coaches
-            from top organizations and colleges, building opportunities for scholarships
-            and future careers.
+            AthLinked is the premier platform for young athletes aged 12-21 to
+            showcase their talent. Here, athletes can connect with college
+            recruiters, scouts, and coaches from top organizations and colleges,
+            building opportunities for scholarships and future careers.
           </p>
 
           <button className="px-10 py-4 bg-white text-[#002767] text-xl font-bold rounded-md hover:bg-gray-100 transition-colors shadow-lg">

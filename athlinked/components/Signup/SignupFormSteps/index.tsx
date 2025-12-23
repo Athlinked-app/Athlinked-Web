@@ -9,6 +9,7 @@ interface SignupFormStepsProps {
   formData: any;
   showPassword: boolean;
   showConfirmPassword: boolean;
+  isLoadingOTP?: boolean;
   onFormDataChange: (data: any) => void;
   onUserTypeSelect: (type: string) => void;
   onContinue: () => void;
@@ -22,6 +23,7 @@ export default function SignupFormSteps({
   formData,
   showPassword,
   showConfirmPassword,
+  isLoadingOTP = false,
   onFormDataChange,
   onUserTypeSelect,
   onContinue,
@@ -47,6 +49,7 @@ export default function SignupFormSteps({
         formData={formData}
         showPassword={showPassword}
         showConfirmPassword={showConfirmPassword}
+        isLoadingOTP={isLoadingOTP}
         onFormDataChange={onFormDataChange}
         onContinue={onContinue}
         onTogglePassword={onTogglePassword}
@@ -61,6 +64,7 @@ export default function SignupFormSteps({
       <ParentDetailsForm
         formData={formData}
         onFormDataChange={onFormDataChange}
+        isLoadingOTP={isLoadingOTP}
         onContinue={onContinue}
       />
     );

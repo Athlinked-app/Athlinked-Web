@@ -26,6 +26,17 @@ async function findByEmail(email) {
 }
 
 /**
+ * Find user by username
+ * @param {string} username - User username
+ * @returns {Promise<object|null>} User data or null
+ */
+async function findByUsername(username) {
+  const query = 'SELECT * FROM users WHERE username = $1';
+  const result = await pool.query(query, [username]);
+  return result.rows[0] || null;
+}
+
+/**
  * Create user in database
  * @param {object} userData - User data object with hashed password
  * @returns {Promise<object>} Created user data
@@ -38,6 +49,7 @@ async function createUser(userData) {
     sports_played,
     primary_sport,
     email,
+    username,
     password,
     parent_name,
     parent_email,
@@ -58,12 +70,13 @@ async function createUser(userData) {
       sports_played,
       primary_sport,
       email,
+      username,
       password,
       parent_name,
       parent_email,
       parent_dob
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-    RETURNING id, email, full_name, user_type, created_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    RETURNING id, email, username, full_name, user_type, created_at
   `;
 
   const values = [
@@ -72,7 +85,8 @@ async function createUser(userData) {
     formatDate(dob),
     sportsArray,
     primary_sport || null,
-    email,
+    email || null, // Email can be null if username is used
+    username ? username.toLowerCase() : null, // Username can be null if email is used
     password,
     parent_name || null,
     parent_email || null,
@@ -84,7 +98,13 @@ async function createUser(userData) {
     return result.rows[0];
   } catch (error) {
     if (error.code === '23505') {
-      throw new Error('Email already registered');
+      if (error.constraint === 'users_email_key') {
+        throw new Error('Email already registered');
+      }
+      if (error.constraint === 'users_username_key') {
+        throw new Error('Username already taken');
+      }
+      throw new Error('Email or username already registered');
     }
     throw error;
   }
@@ -92,5 +112,6 @@ async function createUser(userData) {
 
 module.exports = {
   findByEmail,
+  findByUsername,
   createUser,
 };

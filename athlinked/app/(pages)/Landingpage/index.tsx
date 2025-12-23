@@ -7,7 +7,7 @@ export default function Landing() {
     <div className="flex min-h-screen bg-white dark:bg-black">
       <main className="flex min-h-screen w-full flex-col ">
         <Herosection />
-        <Hersosection1/>
+        <Hersosection1 />
         <Herosection2 />
       </main>
     </div>

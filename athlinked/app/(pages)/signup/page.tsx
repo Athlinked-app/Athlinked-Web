@@ -10,6 +10,7 @@ export default function SignupPage() {
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoadingOTP, setIsLoadingOTP] = useState(false);
 
   // Form data
   const [formData, setFormData] = useState({
@@ -50,6 +51,19 @@ export default function SignupPage() {
       (selectedUserType === 'athlete' && currentStep === 2) ||
       (selectedUserType !== 'athlete' && currentStep === 1)
     ) {
+      // Validate email/username
+      if (!formData.email || !formData.email.trim()) {
+        alert('Email or username is required');
+        return;
+      }
+
+      // If it's not an email (doesn't contain @), validate username length
+      if (!formData.email.includes('@') && formData.email.trim().length < 6) {
+        alert('Username must be at least 6 characters long');
+        return;
+      }
+
+      setIsLoadingOTP(true);
       try {
         // Prepare signup data for OTP request
         const signupData = {
@@ -78,6 +92,7 @@ export default function SignupPage() {
 
         if (!data.success) {
           alert(data.message || 'Failed to send OTP. Please try again.');
+          setIsLoadingOTP(false);
           return;
         }
 
@@ -85,11 +100,13 @@ export default function SignupPage() {
         if (currentStep < currentSteps.length - 1) {
           setCurrentStep(currentStep + 1);
         }
+        setIsLoadingOTP(false);
       } catch (error) {
         console.error('Error sending OTP:', error);
         alert(
           'Failed to send OTP. Please ensure the backend server is running.'
         );
+        setIsLoadingOTP(false);
         return;
       }
     } else {
@@ -106,7 +123,7 @@ export default function SignupPage() {
       <SignupHero />
 
       {/* Right Side - Sign Up Form */}
-      <div className="w-full md:w-1/2 xl:w-2/5 flex items-center justify-center bg-gray-100 p-4 sm:p-6 md:p-8 md:min-h-screen">
+      <div className="w-full md:w-1/2 xl:w-3/5 flex items-center justify-center bg-gray-100 p-4 sm:p-6 md:p-8 md:min-h-screen">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-6 sm:p-8 lg:p-10 xl:p-12 my-6 md:my-0">
           {/* Logo - Shows on all screen sizes */}
           <div className="flex items-center mb-6 sm:mb-8">
@@ -129,6 +146,7 @@ export default function SignupPage() {
             formData={formData}
             showPassword={showPassword}
             showConfirmPassword={showConfirmPassword}
+            isLoadingOTP={isLoadingOTP}
             onFormDataChange={setFormData}
             onUserTypeSelect={setSelectedUserType}
             onContinue={handleContinue}

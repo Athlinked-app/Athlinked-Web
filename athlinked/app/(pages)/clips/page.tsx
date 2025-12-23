@@ -58,10 +58,7 @@ export default function ClipsPage() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
 
-  // Reels data - initially empty
   const [reels, setReels] = useState<Reel[]>([]);
-
-  // Initialize muted state for all reels
   useEffect(() => {
     const initialMuted: { [key: string]: boolean } = {};
     reels.forEach(reel => {
@@ -70,7 +67,6 @@ export default function ClipsPage() {
     setMutedReels(initialMuted);
   }, []);
 
-  // Handle scroll to detect which reel is in view
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
@@ -81,7 +77,6 @@ export default function ClipsPage() {
       const currentIndex = Math.round(scrollPosition / reelHeight);
       setCurrentReelIndex(currentIndex);
 
-      // Set selected reel for comments
       if (reels[currentIndex]) {
         setSelectedReelId(reels[currentIndex].id);
       }
@@ -101,7 +96,6 @@ export default function ClipsPage() {
 
     container.addEventListener('scroll', handleScroll);
 
-    // Set initial selected reel
     if (reels.length > 0 && !selectedReelId) {
       setSelectedReelId(reels[0].id);
     }
@@ -109,21 +103,29 @@ export default function ClipsPage() {
     return () => container.removeEventListener('scroll', handleScroll);
   }, [reels, selectedReelId]);
 
-  // Fetch user data on mount
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const userEmail = localStorage.getItem('userEmail');
+        const userIdentifier = localStorage.getItem('userEmail');
 
-        if (!userEmail) {
-          console.error('No user email found');
+        if (!userIdentifier) {
+          console.error('No user identifier found');
           setLoading(false);
           return;
         }
 
-        const response = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userEmail)}`
-        );
+        let response;
+        if (userIdentifier.startsWith('username:')) {
+          const username = userIdentifier.replace('username:', '');
+          response = await fetch(
+            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          );
+        } else {
+          response = await fetch(
+            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          );
+        }
+
         const data = await response.json();
 
         if (data.success && data.user) {
@@ -182,28 +184,32 @@ export default function ClipsPage() {
   const handleComment = async (reelId: string) => {
     setSelectedReelId(reelId);
     setShowComments(true);
-    // Fetch comments when opening the comments panel
     await fetchComments(reelId);
   };
 
-  // Fetch comments for a specific clip
   const fetchComments = async (clipId: string) => {
     try {
       const response = await fetch(
         `http://localhost:3001/api/clips/${clipId}/comments`
       );
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text.substring(0, 200));
+        return;
+      }
+
       const data = await response.json();
 
       if (data.success && data.comments) {
-        // Backend returns root comments with nested replies
-        // Transform backend comments to frontend format
         const transformedComments: Comment[] = data.comments.map(
           (comment: any) => ({
             id: comment.id,
             author:
               comment.username || userData?.full_name?.split(' ')[0] || 'User',
-            authorAvatar: 'https://via.placeholder.com/40', // TODO: Add user profile URL to backend response
-            text: comment.comment, // Backend returns 'comment' field
+            authorAvatar: 'https://via.placeholder.com/40',
+            text: comment.comment,
             hasReplies: comment.replies && comment.replies.length > 0,
           })
         );
@@ -216,7 +222,6 @@ export default function ClipsPage() {
           0
         );
 
-        // Update the reel with fetched comments
         setReels(prev =>
           prev.map(reel => {
             if (reel.id === clipId) {
@@ -242,23 +247,29 @@ export default function ClipsPage() {
     }
 
     try {
-      const userEmail = localStorage.getItem('userEmail');
-      if (!userEmail) {
+      const userIdentifier = localStorage.getItem('userEmail');
+      if (!userIdentifier) {
         alert('User not logged in');
         return;
       }
 
-      // Get user data to get user_id
-      const userResponse = await fetch(
-        `http://localhost:3001/api/signup/user/${encodeURIComponent(userEmail)}`
-      );
+      let userResponse;
+      if (userIdentifier.startsWith('username:')) {
+        const username = userIdentifier.replace('username:', '');
+        userResponse = await fetch(
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+        );
+      } else {
+        userResponse = await fetch(
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+        );
+      }
       const userDataResponse = await userResponse.json();
 
       if (!userDataResponse.success || !userDataResponse.user) {
         throw new Error('Failed to get user data');
       }
 
-      // Add comment via API
       const response = await fetch(
         `http://localhost:3001/api/clips/${reelId}/comments`,
         {
@@ -273,16 +284,21 @@ export default function ClipsPage() {
         }
       );
 
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text.substring(0, 200));
+        alert('Failed to add comment. Please try again.');
+        return;
+      }
+
       const result = await response.json();
 
       if (!result.success) {
         throw new Error(result.message || 'Failed to add comment');
       }
 
-      // Clear the input
       setCommentTexts(prev => ({ ...prev, [reelId]: '' }));
-
-      // Fetch updated comments
       await fetchComments(reelId);
     } catch (error) {
       console.error('Error adding comment:', error);
@@ -290,16 +306,22 @@ export default function ClipsPage() {
     }
   };
 
-  // Fetch clips from backend
   const fetchClips = async () => {
     try {
       const response = await fetch(
         'http://localhost:3001/api/clips?page=1&limit=50'
       );
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text.substring(0, 200));
+        return;
+      }
+
       const data = await response.json();
 
       if (data.success && data.clips) {
-        // Get display name for fallback
         const fallbackName = userData?.full_name?.split(' ')[0] || 'User';
 
         // Transform backend data to frontend format
@@ -321,7 +343,6 @@ export default function ClipsPage() {
 
         setReels(transformedClips);
 
-        // Set first reel as selected
         if (transformedClips.length > 0 && !selectedReelId) {
           setSelectedReelId(transformedClips[0].id);
         }
@@ -345,36 +366,49 @@ export default function ClipsPage() {
     return `${Math.floor(diffInSeconds / 86400)} days ago`;
   };
 
-  // Handle file upload
   const handleFileUpload = async (file: File, description: string) => {
     setIsUploading(true);
     try {
-      const userEmail = localStorage.getItem('userEmail');
-      if (!userEmail) {
+      const userIdentifier = localStorage.getItem('userEmail');
+      if (!userIdentifier) {
         throw new Error('User not logged in');
       }
 
-      // Get user data to get user_id
-      const userResponse = await fetch(
-        `http://localhost:3001/api/signup/user/${encodeURIComponent(userEmail)}`
-      );
+      let userResponse;
+      if (userIdentifier.startsWith('username:')) {
+        const username = userIdentifier.replace('username:', '');
+        userResponse = await fetch(
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+        );
+      } else {
+        userResponse = await fetch(
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+        );
+      }
       const userData = await userResponse.json();
 
       if (!userData.success || !userData.user) {
         throw new Error('Failed to get user data');
       }
 
-      // Create FormData to upload file
       const formData = new FormData();
       formData.append('video', file);
       formData.append('description', description);
       formData.append('user_id', userData.user.id);
 
-      // Upload clip via API (multipart/form-data)
       const response = await fetch('http://localhost:3001/api/clips', {
         method: 'POST',
         body: formData, // Don't set Content-Type, browser will set it with boundary
       });
+
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Non-JSON response:', text.substring(0, 200));
+        throw new Error(
+          'Failed to upload clip. Server returned invalid response.'
+        );
+      }
 
       const result = await response.json();
 
@@ -395,7 +429,6 @@ export default function ClipsPage() {
     }
   };
 
-  // Fetch clips on mount
   useEffect(() => {
     if (!loading && userData) {
       fetchClips();
@@ -443,7 +476,7 @@ export default function ClipsPage() {
         >
           {/* Scrollable Reels Container */}
           <div
-            className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${showComments ? 'right-80' : 'right-0'}`}
+            className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${showComments ? 'right-[calc(396px+0.5rem)]' : 'right-0'}`}
           >
             <div
               ref={scrollContainerRef}
@@ -570,7 +603,7 @@ export default function ClipsPage() {
           <div className="absolute top-2 right-4 z-20">
             <button
               onClick={() => setShowUploadModal(true)}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white rounded-full px-4 py-2 flex items-center gap-2 shadow-lg transition-colors"
+              className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-4 py-2 flex items-center gap-2 shadow-lg transition-colors"
             >
               <Plus size={20} />
               <span className="text-sm font-medium">Create</span>
@@ -580,8 +613,12 @@ export default function ClipsPage() {
           {/* Comments Section - Visible when comment button is pressed */}
           {showComments && (
             <div
-              className="absolute top-1/2 transform -translate-y-1/2 w-90 bg-white border-l border-gray-200 flex flex-col h-2/3 z-10 shadow-lg"
-              style={{ right: '2rem' }}
+              className="absolute top-1/2 transform -translate-y-1/2 bg-white border-l border-gray-200 flex flex-col z-10 shadow-lg"
+              style={{
+                right: '11.5rem', // Reduced from 2rem to 0.5rem to reduce gap
+                width: 'calc(25.5rem * 1.1)', // Increased w-90 (22.5rem/360px) by 10%
+                height: 'calc(66.666667vh * 1.1)', // Increased h-2/3 by 10%
+              }}
             >
               {/* Comments Header */}
               <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
@@ -681,7 +718,7 @@ export default function ClipsPage() {
                     onClick={() =>
                       selectedReel && handleAddComment(selectedReel.id)
                     }
-                    className="p-2 bg-yellow-500 text-white rounded-full hover:bg-yellow-600 transition-colors"
+                    className="p-2 bg-[#CB9729] text-white rounded-full hover:bg-yellow-600 transition-colors"
                   >
                     <Send size={18} />
                   </button>

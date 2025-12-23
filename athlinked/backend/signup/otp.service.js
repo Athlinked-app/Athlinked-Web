@@ -14,7 +14,12 @@ function generateOTP() {
  * @returns {string} Generated OTP
  */
 function startOTPFlow(signupData) {
-  const email = signupData.email.toLowerCase();
+  const email = signupData.email ? signupData.email.toLowerCase() : null;
+
+  if (!email) {
+    throw new Error('Email is required for OTP flow');
+  }
+
   const otp = generateOTP();
   const expiresInMinutes = 5;
 
