@@ -85,26 +85,28 @@ function ParentSignupContent() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(
-        'http://localhost:3001/api/signup/parent-complete',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            username: username || null,
-            email: email || null,
-            password: password,
-          }),
-        }
-      );
+      const response = await fetch('http://localhost:3001/api/signup/parent-complete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username || null,
+          email: email || null,
+          password: password,
+        }),
+      });
 
       const data = await response.json();
 
       if (data.success) {
+        // Store user identifier in localStorage
+        // Store email if available, otherwise store username with prefix
         if (data.user?.email) {
           localStorage.setItem('userEmail', data.user.email);
+        } else if (data.user?.username) {
+          // For username-based signups, store username with a prefix so we can identify it
+          localStorage.setItem('userEmail', `username:${data.user.username}`);
         }
         router.push('/home');
       } else {

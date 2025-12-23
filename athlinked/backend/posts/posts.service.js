@@ -47,28 +47,31 @@ async function getPostsFeedService(page = 1, limit = 50) {
 }
 
 async function likePostService(postId, userId) {
+  const client = await pool.connect();
   try {
     const post = await postsModel.getPostById(postId);
     if (!post) {
       throw new Error('Post not found');
     }
 
-    const result = await pool.query('BEGIN');
+    await client.query('BEGIN');
     try {
-      const likeResult = await postsModel.likePost(postId, userId, pool);
-      await pool.query('COMMIT');
+      const likeResult = await postsModel.likePost(postId, userId, client);
+      await client.query('COMMIT');
       return {
         success: true,
         message: 'Post liked successfully',
         like_count: likeResult.like_count,
       };
     } catch (error) {
-      await pool.query('ROLLBACK');
+      await client.query('ROLLBACK');
       throw error;
     }
   } catch (error) {
     console.error('Like post service error:', error);
     throw error;
+  } finally {
+    client.release();
   }
 }
 

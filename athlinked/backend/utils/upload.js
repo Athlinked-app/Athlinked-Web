@@ -17,7 +17,20 @@ const storage = multer.diskStorage({
     // Generate unique filename
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
-    const prefix = req.body.post_type === 'video' ? 'post-video-' : req.body.post_type === 'photo' ? 'post-photo-' : 'post-media-';
+    // Determine prefix from file mimetype since req.body may not be available during file processing
+    // Multer processes files before parsing form fields, so we infer from mimetype
+    let prefix = 'post-media-';
+    if (file.mimetype) {
+      if (file.mimetype.startsWith('video/')) {
+        prefix = 'post-video-';
+      } else if (file.mimetype.startsWith('image/')) {
+        prefix = 'post-photo-';
+      }
+    }
+    // If req.body.post_type is available (shouldn't happen, but check as fallback)
+    if (req.body && req.body.post_type) {
+      prefix = req.body.post_type === 'video' ? 'post-video-' : req.body.post_type === 'photo' ? 'post-photo-' : prefix;
+    }
     cb(null, prefix + uniqueSuffix + ext);
   },
 });

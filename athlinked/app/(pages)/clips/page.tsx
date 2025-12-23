@@ -253,6 +253,7 @@ export default function ClipsPage() {
         return;
       }
 
+      // Get user data to get user_id
       let userResponse;
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
@@ -374,6 +375,7 @@ export default function ClipsPage() {
         throw new Error('User not logged in');
       }
 
+      // Get user data to get user_id
       let userResponse;
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
@@ -396,10 +398,14 @@ export default function ClipsPage() {
       formData.append('description', description);
       formData.append('user_id', userData.user.id);
 
-      const response = await fetch('http://localhost:3001/api/clips', {
-        method: 'POST',
-        body: formData, // Don't set Content-Type, browser will set it with boundary
-      });
+      // Upload clip via API (multipart/form-data)
+      const response = await fetch(
+        'http://localhost:3001/api/clips',
+        {
+          method: 'POST',
+          body: formData, // Don't set Content-Type, browser will set it with boundary
+        }
+      );
 
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {

@@ -28,7 +28,7 @@ export default function StatsPage() {
           return;
         }
 
-        // Check if it's a username (prefixed with "username:") or email
+        // Fetch user data from backend
         let response;
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
