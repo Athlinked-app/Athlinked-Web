@@ -1,5 +1,5 @@
 'use client';
-
+ 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -16,14 +16,14 @@ import {
   LogOut,
   X,
 } from 'lucide-react';
-
+ 
 interface NavigationBarProps {
   activeItem?: string;
   userName?: string;
   userProfileUrl?: string;
   userRole?: string;
 }
-
+ 
 export default function NavigationBar({
   activeItem = 'stats',
   userName = 'User',
@@ -32,7 +32,7 @@ export default function NavigationBar({
 }: NavigationBarProps) {
   const router = useRouter();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-
+ 
   const handleLogout = () => {
     // Clear user data from localStorage
     localStorage.removeItem('userEmail');
@@ -52,10 +52,10 @@ export default function NavigationBar({
     { id: 'help', icon: HelpCircle, label: 'Help & Faq' },
     { id: 'logout', icon: LogOut, label: 'Logout' },
   ];
-
+ 
   // Get display name (first name or provided name)
   const displayName = userName?.split(' ')[0] || 'User';
-
+ 
   return (
     <div className="w-72 bg-white flex flex-col border-r border-gray-200 rounded-lg">
       {/* Athlete Profile Section */}
@@ -76,14 +76,14 @@ export default function NavigationBar({
           </div>
         </div>
       </div>
-
+ 
       {/* Navigation Menu */}
       <nav className="flex-1 p-4 overflow-y-auto">
         <ul className="space-y-1">
           {menuItems.map(item => {
             const Icon = item.icon;
             const isActive = activeItem === item.id;
-
+ 
             // Handle logout button separately
             if (item.id === 'logout') {
               return (
@@ -102,7 +102,7 @@ export default function NavigationBar({
                 </li>
               );
             }
-
+ 
             return (
               <li key={item.id}>
                 <a
@@ -129,7 +129,7 @@ export default function NavigationBar({
           })}
         </ul>
       </nav>
-
+ 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <>
@@ -138,7 +138,7 @@ export default function NavigationBar({
             className="fixed inset-0 backdrop-blur-sm z-50"
             onClick={() => setShowLogoutConfirm(false)}
           ></div>
-
+ 
           {/* Modal */}
           <div className="fixed inset-0 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
@@ -153,12 +153,12 @@ export default function NavigationBar({
                   <X size={20} />
                 </button>
               </div>
-
+ 
               <p className="text-gray-600 mb-6">
                 Are you sure you want to logout? You will need to login again to
                 access your account.
               </p>
-
+ 
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => setShowLogoutConfirm(false)}

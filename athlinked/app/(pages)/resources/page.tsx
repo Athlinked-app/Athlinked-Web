@@ -1,9 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, ExternalLink, X, Play, Link2 } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
+import Header from '@/components/Header';
+import ResourceCard from '@/components/Resources/ResourceCard';
+import ResourceModals from '@/components/Resources/ResourceModals';
 
 type TabType = 'guides' | 'videos' | 'templates';
 
@@ -148,7 +151,6 @@ export default function ManageResourcesPage() {
   };
 
   const handleDelete = (id: string) => {
-    // Remove the item based on active tab
     switch (activeTab) {
       case 'guides':
         setGuidesData(guidesData.filter(item => item.id !== id));
@@ -164,17 +166,14 @@ export default function ManageResourcesPage() {
 
   const scrapeArticleMetadata = async (url: string) => {
     try {
-      // Use a CORS proxy to fetch the article
       const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
       const response = await fetch(proxyUrl);
       const data = await response.json();
       const html = data.contents;
 
-      // Create a temporary DOM element to parse the HTML
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
 
-      // Extract title
       let title =
         doc
           .querySelector('meta[property="og:title"]')
@@ -185,7 +184,6 @@ export default function ManageResourcesPage() {
         doc.querySelector('title')?.textContent ||
         'Untitled Article';
 
-      // Extract image
       let image =
         doc
           .querySelector('meta[property="og:image"]')
@@ -196,7 +194,6 @@ export default function ManageResourcesPage() {
         doc.querySelector('img')?.getAttribute('src') ||
         'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=500&h=300&fit=crop';
 
-      // Make sure image URL is absolute
       if (image && !image.startsWith('http')) {
         const urlObj = new URL(url);
         image = urlObj.origin + (image.startsWith('/') ? '' : '/') + image;
@@ -241,17 +238,14 @@ export default function ManageResourcesPage() {
   };
 
   const handleUpload = () => {
-    // For guides tab, show URL modal
     if (activeTab === 'guides') {
       setShowUrlModal(true);
       return;
     }
 
-    // For other tabs, use file upload
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
 
-    // Set accept attribute based on active tab
     switch (activeTab) {
       case 'videos':
         fileInput.accept = 'video/*';
@@ -270,7 +264,6 @@ export default function ManageResourcesPage() {
       if (files) {
         Array.from(files).forEach(file => {
           if (file.type === 'application/pdf') {
-            // For PDFs, use blob URL directly
             const blobUrl = URL.createObjectURL(file);
             const thumbnailUrl =
               'https://images.unsplash.com/photo-1568667256549-094345857637?w=500&h=300&fit=crop';
@@ -285,7 +278,6 @@ export default function ManageResourcesPage() {
 
             setTemplatesData(prev => [...prev, newResource]);
           } else if (file.type.startsWith('video/')) {
-            // For videos, create blob URL and generate thumbnail
             const blobUrl = URL.createObjectURL(file);
 
             const video = document.createElement('video');
@@ -341,230 +333,125 @@ export default function ManageResourcesPage() {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Navigation Bar */}
-      <NavigationBar activeItem="resource" userName="Athlete Name" />
+    <div className="min-h-screen bg-gray-200">
+      <Header userName="Athlete Name" />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col">
-        {/* Tabs Navigation */}
-        <div className="bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex justify-center gap-8">
-              <button
-                onClick={() => setActiveTab('guides')}
-                className={`px-6 py-4 text-sm font-medium relative transition-colors ${
-                  activeTab === 'guides'
-                    ? 'text-[#CB9729]'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Guides & Articles
-                {activeTab === 'guides' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]" />
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab('videos')}
-                className={`px-6 py-4 text-sm font-medium relative transition-colors ${
-                  activeTab === 'videos'
-                    ? 'text-[#CB9729]'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Video Library
-                {activeTab === 'videos' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]" />
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab('templates')}
-                className={`px-6 py-4 text-sm font-medium relative transition-colors ${
-                  activeTab === 'templates'
-                    ? 'text-[#CB9729]'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Templates
-                {activeTab === 'templates' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]" />
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+      <div className="flex p-5 flex-1">
+        <NavigationBar activeItem="resource" userName="Athlete Name" />
 
-        {/* Content Area */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="max-w-7xl mx-auto p-6">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h1 className="text-2xl font-semibold text-gray-900">
-                Manage Resources
-              </h1>
-              <button
-                onClick={handleUpload}
-                className="flex items-center gap-2 bg-[#CB9729] text-white px-5 py-2.5 rounded-lg hover:bg-[#B88624] transition-colors shadow-sm"
-              >
-                {activeTab === 'guides' ? (
-                  <>
-                    <Upload className="w-4 h-4" />
-                    <span className="font-medium">Upload</span>
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4" />
-                    <span className="font-medium">Upload</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Resource Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {getCurrentData().map(resource => (
-                <div
-                  key={resource.id}
-                  className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+        <div className="flex-1 bg-white mt-0 ml-5 mr-5 mb-5 rounded-xl flex flex-col">
+          {/* Tabs Navigation */}
+          <div className="border-b border-gray-200">
+            <div className="max-w-7xl mx-auto">
+              <div className="flex justify-center gap-20">
+                <button
+                  onClick={() => setActiveTab('guides')}
+                  className={`pl-6 pr-10 py-4 text-base font-medium relative transition-colors border-r border-gray-300 ${
+                    activeTab === 'guides'
+                      ? 'text-[#CB9729]'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
                 >
-                  {/* Image Container */}
-                  <div className="relative h-48 bg-gray-100">
-                    <img
-                      src={resource.image}
-                      alt={resource.title}
-                      className="w-full h-full object-cover cursor-pointer"
-                      onClick={() => handleCardClick(resource)}
-                    />
-                    {/* Play Icon for Videos */}
-                    {resource.type === 'video' && (
-                      <div
-                        className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 cursor-pointer"
-                        onClick={() => handleCardClick(resource)}
-                      >
-                        <div className="w-16 h-16 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors">
-                          <Play
-                            className="w-8 h-8 text-white ml-1"
-                            fill="currentColor"
-                          />
-                        </div>
-                      </div>
-                    )}
-                    {/* Delete Button */}
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        handleDelete(resource.id);
-                      }}
-                      className="absolute top-3 right-3 w-7 h-7 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors shadow-md z-10"
-                      aria-label="Delete resource"
-                    >
-                      <X className="w-4 h-4 text-gray-600" />
-                    </button>
-                  </div>
-
-                  {/* Card Content */}
-                </div>
-              ))}
-            </div>
-
-            {/* Empty State */}
-            {getCurrentData().length === 0 && (
-              <div className="text-center py-16">
-                <p className="text-gray-500 text-base mb-2">
-                  No resources available
-                </p>
-                <p className="text-gray-400 text-sm">
-                  {activeTab === 'guides'
-                    ? 'Click Add Article URL to add new content'
-                    : 'Click Upload to add new content'}
-                </p>
+                  Guides & Articles
+                  {activeTab === 'guides' && (
+                    <div className="absolute bottom-0 left-0 right-4 h-0.5 bg-[#CB9729]" />
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab('videos')}
+                  className={`pl-6 pr-10 py-4 text-base font-medium relative transition-colors border-r border-gray-300 ${
+                    activeTab === 'videos'
+                      ? 'text-[#CB9729]'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Video Library
+                  {activeTab === 'videos' && (
+                    <div className="absolute bottom-0 left-0 right-4 h-0.5 bg-[#CB9729]" />
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab('templates')}
+                  className={`px-6 py-4 text-base font-medium relative transition-colors ${
+                    activeTab === 'templates'
+                      ? 'text-[#CB9729]'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Templates
+                  {activeTab === 'templates' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]" />
+                  )}
+                </button>
               </div>
-            )}
+            </div>
+          </div>
+
+          {/* Content Area */}
+          <div className="flex-1 overflow-y-auto">
+            <div className="max-w-7xl mx-auto p-6">
+              {/* Header - Only show for Guides & Articles tab */}
+              {activeTab === 'guides' && (
+                <div className="flex items-center justify-between mb-6">
+                  <h1 className="text-2xl font-semibold text-gray-900">
+                    Manage Resources
+                  </h1>
+                  <button
+                    onClick={handleUpload}
+                    className="flex items-center gap-2 bg-[#CB9729] text-white px-5 py-2.5 rounded-lg hover:bg-[#B88624] transition-colors shadow-sm"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span className="font-medium">Upload</span>
+                  </button>
+                </div>
+              )}
+
+              {/* Resource Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {getCurrentData().map(resource => (
+                  <ResourceCard
+                    key={resource.id}
+                    id={resource.id}
+                    title={resource.title}
+                    image={resource.image}
+                    link={resource.link}
+                    type={resource.type}
+                    onDelete={handleDelete}
+                    onClick={() => handleCardClick(resource)}
+                  />
+                ))}
+              </div>
+
+              {/* Empty State */}
+              {getCurrentData().length === 0 && (
+                <div className="text-center py-16">
+                  <p className="text-gray-500 text-base mb-2">
+                    No resources available
+                  </p>
+                  <p className="text-gray-400 text-sm">
+                    {activeTab === 'guides'
+                      ? 'Click Add Article URL to add new content'
+                      : 'Click Upload to add new content'}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
+
+        <RightSideBar />
       </div>
 
-      {/* Right Sidebar */}
-      <RightSideBar />
-
-      {/* Article URL Modal */}
-      {showUrlModal && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
-          onClick={closeUrlModal}
-        >
-          <div
-            className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">
-                Upload Article
-              </h2>
-              <button
-                onClick={closeUrlModal}
-                className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-
-            <div className="mb-4">
-              <input
-                type="url"
-                value={articleUrl}
-                onChange={e => setArticleUrl(e.target.value)}
-                placeholder="Enter URL"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#CB9729] focus:border-transparent outline-none"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={closeUrlModal}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700"
-                disabled={isLoading}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddArticle}
-                disabled={!articleUrl.trim() || isLoading}
-                className="flex-1 px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-[#B88624] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Adding...' : 'Share'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Video Modal */}
-      {selectedVideo && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
-          onClick={closeVideoModal}
-        >
-          <button
-            onClick={closeVideoModal}
-            className="absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors z-10"
-            aria-label="Close video"
-          >
-            <X className="w-6 h-6 text-gray-600" />
-          </button>
-          <div className="w-full max-w-6xl" onClick={e => e.stopPropagation()}>
-            <video
-              src={selectedVideo}
-              controls
-              autoPlay
-              className="w-full h-auto rounded-lg shadow-2xl"
-            >
-              Your browser does not support the video tag.
-            </video>
-          </div>
-        </div>
-      )}
+      <ResourceModals
+        showUrlModal={showUrlModal}
+        articleUrl={articleUrl}
+        isLoading={isLoading}
+        onUrlChange={setArticleUrl}
+        onCloseUrlModal={closeUrlModal}
+        onAddArticle={handleAddArticle}
+        selectedVideo={selectedVideo}
+        onCloseVideoModal={closeVideoModal}
+      />
     </div>
   );
 }

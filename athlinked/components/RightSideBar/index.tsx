@@ -1,7 +1,7 @@
 'use client';
-
+ 
 import { useState } from 'react';
-
+ 
 interface Person {
   id: string;
   name: string;
@@ -9,7 +9,7 @@ interface Person {
   avatar: string;
   isFollowing: boolean;
 }
-
+ 
 export default function RightSideBar() {
   const [people, setPeople] = useState<Person[]>([
     {
@@ -62,7 +62,7 @@ export default function RightSideBar() {
       isFollowing: false,
     },
   ]);
-
+ 
   const handleFollow = (id: string) => {
     setPeople(prevPeople =>
       prevPeople.map(person =>
@@ -72,7 +72,7 @@ export default function RightSideBar() {
       )
     );
   };
-
+ 
   return (
     <div className="w-80 bg-white border-l border-gray-200 overflow-y-auto">
       {/* Header */}
@@ -81,7 +81,7 @@ export default function RightSideBar() {
           People you may know
         </h2>
       </div>
-
+ 
       {/* People List */}
       <div className="divide-y divide-gray-200">
         {people.map(person => (
@@ -98,7 +98,7 @@ export default function RightSideBar() {
                   className="w-full h-full object-cover"
                 />
               </div>
-
+ 
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-gray-500 mb-0.5">{person.role}</p>
@@ -106,7 +106,7 @@ export default function RightSideBar() {
                   {person.name}
                 </p>
               </div>
-
+ 
               {/* Follow Button */}
               <button
                 onClick={() => handleFollow(person.id)}
