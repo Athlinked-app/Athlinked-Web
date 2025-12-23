@@ -194,11 +194,9 @@ async function getClipComments(clipId) {
     const result = await pool.query(query, [clipId]);
     const comments = result.rows;
 
-    // Build nested structure
     const commentMap = new Map();
     const rootComments = [];
 
-    // First pass: create comment objects and map them
     comments.forEach(comment => {
       commentMap.set(comment.id, {
         ...comment,
@@ -206,7 +204,6 @@ async function getClipComments(clipId) {
       });
     });
 
-    // Second pass: organize into tree structure
     comments.forEach(comment => {
       const commentObj = commentMap.get(comment.id);
       if (comment.parent_comment_id) {
@@ -259,10 +256,8 @@ async function deleteClip(clipId, userId) {
   try {
     await dbClient.query('BEGIN');
 
-    // Delete related records first
     await dbClient.query('DELETE FROM clip_comments WHERE clip_id = $1', [clipId]);
     
-    // Delete the clip itself
     const deleteQuery = 'DELETE FROM clips WHERE id = $1 AND user_id = $2 RETURNING id';
     const result = await dbClient.query(deleteQuery, [clipId, userId]);
     

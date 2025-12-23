@@ -63,7 +63,6 @@ async function getAllArticles(req, res) {
  */
 async function deleteArticle(req, res) {
   try {
-    // Try to get user_id from body first, then from query, then from req.user
     const userId = req.body?.user_id || req.query?.user_id || req.user?.id;
     
     console.log('Delete article request:', {

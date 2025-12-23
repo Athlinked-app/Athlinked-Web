@@ -15,8 +15,8 @@ export default function RightSideBar() {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // Get initials for placeholder
-  const getInitials = (name: string) => {
+  const getInitials = (name: string | null | undefined) => {
+    if (!name) return 'U';
     return name
       .split(' ')
       .map(word => word[0])
@@ -25,7 +25,6 @@ export default function RightSideBar() {
       .slice(0, 2);
   };
 
-  // Construct profile URL
   const getProfileUrl = (profileUrl?: string | null): string | null => {
     if (!profileUrl || profileUrl.trim() === '') return null;
     if (profileUrl.startsWith('http')) return profileUrl;
@@ -35,13 +34,11 @@ export default function RightSideBar() {
     return profileUrl;
   };
 
-  // Fetch current user ID and users from database
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         
-        // First, get current user ID
         let userId: string | null = null;
         const userIdentifier = localStorage.getItem('userEmail');
         if (userIdentifier) {
@@ -70,7 +67,6 @@ export default function RightSideBar() {
           }
         }
 
-        // Then fetch users (excluding current user if found)
         const excludeParam = userId ? `&excludeUserId=${userId}` : '';
         const response = await fetch(
           `http://localhost:3001/api/signup/users?limit=10${excludeParam}`
@@ -84,13 +80,34 @@ export default function RightSideBar() {
 
         const data = await response.json();
         if (data.success && data.users) {
-          const transformedPeople: Person[] = data.users.map((user: any) => ({
-            id: user.id,
-            name: user.full_name || user.username || 'User',
-            role: user.user_type ? user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1).toLowerCase() : 'User',
-            avatar: getProfileUrl(user.profile_url),
-            isFollowing: false,
-          }));
+          const transformedPeople: Person[] = await Promise.all(
+            data.users.map(async (user: any) => {
+              let isFollowing = false;
+              if (userId) {
+                try {
+                  const isFollowingResponse = await fetch(
+                    `http://localhost:3001/api/network/is-following/${user.id}?follower_id=${userId}`
+                  );
+                  if (isFollowingResponse.ok) {
+                    const isFollowingData = await isFollowingResponse.json();
+                    if (isFollowingData.success) {
+                      isFollowing = isFollowingData.isFollowing;
+                    }
+                  }
+                } catch (error) {
+                  console.error(`Error checking follow status for ${user.id}:`, error);
+                }
+              }
+              
+              return {
+                id: user.id,
+                name: user.full_name || user.username || 'User',
+                role: user.user_type ? user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1).toLowerCase() : 'User',
+                avatar: getProfileUrl(user.profile_url),
+                isFollowing,
+              };
+            })
+          );
           setPeople(transformedPeople);
         } else {
           setPeople([]);
@@ -106,14 +123,87 @@ export default function RightSideBar() {
     fetchData();
   }, []);
  
-  const handleFollow = (id: string) => {
-    setPeople(prevPeople =>
-      prevPeople.map(person =>
-        person.id === id
-          ? { ...person, isFollowing: !person.isFollowing }
-          : person
-      )
-    );
+  const handleFollow = async (id: string, isCurrentlyFollowing: boolean) => {
+    if (!currentUserId) {
+      alert('You must be logged in to follow users');
+      return;
+    }
+
+    try {
+      const endpoint = isCurrentlyFollowing
+        ? `http://localhost:3001/api/network/unfollow/${id}`
+        : `http://localhost:3001/api/network/follow/${id}`;
+
+      const userIdentifier = localStorage.getItem('userEmail');
+      if (!userIdentifier) {
+        alert('User not logged in');
+        return;
+      }
+
+      let userResponse;
+      if (userIdentifier.startsWith('username:')) {
+        const username = userIdentifier.replace('username:', '');
+        userResponse = await fetch(
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+        );
+      } else {
+        userResponse = await fetch(
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+        );
+      }
+
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const userDataResponse = await userResponse.json();
+      if (!userDataResponse.success || !userDataResponse.user) {
+        throw new Error('User not found');
+      }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userDataResponse.user.id,
+        }),
+      });
+
+      const contentType = response.headers.get('content-type');
+      let result;
+      
+      if (contentType && contentType.includes('application/json')) {
+        try {
+          result = await response.json();
+        } catch (jsonError) {
+          console.error('JSON parse error:', jsonError);
+          const text = await response.text();
+          console.error('Response text:', text);
+          throw new Error(`Failed to parse response: ${text.substring(0, 100)}`);
+        }
+      } else {
+        const text = await response.text();
+        console.error('Non-JSON response (status:', response.status, '):', text.substring(0, 200));
+        throw new Error(`Server returned non-JSON response (status: ${response.status}). Check backend logs.`);
+      }
+
+      if (result.success) {
+        setPeople(prevPeople =>
+          prevPeople.map(person =>
+            person.id === id
+              ? { ...person, isFollowing: !isCurrentlyFollowing }
+              : person
+          )
+        );
+      } else {
+        alert(result.message || `Failed to ${isCurrentlyFollowing ? 'unfollow' : 'follow'} user`);
+      }
+    } catch (error) {
+      console.error(`Error ${isCurrentlyFollowing ? 'unfollowing' : 'following'} user:`, error);
+      alert(`Failed to ${isCurrentlyFollowing ? 'unfollow' : 'follow'} user. Please try again.`);
+    }
   };
  
   return (
@@ -167,7 +257,7 @@ export default function RightSideBar() {
  
                 {/* Follow Button */}
                 <button
-                  onClick={() => handleFollow(person.id)}
+                  onClick={() => handleFollow(person.id, person.isFollowing)}
                   className={`px-4 py-1.5 text-sm font-medium rounded-full border transition-colors flex-shrink-0 ${
                     person.isFollowing
                       ? 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'

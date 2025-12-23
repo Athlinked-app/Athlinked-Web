@@ -7,7 +7,6 @@ const resourcesService = require('./resources.service');
  */
 async function createResource(req, res) {
   try {
-    // Get user_id from body (FormData or JSON)
     const userId = req.body.user_id || req.user?.id;
     if (!userId) {
       return res.status(401).json({
@@ -16,7 +15,6 @@ async function createResource(req, res) {
       });
     }
 
-    // Extract fields from request body
     const {
       resource_type,
       title,
@@ -29,7 +27,6 @@ async function createResource(req, res) {
       file_size,
     } = req.body;
 
-    // Validate resource_type
     if (!resource_type || !['article', 'video', 'template'].includes(resource_type)) {
       return res.status(400).json({
         success: false,
@@ -37,7 +34,6 @@ async function createResource(req, res) {
       });
     }
 
-    // Handle file upload
     let finalFileUrl = file_url;
     let finalFileType = file_type;
     let finalFileSize = file_size;
@@ -57,9 +53,6 @@ async function createResource(req, res) {
       }
     }
 
-    // Prepare resource data for database
-    // Only set fields for the current resource_type - don't set others to null
-    // This allows the service layer to preserve existing data when updating the first combined row
     const resourceData = {
       user_id: userId,
       resource_type,
@@ -67,7 +60,6 @@ async function createResource(req, res) {
       description: description || null,
     };
 
-    // Only set fields relevant to the current resource_type
     if (resource_type === 'article') {
       resourceData.article_link = article_link;
     } else if (resource_type === 'video') {

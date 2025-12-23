@@ -29,7 +29,6 @@ export default function ShareModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<UserData[]>([]);
 
-  // Load users from localStorage or use dummy data
   useEffect(() => {
     if (open) {
       loadUsers();
@@ -37,7 +36,6 @@ export default function ShareModal({
   }, [open]);
 
   const loadUsers = () => {
-    // Try to load from localStorage, otherwise use dummy data
     const storedUsers = localStorage.getItem('athlinked_users');
     if (storedUsers) {
       try {
@@ -88,7 +86,6 @@ export default function ShareModal({
     ];
   };
   
-  // Get initials for placeholder
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -119,7 +116,6 @@ export default function ShareModal({
 
     const selectedUserIds = Array.from(selectedUsers);
     
-    // Save share data to localStorage
     const shareData = {
       post_id: post.id,
       shared_with: selectedUserIds,
@@ -137,7 +133,6 @@ export default function ShareModal({
       onShare(selectedUserIds, message.trim());
     }
 
-    // Reset and close
     setSelectedUsers(new Set());
     setMessage('');
     setSearchQuery('');

@@ -25,9 +25,7 @@ async function createClip(req, res) {
       });
     }
 
-    // Create URL for the uploaded file
     const video_url = `/uploads/${file.filename}`;
-    // In production, this would be: `https://your-domain.com/uploads/${file.filename}`
 
     const result = await clipsService.createClipService({
       user_id,

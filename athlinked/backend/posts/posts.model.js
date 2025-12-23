@@ -53,10 +53,10 @@ async function createPost(postData, client = null) {
     event_title || null,
     event_date || null,
     event_location || null,
-    0, // like_count
-    0, // comment_count
-    0, // save_count
-    true, // is_active
+    0,
+    0,
+    0,
+    true,
   ];
 
   try {
@@ -246,12 +246,10 @@ async function deletePost(postId, userId) {
   try {
     await dbClient.query('BEGIN');
 
-    // Delete related records first
     await dbClient.query('DELETE FROM post_likes WHERE post_id = $1', [postId]);
     await dbClient.query('DELETE FROM post_comments WHERE post_id = $1', [postId]);
     await dbClient.query('DELETE FROM post_saves WHERE post_id = $1', [postId]);
     
-    // Delete the post itself
     const deleteQuery = 'DELETE FROM posts WHERE id = $1 AND user_id = $2 RETURNING id';
     const result = await dbClient.query(deleteQuery, [postId, userId]);
     

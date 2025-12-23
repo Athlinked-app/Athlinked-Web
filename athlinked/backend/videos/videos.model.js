@@ -95,7 +95,6 @@ async function deleteVideo(videoId, userId) {
   try {
     await dbClient.query('BEGIN');
 
-    // Delete the video itself
     const deleteQuery = 'DELETE FROM videos WHERE id = $1 AND user_id = $2 RETURNING id';
     const result = await dbClient.query(deleteQuery, [videoId, userId]);
     

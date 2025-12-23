@@ -27,7 +27,6 @@ export default function HomeHerosection({
   onPostCreated,
 }: HomeHerosectionProps) {
   
-  // Get initials for placeholder
   const getInitials = (name: string) => {
     return name
       .split(' ')

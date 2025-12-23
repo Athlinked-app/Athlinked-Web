@@ -33,7 +33,6 @@ export default function CommentsModal({
 }: CommentsModalProps) {
   const [comments, setComments] = useState<CommentData[]>([]);
   
-  // Get initials for placeholder
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -50,14 +49,12 @@ export default function CommentsModal({
   const commentsEndRef = useRef<HTMLDivElement>(null);
   const replyInputRef = useRef<HTMLInputElement>(null);
 
-  // Load comments from localStorage
   useEffect(() => {
     if (open) {
       loadComments();
     }
   }, [open, post.id]);
 
-  // Scroll to bottom when comments change
   useEffect(() => {
     if (commentsEndRef.current) {
       commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -79,7 +76,6 @@ export default function CommentsModal({
     }
   };
 
-  // Organize comments into parent comments and replies
   const organizeComments = (allComments: CommentData[]) => {
     const parentComments = allComments.filter(c => !c.parent_comment_id);
     const replies = allComments.filter(c => c.parent_comment_id);
@@ -109,25 +105,20 @@ export default function CommentsModal({
       parent_comment_id: null,
     };
 
-    // Get existing comments
     const existingComments = JSON.parse(
       localStorage.getItem(`athlinked_comments_${post.id}`) || '[]'
     );
 
-    // Add new comment
     const updatedComments = [...existingComments, newComment];
 
-    // Save to localStorage
     localStorage.setItem(
       `athlinked_comments_${post.id}`,
       JSON.stringify(updatedComments)
     );
 
-    // Update state
     setComments(updatedComments);
     setCommentText('');
 
-    // Update post comment count (only count parent comments)
     const parentCommentsCount = updatedComments.filter(c => !c.parent_comment_id).length;
     const posts = JSON.parse(localStorage.getItem('athlinked_posts') || '[]');
     const updatedPosts = posts.map((p: PostData) => {
@@ -148,7 +139,6 @@ export default function CommentsModal({
   const handleReplyClick = (commentId: string) => {
     setReplyingTo(commentId);
     setShowReplies(prev => ({ ...prev, [commentId]: true }));
-    // Focus on reply input after a brief delay
     setTimeout(() => {
       replyInputRef.current?.focus();
     }, 100);
@@ -169,21 +159,17 @@ export default function CommentsModal({
       parent_comment_id: parentCommentId,
     };
 
-    // Get existing comments
     const existingComments = JSON.parse(
       localStorage.getItem(`athlinked_comments_${post.id}`) || '[]'
     );
 
-    // Add new reply
     const updatedComments = [...existingComments, newReply];
 
-    // Save to localStorage
     localStorage.setItem(
       `athlinked_comments_${post.id}`,
       JSON.stringify(updatedComments)
     );
 
-    // Update state
     setComments(updatedComments);
     setReplyText('');
     setReplyingTo(null);

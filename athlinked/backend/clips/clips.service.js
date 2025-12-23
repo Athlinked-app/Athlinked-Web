@@ -14,13 +14,11 @@ async function createClipService(clipData) {
       throw new Error('User ID and video URL are required');
     }
 
-    // Fetch username and profile_url from users table
     const user = await clipsModel.getUserById(user_id);
     if (!user) {
       throw new Error('User not found');
     }
 
-    // Use transaction to ensure data consistency
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -90,13 +88,11 @@ async function addCommentService(clipId, commentData) {
       throw new Error('User ID and comment are required');
     }
 
-    // Verify clip exists
     const clip = await clipsModel.getClipById(clipId);
     if (!clip) {
       throw new Error('Clip not found');
     }
 
-    // Use transaction to add comment and increment count
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -144,7 +140,6 @@ async function replyToCommentService(commentId, replyData) {
       throw new Error('User ID and comment are required');
     }
 
-    // Verify parent comment exists and get clip_id
     const parentComment = await clipsModel.getCommentById(commentId);
     if (!parentComment) {
       throw new Error('Parent comment not found');
@@ -152,7 +147,6 @@ async function replyToCommentService(commentId, replyData) {
 
     const clipId = parentComment.clip_id;
 
-    // Use transaction to add reply and increment count
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -194,7 +188,6 @@ async function replyToCommentService(commentId, replyData) {
  */
 async function getClipCommentsService(clipId) {
   try {
-    // Verify clip exists
     const clip = await clipsModel.getClipById(clipId);
     if (!clip) {
       throw new Error('Clip not found');

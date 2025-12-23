@@ -36,7 +36,7 @@ async function createArticle(articleData, client = null) {
     title || null,
     description || null,
     article_link,
-    true, // is_active defaults to true
+    true,
   ];
 
   const dbClient = client || pool;
@@ -92,7 +92,6 @@ async function deleteArticle(articleId, userId) {
   try {
     await dbClient.query('BEGIN');
 
-    // Delete the article itself
     const deleteQuery = 'DELETE FROM articles WHERE id = $1 AND user_id = $2 RETURNING id';
     const result = await dbClient.query(deleteQuery, [articleId, userId]);
     

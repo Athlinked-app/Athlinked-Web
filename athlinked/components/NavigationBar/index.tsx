@@ -42,13 +42,10 @@ export default function NavigationBar({
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch current user data if not provided as props
   useEffect(() => {
     let isMounted = true;
 
     const fetchUserData = async () => {
-      // Always fetch to ensure we have the latest user data
-      // Props will override if provided, but we fetch as fallback
       try {
         const userIdentifier = localStorage.getItem('userEmail');
         if (!userIdentifier) {
@@ -98,9 +95,7 @@ export default function NavigationBar({
   }, []);
 
   const handleLogout = () => {
-    // Clear user data from localStorage
     localStorage.removeItem('userEmail');
-    // Redirect to login page
     router.push('/login');
   };
   const menuItems = [
@@ -117,16 +112,10 @@ export default function NavigationBar({
     { id: 'logout', icon: LogOut, label: 'Logout' },
   ];
  
-  // Get display name (first name or provided name)
-  // Priority: prop > fetched user data > default
   const userName = propUserName || userData?.full_name || 'User';
   
-  // Only use profile_url if it actually exists (not null/undefined/empty)
   const rawProfileUrl = propUserProfileUrl || (userData?.profile_url && typeof userData.profile_url === 'string' && userData.profile_url.trim() !== '' ? userData.profile_url : null);
   
-  // Construct full URL if profile_url is a relative path (starts with /)
-  // But don't modify /assets paths (static assets)
-  // Don't use default - only show if profile_url exists
   const userProfileUrl = rawProfileUrl && rawProfileUrl.trim() !== ''
     ? (rawProfileUrl.startsWith('http') 
         ? rawProfileUrl 
@@ -138,7 +127,6 @@ export default function NavigationBar({
   const userRole = propUserRole || (userData?.user_type ? userData.user_type.charAt(0).toUpperCase() + userData.user_type.slice(1).toLowerCase() : 'Athlete');
   const displayName = userName?.split(' ')[0] || 'User';
   
-  // Get initials for placeholder
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -182,7 +170,6 @@ export default function NavigationBar({
             const Icon = item.icon;
             const isActive = activeItem === item.id;
  
-            // Handle logout button separately
             if (item.id === 'logout') {
               return (
                 <li key={item.id}>
@@ -201,7 +188,6 @@ export default function NavigationBar({
               );
             }
  
-            // Determine the href for navigation
             const getHref = () => {
               switch (item.id) {
                 case 'home':
@@ -210,6 +196,8 @@ export default function NavigationBar({
                   return '/stats';
                 case 'clips':
                   return '/clips';
+                case 'network':
+                  return '/network';
                 case 'resource':
                   return '/resources';
                 default:

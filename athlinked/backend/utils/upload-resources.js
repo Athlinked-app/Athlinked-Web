@@ -8,16 +8,13 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configure storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    // Generate unique filename
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const ext = path.extname(file.originalname);
-    // Determine prefix based on resource type
     let prefix = 'resource-';
     if (req.body && req.body.resource_type) {
       if (req.body.resource_type === 'video') {
@@ -36,7 +33,6 @@ const storage = multer.diskStorage({
   },
 });
 
-// File filter - allow videos and PDFs for resources
 const fileFilter = (req, file, cb) => {
   const allowedExtensions = /\.(mp4|mov|pdf)$/i;
   const allowedMimeTypes = /^(video\/(mp4|quicktime)|application\/pdf)/;

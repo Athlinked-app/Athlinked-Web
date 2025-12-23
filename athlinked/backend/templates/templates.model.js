@@ -98,7 +98,6 @@ async function deleteTemplate(templateId, userId) {
   try {
     await dbClient.query('BEGIN');
 
-    // Delete the template itself
     const deleteQuery = 'DELETE FROM templates WHERE id = $1 AND user_id = $2 RETURNING id';
     const result = await dbClient.query(deleteQuery, [templateId, userId]);
     

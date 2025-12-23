@@ -54,7 +54,6 @@ export default function Post({
   onPostDeleted,
 }: PostProps) {
   
-  // Get initials for placeholder
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -74,22 +73,19 @@ export default function Post({
   const [showDeleteMenu, setShowDeleteMenu] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Fetch comment count from API
   useEffect(() => {
     const fetchCommentCount = async () => {
       try {
         const response = await fetch(`http://localhost:3001/api/posts/${post.id}/comments`);
         if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.comments) {
-            // Count only parent comments (not replies)
-            const parentComments = data.comments.filter((c: any) => !c.parent_comment_id);
+        const data = await response.json();
+        if (data.success && data.comments) {
+          const parentComments = data.comments.filter((c: any) => !c.parent_comment_id);
             setCommentCount(parentComments.length);
           }
         }
       } catch (error) {
         console.error('Error fetching comment count:', error);
-        // Fallback to post.comment_count if API fails
         setCommentCount(post.comment_count);
       }
     };
@@ -97,7 +93,6 @@ export default function Post({
     fetchCommentCount();
   }, [post.id, post.comment_count]);
 
-  // Check save status on mount
   useEffect(() => {
     const checkSavedStatus = () => {
       const savedPosts = JSON.parse(
@@ -119,13 +114,11 @@ export default function Post({
   };
 
   const handleCommentAdded = async () => {
-    // Fetch updated comment count from API
     try {
       const response = await fetch(`http://localhost:3001/api/posts/${post.id}/comments`);
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.comments) {
-          // Count only parent comments (not replies)
           const parentComments = data.comments.filter((c: any) => !c.parent_comment_id);
           setCommentCount(parentComments.length);
         }
@@ -145,14 +138,12 @@ export default function Post({
 
   const handleShareComplete = (selectedUsers: string[], message: string) => {
     console.log('Post shared with:', selectedUsers, 'Message:', message);
-    // You can add additional logic here, like showing a success message
   };
 
   const handleSave = () => {
     const newSavedStatus = toggleSave(post.id);
     setIsSaved(newSavedStatus);
     
-    // Show alert
     if (newSavedStatus) {
       setSaveAlertMessage('This post is saved');
     } else {

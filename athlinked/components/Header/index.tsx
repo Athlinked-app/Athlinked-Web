@@ -25,7 +25,6 @@ export default function Header({
     let isMounted = true;
 
     const fetchUserData = async () => {
-      // If props are provided, skip fetching
       if (propUserName && propUserName !== 'User' && propUserProfileUrl && propUserProfileUrl !== '/assets/Header/profiledummy.jpeg') {
         if (isMounted) {
           setLoading(false);
@@ -83,11 +82,8 @@ export default function Header({
 
   const userName = propUserName || userData?.full_name || 'User';
   
-  // Only use profile_url if it actually exists (not null/undefined/empty)
   const rawProfileUrl = propUserProfileUrl || (userData?.profile_url && typeof userData.profile_url === 'string' && userData.profile_url.trim() !== '' ? userData.profile_url : null);
   
-  // Construct full URL if profile_url is a relative path (starts with /)
-  // Don't use default - only show if profile_url exists
   const userProfileUrl = rawProfileUrl && rawProfileUrl.trim() !== ''
     ? (rawProfileUrl.startsWith('http') 
         ? rawProfileUrl 
@@ -96,7 +92,6 @@ export default function Header({
           : rawProfileUrl)
     : null;
   
-  // Get initials for placeholder
   const getInitials = (name: string) => {
     return name
       .split(' ')

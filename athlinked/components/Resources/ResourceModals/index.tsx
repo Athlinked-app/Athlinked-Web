@@ -3,7 +3,6 @@
 import { X } from 'lucide-react';
 
 interface ResourceModalsProps {
-  // URL Modal props
   showUrlModal: boolean;
   articleUrl: string;
   isLoading: boolean;
@@ -11,7 +10,6 @@ interface ResourceModalsProps {
   onCloseUrlModal: () => void;
   onAddArticle: () => void;
 
-  // Video Modal props
   selectedVideo: string | null;
   onCloseVideoModal: () => void;
 }

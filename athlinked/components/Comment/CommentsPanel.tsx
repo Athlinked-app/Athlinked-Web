@@ -38,7 +38,6 @@ export default function CommentsPanel({
   const commentsEndRef = useRef<HTMLDivElement>(null);
   const replyInputRef = useRef<HTMLInputElement>(null);
   
-  // Get initials for placeholder
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -48,12 +47,10 @@ export default function CommentsPanel({
       .slice(0, 2);
   };
 
-  // Load comments from API
   useEffect(() => {
     loadComments();
   }, [post.id]);
 
-  // Scroll to bottom when comments change
   useEffect(() => {
     if (commentsEndRef.current) {
       commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -74,7 +71,6 @@ export default function CommentsPanel({
     }
   };
 
-  // Organize comments into parent comments and replies
   const organizeComments = (allComments: CommentData[]) => {
     const parentComments = allComments.filter(c => !c.parent_comment_id);
     const replies = allComments.filter(c => c.parent_comment_id);
