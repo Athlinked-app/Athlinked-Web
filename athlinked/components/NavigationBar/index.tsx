@@ -26,6 +26,7 @@ interface NavigationBarProps {
 }
 
 interface UserData {
+  id?: string;
   full_name: string;
   profile_url?: string;
   user_type?: string;
@@ -140,7 +141,12 @@ export default function NavigationBar({
     <div className="w-72 bg-white flex flex-col border-r border-gray-200 rounded-lg">
       {/* Athlete Profile Section */}
       <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center gap-3">
+        <div 
+          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => {
+            router.push('/profile');
+          }}
+        >
           <div className="w-12 h-12 md:w-20 md:h-20 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center">
             {userProfileUrl ? (
               <img
