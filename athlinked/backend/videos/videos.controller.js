@@ -63,7 +63,8 @@ async function createVideo(req, res) {
  */
 async function getAllVideos(req, res) {
   try {
-    const result = await videosService.getAllVideosService();
+    const userId = req.query.user_id || req.user?.id || null;
+    const result = await videosService.getAllVideosService(userId);
     return res.status(200).json(result);
   } catch (error) {
     console.error('Get videos error:', error);

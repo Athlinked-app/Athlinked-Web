@@ -428,12 +428,40 @@ export default function MessagesPage() {
     const date = new Date(timestamp);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / (1000 * 60));
     const hours = Math.floor(diff / (1000 * 60 * 60));
-    
-    if (hours < 24) {
-      return `${hours}h`;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    // Format time as "HH:MM AM/PM"
+    const timeString = date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+    // If less than 1 minute ago, show "Just now"
+    if (minutes < 1) {
+      return 'Just now';
     }
-    return date.toLocaleDateString();
+    // If today, show time only
+    if (date.toDateString() === now.toDateString()) {
+      return timeString;
+    }
+    // If yesterday, show "Yesterday"
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    }
+    // If within this week, show day name
+    if (days < 7) {
+      return date.toLocaleDateString('en-US', { weekday: 'short' });
+    }
+    // Otherwise show date
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+    });
   };
 
   const formatMessageTime = (timestamp: string) => {
@@ -442,6 +470,50 @@ export default function MessagesPage() {
       month: 'long',
       day: 'numeric',
       year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const formatMessageTimestamp = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    // Format time as "HH:MM AM/PM"
+    const timeString = date.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+    // If less than 1 minute ago, show "Just now"
+    if (minutes < 1) {
+      return 'Just now';
+    }
+    // If today, show time only
+    if (date.toDateString() === now.toDateString()) {
+      return timeString;
+    }
+    // If yesterday, show "Yesterday" and time
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (date.toDateString() === yesterday.toDateString()) {
+      return `Yesterday ${timeString}`;
+    }
+    // If within this week, show day name and time
+    if (days < 7) {
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+      return `${dayName} ${timeString}`;
+    }
+    // Otherwise show date and time
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
@@ -666,20 +738,25 @@ export default function MessagesPage() {
                             }`}
                           >
                             <p className="text-sm text-gray-900">{msg.message}</p>
-                            {isOwnMessage && (
-                              <div className="flex justify-end items-center mt-0.5">
-                                {msg.is_read_by_recipient ? (
-                                  // Blue double tick - message seen/read
-                                  <CheckCheck size={16} className="text-[#53BDEB]" strokeWidth={2.5} />
-                                ) : msg.is_delivered ? (
-                                  // Gray double tick - message reached/delivered
-                                  <CheckCheck size={16} className="text-[#8696A0]" strokeWidth={2.5} />
-                                ) : (
-                                  // Single tick - message sent
-                                  <Check size={12} className="text-[#8696A0]" strokeWidth={2.5} />
-                                )}
-                              </div>
-                            )}
+                            <div className={`flex items-center justify-end gap-1.5 mt-1 ${isOwnMessage ? '' : 'justify-start'}`}>
+                              <span className="text-xs text-gray-500">
+                                {formatMessageTimestamp(msg.created_at)}
+                              </span>
+                              {isOwnMessage && (
+                                <div className="flex items-center">
+                                  {msg.is_read_by_recipient ? (
+                                    // Blue double tick - message seen/read
+                                    <CheckCheck size={16} className="text-[#53BDEB]" strokeWidth={2.5} />
+                                  ) : msg.is_delivered ? (
+                                    // Gray double tick - message reached/delivered
+                                    <CheckCheck size={16} className="text-[#8696A0]" strokeWidth={2.5} />
+                                  ) : (
+                                    // Single tick - message sent
+                                    <Check size={12} className="text-[#8696A0]" strokeWidth={2.5} />
+                                  )}
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>

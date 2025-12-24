@@ -39,11 +39,12 @@ async function createVideoService(videoData) {
 
 /**
  * Get all active videos
+ * @param {string} userId - Optional user ID to filter by
  * @returns {Promise<object>} Service result with videos array
  */
-async function getAllVideosService() {
+async function getAllVideosService(userId = null) {
   try {
-    const videos = await videosModel.getAllVideos();
+    const videos = await videosModel.getAllVideos(userId);
     return {
       success: true,
       videos,

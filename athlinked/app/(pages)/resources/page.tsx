@@ -133,15 +133,21 @@ export default function ManageResourcesPage() {
   // Fetch resources from API
   const fetchResources = async () => {
     try {
+      if (!currentUserId) {
+        setLoading(false);
+        setResources([]);
+        return;
+      }
+
       setLoading(true);
       let endpoint = '';
       
       if (activeTab === 'guides') {
-        endpoint = 'http://localhost:3001/api/articles';
+        endpoint = `http://localhost:3001/api/articles?user_id=${encodeURIComponent(currentUserId)}`;
       } else if (activeTab === 'videos') {
-        endpoint = 'http://localhost:3001/api/videos';
+        endpoint = `http://localhost:3001/api/videos?user_id=${encodeURIComponent(currentUserId)}`;
       } else {
-        endpoint = 'http://localhost:3001/api/templates';
+        endpoint = `http://localhost:3001/api/templates?user_id=${encodeURIComponent(currentUserId)}`;
       }
 
       const response = await fetch(endpoint);

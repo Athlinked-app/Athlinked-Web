@@ -69,7 +69,8 @@ async function createTemplate(req, res) {
  */
 async function getAllTemplates(req, res) {
   try {
-    const result = await templatesService.getAllTemplatesService();
+    const userId = req.query.user_id || req.user?.id || null;
+    const result = await templatesService.getAllTemplatesService(userId);
     return res.status(200).json(result);
   } catch (error) {
     console.error('Get templates error:', error);
