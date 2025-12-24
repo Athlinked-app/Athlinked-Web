@@ -589,7 +589,7 @@ export default function ClipsPage() {
       </header>
 
       {/* Content Area with Navigation and Main Content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden mt-5 ml-5">
         {/* Navigation Sidebar */}
         <NavigationBar
           activeItem="clips"
@@ -643,7 +643,7 @@ export default function ClipsPage() {
 
                       {/* Top Right - Delete Button (only for clips owned by current user) */}
                       {reel.user_id === currentUserId && (
-                        <div className="absolute top-4 right-4 z-20">
+                        <div className="absolute top-10 right-4 z-20">
                           <div className="relative">
                             <button
                               onClick={() => setShowDeleteMenu(prev => ({
@@ -710,13 +710,13 @@ export default function ClipsPage() {
                       </div>
 
                       {/* Right Side - Interaction Buttons */}
-                      <div className="absolute right-4 bottom-24 flex flex-col items-center gap-6">
+                      <div className="absolute right-4 bottom-15 flex flex-col items-center gap-6">
                         <button
                           onClick={() => handleLike(reel.id)}
                           className="flex flex-col items-center gap-1 text-white hover:scale-110 transition-transform"
                         >
                           <Heart
-                            size={28}
+                            size={25}
                             fill={likedReels[reel.id] ? 'currentColor' : 'none'}
                           />
                           <span className="text-xs font-medium">
@@ -738,7 +738,7 @@ export default function ClipsPage() {
                           onClick={() => handleShare(reel.id)}
                           className="flex flex-col items-center gap-1 text-white hover:scale-110 transition-transform"
                         >
-                          <Share2 size={28} />
+                          <Share2 size={25} />
                           <span className="text-xs font-medium">
                             {reel.shares}
                           </span>
@@ -749,9 +749,9 @@ export default function ClipsPage() {
                           className="flex flex-col items-center gap-1 text-white hover:scale-110 transition-transform"
                         >
                           {mutedReels[reel.id] ? (
-                            <VolumeX size={28} />
+                            <VolumeX size={25} />
                           ) : (
-                            <Volume2 size={28} />
+                            <Volume2 size={25} />
                           )}
                         </button>
                       </div>
@@ -772,7 +772,7 @@ export default function ClipsPage() {
           </div>
 
           {/* Create Button - Top Right */}
-          <div className="absolute top-2 right-4 z-20">
+          <div className="absolute top-2 right-240 z-20">
             <button
               onClick={() => setShowUploadModal(true)}
               className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-4 py-2 flex items-center gap-2 shadow-lg transition-colors"
@@ -787,7 +787,7 @@ export default function ClipsPage() {
             <div
               className="absolute top-1/2 transform -translate-y-1/2 bg-white border-l border-gray-200 flex flex-col z-10 shadow-lg"
               style={{
-                right: '11.5rem', // Reduced from 2rem to 0.5rem to reduce gap
+                right: '6.5rem', // Reduced from 2rem to 0.5rem to reduce gap
                 width: 'calc(25.5rem * 1.1)', // Increased w-90 (22.5rem/360px) by 10%
                 height: 'calc(66.666667vh * 1.1)', // Increased h-2/3 by 10%
               }}

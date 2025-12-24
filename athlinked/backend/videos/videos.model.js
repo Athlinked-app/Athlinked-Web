@@ -49,19 +49,27 @@ async function createVideo(videoData, client = null) {
 
 /**
  * Get all active videos
+ * @param {string} userId - Optional user ID to filter by
  * @param {object} client - Optional database client for transactions
  * @returns {Promise<Array>} Array of video data
  */
-async function getAllVideos(client = null) {
-  const query = `
+async function getAllVideos(userId = null, client = null) {
+  let query = `
     SELECT *
     FROM videos
     WHERE is_active = true
-    ORDER BY created_at DESC
   `;
+  const values = [];
+
+  if (userId) {
+    query += ` AND user_id = $1`;
+    values.push(userId);
+  }
+
+  query += ` ORDER BY created_at DESC`;
 
   const dbClient = client || pool;
-  const result = await dbClient.query(query);
+  const result = await dbClient.query(query, values);
   return result.rows;
 }
 

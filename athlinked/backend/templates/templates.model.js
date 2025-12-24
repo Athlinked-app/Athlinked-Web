@@ -52,19 +52,27 @@ async function createTemplate(templateData, client = null) {
 
 /**
  * Get all active templates
+ * @param {string} userId - Optional user ID to filter by
  * @param {object} client - Optional database client for transactions
  * @returns {Promise<Array>} Array of template data
  */
-async function getAllTemplates(client = null) {
-  const query = `
+async function getAllTemplates(userId = null, client = null) {
+  let query = `
     SELECT *
     FROM templates
     WHERE is_active = true
-    ORDER BY created_at DESC
   `;
+  const values = [];
+
+  if (userId) {
+    query += ` AND user_id = $1`;
+    values.push(userId);
+  }
+
+  query += ` ORDER BY created_at DESC`;
 
   const dbClient = client || pool;
-  const result = await dbClient.query(query);
+  const result = await dbClient.query(query, values);
   return result.rows;
 }
 

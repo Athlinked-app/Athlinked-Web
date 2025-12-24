@@ -37,11 +37,12 @@ async function createArticleService(articleData) {
 
 /**
  * Get all active articles
+ * @param {string} userId - Optional user ID to filter by
  * @returns {Promise<object>} Service result with articles array
  */
-async function getAllArticlesService() {
+async function getAllArticlesService(userId = null) {
   try {
-    const articles = await articlesModel.getAllArticles();
+    const articles = await articlesModel.getAllArticles(userId);
     return {
       success: true,
       articles,
