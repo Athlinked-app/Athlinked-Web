@@ -7,6 +7,8 @@ import RightSideBar from '@/components/RightSideBar';
 interface User {
   id: string;
   username: string | null;
+  full_name: string | null;
+  user_type: string | null;
   profile_url: string | null;
 }
 
@@ -155,6 +157,11 @@ export default function NetworkPage() {
       .join('')
       .toUpperCase()
       .slice(0, 2);
+  };
+
+  // Get display name (full_name only)
+  const getDisplayName = (user: User) => {
+    return user.full_name || 'User';
   };
 
   // Get profile URL helper
@@ -337,18 +344,24 @@ export default function NetworkPage() {
                           {profileUrl ? (
                             <img
                               src={profileUrl}
-                              alt={user.username ?? 'User'}
+                              alt={getDisplayName(user)}
                               className="w-full h-full object-cover"
                             />
                           ) : (
                             <span className="text-gray-600 font-semibold text-sm">
-                              {getInitials(user.username)}
+                              {getInitials(user.full_name || 'User')}
                             </span>
                           )}
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">{user.username || 'User'}</div>
-                          <div className="text-sm text-gray-500">Athlete</div>
+                          <div className="font-medium text-gray-900">
+                            {user.full_name || 'User'}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {user.user_type 
+                              ? user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1).toLowerCase()
+                              : 'User'}
+                          </div>
                         </div>
                       </div>
                       <button

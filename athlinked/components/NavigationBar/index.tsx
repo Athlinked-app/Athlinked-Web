@@ -26,7 +26,8 @@ interface NavigationBarProps {
 }
 
 interface UserData {
-  full_name: string;
+  full_name: string | null;
+  username: string | null;
   profile_url?: string;
   user_type?: string;
 }
@@ -125,7 +126,7 @@ export default function NavigationBar({
     : null;
     
   const userRole = propUserRole || (userData?.user_type ? userData.user_type.charAt(0).toUpperCase() + userData.user_type.slice(1).toLowerCase() : 'Athlete');
-  const displayName = userName?.split(' ')[0] || 'User';
+  const displayName = userName || 'User';
   
   const getInitials = (name: string) => {
     return name
@@ -200,6 +201,8 @@ export default function NavigationBar({
                   return '/network';
                 case 'resource':
                   return '/resources';
+                case 'message':
+                  return '/messages';
                 default:
                   return '#';
               }

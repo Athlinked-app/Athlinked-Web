@@ -3,7 +3,7 @@ const pool = require('../config/db');
 
 async function createPostService(postData, userId) {
   try {
-    const userQuery = 'SELECT username, profile_url FROM users WHERE id = $1';
+    const userQuery = 'SELECT full_name, profile_url FROM users WHERE id = $1';
     const userResult = await pool.query(userQuery, [userId]);
 
     if (userResult.rows.length === 0) {
@@ -15,7 +15,7 @@ async function createPostService(postData, userId) {
     const postDataWithUser = {
       ...postData,
       user_id: userId,
-      username: user.username || 'Unknown',
+      username: user.full_name || 'User',
       user_profile_url: user.profile_url || null,
     };
 

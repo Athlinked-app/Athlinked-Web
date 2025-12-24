@@ -101,7 +101,7 @@ export default function RightSideBar() {
               
               return {
                 id: user.id,
-                name: user.full_name || user.username || 'User',
+                name: user.full_name || 'User',
                 role: user.user_type ? user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1).toLowerCase() : 'User',
                 avatar: getProfileUrl(user.profile_url),
                 isFollowing,

@@ -124,6 +124,8 @@ async function getFollowers(userId) {
     SELECT 
       u.id,
       u.username,
+      u.full_name,
+      u.user_type,
       u.profile_url
     FROM users u
     INNER JOIN user_follows uf ON u.id = uf.follower_id
@@ -150,6 +152,8 @@ async function getFollowing(userId) {
     SELECT 
       u.id,
       u.username,
+      u.full_name,
+      u.user_type,
       u.profile_url
     FROM users u
     INNER JOIN user_follows uf ON u.id = uf.following_id
