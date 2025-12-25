@@ -206,7 +206,7 @@ async function getCommentsByPostId(postId) {
   const query = `
     SELECT 
       pc.*,
-      u.username,
+      COALESCE(u.full_name, 'User') as username,
       u.profile_url as user_profile_url
     FROM post_comments pc
     LEFT JOIN users u ON pc.user_id = u.id
@@ -217,7 +217,7 @@ async function getCommentsByPostId(postId) {
   const repliesQuery = `
     SELECT 
       pc.*,
-      u.username,
+      COALESCE(u.full_name, 'User') as username,
       u.profile_url as user_profile_url
     FROM post_comments pc
     LEFT JOIN users u ON pc.user_id = u.id

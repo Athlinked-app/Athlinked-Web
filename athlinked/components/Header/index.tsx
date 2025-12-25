@@ -10,7 +10,8 @@ type HeaderProps = {
 };
 
 interface UserData {
-  full_name: string;
+  full_name: string | null;
+  username: string | null;
   profile_url?: string;
 }
 

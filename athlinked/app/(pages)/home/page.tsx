@@ -111,7 +111,7 @@ export default function Landing() {
         setCurrentUserId(data.user.id);
         setCurrentUser({
           id: data.user.id,
-          full_name: data.user.full_name || data.user.username || 'User',
+          full_name: data.user.full_name || 'User',
           profile_url: data.user.profile_url,
           username: data.user.username,
         });
@@ -162,7 +162,7 @@ export default function Landing() {
           <div className="flex-shrink-0">
             <HomeHerosection
               userProfileUrl={getProfileUrl(currentUser?.profile_url)}
-              username={currentUser?.full_name || currentUser?.username || 'User'}
+              username={currentUser?.full_name || 'User'}
               onPostCreated={handlePostCreated}
             />
           </div>
@@ -183,7 +183,7 @@ export default function Landing() {
                     key={post.id}
                     post={post}
                     currentUserProfileUrl={getProfileUrl(currentUser?.profile_url)}
-                    currentUsername={currentUser?.full_name || currentUser?.username || 'User'}
+                    currentUsername={currentUser?.full_name || 'User'}
                     currentUserId={currentUserId || undefined}
                     onCommentCountUpdate={fetchPosts}
                     onPostDeleted={fetchPosts}
