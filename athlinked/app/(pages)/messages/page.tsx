@@ -663,9 +663,9 @@ export default function MessagesPage() {
         <div className="flex-1 flex gap-4 px-4 overflow-hidden">
           <div className="w-80 bg-white rounded-lg border border-gray-200 flex flex-col overflow-hidden">
             <div className="p-4 border-b border-gray-200 relative">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">Messages</h2>
+              <h2 className="text-xl font-semibold text-black mb-4">Messages</h2>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black" size={18} />
                 <input
                   type="text"
                   placeholder="Search"
@@ -706,17 +706,17 @@ export default function MessagesPage() {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <span className="text-gray-600 font-semibold text-xs">
+                              <span className="text-black font-semibold text-xs">
                                 {getInitials(user.full_name || 'User')}
                               </span>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-gray-900 truncate">
+                              <span className="text-sm font-semibold text-black truncate">
                                 {user.full_name || 'User'}
                               </span>
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-black">
                                 {user.relationship === 'following' ? 'Following' : 'Follower'}
                               </span>
                             </div>
@@ -731,7 +731,7 @@ export default function MessagesPage() {
 
             <div className="flex-1 overflow-y-auto">
               {filteredConversations.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
+                <div className="p-4 text-center text-black">
                   No conversations found
                 </div>
               ) : (
@@ -754,14 +754,14 @@ export default function MessagesPage() {
                             className="w-full h-full object-cover"
                           />
                         ) : (
-                          <span className="text-gray-600 font-semibold text-sm">
+                          <span className="text-black font-semibold text-sm">
                             {getInitials(conv.other_user_username)}
                           </span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-semibold text-gray-900 truncate">
+                          <span className="text-sm font-semibold text-black truncate">
                             {conv.other_user_username}
                           </span>
                           {conv.unread_count > 0 && (
@@ -771,11 +771,11 @@ export default function MessagesPage() {
                           )}
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-gray-600 truncate">
+                          <span className="text-sm text-black truncate">
                             {conv.last_message || 'No messages yet'}
                           </span>
                           {conv.last_message_time && (
-                            <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                            <span className="text-xs text-black ml-2 flex-shrink-0">
                               {formatTime(conv.last_message_time)}
                             </span>
                           )}
@@ -800,12 +800,12 @@ export default function MessagesPage() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-gray-600 font-semibold text-xs">
+                      <span className="text-black font-semibold text-xs">
                         {getInitials(selectedConversation.other_user_username)}
                       </span>
                     )}
                   </div>
-                  <span className="text-lg font-semibold text-gray-900">
+                  <span className="text-lg font-semibold text-black">
                     {selectedConversation.other_user_username}
                   </span>
                 </div>
@@ -821,7 +821,7 @@ export default function MessagesPage() {
                     return (
                       <div key={msg.message_id}>
                         {showDate && (
-                          <div className="text-center text-xs text-gray-500 my-4">
+                          <div className="text-center text-xs text-black my-4">
                             {formatMessageTime(msg.created_at)}
                           </div>
                         )}
@@ -842,7 +842,7 @@ export default function MessagesPage() {
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
-                                <span className="text-gray-600 font-semibold text-xs">
+                                <span className="text-black font-semibold text-xs">
                                   {getInitials(selectedConversation.other_user_username)}
                                 </span>
                               )}
@@ -871,7 +871,7 @@ export default function MessagesPage() {
                                     </div>
                                   )}
                                   <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-gray-900 truncate">
+                                    <p className="text-sm font-semibold text-black truncate">
                                       {msg.post_data.username || 'User'}
                                     </p>
                                   </div>
@@ -911,21 +911,21 @@ export default function MessagesPage() {
                                 })()}
                                 <div className="p-3">
                                   {msg.post_data.article_title && (
-                                    <h4 className="font-semibold text-gray-900 mb-2 text-base">{msg.post_data.article_title}</h4>
+                                    <h4 className="font-semibold text-black mb-2 text-base">{msg.post_data.article_title}</h4>
                                   )}
                                   {msg.post_data.event_title && (
                                     <div className="mb-2">
-                                      <h4 className="font-semibold text-gray-900 mb-1 text-base">{msg.post_data.event_title}</h4>
+                                      <h4 className="font-semibold text-black mb-1 text-base">{msg.post_data.event_title}</h4>
                                       {msg.post_data.event_date && (
-                                        <p className="text-xs text-gray-600">📅 {new Date(msg.post_data.event_date).toLocaleDateString()}</p>
+                                        <p className="text-xs text-black">📅 {new Date(msg.post_data.event_date).toLocaleDateString()}</p>
                                       )}
                                       {msg.post_data.event_location && (
-                                        <p className="text-xs text-gray-600">📍 {msg.post_data.event_location}</p>
+                                        <p className="text-xs text-black">📍 {msg.post_data.event_location}</p>
                                       )}
                                     </div>
                                   )}
                                   {msg.post_data.caption && (
-                                    <p className="text-sm text-gray-700 mb-2">{msg.post_data.caption}</p>
+                                    <p className="text-sm text-black mb-2">{msg.post_data.caption}</p>
                                   )}
                                   {msg.post_data.post_url && (
                                     <a
@@ -992,13 +992,13 @@ export default function MessagesPage() {
                             })()}
                             
                             {msg.message && (
-                              <p className={`text-sm text-gray-900 ${msg.media_url ? 'px-4 py-2' : 'px-4 py-2'}`}>
+                              <p className={`text-sm text-black ${msg.media_url ? 'px-4 py-2' : 'px-4 py-2'}`}>
                                 {msg.message}
                               </p>
                             )}
                             
                             <div className={`flex items-center justify-end gap-1.5 px-4 pb-2 ${isOwnMessage ? '' : 'justify-start'}`}>
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-black">
                                 {formatMessageTimestamp(msg.created_at)}
                               </span>
                               {isOwnMessage && (
@@ -1047,8 +1047,8 @@ export default function MessagesPage() {
                           )
                         ) : selectedFile ? (
                           <div className="flex items-center gap-2 p-2 bg-gray-100 rounded-lg">
-                            <span className="text-sm text-gray-700">{selectedFile.name}</span>
-                            <span className="text-xs text-gray-500">
+                            <span className="text-sm text-black">{selectedFile.name}</span>
+                            <span className="text-xs text-black">
                               ({(selectedFile.size / 1024).toFixed(1)} KB)
                             </span>
                           </div>
@@ -1091,7 +1091,7 @@ export default function MessagesPage() {
                 </div>
               </>
             ) : (
-              <div className="flex-1 flex items-center justify-center text-gray-500">
+              <div className="flex-1 flex items-center justify-center text-black">
                 Select a conversation to start messaging
               </div>
             )}

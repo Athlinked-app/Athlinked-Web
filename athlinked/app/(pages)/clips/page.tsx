@@ -920,7 +920,7 @@ export default function ClipsPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen bg-gray-200 items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+        <div className="text-black">Loading...</div>
       </div>
     );
   }
@@ -934,7 +934,7 @@ export default function ClipsPage() {
         </div>
         <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden flex items-center justify-center">
           {userData?.full_name ? (
-            <span className="text-gray-600 font-semibold text-xs">
+            <span className="text-black font-semibold text-xs">
               {userData.full_name
                 .split(' ')
                 .map(word => word[0])
@@ -943,7 +943,7 @@ export default function ClipsPage() {
                 .slice(0, 2)}
             </span>
           ) : (
-            <span className="text-gray-600 font-semibold text-xs">U</span>
+            <span className="text-black font-semibold text-xs">U</span>
           )}
         </div>
       </header>
@@ -1143,7 +1143,7 @@ export default function ClipsPage() {
                 ))
               ) : (
                 <div className="flex items-center justify-center w-full h-full">
-                  <div className="text-center text-gray-500">
+                  <div className="text-center text-black">
                     <p className="text-lg mb-2">No videos yet</p>
                     <p className="text-sm mb-4">
                       Use the Create button to add your first video
@@ -1173,14 +1173,14 @@ export default function ClipsPage() {
             >
               {/* Comments Header */}
               <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-black">
                   Comments
                 </h2>
                 <button
                   onClick={() => setShowComments(false)}
                   className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                 >
-                  <X size={20} className="text-gray-600" />
+                  <X size={20} className="text-black" />
                 </button>
               </div>
 
@@ -1198,7 +1198,7 @@ export default function ClipsPage() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="text-gray-600 font-semibold text-xs">
+                            <span className="text-black font-semibold text-xs">
                               {comment.author
                                 .split(' ')
                                 .map(word => word[0])
@@ -1210,19 +1210,19 @@ export default function ClipsPage() {
                         </div>
                         <div className="flex-1">
                           <div className="mb-1">
-                            <span className="font-semibold text-gray-900 text-sm">
+                            <span className="font-semibold text-black text-sm">
                               {comment.author}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-700 mb-2">
+                          <p className="text-sm text-black mb-2">
                             {comment.text}
                           </p>
-                          <div className="flex items-center gap-4 text-xs text-gray-500">
-                            <button className="hover:text-gray-700">
+                          <div className="flex items-center gap-4 text-xs text-black">
+                            <button className="hover:text-black">
                               Reply
                             </button>
                             {comment.hasReplies && (
-                              <button className="hover:text-gray-700">
+                              <button className="hover:text-black">
                                 View replies
                               </button>
                             )}
@@ -1233,15 +1233,15 @@ export default function ClipsPage() {
                     {/* Scroll Arrows */}
                     <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex flex-col gap-2">
                       <button className="w-10 h-10 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm">
-                        <ChevronUp size={20} className="text-gray-600" />
+                        <ChevronUp size={20} className="text-black" />
                       </button>
                       <button className="w-10 h-10 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm">
-                        <ChevronDown size={20} className="text-gray-600" />
+                        <ChevronDown size={20} className="text-black" />
                       </button>
                     </div>
                   </>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <div className="flex flex-col items-center justify-center h-full text-black">
                     <MessageSquare size={48} className="mb-4 opacity-50" />
                     <p className="text-sm">No comments yet</p>
                     <p className="text-xs mt-1">Be the first to comment!</p>
@@ -1254,7 +1254,7 @@ export default function ClipsPage() {
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-gray-300 overflow-hidden flex-shrink-0 flex items-center justify-center">
                     {userData?.full_name ? (
-                      <span className="text-gray-600 font-semibold text-xs">
+                      <span className="text-black font-semibold text-xs">
                         {userData.full_name
                           .split(' ')
                           .map(word => word[0])
@@ -1263,7 +1263,7 @@ export default function ClipsPage() {
                           .slice(0, 2)}
                       </span>
                     ) : (
-                      <span className="text-gray-600 font-semibold text-xs">U</span>
+                      <span className="text-black font-semibold text-xs">U</span>
                     )}
                   </div>
                   <input
@@ -1276,7 +1276,7 @@ export default function ClipsPage() {
                         [selectedReel?.id || '']: e.target.value,
                       }))
                     }
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm text-gray-900"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm text-black"
                     onKeyPress={e => {
                       if (e.key === 'Enter' && selectedReel) {
                         handleAddComment(selectedReel.id);

@@ -577,7 +577,7 @@ export default function ManageResourcesPage() {
                   className={`pl-6 pr-10 py-4 text-base font-medium relative transition-colors border-r border-gray-300 ${
                     activeTab === 'guides'
                       ? 'text-[#CB9729]'
-                      : 'text-gray-600 hover:text-gray-900'
+                      : 'text-black hover:text-black'
                   }`}
                 >
                   Guides & Articles
@@ -590,7 +590,7 @@ export default function ManageResourcesPage() {
                   className={`pl-6 pr-10 py-4 text-base font-medium relative transition-colors border-r border-gray-300 ${
                     activeTab === 'videos'
                       ? 'text-[#CB9729]'
-                      : 'text-gray-600 hover:text-gray-900'
+                      : 'text-black hover:text-black'
                   }`}
                 >
                   Video Library
@@ -603,7 +603,7 @@ export default function ManageResourcesPage() {
                   className={`px-6 py-4 text-base font-medium relative transition-colors ${
                     activeTab === 'templates'
                       ? 'text-[#CB9729]'
-                      : 'text-gray-600 hover:text-gray-900'
+                      : 'text-black hover:text-black'
                   }`}
                 >
                   Templates
@@ -620,7 +620,7 @@ export default function ManageResourcesPage() {
             <div className="max-w-7xl mx-auto p-6">
               {/* Header */}
               <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-semibold text-gray-900">
+                <h1 className="text-2xl font-semibold text-black">
                   Manage Resources
                 </h1>
                 <button
@@ -636,7 +636,7 @@ export default function ManageResourcesPage() {
               {/* Resource Grid */}
               {loading ? (
                 <div className="text-center py-16">
-                  <p className="text-gray-500 text-base">Loading resources...</p>
+                  <p className="text-black text-base">Loading resources...</p>
                 </div>
               ) : (
                 <>
@@ -658,10 +658,10 @@ export default function ManageResourcesPage() {
                   {/* Empty State */}
                   {resources.length === 0 && (
                     <div className="text-center py-16">
-                      <p className="text-gray-500 text-base mb-2">
+                      <p className="text-black text-base mb-2">
                         No resources available
                       </p>
-                      <p className="text-gray-400 text-sm">
+                      <p className="text-black text-sm">
                         {activeTab === 'guides'
                           ? 'Click Upload to add article URL'
                           : 'Click Upload to add new content'}
@@ -706,16 +706,16 @@ export default function ManageResourcesPage() {
               className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6"
               onClick={e => e.stopPropagation()}
             >
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              <h3 className="text-xl font-semibold text-black mb-4">
                 Confirm Delete
               </h3>
-              <p className="text-gray-600 mb-6">
+              <p className="text-black mb-6">
                 Are you sure you want to delete this resource? This action cannot be undone.
               </p>
               <div className="flex gap-3">
                 <button
                   onClick={handleDeleteCancel}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-black"
                 >
                   Cancel
                 </button>

@@ -67,7 +67,7 @@ function ParentSignupContent() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-600">Loading...</p>
+        <p className="text-black">Loading...</p>
       </div>
     );
   }
@@ -146,16 +146,16 @@ function ParentSignupContent() {
           </div>
 
           {/* Title */}
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">
             Complete Signup
           </h1>
           {userData && (
-            <p className="text-sm sm:text-base text-gray-600 mb-4">
+            <p className="text-sm sm:text-base text-black mb-4">
               Completing signup for:{' '}
               <strong>{userData.parent_name || 'Parent'}</strong>
             </p>
           )}
-          <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">
+          <p className="text-sm sm:text-base text-black mb-6 sm:mb-8">
             Create a strong password to secure the account
           </p>
 
@@ -163,7 +163,7 @@ function ParentSignupContent() {
           <div className="space-y-4 mb-6">
             {/* Create Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-black mb-2">
                 Create Password
               </label>
               <div className="relative">
@@ -171,7 +171,7 @@ function ParentSignupContent() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-black"
                   placeholder="Enter your password"
                 />
                 <button
@@ -180,9 +180,9 @@ function ParentSignupContent() {
                   className="absolute right-3 top-1/2 -translate-y-1/2"
                 >
                   {showPassword ? (
-                    <EyeOff className="w-5 h-5 text-gray-400" />
+                    <EyeOff className="w-5 h-5 text-black" />
                   ) : (
-                    <Eye className="w-5 h-5 text-gray-400" />
+                    <Eye className="w-5 h-5 text-black" />
                   )}
                 </button>
               </div>
@@ -190,7 +190,7 @@ function ParentSignupContent() {
 
             {/* Confirm Password */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-black mb-2">
                 Confirm Password
               </label>
               <div className="relative">
@@ -198,7 +198,7 @@ function ParentSignupContent() {
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={e => setConfirmPassword(e.target.value)}
-                  className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-black"
                   placeholder="Confirm your password"
                 />
                 <button
@@ -207,9 +207,9 @@ function ParentSignupContent() {
                   className="absolute right-3 top-1/2 -translate-y-1/2"
                 >
                   {showConfirmPassword ? (
-                    <EyeOff className="w-5 h-5 text-gray-400" />
+                    <EyeOff className="w-5 h-5 text-black" />
                   ) : (
-                    <Eye className="w-5 h-5 text-gray-400" />
+                    <Eye className="w-5 h-5 text-black" />
                   )}
                 </button>
               </div>
@@ -233,8 +233,8 @@ function ParentSignupContent() {
           </button>
 
           {/* Sign In Link */}
-          <div className="text-center text-xs sm:text-sm text-gray-600">
-            <span className="text-gray-700">Already have an account? </span>
+          <div className="text-center text-xs sm:text-sm text-black">
+            <span className="text-black">Already have an account? </span>
             <a href="#" className="text-[#CB9729] font-medium hover:underline">
               Sign in
             </a>
@@ -250,7 +250,7 @@ export default function ParentSignupPage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-gray-100">
-          <p className="text-gray-700">Loading...</p>
+          <p className="text-black">Loading...</p>
         </div>
       }
     >

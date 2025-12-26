@@ -314,7 +314,7 @@ export default function NetworkPage() {
                 className={`px-6 py-3 font-medium text-base relative ${
                   activeTab === 'followers'
                     ? 'text-[#CB9729]'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-black hover:text-black'
                 }`}
               >
                 Followers
@@ -327,7 +327,7 @@ export default function NetworkPage() {
                 className={`px-6 py-3 font-medium text-base relative ${
                   activeTab === 'following'
                     ? 'text-[#CB9729]'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-black hover:text-black'
                 }`}
               >
                 Followings
@@ -338,9 +338,9 @@ export default function NetworkPage() {
             </div>
 
             {loading ? (
-              <div className="text-center py-8 text-gray-500">Loading...</div>
+              <div className="text-center py-8 text-black">Loading...</div>
             ) : currentList.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-black">
                 No {activeTab === 'followers' ? 'followers' : 'followings'} yet
               </div>
             ) : (
@@ -363,16 +363,16 @@ export default function NetworkPage() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="text-gray-600 font-semibold text-sm">
+                            <span className="text-black font-semibold text-sm">
                               {getInitials(user.full_name || 'User')}
                             </span>
                           )}
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">
+                          <div className="font-medium text-black">
                             {user.full_name || 'User'}
                           </div>
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-black">
                             {user.user_type 
                               ? user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1).toLowerCase()
                               : 'User'}
@@ -383,7 +383,7 @@ export default function NetworkPage() {
                         onClick={() => handleFollowToggle(user.id, isFollowing)}
                         className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
                           isFollowing
-                            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            ? 'bg-gray-200 text-black hover:bg-gray-300'
                             : 'bg-[#CB9729] text-white hover:bg-yellow-600'
                         }`}
                       >
