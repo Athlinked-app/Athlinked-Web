@@ -131,19 +131,22 @@ async function upsertUserProfile(userId, profileData) {
     console.log('Conflict Update Fields:', conflictUpdateFields);
 
     const result = await dbClient.query(upsertQuery, insertValues);
-    
+
     console.log('Query executed successfully');
     console.log('Rows affected:', result.rowCount);
     console.log('Returned data:', result.rows[0]);
-    
+
     // Update sports_played in users table if provided
     if (profileData.sportsPlayed !== undefined) {
       // Convert comma-separated string to PostgreSQL array format
       let sportsArray = [];
       if (profileData.sportsPlayed && profileData.sportsPlayed.trim() !== '') {
-        sportsArray = profileData.sportsPlayed.split(',').map(s => s.trim()).filter(Boolean);
+        sportsArray = profileData.sportsPlayed
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
       }
-      
+
       // Update users table with sports_played array
       // PostgreSQL accepts JavaScript arrays directly for array columns
       const updateUsersQuery = `
@@ -151,22 +154,22 @@ async function upsertUserProfile(userId, profileData) {
         SET sports_played = $1, updated_at = NOW()
         WHERE id = $2
       `;
-      
+
       // Pass the array directly - PostgreSQL will handle the conversion
       await dbClient.query(updateUsersQuery, [
         sportsArray.length > 0 ? sportsArray : null,
-        userId
+        userId,
       ]);
-      
+
       console.log('Updated sports_played in users table:', sportsArray);
     }
-    
+
     await dbClient.query('COMMIT');
     console.log('Transaction committed');
-    
+
     // Fetch the updated profile with sports_played from users table
     const finalProfile = await getUserProfile(userId);
-    
+
     console.log('=== UPSERT PROFILE SUCCESS ===');
     return finalProfile || result.rows[0];
   } catch (error) {

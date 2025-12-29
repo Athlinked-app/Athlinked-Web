@@ -209,10 +209,17 @@ export default function Profile() {
           setUserBio(data.user.bio);
         }
         // Always update sports_played, even if empty (to clear it)
-        if (data.user.sports_played !== undefined && data.user.sports_played !== null) {
+        if (
+          data.user.sports_played !== undefined &&
+          data.user.sports_played !== null
+        ) {
           // Parse PostgreSQL array format if needed
           let sportsString = data.user.sports_played;
-          if (typeof sportsString === 'string' && sportsString.startsWith('{') && sportsString.endsWith('}')) {
+          if (
+            typeof sportsString === 'string' &&
+            sportsString.startsWith('{') &&
+            sportsString.endsWith('}')
+          ) {
             sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
           }
           setSportsPlayed(sportsString);
@@ -282,11 +289,13 @@ export default function Profile() {
               location: 'Rochester, NY', // You can fetch this from user data
               age: 35, // You can fetch this from user data
               followers_count: 10000,
-              sports_played: profileData?.sportsPlayed !== undefined && profileData?.sportsPlayed !== null
-                ? (typeof profileData.sportsPlayed === 'string' 
-                    ? profileData.sportsPlayed.replace(/[{}"']/g, '') 
-                    : '')
-                : '',
+              sports_played:
+                profileData?.sportsPlayed !== undefined &&
+                profileData?.sportsPlayed !== null
+                  ? typeof profileData.sportsPlayed === 'string'
+                    ? profileData.sportsPlayed.replace(/[{}"']/g, '')
+                    : ''
+                  : '',
               primary_sport: profileData?.primarySport || '',
               profile_completion: 60,
               bio: profileData?.bio || '',
@@ -333,8 +342,9 @@ export default function Profile() {
                 if (data.sports_played !== undefined) {
                   // Send the full sports_played string to update the users table
                   // If empty string, send empty string (not undefined) so backend can clear it
-                  profileData.sportsPlayed = data.sports_played.trim() === '' ? '' : data.sports_played;
-                  
+                  profileData.sportsPlayed =
+                    data.sports_played.trim() === '' ? '' : data.sports_played;
+
                   // Also set primary sport (first sport in the list)
                   const sports = data.sports_played
                     .split(',')
@@ -346,7 +356,7 @@ export default function Profile() {
                     profileData.primarySport = undefined; // Clear if no sports
                   }
                 }
-                
+
                 console.log('Profile data being sent to API:', profileData);
 
                 // Handle image files - upload them first

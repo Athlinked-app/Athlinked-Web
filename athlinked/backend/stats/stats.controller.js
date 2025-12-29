@@ -229,7 +229,11 @@ async function getUserStatsByProfile(req, res) {
  */
 async function getAllUserSportProfiles(req, res) {
   try {
-    const userId = req.params.userId || req.query.user_id || req.body.user_id || req.user?.id;
+    const userId =
+      req.params.userId ||
+      req.query.user_id ||
+      req.body.user_id ||
+      req.user?.id;
 
     if (!userId) {
       return res.status(400).json({

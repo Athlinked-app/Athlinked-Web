@@ -30,6 +30,9 @@ router.get(
 );
 
 // 7. Get All User Sport Profiles with Stats
-router.get('/user/:userId/sport-profiles', statsController.getAllUserSportProfiles);
+router.get(
+  '/user/:userId/sport-profiles',
+  statsController.getAllUserSportProfiles
+);
 
 module.exports = router;
