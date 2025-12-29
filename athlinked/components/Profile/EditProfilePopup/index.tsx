@@ -282,15 +282,11 @@ export default function EditProfilePopup({
               </div>
             )}
           </div>
-
-          {/* Tell us about you Section */}
           <div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">Tell us about you</h3>
             <p className="text-sm text-gray-600 mb-4">
               Please add your photo and biography to tell us about yourself.
             </p>
-
-            {/* Education Section */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Education
@@ -335,8 +331,6 @@ export default function EditProfilePopup({
             </div>
           </div>
         </div>
-
-        {/* Footer with Save Button */}
         <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-end">
           <button
             onClick={handleSave}
