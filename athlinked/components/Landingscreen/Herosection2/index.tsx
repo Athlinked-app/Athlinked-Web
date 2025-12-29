@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function Herosection2() {
   return (
@@ -183,7 +184,7 @@ export default function Herosection2() {
         </div>
       </section>
 
-      <section className="px-8 py-6 md:px-16 lg:px-6">
+      <section className="px-8 py-6 md:px-6 lg:px-6">
         <div className="relative mx-auto rounded-lg overflow-hidden">
           <div className="relative z-10 max-w-7xl mx-auto text-left px-8 py-20">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
@@ -193,9 +194,11 @@ export default function Herosection2() {
               Join thousands of athletes, coaches, and recruiters already on
               AthLinked
             </p>
+            <Link href="/login">
             <button className="px-10 py-4 bg-white text-[#002767] text-xl font-bold rounded-md hover:bg-gray-100 transition-colors shadow-lg">
               Join us
             </button>
+            </Link>
           </div>
 
           <div className="absolute inset-0 z-0">

@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function HeroSection() {
   return (
@@ -37,9 +38,11 @@ export default function HeroSection() {
             building opportunities for scholarships and future careers.
           </p>
 
-          <button className="px-10 py-4 bg-white text-[#002767] text-xl font-bold rounded-md hover:bg-gray-100 transition-colors shadow-lg">
-            Join us
-          </button>
+          <Link href="/login">
+            <button className="px-10 py-4 bg-white text-[#002767] text-xl font-bold rounded-md hover:bg-gray-100 transition-colors shadow-lg">
+              Join us
+            </button>
+          </Link>
         </div>
       </div>
     </div>

@@ -31,6 +31,7 @@ interface EditProfileModalProps {
     primary_sport?: string;
     profile_url?: File;
     background_image_url?: File;
+    bio?: string;
   }) => void;
 }
 
@@ -73,6 +74,7 @@ export default function EditProfileModal({
   );
   const [profileCompletion, setProfileCompletion] = useState(userData?.profile_completion || 60);
   const [showEditPopup, setShowEditPopup] = useState(false);
+  const [bio, setBio] = useState('');
 
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const backgroundImageInputRef = useRef<HTMLInputElement>(null);
@@ -222,12 +224,16 @@ export default function EditProfileModal({
     if (data.sports_played) {
       setSportsPlayed(data.sports_played);
     }
+    if (data.bio) {
+      setBio(data.bio);
+    }
     // Call parent onSave if provided
     if (onSave) {
       onSave({
         profile_url: data.profile_url,
         background_image_url: data.background_image_url,
         sports_played: data.sports_played,
+        bio: data.bio,
       });
     }
   };
@@ -242,33 +248,42 @@ export default function EditProfileModal({
   };
 
   // Calculate completion percentage based on filled fields
+  // This recalculates on every render when any field changes
   const calculateCompletion = () => {
     let completed = 0;
-    const fields = [
-      fullName,
-      username,
-      location,
-      age,
-      sportsPlayed,
-      primarySport,
-      profileImagePreview,
-    ];
-    fields.forEach(field => {
-      if (field) completed++;
-    });
-    return Math.min(Math.round((completed / fields.length) * 100), 100);
+    const totalFields = 7;
+    
+    // Check each field - must be non-empty
+    if (fullName && fullName.trim() !== '') completed++;
+    if (username && username.trim() !== '') completed++;
+    if (location && location.trim() !== '') completed++;
+    if (age && age.trim() !== '') completed++;
+    if (sportsPlayed && sportsPlayed.trim() !== '') completed++;
+    if (primarySport && primarySport.trim() !== '') completed++;
+    if (profileImagePreview) completed++;
+    
+    const percentage = Math.min(Math.round((completed / totalFields) * 100), 100);
+    return percentage;
   };
 
+  // Calculate completion percentage - this will recalculate on every render when fields change
   const currentCompletion = calculateCompletion();
+  
+  // Calculate the circumference for the progress ring
+  const radius = 54;
+  const circumference = 2 * Math.PI * radius;
+  // Calculate offset: when completion is 0%, offset = full circumference (no fill)
+  // When completion is 100%, offset = 0 (fully filled)
+  const offset = circumference - (currentCompletion / 100) * circumference;
 
   if (!open) return null;
 
   // Sidebar view
   if (asSidebar) {
     return (
-      <div className="w-full h- bg-white overflow-y-auto rounded-lg">
+      <div className="w-full  bg-white overflow-y-auto rounded-lg">
         {/* Background Image */}
-        <div className="relative w-full h-64 bg-gray-100 overflow-hidden">
+        <div className="relative w-full h-44 bg-gray-100 overflow-hidden">
           {/* Back Button - Positioned on left side above the image */}
           <div className="absolute top-4 left-4 z-20">
             <button
@@ -309,6 +324,7 @@ export default function EditProfileModal({
           <div className="relative -mt-16 mb-4 flex justify-start px-6">
             <div className="relative">
               <svg className={`${asSidebar ? 'w-32 h-32' : 'w-40 h-40'} transform -rotate-90`} viewBox="0 0 120 120">
+                {/* Background circle */}
                 <circle
                   cx="60"
                   cy="60"
@@ -317,6 +333,7 @@ export default function EditProfileModal({
                   strokeWidth="8"
                   fill="none"
                 />
+                {/* Progress circle */}
                 <circle
                   cx="60"
                   cy="60"
@@ -324,8 +341,10 @@ export default function EditProfileModal({
                   stroke="#CB9729"
                   strokeWidth="8"
                   fill="none"
-                  strokeDasharray={`${(currentCompletion / 100) * 339.29} 339.29`}
+                  strokeDasharray={`${circumference} ${circumference}`}
+                  strokeDashoffset={offset}
                   strokeLinecap="round"
+                  className="transition-all duration-500 ease-in-out"
                 />
               </svg>
       
