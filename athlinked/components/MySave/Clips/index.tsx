@@ -20,6 +20,7 @@ interface MySaveClipsProps {
   currentUserId?: string;
   currentUserProfileUrl?: string;
   currentUsername?: string;
+  viewedUserId?: string | null;
   onClipDeleted?: () => void;
 }
 

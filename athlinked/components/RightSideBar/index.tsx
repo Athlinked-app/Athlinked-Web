@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Person {
   id: string;
@@ -11,6 +12,7 @@ interface Person {
 }
 
 export default function RightSideBar() {
+  const router = useRouter();
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export default function RightSideBar() {
     if (!profileUrl || profileUrl.trim() === '') return null;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
+      return `http://localhost:3001${profileUrl}`;
     }
     return profileUrl;
   };
@@ -47,11 +49,11 @@ export default function RightSideBar() {
             if (userIdentifier.startsWith('username:')) {
               const username = userIdentifier.replace('username:', '');
               response = await fetch(
-                `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+                `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
               );
             } else {
               response = await fetch(
-                `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+                `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
               );
             }
 
@@ -69,7 +71,7 @@ export default function RightSideBar() {
 
         const excludeParam = userId ? `&excludeUserId=${userId}` : '';
         const response = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/users?limit=10${excludeParam}`
+          `http://localhost:3001/api/signup/users?limit=10${excludeParam}`
         );
 
         if (!response.ok) {
@@ -86,7 +88,7 @@ export default function RightSideBar() {
               if (userId) {
                 try {
                   const isFollowingResponse = await fetch(
-                    `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/is-following/${user.id}?follower_id=${userId}`
+                    `http://localhost:3001/api/network/is-following/${user.id}?follower_id=${userId}`
                   );
                   if (isFollowingResponse.ok) {
                     const isFollowingData = await isFollowingResponse.json();
@@ -134,8 +136,8 @@ export default function RightSideBar() {
 
     try {
       const endpoint = isCurrentlyFollowing
-        ? `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/unfollow/${id}`
-        : `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/follow/${id}`;
+        ? `http://localhost:3001/api/network/unfollow/${id}`
+        : `http://localhost:3001/api/network/follow/${id}`;
 
       const userIdentifier = localStorage.getItem('userEmail');
       if (!userIdentifier) {
@@ -147,11 +149,11 @@ export default function RightSideBar() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -252,32 +254,41 @@ export default function RightSideBar() {
               className="p-4 hover:bg-gray-50 transition-colors"
             >
               <div className="flex items-center gap-3">
-                {/* Avatar */}
-                <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
-                  {person.avatar ? (
-                    <img
-                      src={person.avatar}
-                      alt={person.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-600 font-semibold text-sm">
-                      {getInitials(person.name)}
-                    </span>
-                  )}
-                </div>
+                {/* Avatar and Info - Clickable */}
+                <div
+                  onClick={() => router.push(`/profile?userId=${person.id}`)}
+                  className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+                >
+                  {/* Avatar */}
+                  <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                    {person.avatar ? (
+                      <img
+                        src={person.avatar}
+                        alt={person.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-gray-600 font-semibold text-sm">
+                        {getInitials(person.name)}
+                      </span>
+                    )}
+                  </div>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-gray-500 mb-0.5">{person.role}</p>
-                  <p className="text-sm font-semibold text-gray-900 truncate">
-                    {person.name}
-                  </p>
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-gray-500 mb-0.5">{person.role}</p>
+                    <p className="text-sm font-semibold text-gray-900 truncate">
+                      {person.name}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Follow Button */}
                 <button
-                  onClick={() => handleFollow(person.id, person.isFollowing)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleFollow(person.id, person.isFollowing);
+                  }}
                   className={`px-4 py-1.5 text-sm font-medium rounded-full border transition-colors flex-shrink-0 ${
                     person.isFollowing
                       ? 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'

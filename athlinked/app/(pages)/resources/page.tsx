@@ -71,11 +71,11 @@ export default function ManageResourcesPage() {
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -113,7 +113,7 @@ export default function ManageResourcesPage() {
     const videoUrl = video.video_url
       ? video.video_url.startsWith('http')
         ? video.video_url
-        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${video.video_url}`
+        : `http://localhost:3001${video.video_url}`
       : undefined;
 
     return {
@@ -130,7 +130,7 @@ export default function ManageResourcesPage() {
     const fileUrl = template.file_url
       ? template.file_url.startsWith('http')
         ? template.file_url
-        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${template.file_url}`
+        : `http://localhost:3001${template.file_url}`
       : undefined;
 
     return {
@@ -228,11 +228,11 @@ export default function ManageResourcesPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -248,11 +248,11 @@ export default function ManageResourcesPage() {
       // Determine endpoint based on active tab
       let endpoint = '';
       if (activeTab === 'guides') {
-        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/articles/${resourceToDelete}`;
+        endpoint = `http://localhost:3001/api/articles/${resourceToDelete}`;
       } else if (activeTab === 'videos') {
-        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/videos/${resourceToDelete}`;
+        endpoint = `http://localhost:3001/api/videos/${resourceToDelete}`;
       } else {
-        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/templates/${resourceToDelete}`;
+        endpoint = `http://localhost:3001/api/templates/${resourceToDelete}`;
       }
 
       // Send DELETE request with user_id in body (same pattern as Post component)
@@ -332,7 +332,7 @@ export default function ManageResourcesPage() {
       const { title } = await scrapeArticleMetadata(articleUrl);
 
       const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/articles',
+        'http://localhost:3001/api/articles',
         {
           method: 'POST',
           headers: {
@@ -447,7 +447,7 @@ export default function ManageResourcesPage() {
                 formData.append('video_duration', duration.toString());
 
                 const response = await fetch(
-                  'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/videos',
+                  'http://localhost:3001/api/videos',
                   {
                     method: 'POST',
                     body: formData,
@@ -507,7 +507,7 @@ export default function ManageResourcesPage() {
               formData.append('file_size', file.size.toString());
 
               const response = await fetch(
-                'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/templates',
+                'http://localhost:3001/api/templates',
                 {
                   method: 'POST',
                   body: formData,

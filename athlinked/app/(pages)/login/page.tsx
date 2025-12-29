@@ -20,7 +20,7 @@ export default function LoginPage() {
 
     try {
       const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/login',
+        'http://localhost:3001/api/login',
         {
           method: 'POST',
           headers: {

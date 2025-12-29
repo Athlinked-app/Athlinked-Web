@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Play, X } from 'lucide-react';
+import { Play, X, Calendar } from 'lucide-react';
 import { type PostData } from '@/components/Post';
 import Post from '@/components/Post';
 
@@ -11,6 +11,7 @@ interface MySavePostProps {
   currentUserId?: string;
   currentUserProfileUrl?: string;
   currentUsername?: string;
+  viewedUserId?: string | null;
   loading?: boolean;
   onCommentCountUpdate?: () => void;
   onPostDeleted?: () => void;
@@ -21,29 +22,87 @@ export default function MySavePost({
   currentUserId,
   currentUserProfileUrl,
   currentUsername,
+  viewedUserId,
   loading = false,
   onCommentCountUpdate,
   onPostDeleted,
 }: MySavePostProps) {
   const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
+  const [savedPosts, setSavedPosts] = useState<PostData[]>([]);
+  const [loadingSaved, setLoadingSaved] = useState(false);
 
-  // Get saved post IDs from localStorage
+  // Fetch saved posts from backend if viewing another user's profile
+  useEffect(() => {
+    const fetchSavedPosts = async () => {
+      if (viewedUserId && viewedUserId !== currentUserId) {
+        setLoadingSaved(true);
+        try {
+          const response = await fetch(
+            `http://localhost:3001/api/posts/saved/${viewedUserId}`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.posts) {
+              const transformedPosts: PostData[] = data.posts.map((post: any) => ({
+                id: post.id,
+                username: post.username || 'User',
+                user_profile_url: post.user_profile_url || null,
+                user_id: post.user_id,
+                post_type: post.post_type,
+                caption: post.caption,
+                media_url: post.media_url,
+                article_title: post.article_title,
+                article_body: post.article_body,
+                event_title: post.event_title,
+                event_date: post.event_date,
+                event_location: post.event_location,
+                like_count: post.like_count || 0,
+                comment_count: post.comment_count || 0,
+                save_count: post.save_count || 0,
+                created_at: post.created_at,
+              }));
+              setSavedPosts(transformedPosts);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching saved posts:', error);
+        } finally {
+          setLoadingSaved(false);
+        }
+      } else {
+        // Use localStorage for own profile
+        setSavedPosts([]);
+      }
+    };
+
+    fetchSavedPosts();
+  }, [viewedUserId, currentUserId]);
+
+  // Get saved post IDs from localStorage (for own profile)
   const getSavedPostIds = (): string[] => {
     if (typeof window === 'undefined') return [];
     const savedPosts = localStorage.getItem('athlinked_saved_posts');
     return savedPosts ? JSON.parse(savedPosts) : [];
   };
 
-  // Filter posts: only show saved posts (photo, video, or text)
-  const savedPostIds = getSavedPostIds();
-  const filteredPosts = posts.filter(post => {
-    // Only show saved posts
-    if (!savedPostIds.includes(post.id)) {
-      return false;
-    }
-    // Only show photo, video, or text posts (not articles or events)
-    return post.post_type === 'photo' || post.post_type === 'video' || post.post_type === 'text';
-  });
+  // Determine which posts to show
+  let filteredPosts: PostData[] = [];
+  
+  if (viewedUserId && viewedUserId !== currentUserId) {
+    // Show saved posts from backend for other users
+    filteredPosts = savedPosts.filter(post => 
+      post.post_type === 'photo' || post.post_type === 'video' || post.post_type === 'text' || post.post_type === 'event'
+    );
+  } else {
+    // Show saved posts from localStorage for own profile
+    const savedPostIds = getSavedPostIds();
+    filteredPosts = posts.filter(post => {
+      if (!savedPostIds.includes(post.id)) {
+        return false;
+      }
+      return post.post_type === 'photo' || post.post_type === 'video' || post.post_type === 'text' || post.post_type === 'event';
+    });
+  }
 
   // Get thumbnail URL for a post with proper URL formatting
   const getThumbnailUrl = (post: PostData): string | null => {
@@ -57,7 +116,7 @@ export default function MySavePost({
     return `http://localhost:3001${mediaUrl}`;
   };
 
-  if (loading) {
+  if (loading || loadingSaved) {
     return (
       <div className="text-center py-8 text-gray-500">
         Loading saved posts...
@@ -80,6 +139,7 @@ export default function MySavePost({
         {filteredPosts.map(post => {
           const thumbnailUrl = getThumbnailUrl(post);
           const isVideo = post.post_type === 'video';
+          const isEvent = post.post_type === 'event';
           
           return (
             <div
@@ -102,18 +162,32 @@ export default function MySavePost({
                       </div>
                     </div>
                   ) : (
-                    <Image
-                      src={thumbnailUrl}
-                      alt={post.caption || 'Post image'}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
-                      unoptimized
-                    />
+                    <div className="relative w-full h-full">
+                      <Image
+                        src={thumbnailUrl}
+                        alt={post.caption || post.event_title || 'Post image'}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        unoptimized
+                      />
+                      {isEvent && (
+                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                          <Calendar className="w-12 h-12 text-white opacity-80" />
+                        </div>
+                      )}
+                    </div>
                   )}
                 </>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200 text-gray-400 p-2">
-                  <span className="text-xs text-center line-clamp-3">{post.caption || 'Text post'}</span>
+                  {isEvent ? (
+                    <>
+                      <Calendar className="w-12 h-12 mb-2" />
+                      <span className="text-xs text-center line-clamp-3">{post.event_title || 'Event'}</span>
+                    </>
+                  ) : (
+                    <span className="text-xs text-center line-clamp-3">{post.caption || 'Text post'}</span>
+                  )}
                 </div>
               )}
             </div>
@@ -157,4 +231,3 @@ export default function MySavePost({
     </>
   );
 }
-

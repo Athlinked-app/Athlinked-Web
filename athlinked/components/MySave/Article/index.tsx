@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { FileText, X } from 'lucide-react';
 import { type PostData } from '@/components/Post';
@@ -11,6 +11,7 @@ interface MySaveArticleProps {
   currentUserId?: string;
   currentUserProfileUrl?: string;
   currentUsername?: string;
+  viewedUserId?: string | null;
   loading?: boolean;
   onCommentCountUpdate?: () => void;
   onPostDeleted?: () => void;
@@ -21,29 +22,84 @@ export default function MySaveArticle({
   currentUserId,
   currentUserProfileUrl,
   currentUsername,
+  viewedUserId,
   loading = false,
   onCommentCountUpdate,
   onPostDeleted,
 }: MySaveArticleProps) {
   const [selectedArticle, setSelectedArticle] = useState<PostData | null>(null);
+  const [savedPosts, setSavedPosts] = useState<PostData[]>([]);
+  const [loadingSaved, setLoadingSaved] = useState(false);
 
-  // Get saved post IDs from localStorage
+  // Fetch saved posts from backend if viewing another user's profile
+  useEffect(() => {
+    const fetchSavedPosts = async () => {
+      if (viewedUserId && viewedUserId !== currentUserId) {
+        setLoadingSaved(true);
+        try {
+          const response = await fetch(
+            `http://localhost:3001/api/posts/saved/${viewedUserId}`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.posts) {
+              const transformedPosts: PostData[] = data.posts.map((post: any) => ({
+                id: post.id,
+                username: post.username || 'User',
+                user_profile_url: post.user_profile_url || null,
+                user_id: post.user_id,
+                post_type: post.post_type,
+                caption: post.caption,
+                media_url: post.media_url,
+                article_title: post.article_title,
+                article_body: post.article_body,
+                event_title: post.event_title,
+                event_date: post.event_date,
+                event_location: post.event_location,
+                like_count: post.like_count || 0,
+                comment_count: post.comment_count || 0,
+                save_count: post.save_count || 0,
+                created_at: post.created_at,
+              }));
+              setSavedPosts(transformedPosts);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching saved posts:', error);
+        } finally {
+          setLoadingSaved(false);
+        }
+      } else {
+        setSavedPosts([]);
+      }
+    };
+
+    fetchSavedPosts();
+  }, [viewedUserId, currentUserId]);
+
+  // Get saved post IDs from localStorage (for own profile)
   const getSavedPostIds = (): string[] => {
     if (typeof window === 'undefined') return [];
     const savedPosts = localStorage.getItem('athlinked_saved_posts');
     return savedPosts ? JSON.parse(savedPosts) : [];
   };
 
-  // Filter posts: only show saved articles
-  const savedPostIds = getSavedPostIds();
-  const filteredArticles = posts.filter(post => {
-    // Only show saved posts
-    if (!savedPostIds.includes(post.id)) {
-      return false;
-    }
-    // Only show article posts
-    return post.post_type === 'article';
-  });
+  // Determine which posts to show
+  let filteredArticles: PostData[] = [];
+  
+  if (viewedUserId && viewedUserId !== currentUserId) {
+    // Show saved articles from backend for other users
+    filteredArticles = savedPosts.filter(post => post.post_type === 'article');
+  } else {
+    // Show saved articles from localStorage for own profile
+    const savedPostIds = getSavedPostIds();
+    filteredArticles = posts.filter(post => {
+      if (!savedPostIds.includes(post.id)) {
+        return false;
+      }
+      return post.post_type === 'article';
+    });
+  }
 
   // Get thumbnail URL for an article with proper URL formatting
   const getThumbnailUrl = (post: PostData): string | null => {
@@ -57,7 +113,7 @@ export default function MySaveArticle({
     return `http://localhost:3001${mediaUrl}`;
   };
 
-  if (loading) {
+  if (loading || loadingSaved) {
     return (
       <div className="text-center py-8 text-gray-500">
         Loading saved articles...
@@ -84,31 +140,20 @@ export default function MySaveArticle({
             <div
               key={article.id}
               onClick={() => setSelectedArticle(article)}
-              className="relative aspect-square cursor-pointer group overflow-hidden rounded-lg bg-gray-100 hover:opacity-90 transition-opacity flex flex-col"
+              className="relative aspect-square cursor-pointer group overflow-hidden rounded-lg bg-gray-100 hover:opacity-90 transition-opacity"
             >
               {thumbnailUrl ? (
-                <div className="relative w-full h-full">
-                  <Image
-                    src={thumbnailUrl}
-                    alt={article.article_title || 'Article image'}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    unoptimized
-                  />
-                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center">
-                    <FileText className="w-12 h-12 text-white opacity-80" />
-                  </div>
-                  {/* Title overlay at bottom */}
-                  {article.article_title && (
-                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                      <p className="text-white font-bold text-sm line-clamp-2">{article.article_title}</p>
-                    </div>
-                  )}
-                </div>
+                <Image
+                  src={thumbnailUrl}
+                  alt={article.article_title || 'Article image'}
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  unoptimized
+                />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200 text-gray-900 p-2">
-                  <FileText className="w-12 h-12 mb-2 text-gray-400" />
-                  <span className="text-sm text-center line-clamp-3 font-bold">{article.article_title || 'Article'}</span>
+                <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200 text-gray-400 p-2">
+                  <FileText className="w-12 h-12 mb-2 opacity-50" />
+                  <span className="text-xs text-center line-clamp-3">{article.article_title || 'Article'}</span>
                 </div>
               )}
             </div>
@@ -152,4 +197,3 @@ export default function MySaveArticle({
     </>
   );
 }
-

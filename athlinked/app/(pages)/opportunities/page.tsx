@@ -5,6 +5,7 @@ import { X, Bookmark } from 'lucide-react';
 import NavigationBar from '@/components/NavigationBar';
 import Header from '@/components/Header';
 import CampDetailsPopup from '@/components/opportunities/CampDetailsPopup';
+import SaveModal from '@/components/Save/SaveModal';
 
 type TabType = 'all' | 'tryouts' | 'scholarships' | 'tournaments';
 
@@ -46,6 +47,14 @@ export default function OpportunitiesPage() {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [scrapedCamps, setScrapedCamps] = useState<OpportunityItem[]>([]);
   const [loadingCamps, setLoadingCamps] = useState(false);
+  const [savedOpportunities, setSavedOpportunities] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [showSaveAlert, setShowSaveAlert] = useState(false);
+  const [saveAlertMessage, setSaveAlertMessage] = useState('');
+  const [saveAlertOpportunityId, setSaveAlertOpportunityId] = useState<
+    string | null
+  >(null);
 
   const staticOpportunities: OpportunityItem[] = [
     // SCHOLARSHIPS
@@ -258,6 +267,23 @@ export default function OpportunitiesPage() {
 
   const allOpportunities = [...opportunities, ...scrapedCamps];
 
+  // Check saved status for opportunities
+  useEffect(() => {
+    const checkSavedOpportunities = () => {
+      const savedOpportunityIds = JSON.parse(
+        localStorage.getItem('athlinked_saved_opportunities') || '[]'
+      );
+      const savedMap: { [key: string]: boolean } = {};
+      const allOpps = [...opportunities, ...scrapedCamps];
+      allOpps.forEach(opp => {
+        savedMap[opp.id] = savedOpportunityIds.includes(opp.id);
+      });
+      setSavedOpportunities(savedMap);
+    };
+
+    checkSavedOpportunities();
+  }, [opportunities, scrapedCamps]);
+
   const handleCampClick = async (camp: OpportunityItem) => {
     if (camp.link) {
       setShowCampPopup(true);
@@ -296,6 +322,74 @@ export default function OpportunitiesPage() {
     }
   };
 
+  const handleSaveOpportunity = (opportunityId: string) => {
+    const savedOpportunityIds = JSON.parse(
+      localStorage.getItem('athlinked_saved_opportunities') || '[]'
+    );
+
+    let isNowSaved: boolean;
+    if (savedOpportunityIds.includes(opportunityId)) {
+      // Unsave
+      const updatedSavedOpportunities = savedOpportunityIds.filter(
+        (id: string) => id !== opportunityId
+      );
+      localStorage.setItem(
+        'athlinked_saved_opportunities',
+        JSON.stringify(updatedSavedOpportunities)
+      );
+      // Also remove from saved data
+      const savedOpportunitiesData = JSON.parse(
+        localStorage.getItem('athlinked_saved_opportunities_data') || '[]'
+      );
+      const updatedSavedData = savedOpportunitiesData.filter(
+        (opp: OpportunityItem) => opp.id !== opportunityId
+      );
+      localStorage.setItem(
+        'athlinked_saved_opportunities_data',
+        JSON.stringify(updatedSavedData)
+      );
+      isNowSaved = false;
+      setSaveAlertMessage('This opportunity is unsaved');
+    } else {
+      // Save - store the full opportunity object
+      const opportunity = allOpportunities.find(opp => opp.id === opportunityId);
+      if (opportunity) {
+        const savedOpportunitiesData = JSON.parse(
+          localStorage.getItem('athlinked_saved_opportunities_data') || '[]'
+        );
+        // Check if already exists to avoid duplicates
+        if (!savedOpportunitiesData.find((opp: OpportunityItem) => opp.id === opportunityId)) {
+          savedOpportunitiesData.push(opportunity);
+          localStorage.setItem(
+            'athlinked_saved_opportunities_data',
+            JSON.stringify(savedOpportunitiesData)
+          );
+        }
+      }
+      const updatedSavedOpportunities = [...savedOpportunityIds, opportunityId];
+      localStorage.setItem(
+        'athlinked_saved_opportunities',
+        JSON.stringify(updatedSavedOpportunities)
+      );
+      isNowSaved = true;
+      setSaveAlertMessage('This opportunity is saved');
+    }
+
+    // Update saved state
+    setSavedOpportunities(prev => ({
+      ...prev,
+      [opportunityId]: isNowSaved,
+    }));
+
+    // Show alert
+    setSaveAlertOpportunityId(opportunityId);
+    setShowSaveAlert(true);
+    setTimeout(() => {
+      setShowSaveAlert(false);
+      setSaveAlertOpportunityId(null);
+    }, 2000);
+  };
+
   const getFilteredData = () => {
     if (activeTab === 'all') return allOpportunities;
     if (activeTab === 'tryouts')
@@ -321,9 +415,9 @@ export default function OpportunitiesPage() {
       <Header userName="Athlete Name" />
 
       <div className="flex p-5 flex-1">
-        <NavigationBar activeItem="opportunities" userName="Athlete Name" />
+        <NavigationBar activeItem="opportunities"  />
 
-        <div className="flex-1 bg-white mt-0 ml-5 mr-5 mb-5 rounded-xl flex flex-col">
+        <div className="flex-1 bg-white mt-0 ml-5 mr-5 mb-5 rounded-xl flex flex-col h-[1200px] overflow-y-auto">
           <div className="border-b border-gray-200">
             <div className="max-w-7xl mx-auto px-6">
               <div className="flex gap-8">
@@ -478,9 +572,30 @@ export default function OpportunitiesPage() {
               <button className="flex-1 bg-[#CB9729] text-white py-2 px-4 rounded-lg font-medium hover:bg-[#B88624] transition-colors">
                 Share
               </button>
-              <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                <Bookmark className="w-4 h-4" />
-                <span className="font-medium text-gray-700">Save</span>
+              <button
+                onClick={() => {
+                  if (selectedOpportunity) {
+                    handleSaveOpportunity(selectedOpportunity.id);
+                  }
+                }}
+                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
+                  selectedOpportunity && savedOpportunities[selectedOpportunity.id]
+                    ? 'bg-[#CB9729] text-white border-[#CB9729]'
+                    : 'border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <Bookmark
+                  className={`w-4 h-4 ${
+                    selectedOpportunity && savedOpportunities[selectedOpportunity.id]
+                      ? 'fill-current'
+                      : ''
+                  }`}
+                />
+                <span className="font-medium">
+                  {selectedOpportunity && savedOpportunities[selectedOpportunity.id]
+                    ? 'Saved'
+                    : 'Save'}
+                </span>
               </button>
             </div>
 
@@ -516,6 +631,16 @@ export default function OpportunitiesPage() {
         campDetails={campDetails}
         onClose={() => setShowCampPopup(false)}
       />
+
+      {/* Save Alert Modal */}
+      {saveAlertOpportunityId && (
+        <SaveModal
+          postId={saveAlertOpportunityId}
+          showAlert={showSaveAlert}
+          alertMessage={saveAlertMessage}
+          isSaved={savedOpportunities[saveAlertOpportunityId] || false}
+        />
+      )}
     </div>
   );
 }

@@ -60,11 +60,11 @@ export default function NavigationBar({
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -129,8 +129,8 @@ export default function NavigationBar({
         ? rawProfileUrl
         : rawProfileUrl.startsWith('/') && !rawProfileUrl.startsWith('/assets')
           ? `http://localhost:3001${rawProfileUrl}`
-          : rawProfileUrl)
-    : null;
+          : rawProfileUrl
+      : null;
     
   const userRole = propUserRole || (userData?.user_type ? userData.user_type.charAt(0).toUpperCase() + userData.user_type.slice(1).toLowerCase() : 'Athlete');
   const displayName = userName || 'User';
@@ -211,6 +211,8 @@ export default function NavigationBar({
                   return '/clips';
                 case 'network':
                   return '/network';
+                case 'opportunities':
+                  return '/opportunities';
                 case 'resource':
                   return '/resources';
                 case 'message':
