@@ -45,7 +45,8 @@ async function createArticle(req, res) {
  */
 async function getAllArticles(req, res) {
   try {
-    const result = await articlesService.getAllArticlesService();
+    const userId = req.query.user_id || req.user?.id || null;
+    const result = await articlesService.getAllArticlesService(userId);
     return res.status(200).json(result);
   } catch (error) {
     console.error('Get articles error:', error);

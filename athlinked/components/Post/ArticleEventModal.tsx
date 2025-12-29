@@ -56,7 +56,6 @@ export default function ArticleEventModal({
   const [articleImagePreview, setArticleImagePreview] = useState<string | null>(null);
   const editorRef = useRef<HTMLDivElement>(null);
 
-  // Initialize editor content
   useEffect(() => {
     if (editorRef.current && !body && editorRef.current.innerHTML === '') {
       editorRef.current.innerHTML = '';
@@ -97,6 +96,11 @@ export default function ArticleEventModal({
     }
   };
 
+  const isVideoFile = (file: File | null): boolean => {
+    if (!file) return false;
+    return file.type.startsWith('video/');
+  };
+
   const handleArticleImageClick = () => {
     articleImageInputRef.current?.click();
   };
@@ -115,11 +119,9 @@ export default function ArticleEventModal({
     editorRef.current.focus();
     
     if (command === 'formatBlock' && value) {
-      // For headings, use formatBlock command
       try {
         document.execCommand('formatBlock', false, `<${value}>`);
       } catch (e) {
-        // Fallback: wrap selection in heading tag
         const selection = window.getSelection();
         if (selection && selection.rangeCount > 0) {
           const range = selection.getRangeAt(0);
@@ -133,7 +135,6 @@ export default function ArticleEventModal({
               range.insertNode(heading);
             }
           } else {
-            // Insert heading at cursor
             const heading = document.createElement(value);
             heading.textContent = 'Heading';
             range.insertNode(heading);
@@ -148,7 +149,6 @@ export default function ArticleEventModal({
       document.execCommand(command, false, value);
     }
     
-    // Update body state
     if (editorRef.current) {
       setBody(editorRef.current.innerHTML);
     }
@@ -176,8 +176,6 @@ export default function ArticleEventModal({
       return;
     }
 
-    // Store data before resetting
-    // For articles, body contains HTML, so we don't trim it
     const submitData = {
       title: title.trim(),
       body: postType === 'article' ? (body || undefined) : (body.trim() || undefined),
@@ -188,7 +186,6 @@ export default function ArticleEventModal({
       eventType: postType === 'event' ? selectedEventType || undefined : undefined,
     };
 
-    // Reset all state first to prevent showing event selection
     setTitle('');
     setBody('');
     setDate('');
@@ -200,19 +197,15 @@ export default function ArticleEventModal({
     setArticleImage(null);
     setArticleImagePreview(null);
     
-    // Clear editor content
     if (editorRef.current) {
       editorRef.current.innerHTML = '';
     }
     
-    // Close the modal immediately
     onClose();
     
-    // Then submit (parent will handle success/failure)
     onSubmit(submitData);
   };
 
-  // Show event type selection for events
   if (postType === 'event' && !selectedEventType) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -222,11 +215,11 @@ export default function ArticleEventModal({
         />
         <div className="relative z-10 w-full max-w-2xl bg-white rounded-xl shadow-2xl border border-gray-200 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4 pb-4 border-b border-gray-200">
-  <div className="flex-1" /> {/* Spacer for centering */}
+  <div className="flex-1" />
   <h2 className="text-2xl font-semibold text-gray-900">
     Create life events
   </h2>
-  <div className="flex-1 flex justify-end"> {/* Spacer and align button to right */}
+  <div className="flex-1 flex justify-end">
     <button
       type="button"
       aria-label="Close"
@@ -263,7 +256,6 @@ export default function ArticleEventModal({
     );
   }
 
-  // Show form for articles or selected event type
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
@@ -294,7 +286,6 @@ export default function ArticleEventModal({
         )}
 
         <div className="space-y-4">
-          {/* Image/Video Upload for Events */}
           {postType === 'event' && (
             <div>
               <div
@@ -303,11 +294,19 @@ export default function ArticleEventModal({
               >
                 {imagePreview ? (
                   <div className="relative">
-                    <img
-                      src={imagePreview}
-                      alt="Preview"
-                      className="w-full h-64 object-cover rounded-lg"
-                    />
+                    {isVideoFile(selectedImage) ? (
+                      <video
+                        src={imagePreview}
+                        controls
+                        className="w-full h-64 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-64 object-cover rounded-lg"
+                      />
+                    )}
                     <button
                       type="button"
                       onClick={(e) => {
@@ -336,11 +335,10 @@ export default function ArticleEventModal({
             </div>
           )}
 
-          {/* Image Upload for Articles */}
           {postType === 'article' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Media Upload
+                Media Upload (Photo/Video)
               </label>
               <div
                 onClick={handleArticleImageClick}
@@ -348,11 +346,19 @@ export default function ArticleEventModal({
               >
                 {articleImagePreview ? (
                   <div className="relative">
-                    <img
-                      src={articleImagePreview}
-                      alt="Preview"
-                      className="w-full h-64 object-cover rounded-lg"
-                    />
+                    {isVideoFile(articleImage) ? (
+                      <video
+                        src={articleImagePreview}
+                        controls
+                        className="w-full h-64 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <img
+                        src={articleImagePreview}
+                        alt="Preview"
+                        className="w-full h-64 object-cover rounded-lg"
+                      />
+                    )}
                     <button
                       type="button"
                       onClick={(e) => {
@@ -368,13 +374,13 @@ export default function ArticleEventModal({
                   <div className="flex flex-col items-center gap-2">
                     <UploadCloud className="w-12 h-12 text-gray-400" />
                     <span className="text-gray-600 font-medium">Choose a media file or drag & drop it here</span>
-                    <span className="text-xs text-gray-500 mt-1">Minimum resolutions, and Only JPG, JPEG, PNG, WebP, GIF formats</span>
+                    <span className="text-xs text-gray-500 mt-1">Images: JPG, JPEG, PNG, WebP, GIF | Videos: MP4, MOV</span>
                   </div>
                 )}
                 <input
                   ref={articleImageInputRef}
                   type="file"
-                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif,video/mp4,video/quicktime"
                   onChange={handleArticleImageSelect}
                   className="hidden"
                 />
@@ -404,13 +410,14 @@ export default function ArticleEventModal({
                 {/* Rich Text Editor Toolbar */}
                 <div className="border border-gray-300 rounded-t-lg bg-gray-50 p-2 flex items-center gap-2 flex-wrap">
                   <select
-                    className="px-2 py-1 text-sm border border-gray-300 rounded bg-white"
+                    className="px-2 py-1 text-sm border border-gray-300 rounded bg-white text-black"
                     onChange={(e) => handleFormat('fontName', e.target.value)}
+                    style={{ color: '#000000' }}
                   >
-                    <option value="Sans Serif">Sans Serif</option>
-                    <option value="Arial">Arial</option>
-                    <option value="Times New Roman">Times New Roman</option>
-                    <option value="Courier New">Courier New</option>
+                    <option value="Sans Serif" style={{ color: '#000000' }}>Sans Serif</option>
+                    <option value="Arial" style={{ color: '#000000' }}>Arial</option>
+                    <option value="Times New Roman" style={{ color: '#000000' }}>Times New Roman</option>
+                    <option value="Courier New" style={{ color: '#000000' }}>Courier New</option>
                   </select>
                   <button
                     type="button"
@@ -506,7 +513,6 @@ export default function ArticleEventModal({
                     <LinkIcon className="w-4 h-4" />
                   </button>
                 </div>
-                {/* Rich Text Editor Content Area */}
                 <div
                   ref={editorRef}
                   contentEditable
@@ -519,8 +525,8 @@ export default function ArticleEventModal({
                     const content = e.currentTarget.innerHTML;
                     setBody(content);
                   }}
-                  className="w-full min-h-[200px] px-4 py-3 border border-t-0 border-gray-300 rounded-b-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
-                  style={{ whiteSpace: 'pre-wrap' }}
+                  className="w-full min-h-[200px] px-4 py-3 border border-t-0 border-gray-300 rounded-b-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black"
+                  style={{ whiteSpace: 'pre-wrap', color: '#000000' }}
                   data-placeholder="Add your message here"
                 />
                 <style jsx global>{`
@@ -528,6 +534,12 @@ export default function ArticleEventModal({
                     content: attr(data-placeholder);
                     color: #9ca3af;
                     pointer-events: none;
+                  }
+                  [contenteditable] {
+                    color: #000000 !important;
+                  }
+                  [contenteditable] * {
+                    color: #000000 !important;
                   }
                 `}</style>
               </div>
@@ -558,6 +570,18 @@ export default function ArticleEventModal({
                   onChange={e => setDate(e.target.value)}
                   placeholder="Select the date"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Caption
+                </label>
+                <textarea
+                  value={caption}
+                  onChange={e => setCaption(e.target.value)}
+                  placeholder="Add a caption..."
+                  rows={3}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900 resize-none"
                 />
               </div>
             </>

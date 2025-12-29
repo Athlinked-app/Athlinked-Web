@@ -46,19 +46,27 @@ async function createArticle(articleData, client = null) {
 
 /**
  * Get all active articles
+ * @param {string} userId - Optional user ID to filter by
  * @param {object} client - Optional database client for transactions
  * @returns {Promise<Array>} Array of article data
  */
-async function getAllArticles(client = null) {
-  const query = `
+async function getAllArticles(userId = null, client = null) {
+  let query = `
     SELECT *
     FROM articles
     WHERE is_active = true
-    ORDER BY created_at DESC
   `;
+  const values = [];
+
+  if (userId) {
+    query += ` AND user_id = $1`;
+    values.push(userId);
+  }
+
+  query += ` ORDER BY created_at DESC`;
 
   const dbClient = client || pool;
-  const result = await dbClient.query(query);
+  const result = await dbClient.query(query, values);
   return result.rows;
 }
 

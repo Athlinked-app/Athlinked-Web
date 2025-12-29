@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import NavigationBar from '@/components/NavigationBar';
 import FileUploadModal from '@/components/Clips/FileUploadModal';
+import ShareModal from '@/components/Share/ShareModal';
+import type { PostData } from '@/components/Post';
 import {
   Heart,
   Share2,
@@ -52,26 +54,61 @@ export default function ClipsPage() {
   const [currentReelIndex, setCurrentReelIndex] = useState(0);
   const [mutedReels, setMutedReels] = useState<{ [key: string]: boolean }>({});
   const [likedReels, setLikedReels] = useState<{ [key: string]: boolean }>({});
+  const [pausedReels, setPausedReels] = useState<{ [key: string]: boolean }>({});
   const [selectedReelId, setSelectedReelId] = useState<string | null>(null);
   const [showComments, setShowComments] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [selectedReelForShare, setSelectedReelForShare] = useState<Reel | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [commentTexts, setCommentTexts] = useState<{ [key: string]: string }>(
     {}
   );
   const [showDeleteMenu, setShowDeleteMenu] = useState<{ [key: string]: boolean }>({});
   const [isDeleting, setIsDeleting] = useState(false);
+  const [userHasInteracted, setUserHasInteracted] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
+  const playPromisesRef = useRef<{ [key: string]: Promise<void> | null }>({});
 
   const [reels, setReels] = useState<Reel[]>([]);
   useEffect(() => {
     const initialMuted: { [key: string]: boolean } = {};
     reels.forEach(reel => {
-      initialMuted[reel.id] = true;
+      // Start videos unmuted by default for audio
+      initialMuted[reel.id] = false;
     });
     setMutedReels(initialMuted);
-  }, []);
+  }, [reels]);
+
+  // Update video muted property when mutedReels state changes
+  useEffect(() => {
+    Object.keys(mutedReels).forEach(reelId => {
+      const video = videoRefs.current[reelId];
+      if (video) {
+        video.muted = mutedReels[reelId];
+        // Ensure volume is set to 1 when unmuted
+        if (!mutedReels[reelId]) {
+          video.volume = 1;
+        }
+        // Only try to play with audio if user has interacted
+        if (!video.paused && !mutedReels[reelId] && userHasInteracted) {
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromisesRef.current[reelId] = playPromise;
+            playPromise.catch(err => {
+              // Silently handle autoplay errors
+              if (err.name !== 'AbortError') {
+                console.error('Error playing video with audio:', err);
+              }
+            }).finally(() => {
+              playPromisesRef.current[reelId] = null;
+            });
+          }
+        }
+      }
+    });
+  }, [mutedReels, userHasInteracted]);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -87,13 +124,70 @@ export default function ClipsPage() {
         setSelectedReelId(reels[currentIndex].id);
       }
 
-      // Pause all videos except the current one
+      // Play/pause videos based on current index and paused state
       reels.forEach((reel, index) => {
         const video = videoRefs.current[reel.id];
         if (video) {
-          if (index === currentIndex) {
-            video.play();
+          if (index === currentIndex && !pausedReels[reel.id]) {
+            // Try to play with audio by default
+            const shouldBeMuted = mutedReels[reel.id] ?? false;
+            video.muted = shouldBeMuted;
+            if (!shouldBeMuted) {
+              video.volume = 1;
+            }
+            
+            // Cancel any pending play promise
+            if (playPromisesRef.current[reel.id]) {
+              playPromisesRef.current[reel.id] = null;
+            }
+            
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+              playPromisesRef.current[reel.id] = playPromise;
+              playPromise.catch(err => {
+                // If autoplay with audio fails, try multiple strategies to enable audio
+                if (err.name === 'NotAllowedError' && !shouldBeMuted) {
+                  video.muted = true;
+                  const mutedPlayPromise = video.play();
+                  if (mutedPlayPromise !== undefined) {
+                    mutedPlayPromise.then(() => {
+                      // Try multiple times with different delays to enable audio
+                      const tryEnableAudio = (attempt: number) => {
+                        if (attempt > 5) return; // Max 5 attempts
+                        
+                        setTimeout(() => {
+                          if (!video.paused && !mutedReels[reel.id]) {
+                            video.muted = false;
+                            video.volume = 1;
+                            video.play().then(() => {
+                              // Success! Audio is now enabled
+                            }).catch(() => {
+                              // Try again with longer delay
+                              tryEnableAudio(attempt + 1);
+                            });
+                          }
+                        }, attempt * 50); // Increasing delay: 50ms, 100ms, 150ms, etc.
+                      };
+                      
+                      tryEnableAudio(1);
+                    }).catch(mutedErr => {
+                      if (mutedErr.name !== 'AbortError') {
+                        console.error('Error playing muted video:', mutedErr);
+                      }
+                    });
+                  }
+                } else if (err.name !== 'AbortError') {
+                  console.error('Error playing video:', err);
+                }
+              }).finally(() => {
+                playPromisesRef.current[reel.id] = null;
+              });
+            }
           } else {
+            // Cancel any pending play promise before pausing
+            if (playPromisesRef.current[reel.id]) {
+              playPromisesRef.current[reel.id] = null;
+            }
             video.pause();
           }
         }
@@ -106,8 +200,151 @@ export default function ClipsPage() {
       setSelectedReelId(reels[0].id);
     }
 
+    // Play the first video on initial load
+    if (reels.length > 0 && currentReelIndex === 0) {
+      const firstVideo = videoRefs.current[reels[0].id];
+      if (firstVideo && !pausedReels[reels[0].id]) {
+        firstVideo.muted = mutedReels[reels[0].id] ?? false;
+        if (!mutedReels[reels[0].id]) {
+          firstVideo.volume = 1;
+        }
+        const playPromise = firstVideo.play();
+        if (playPromise !== undefined) {
+          playPromisesRef.current[reels[0].id] = playPromise;
+          playPromise.then(() => {
+            // If play succeeds, ensure audio is enabled if it should be
+            if (!mutedReels[reels[0].id] && firstVideo.muted) {
+              firstVideo.muted = false;
+              firstVideo.volume = 1;
+            }
+          }).catch(err => {
+            // If autoplay with audio fails, try multiple strategies to enable audio
+            if (err.name === 'NotAllowedError' && !firstVideo.muted) {
+              // Strategy 1: Play muted first, then try to unmute immediately
+              firstVideo.muted = true;
+              firstVideo.play().then(() => {
+                // Try multiple times with different delays to enable audio
+                const tryEnableAudio = (attempt: number) => {
+                  if (attempt > 5) return; // Max 5 attempts
+                  
+                  setTimeout(() => {
+                    if (!firstVideo.paused && !mutedReels[reels[0].id]) {
+                      firstVideo.muted = false;
+                      firstVideo.volume = 1;
+                      firstVideo.play().then(() => {
+                        // Success! Audio is now enabled
+                      }).catch(() => {
+                        // Try again with longer delay
+                        tryEnableAudio(attempt + 1);
+                      });
+                    }
+                  }, attempt * 50); // Increasing delay: 50ms, 100ms, 150ms, etc.
+                };
+                
+                tryEnableAudio(1);
+              }).catch(() => {});
+            }
+          }).finally(() => {
+            playPromisesRef.current[reels[0].id] = null;
+          });
+        }
+      }
+    }
+
     return () => container.removeEventListener('scroll', handleScroll);
-  }, [reels, selectedReelId]);
+  }, [reels, selectedReelId, pausedReels, currentReelIndex, mutedReels, userHasInteracted]);
+
+  // Enable audio on any page interaction (makes it feel automatic)
+  useEffect(() => {
+    const enableAudioOnInteraction = () => {
+      if (!userHasInteracted) {
+        setUserHasInteracted(true);
+        // Enable audio for current video
+        if (reels.length > 0 && currentReelIndex >= 0 && currentReelIndex < reels.length) {
+          const currentReel = reels[currentReelIndex];
+          const video = videoRefs.current[currentReel.id];
+          if (video && !mutedReels[currentReel.id] && video.muted) {
+            video.muted = false;
+            video.volume = 1;
+            if (!video.paused) {
+              video.play().catch(() => {});
+            }
+          }
+        }
+      }
+    };
+
+    // Listen for any user interaction on the page
+    document.addEventListener('click', enableAudioOnInteraction, { once: true });
+    document.addEventListener('touchstart', enableAudioOnInteraction, { once: true });
+    document.addEventListener('keydown', enableAudioOnInteraction, { once: true });
+
+    return () => {
+      document.removeEventListener('click', enableAudioOnInteraction);
+      document.removeEventListener('touchstart', enableAudioOnInteraction);
+      document.removeEventListener('keydown', enableAudioOnInteraction);
+    };
+  }, [userHasInteracted, reels, currentReelIndex, mutedReels]);
+
+  // Ensure current video plays when reels are loaded or current index changes
+  useEffect(() => {
+    if (reels.length > 0 && currentReelIndex >= 0 && currentReelIndex < reels.length) {
+      const currentReel = reels[currentReelIndex];
+      const video = videoRefs.current[currentReel.id];
+      if (video && !pausedReels[currentReel.id]) {
+        video.muted = mutedReels[currentReel.id] ?? false;
+        if (!mutedReels[currentReel.id]) {
+          video.volume = 1;
+        }
+        
+        // Cancel any pending play promise
+        if (playPromisesRef.current[currentReel.id]) {
+          playPromisesRef.current[currentReel.id] = null;
+        }
+        
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromisesRef.current[currentReel.id] = playPromise;
+          playPromise.then(() => {
+            // If play succeeds, ensure audio is enabled if it should be
+            if (!mutedReels[currentReel.id] && video.muted) {
+              video.muted = false;
+              video.volume = 1;
+            }
+          }).catch(err => {
+            // If autoplay with audio fails, try multiple strategies to enable audio
+            if (err.name === 'NotAllowedError' && !video.muted) {
+              // Strategy 1: Play muted first, then try to unmute immediately
+              video.muted = true;
+              video.play().then(() => {
+                // Try multiple times with different delays to enable audio
+                const tryEnableAudio = (attempt: number) => {
+                  if (attempt > 5) return; // Max 5 attempts
+                  
+                  setTimeout(() => {
+                    if (!video.paused && !mutedReels[currentReel.id]) {
+                      video.muted = false;
+                      video.volume = 1;
+                      video.play().then(() => {
+                        // Success! Audio is now enabled
+                      }).catch(() => {
+                        // Try again with longer delay
+                        tryEnableAudio(attempt + 1);
+                      });
+                    }
+                  }, attempt * 50); // Increasing delay: 50ms, 100ms, 150ms, etc.
+                };
+                
+                tryEnableAudio(1);
+              }).catch(() => {});
+            }
+          }).finally(() => {
+            playPromisesRef.current[currentReel.id] = null;
+          });
+        }
+      }
+    }
+  }, [reels, currentReelIndex, pausedReels, mutedReels]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -171,21 +408,112 @@ export default function ClipsPage() {
   };
 
   const handleShare = (reelId: string) => {
-    setReels(prev =>
-      prev.map(reel => {
-        if (reel.id === reelId) {
-          return { ...reel, shares: reel.shares + 1 };
-        }
-        return reel;
-      })
-    );
+    const reel = reels.find(r => r.id === reelId);
+    if (reel) {
+      setSelectedReelForShare(reel);
+      setShowShareModal(true);
+    }
+  };
+
+  const handleShareComplete = () => {
+    // Increment share count after successful share
+    if (selectedReelForShare) {
+      setReels(prev =>
+        prev.map(reel => {
+          if (reel.id === selectedReelForShare.id) {
+            return { ...reel, shares: reel.shares + 1 };
+          }
+          return reel;
+        })
+      );
+    }
+    setShowShareModal(false);
+    setSelectedReelForShare(null);
+  };
+
+  // Convert Reel to PostData format for ShareModal
+  const reelToPostData = (reel: Reel): PostData => {
+    return {
+      id: reel.id,
+      username: reel.author,
+      user_profile_url: reel.authorAvatar,
+      user_id: reel.user_id,
+      post_type: 'video',
+      caption: reel.caption,
+      media_url: reel.videoUrl,
+      like_count: reel.likes,
+      comment_count: reel.commentCount,
+      created_at: reel.timestamp,
+    };
   };
 
   const handleToggleMute = (reelId: string) => {
-    setMutedReels(prev => ({
-      ...prev,
-      [reelId]: !prev[reelId],
-    }));
+    // Mark user as interacted when they toggle mute
+    if (!userHasInteracted) {
+      setUserHasInteracted(true);
+    }
+    
+    setMutedReels(prev => {
+      const newMuted = !prev[reelId];
+      // Update video muted state immediately - only affects audio, not playback
+      const video = videoRefs.current[reelId];
+      if (video) {
+        // Only toggle the muted property - video continues playing
+        video.muted = newMuted;
+        // Set volume when unmuting
+        if (!newMuted) {
+          video.volume = 1;
+        }
+        // Don't call play() if video is already playing - just toggle mute
+        // The video will continue playing with or without audio based on muted state
+      }
+      return {
+        ...prev,
+        [reelId]: newMuted,
+      };
+    });
+  };
+
+  const handleVideoClick = (e: React.MouseEvent<HTMLVideoElement>, reelId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const video = videoRefs.current[reelId];
+    if (video) {
+      if (video.paused) {
+        // Ensure muted state and volume are correct (default to unmuted)
+        const shouldBeMuted = mutedReels[reelId] ?? false;
+        video.muted = shouldBeMuted;
+        if (!shouldBeMuted) {
+          video.volume = 1;
+        }
+        
+        // Cancel any pending play promise
+        if (playPromisesRef.current[reelId]) {
+          playPromisesRef.current[reelId] = null;
+        }
+        
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromisesRef.current[reelId] = playPromise;
+          playPromise.catch(err => {
+            if (err.name !== 'AbortError') {
+              console.error('Error playing video:', err);
+            }
+          }).finally(() => {
+            playPromisesRef.current[reelId] = null;
+          });
+        }
+        setPausedReels(prev => ({ ...prev, [reelId]: false }));
+      } else {
+        // Cancel any pending play promise before pausing
+        if (playPromisesRef.current[reelId]) {
+          playPromisesRef.current[reelId] = null;
+        }
+        video.pause();
+        setPausedReels(prev => ({ ...prev, [reelId]: true }));
+      }
+    }
   };
 
   const handleComment = async (reelId: string) => {
@@ -555,12 +883,44 @@ export default function ClipsPage() {
     }
   }, [loading, userData]);
 
+  // Try to enable audio automatically on page load using multiple strategies
+  useEffect(() => {
+    // Strategy 1: Try to play a silent audio context to unlock audio (browser trick)
+    const unlockAudio = async () => {
+      try {
+        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContext) {
+          const audioContext = new AudioContext();
+          const buffer = audioContext.createBuffer(1, 1, 22050);
+          const source = audioContext.createBufferSource();
+          source.buffer = buffer;
+          source.connect(audioContext.destination);
+          source.start(0);
+          // Resume audio context (some browsers require this)
+          if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+          }
+        }
+      } catch (e) {
+        // Ignore errors
+      }
+    };
+
+    // Try to unlock audio immediately
+    unlockAudio();
+
+    // Also try when videos are loaded
+    if (reels.length > 0) {
+      unlockAudio();
+    }
+  }, [reels]);
+
   const selectedReel = reels.find(r => r.id === selectedReelId) || null;
 
   if (loading) {
     return (
       <div className="flex min-h-screen bg-gray-200 items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+        <div className="text-black">Loading...</div>
       </div>
     );
   }
@@ -574,7 +934,7 @@ export default function ClipsPage() {
         </div>
         <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden flex items-center justify-center">
           {userData?.full_name ? (
-            <span className="text-gray-600 font-semibold text-xs">
+            <span className="text-black font-semibold text-xs">
               {userData.full_name
                 .split(' ')
                 .map(word => word[0])
@@ -583,13 +943,13 @@ export default function ClipsPage() {
                 .slice(0, 2)}
             </span>
           ) : (
-            <span className="text-gray-600 font-semibold text-xs">U</span>
+            <span className="text-black font-semibold text-xs">U</span>
           )}
         </div>
       </header>
 
       {/* Content Area with Navigation and Main Content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden mt-5 ml-5">
         {/* Navigation Sidebar */}
         <NavigationBar
           activeItem="clips"
@@ -605,12 +965,27 @@ export default function ClipsPage() {
           <div
             className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${showComments ? 'right-[calc(396px+0.5rem)]' : 'right-0'}`}
           >
+            {/* Create Button - Fixed on video container when videos exist */}
+            {reels.length > 0 && (
+              <div 
+                className="absolute top-15 z-30"
+                style={{ left: 'calc(50% - 250px + 20px)' }}
+              >
+                <button
+                  onClick={() => setShowUploadModal(true)}
+                  className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-4 py-2 flex items-center gap-2 shadow-lg transition-colors"
+                >
+                  <Plus size={20} />
+                  <span className="text-sm font-medium">Create</span>
+                </button>
+              </div>
+            )}
             <div
               ref={scrollContainerRef}
-              className="w-full h-full overflow-y-scroll snap-y snap-mandatory hide-scrollbar"
+              className={`w-full h-full ${reels.length > 0 ? 'overflow-y-scroll snap-y snap-mandatory hide-scrollbar' : 'overflow-hidden'}`}
               style={{
                 scrollBehavior: 'smooth',
-                scrollSnapType: 'y mandatory',
+                scrollSnapType: reels.length > 0 ? 'y mandatory' : 'none',
                 WebkitOverflowScrolling: 'touch',
               }}
             >
@@ -626,16 +1001,24 @@ export default function ClipsPage() {
                       className="relative bg-black rounded-lg overflow-hidden shadow-2xl"
                       style={{ width: '500px', aspectRatio: '9/16' }}
                     >
+
                       <video
                         ref={el => {
-                          videoRefs.current[reel.id] = el;
+                          if (el) {
+                            videoRefs.current[reel.id] = el;
+                            // Start unmuted by default for audio
+                            el.muted = mutedReels[reel.id] ?? false;
+                            el.volume = 1;
+                          }
                         }}
-                        className="w-full h-full object-contain"
+                        onClick={(e) => handleVideoClick(e, reel.id)}
+                        className="w-full h-full object-contain cursor-pointer"
+                        style={{ pointerEvents: 'auto' }}
                         controls={false}
-                        muted={mutedReels[reel.id] ?? true}
+                        muted={mutedReels[reel.id] ?? false}
                         loop
                         playsInline
-                        autoPlay={index === 0}
+                        autoPlay={true}
                       >
                         <source src={reel.videoUrl} type="video/mp4" />
                         Your browser does not support the video tag.
@@ -643,7 +1026,7 @@ export default function ClipsPage() {
 
                       {/* Top Right - Delete Button (only for clips owned by current user) */}
                       {reel.user_id === currentUserId && (
-                        <div className="absolute top-4 right-4 z-20">
+                        <div className="absolute top-10 right-4 z-20">
                           <div className="relative">
                             <button
                               onClick={() => setShowDeleteMenu(prev => ({
@@ -676,8 +1059,8 @@ export default function ClipsPage() {
                       )}
 
                       {/* Bottom Section - Profile, Username, and Description */}
-                      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10">
-                        <div className="flex items-start gap-3">
+                      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10" style={{ pointerEvents: 'none' }}>
+                        <div className="flex items-start gap-3" style={{ pointerEvents: 'auto' }}>
                           <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden flex-shrink-0 border-2 border-white flex items-center justify-center">
                             {reel.authorAvatar ? (
                               <img
@@ -710,13 +1093,13 @@ export default function ClipsPage() {
                       </div>
 
                       {/* Right Side - Interaction Buttons */}
-                      <div className="absolute right-4 bottom-24 flex flex-col items-center gap-6">
+                      <div className="absolute right-4 bottom-15 flex flex-col items-center gap-6" style={{ pointerEvents: 'auto' }}>
                         <button
                           onClick={() => handleLike(reel.id)}
                           className="flex flex-col items-center gap-1 text-white hover:scale-110 transition-transform"
                         >
                           <Heart
-                            size={28}
+                            size={25}
                             fill={likedReels[reel.id] ? 'currentColor' : 'none'}
                           />
                           <span className="text-xs font-medium">
@@ -738,7 +1121,7 @@ export default function ClipsPage() {
                           onClick={() => handleShare(reel.id)}
                           className="flex flex-col items-center gap-1 text-white hover:scale-110 transition-transform"
                         >
-                          <Share2 size={28} />
+                          <Share2 size={25} />
                           <span className="text-xs font-medium">
                             {reel.shares}
                           </span>
@@ -749,9 +1132,9 @@ export default function ClipsPage() {
                           className="flex flex-col items-center gap-1 text-white hover:scale-110 transition-transform"
                         >
                           {mutedReels[reel.id] ? (
-                            <VolumeX size={28} />
+                            <VolumeX size={25} />
                           ) : (
-                            <Volume2 size={28} />
+                            <Volume2 size={25} />
                           )}
                         </button>
                       </div>
@@ -760,26 +1143,22 @@ export default function ClipsPage() {
                 ))
               ) : (
                 <div className="flex items-center justify-center w-full h-full">
-                  <div className="text-center text-gray-500">
+                  <div className="text-center text-black">
                     <p className="text-lg mb-2">No videos yet</p>
-                    <p className="text-sm">
+                    <p className="text-sm mb-4">
                       Use the Create button to add your first video
                     </p>
+                    <button
+                      onClick={() => setShowUploadModal(true)}
+                      className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-4 py-2 flex items-center gap-2 shadow-lg transition-colors mx-auto"
+                    >
+                      <Plus size={20} />
+                      <span className="text-sm font-medium">Create</span>
+                    </button>
                   </div>
                 </div>
               )}
             </div>
-          </div>
-
-          {/* Create Button - Top Right */}
-          <div className="absolute top-2 right-4 z-20">
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-4 py-2 flex items-center gap-2 shadow-lg transition-colors"
-            >
-              <Plus size={20} />
-              <span className="text-sm font-medium">Create</span>
-            </button>
           </div>
 
           {/* Comments Section - Visible when comment button is pressed */}
@@ -787,21 +1166,21 @@ export default function ClipsPage() {
             <div
               className="absolute top-1/2 transform -translate-y-1/2 bg-white border-l border-gray-200 flex flex-col z-10 shadow-lg"
               style={{
-                right: '11.5rem', // Reduced from 2rem to 0.5rem to reduce gap
+                right: '6.5rem', // Reduced from 2rem to 0.5rem to reduce gap
                 width: 'calc(25.5rem * 1.1)', // Increased w-90 (22.5rem/360px) by 10%
                 height: 'calc(66.666667vh * 1.1)', // Increased h-2/3 by 10%
               }}
             >
               {/* Comments Header */}
               <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-black">
                   Comments
                 </h2>
                 <button
                   onClick={() => setShowComments(false)}
                   className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                 >
-                  <X size={20} className="text-gray-600" />
+                  <X size={20} className="text-black" />
                 </button>
               </div>
 
@@ -819,7 +1198,7 @@ export default function ClipsPage() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="text-gray-600 font-semibold text-xs">
+                            <span className="text-black font-semibold text-xs">
                               {comment.author
                                 .split(' ')
                                 .map(word => word[0])
@@ -831,19 +1210,19 @@ export default function ClipsPage() {
                         </div>
                         <div className="flex-1">
                           <div className="mb-1">
-                            <span className="font-semibold text-gray-900 text-sm">
+                            <span className="font-semibold text-black text-sm">
                               {comment.author}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-700 mb-2">
+                          <p className="text-sm text-black mb-2">
                             {comment.text}
                           </p>
-                          <div className="flex items-center gap-4 text-xs text-gray-500">
-                            <button className="hover:text-gray-700">
+                          <div className="flex items-center gap-4 text-xs text-black">
+                            <button className="hover:text-black">
                               Reply
                             </button>
                             {comment.hasReplies && (
-                              <button className="hover:text-gray-700">
+                              <button className="hover:text-black">
                                 View replies
                               </button>
                             )}
@@ -854,15 +1233,15 @@ export default function ClipsPage() {
                     {/* Scroll Arrows */}
                     <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex flex-col gap-2">
                       <button className="w-10 h-10 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm">
-                        <ChevronUp size={20} className="text-gray-600" />
+                        <ChevronUp size={20} className="text-black" />
                       </button>
                       <button className="w-10 h-10 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm">
-                        <ChevronDown size={20} className="text-gray-600" />
+                        <ChevronDown size={20} className="text-black" />
                       </button>
                     </div>
                   </>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                  <div className="flex flex-col items-center justify-center h-full text-black">
                     <MessageSquare size={48} className="mb-4 opacity-50" />
                     <p className="text-sm">No comments yet</p>
                     <p className="text-xs mt-1">Be the first to comment!</p>
@@ -875,7 +1254,7 @@ export default function ClipsPage() {
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-gray-300 overflow-hidden flex-shrink-0 flex items-center justify-center">
                     {userData?.full_name ? (
-                      <span className="text-gray-600 font-semibold text-xs">
+                      <span className="text-black font-semibold text-xs">
                         {userData.full_name
                           .split(' ')
                           .map(word => word[0])
@@ -884,7 +1263,7 @@ export default function ClipsPage() {
                           .slice(0, 2)}
                       </span>
                     ) : (
-                      <span className="text-gray-600 font-semibold text-xs">U</span>
+                      <span className="text-black font-semibold text-xs">U</span>
                     )}
                   </div>
                   <input
@@ -897,7 +1276,7 @@ export default function ClipsPage() {
                         [selectedReel?.id || '']: e.target.value,
                       }))
                     }
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm text-gray-900"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm text-black"
                     onKeyPress={e => {
                       if (e.key === 'Enter' && selectedReel) {
                         handleAddComment(selectedReel.id);
@@ -926,6 +1305,20 @@ export default function ClipsPage() {
         onUpload={handleFileUpload}
         isUploading={isUploading}
       />
+
+      {/* Share Modal */}
+      {selectedReelForShare && (
+        <ShareModal
+          open={showShareModal}
+          post={reelToPostData(selectedReelForShare)}
+          onClose={() => {
+            setShowShareModal(false);
+            setSelectedReelForShare(null);
+          }}
+          onShare={handleShareComplete}
+          currentUserId={currentUserId || undefined}
+        />
+      )}
     </div>
   );
 }

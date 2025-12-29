@@ -30,11 +30,23 @@ interface CurrentUser {
   username?: string;
 }
 
+interface ProfileData {
+  userId: string;
+  fullName: string | null;
+  profileImage: string | null;
+  coverImage: string | null;
+  bio: string | null;
+  education: string | null;
+  primarySport: string | null;
+  sportsPlayed: string | null;
+}
+
 export default function Profile() {
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'activity' | 'mysave'>('profile');
   const [userBio, setUserBio] = useState<string>('');
@@ -110,6 +122,32 @@ export default function Profile() {
     fetchPosts();
     fetchCurrentUser();
   }, []);
+
+  useEffect(() => {
+    if (currentUserId) {
+      fetchProfileData();
+    }
+  }, [currentUserId]);
+
+  const fetchProfileData = async () => {
+    if (!currentUserId) return;
+    
+    try {
+      console.log('Fetching profile data for userId:', currentUserId);
+      const response = await fetch(`http://localhost:3001/api/profile/${currentUserId}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Profile data fetched:', data);
+        setProfileData(data);
+      } else {
+        console.log('No profile data found, will use defaults');
+        setProfileData(null);
+      }
+    } catch (error) {
+      console.error('Error fetching profile data:', error);
+      setProfileData(null);
+    }
+  };
 
   const fetchCurrentUser = async () => {
     try {
@@ -197,19 +235,139 @@ export default function Profile() {
             userData={{
               full_name: currentUser?.full_name,
               username: currentUser?.username,
-              profile_url: currentUser?.profile_url,
+              profile_url: profileData?.profileImage 
+                ? (profileData.profileImage.startsWith('http') 
+                    ? profileData.profileImage 
+                    : `http://localhost:3001${profileData.profileImage}`)
+                : currentUser?.profile_url,
+              background_image_url: profileData?.coverImage
+                ? (profileData.coverImage.startsWith('http')
+                    ? profileData.coverImage
+                    : `http://localhost:3001${profileData.coverImage}`)
+                : null,
               user_type: 'coach',
               location: 'Rochester, NY', // You can fetch this from user data
               age: 35, // You can fetch this from user data
               followers_count: 10000,
-              sports_played: 'Basketball, Football',
-              primary_sport: 'Basketball',
+              sports_played: profileData?.sportsPlayed 
+                ? profileData.sportsPlayed.replace(/[{}"']/g, '') // Remove curly brackets and quotes
+                : '',
+              primary_sport: profileData?.primarySport || '',
               profile_completion: 60,
+              bio: profileData?.bio || '',
+              education: profileData?.education || '',
             }}
-            onSave={(data) => {
+            onSave={async (data) => {
               console.log('Profile saved:', data);
-              if (data.bio) {
-                setUserBio(data.bio);
+
+              try {
+                if (!currentUserId) {
+                  console.error('No user ID available');
+                  return;
+                }
+
+                // Prepare data for API
+                const profileData: {
+                  userId: string;
+                  bio?: string;
+                  education?: string;
+                  primarySport?: string;
+                  profileImageUrl?: string;
+                  coverImageUrl?: string;
+                } = {
+                  userId: currentUserId,
+                };
+
+                // Handle text fields - allow empty strings to clear the field
+                console.log('Received data from EditProfilePopup:', {
+                  bio: data.bio,
+                  education: data.education,
+                  bioUndefined: data.bio === undefined,
+                  educationUndefined: data.education === undefined,
+                });
+                
+                if (data.bio !== undefined) {
+                  profileData.bio = data.bio || undefined; // Convert empty string to undefined
+                }
+                if (data.education !== undefined) {
+                  profileData.education = data.education || undefined; // Convert empty string to undefined
+                }
+                
+                console.log('Profile data being sent to API:', profileData);
+                
+                // Handle sports - parse from sports_played string (take first sport as primary)
+                if (data.sports_played) {
+                  const sports = data.sports_played.split(',').map(s => s.trim()).filter(Boolean);
+                  if (sports.length > 0) profileData.primarySport = sports[0];
+                }
+
+                // Handle image files - upload them first
+                if (data.profile_url instanceof File) {
+                  const formData = new FormData();
+                  formData.append('file', data.profile_url);
+                  
+                  // Upload profile image
+                  const uploadResponse = await fetch('http://localhost:3001/api/profile/upload', {
+                    method: 'POST',
+                    body: formData,
+                  });
+                  
+                  if (uploadResponse.ok) {
+                    const uploadData = await uploadResponse.json();
+                    if (uploadData.success && uploadData.fileUrl) {
+                      profileData.profileImageUrl = uploadData.fileUrl;
+                    }
+                  }
+                } else if (typeof data.profile_url === 'string') {
+                  profileData.profileImageUrl = data.profile_url;
+                }
+
+                if (data.background_image_url instanceof File) {
+                  const formData = new FormData();
+                  formData.append('file', data.background_image_url);
+                  
+                  // Upload cover image
+                  const uploadResponse = await fetch('http://localhost:3001/api/profile/upload', {
+                    method: 'POST',
+                    body: formData,
+                  });
+                  
+                  if (uploadResponse.ok) {
+                    const uploadData = await uploadResponse.json();
+                    if (uploadData.success && uploadData.fileUrl) {
+                      profileData.coverImageUrl = uploadData.fileUrl;
+                    }
+                  }
+                } else if (typeof data.background_image_url === 'string') {
+                  profileData.coverImageUrl = data.background_image_url;
+                }
+
+                // Call profile API
+                const response = await fetch('http://localhost:3001/api/profile', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(profileData),
+                });
+
+                if (!response.ok) {
+                  const errorData = await response.json();
+                  console.error('Failed to save profile:', errorData);
+                  alert('Failed to save profile: ' + (errorData.message || 'Unknown error'));
+                  return;
+                }
+
+                const result = await response.json();
+                console.log('Profile saved successfully:', result);
+                
+                // Refresh user data and profile data
+                fetchCurrentUser();
+                fetchProfileData();
+              } catch (error) {
+                console.error('Error saving profile:', error);
+                alert('Error saving profile. Please try again.');
+
               }
             }}
           />

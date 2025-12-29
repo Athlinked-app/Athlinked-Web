@@ -163,6 +163,7 @@ export default function Landing() {
             <HomeHerosection
               userProfileUrl={getProfileUrl(currentUser?.profile_url)}
               username={currentUser?.full_name || 'User'}
+              currentUserId={currentUserId || undefined}
               onPostCreated={handlePostCreated}
             />
           </div>
@@ -170,11 +171,11 @@ export default function Landing() {
           <div className="flex-1 overflow-y-auto pr-2 min-h-0">
             <div className="flex flex-col gap-4 pb-4">
               {loading ? (
-                <div className="text-center py-8 text-gray-600 bg-white rounded-xl border border-gray-200">
+                <div className="text-center py-8 text-black bg-white rounded-xl border border-gray-200">
                   Loading posts...
                 </div>
               ) : posts.length === 0 ? (
-                <div className="text-center py-8 text-gray-600 bg-white rounded-xl border border-gray-200">
+                <div className="text-center py-8 text-black bg-white rounded-xl border border-gray-200">
                   No posts yet. Be the first to post!
                 </div>
               ) : (

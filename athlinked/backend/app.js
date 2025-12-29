@@ -13,6 +13,7 @@ const videosRoutes = require('./videos/videos.routes');
 const templatesRoutes = require('./templates/templates.routes');
 const networkRoutes = require('./network/network.routes');
 const messagesRoutes = require('./messages/messages.routes');
+const statsRoutes = require('./stats/stats.routes');
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use('/api/videos', videosRoutes);
 app.use('/api/templates', templatesRoutes);
 app.use('/api/network', networkRoutes);
 app.use('/api/messages', messagesRoutes);
+app.use('/api', statsRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

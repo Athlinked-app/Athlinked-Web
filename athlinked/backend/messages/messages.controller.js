@@ -1,9 +1,7 @@
 const messagesService = require('./messages.service');
+const upload = require('../utils/upload-message');
+const path = require('path');
 
-/**
- * GET /api/messages/conversations
- * Get conversations list for current user
- */
 async function getConversations(req, res) {
   try {
     const userId = req.user?.id || req.body.user_id || req.query.user_id;
@@ -30,10 +28,6 @@ async function getConversations(req, res) {
   }
 }
 
-/**
- * GET /api/messages/:conversationId
- * Get messages for a conversation
- */
 async function getMessages(req, res) {
   try {
     const userId = req.user?.id || req.body.user_id || req.query.user_id;
@@ -61,17 +55,15 @@ async function getMessages(req, res) {
     });
   } catch (error) {
     console.error('Error getting messages:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
       message: error.message || 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     });
   }
 }
 
-/**
- * POST /api/messages/:conversationId/read
- * Mark messages as read
- */
 async function markAsRead(req, res) {
   try {
     const userId = req.user?.id || req.body.user_id || req.query.user_id;
@@ -93,7 +85,6 @@ async function markAsRead(req, res) {
 
     const result = await messagesService.markAsRead(conversationId, userId);
 
-    // Emit socket event to notify sender that messages were read
     const io = req.app.get('io');
     if (io && result.senderId) {
       io.to(`user:${result.senderId}`).emit('messages_read', {
@@ -115,10 +106,6 @@ async function markAsRead(req, res) {
   }
 }
 
-/**
- * GET /api/messages/search/users
- * Search users from network (followers and following)
- */
 async function searchUsers(req, res) {
   try {
     const userId = req.user?.id || req.body.user_id || req.query.user_id;
@@ -155,10 +142,6 @@ async function searchUsers(req, res) {
   }
 }
 
-/**
- * POST /api/messages/conversations/create
- * Get or create a conversation with another user
- */
 async function getOrCreateConversation(req, res) {
   try {
     const userId = req.user?.id || req.body.user_id;
@@ -198,11 +181,48 @@ async function getOrCreateConversation(req, res) {
   }
 }
 
+async function uploadMessageFile(req, res) {
+  try {
+    const uploadSingle = upload.single('file');
+    
+    uploadSingle(req, res, async (err) => {
+      if (err) {
+        return res.status(400).json({
+          success: false,
+          message: err.message || 'File upload failed',
+        });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'No file uploaded',
+        });
+      }
+
+      const mediaUrl = `/uploads/messages/${req.file.filename}`;
+
+      res.json({
+        success: true,
+        media_url: mediaUrl,
+        filename: req.file.filename,
+      });
+    });
+  } catch (error) {
+    console.error('Error uploading message file:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 module.exports = {
   getConversations,
   getMessages,
   markAsRead,
   searchUsers,
   getOrCreateConversation,
+  uploadMessageFile,
 };
 

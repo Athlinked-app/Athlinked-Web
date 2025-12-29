@@ -29,7 +29,7 @@ export interface PostData {
   username: string;
   user_profile_url: string | null;
   user_id?: string;
-  post_type?: 'photo' | 'video' | 'article' | 'event';
+  post_type?: 'photo' | 'video' | 'article' | 'event' | 'text';
   caption?: string | null;
   media_url?: string | null;
   article_title?: string | null;
@@ -86,7 +86,6 @@ export default function Post({
       feeling: Smile,
       custom: Flag,
     };
-    // Handle case-insensitive matching
     const normalizedType = eventType?.toLowerCase() || '';
     return iconMap[normalizedType] || Briefcase;
   };
@@ -165,8 +164,7 @@ export default function Post({
     setShowShare(true);
   };
 
-  const handleShareComplete = (selectedUsers: string[], message: string) => {
-    console.log('Post shared with:', selectedUsers, 'Message:', message);
+  const handleShareComplete = () => {
   };
 
   const handleSave = () => {
@@ -255,7 +253,6 @@ export default function Post({
   const handleDownloadPDF = () => {
     if (!post.article_title || !post.article_body) return;
 
-    // Create a new window with the article content
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
@@ -302,7 +299,6 @@ export default function Post({
     printWindow.document.write(htmlContent);
     printWindow.document.close();
     
-    // Wait for content to load, then trigger print
     setTimeout(() => {
       printWindow.print();
     }, 250);
@@ -310,7 +306,6 @@ export default function Post({
 
   return (
     <div className="w-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-      {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-gray-200 mb-4">
         <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
           {post.user_profile_url && post.user_profile_url.trim() !== '' ? (
@@ -359,10 +354,8 @@ export default function Post({
           </div>
         )}
       </div>
-      {/* Content based on post type */}
       {post.post_type === 'article' && (
         <>
-          {/* Article Image */}
           {(post.media_url || post.image_url) && (
             <div className="w-full">
               <img
@@ -377,7 +370,6 @@ export default function Post({
             </div>
           )}
           
-          {/* Article Content */}
           {post.article_title && (
             <div className="px-6 py-4">
               <h3 className="text-3xl font-bold text-gray-900 mb-3">
@@ -391,7 +383,6 @@ export default function Post({
               {post.article_body && (
                 <div className="mb-4">
                   {(() => {
-                    // Strip HTML tags to check length
                     const textContent = post.article_body.replace(/<[^>]*>/g, '');
                     const previewLength = 200;
                     const shouldTruncate = textContent.length > previewLength;
@@ -430,7 +421,6 @@ export default function Post({
 
       {post.post_type === 'event' && (
         <>
-          {/* Event Image/Media */}
           {(post.media_url || post.image_url) && (
             <div className="w-full relative">
               {(post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) || (post.image_url && post.image_url.match(/\.(mp4|mov)$/i)) ? (
@@ -450,7 +440,6 @@ export default function Post({
                   }}
                 />
               )}
-              {/* Event Type Icon - Centered Blue Circle */}
               <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 z-10">
                 <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center shadow-xl border-4 border-white">
                   {(() => {
@@ -462,7 +451,6 @@ export default function Post({
             </div>
           )}
 
-          {/* Event Details - Centered */}
           {post.event_title && (
             <div className={`px-6 text-center ${(post.media_url || post.image_url) ? 'pt-12 pb-6' : 'py-6'}`}>
               {!(post.media_url || post.image_url) && (
@@ -502,7 +490,7 @@ export default function Post({
         </>
       )}
 
-      {(post.post_type === 'photo' || post.post_type === 'video' || !post.post_type) && (
+      {(post.post_type === 'photo' || post.post_type === 'video' || post.post_type === 'text' || !post.post_type) && (
         <>
           {(post.caption || post.description) && (
             <p className="text-md text-gray-800 px-6 mb-4">
@@ -510,7 +498,7 @@ export default function Post({
             </p>
           )}
 
-          {(post.media_url || post.image_url) && (
+          {(post.media_url || post.image_url) && post.post_type !== 'text' && (
             <div className="w-full aspect-auto px-12">
               {post.post_type === 'video' || (post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ? (
                 <video
@@ -534,9 +522,7 @@ export default function Post({
         </>
       )}
 
-      {/* Footer */}
       <div className="p-4">
-        {/* Likes and Comments Count */}
         <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
           <div className="flex items-center gap-2">
             <ThumbsUp className="w-5 h-5 text-gray-600" fill="currentColor" />
@@ -545,7 +531,6 @@ export default function Post({
           <span className="text-sm text-gray-600">{commentCount} comments</span>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex items-center justify-between">
           <button
             onClick={handleLike}
@@ -591,19 +576,16 @@ export default function Post({
             <span className="text-sm font-medium">{isSaved ? 'Saved' : 'Save'}</span>
           </button>
         </div>
-
-        {/* Description */}
       </div>
 
-      {/* Share Modal */}
       <ShareModal
         open={showShare}
         post={post}
         onClose={() => setShowShare(false)}
         onShare={handleShareComplete}
+        currentUserId={currentUserId}
       />
 
-      {/* Save Alert */}
       <SaveModal
         postId={post.id}
         showAlert={showSaveAlert}
@@ -611,7 +593,6 @@ export default function Post({
         isSaved={isSaved}
       />
 
-      {/* Article View Modal */}
       {showArticleModal && post.post_type === 'article' && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div
@@ -619,7 +600,6 @@ export default function Post({
             onClick={() => setShowArticleModal(false)}
           />
           <div className="relative z-10 w-full max-w-4xl bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            {/* Header */}
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">Article</h2>
               <button
@@ -631,7 +611,6 @@ export default function Post({
               </button>
             </div>
 
-            {/* User Info */}
             <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-3">
               <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
                 {post.user_profile_url && post.user_profile_url.trim() !== '' ? (
@@ -652,7 +631,6 @@ export default function Post({
               </div>
             </div>
 
-            {/* Article Image */}
             {(post.media_url || post.image_url) && (
               <div className="w-full">
                 <img
@@ -663,7 +641,6 @@ export default function Post({
               </div>
             )}
 
-            {/* Article Content */}
             <div className="px-6 py-6">
               {post.article_title && (
                 <h3 className="text-3xl font-bold text-gray-900 mb-4">
@@ -683,7 +660,6 @@ export default function Post({
               )}
             </div>
 
-            {/* Download PDF Button */}
             <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-end">
               <button
                 onClick={handleDownloadPDF}
@@ -697,21 +673,17 @@ export default function Post({
         </div>
       )}
 
-      {/* Comments Modal */}
       {showComments && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowComments(false)}
           />
 
-          {/* Modal */}
           <div 
             className="relative z-10 w-full max-w-5xl h-[80vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-row"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Left Side - Post Image */}
             <div className="w-1/2 bg-black flex items-center justify-center">
               {post.media_url || post.image_url ? (
                 post.post_type === 'video' || (post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ? (
@@ -731,8 +703,6 @@ export default function Post({
                 <div className="text-white">No media available</div>
               )}
             </div>
-
-            {/* Right Side - Comments */}
             <div className="w-1/2 flex flex-col">
               <CommentsPanel
                 post={post}

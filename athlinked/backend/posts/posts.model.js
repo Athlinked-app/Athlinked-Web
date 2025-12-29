@@ -14,6 +14,7 @@ async function createPost(postData, client = null) {
     event_title,
     event_date,
     event_location,
+    event_type,
   } = postData;
 
   const id = uuidv4();
@@ -31,12 +32,13 @@ async function createPost(postData, client = null) {
       event_title,
       event_date,
       event_location,
+      event_type,
       like_count,
       comment_count,
       save_count,
       is_active,
       created_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
     RETURNING *
   `;
 
@@ -53,6 +55,7 @@ async function createPost(postData, client = null) {
     event_title || null,
     event_date || null,
     event_location || null,
+    event_type || null,
     0,
     0,
     0,

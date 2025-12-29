@@ -1,11 +1,6 @@
 const videosService = require('./videos.service');
 const upload = require('../utils/upload-resources');
 
-/**
- * Controller to create a new video
- * @param {object} req - Express request object
- * @param {object} res - Express response object
- */
 async function createVideo(req, res) {
   try {
     const userId = req.body.user_id || req.user?.id;
@@ -23,7 +18,6 @@ async function createVideo(req, res) {
       video_duration,
     } = req.body;
 
-    // Handle file upload
     let finalVideoUrl = video_url;
 
     if (req.file) {
@@ -56,14 +50,10 @@ async function createVideo(req, res) {
   }
 }
 
-/**
- * Controller to get all active videos
- * @param {object} req - Express request object
- * @param {object} res - Express response object
- */
 async function getAllVideos(req, res) {
   try {
-    const result = await videosService.getAllVideosService();
+    const userId = req.query.user_id || req.user?.id || null;
+    const result = await videosService.getAllVideosService(userId);
     return res.status(200).json(result);
   } catch (error) {
     console.error('Get videos error:', error);
@@ -84,13 +74,6 @@ async function deleteVideo(req, res) {
     // Try to get user_id from body first, then from query, then from req.user
     const userId = req.body?.user_id || req.query?.user_id || req.user?.id;
     
-    console.log('Delete video request:', {
-      id: req.params.id,
-      userId: userId ? userId.substring(0, 8) + '...' : null,
-      body: req.body,
-      query: req.query,
-    });
-    
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -108,8 +91,6 @@ async function deleteVideo(req, res) {
     }
 
     const result = await videosService.deleteVideoService(id, userId);
-
-    console.log('Delete video result:', result);
 
     return res.status(200).json(result);
   } catch (error) {

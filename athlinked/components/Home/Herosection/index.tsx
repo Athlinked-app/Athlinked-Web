@@ -1,4 +1,3 @@
-/* eslint-disable jsx-a11y/label-has-associated-control */
 'use client';
 
 import { useState, type ChangeEvent } from 'react';
@@ -19,7 +18,7 @@ type HomeHerosectionProps = {
   onPostCreated?: () => void;
 };
 
-type PostType = 'photo' | 'video' | 'article' | 'event';
+type PostType = 'photo' | 'video' | 'article' | 'event' | 'text';
 
 export default function HomeHerosection({
   userProfileUrl,
@@ -111,7 +110,7 @@ export default function HomeHerosection({
         },
         body: JSON.stringify({
           user_id: userData.id,
-          post_type: 'photo',
+          post_type: 'text',
           caption: postText.trim(),
         }),
       });
@@ -224,7 +223,6 @@ export default function HomeHerosection({
         });
 
         const result = await response.json();
-        console.log('Create article/event post with image response:', result);
         
         if (result.success) {
           setShowArticleEvent(false);
@@ -235,7 +233,6 @@ export default function HomeHerosection({
           alert(result.message || 'Failed to create post');
         }
       } else {
-        // No image, use JSON
         const postData: any = {
           user_id: userData.id,
           post_type: selectedPostType,
@@ -272,7 +269,6 @@ export default function HomeHerosection({
         }
 
         const result = await response.json();
-        console.log('Create article/event post response:', result);
         
         if (result.success) {
           setShowArticleEvent(false);

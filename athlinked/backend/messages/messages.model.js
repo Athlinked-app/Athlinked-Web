@@ -1,18 +1,10 @@
 const pool = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
 
-/**
- * Get or create a conversation between two users
- * @param {string} userId1 - First user ID
- * @param {string} userId2 - Second user ID
- * @param {object} client - Optional database client for transactions
- * @returns {Promise<object>} Conversation data
- */
 async function getOrCreateConversation(userId1, userId2, client = null) {
   const dbClient = client || pool;
 
   try {
-    // Check if conversation exists
     const checkQuery = `
       SELECT c.id
       FROM conversations c
@@ -29,7 +21,6 @@ async function getOrCreateConversation(userId1, userId2, client = null) {
       return { id: checkResult.rows[0].id };
     }
 
-    // Create new conversation
     const conversationId = uuidv4();
     const createConversationQuery = `
       INSERT INTO conversations (id, last_message, last_message_at, created_at)
@@ -39,7 +30,6 @@ async function getOrCreateConversation(userId1, userId2, client = null) {
 
     await dbClient.query(createConversationQuery, [conversationId]);
 
-    // Get user names for participants
     const userQuery = 'SELECT id, full_name, username FROM users WHERE id = $1';
     const [user1Result, user2Result] = await Promise.all([
       dbClient.query(userQuery, [userId1]),
@@ -53,7 +43,6 @@ async function getOrCreateConversation(userId1, userId2, client = null) {
       ? (user2Result.rows[0].full_name || user2Result.rows[0].username || 'User')
       : 'User';
 
-    // Add participants
     const participant1Id = uuidv4();
     const participant2Id = uuidv4();
 
@@ -81,34 +70,68 @@ async function getOrCreateConversation(userId1, userId2, client = null) {
   }
 }
 
-/**
- * Create a new message
- * @param {string} conversationId - Conversation ID
- * @param {string} senderId - Sender user ID
- * @param {string} message - Message text
- * @param {object} client - Optional database client for transactions
- * @returns {Promise<object>} Created message data
- */
-async function createMessage(conversationId, senderId, message, client = null) {
+async function createMessage(conversationId, senderId, message, client = null, mediaUrl = null, messageType = 'text', postData = null) {
   const dbClient = client || pool;
   
-  // Get sender's name
   const userQuery = 'SELECT full_name, username FROM users WHERE id = $1';
   const userResult = await dbClient.query(userQuery, [senderId]);
   const senderName = userResult.rows.length > 0 
     ? (userResult.rows[0].full_name || userResult.rows[0].username || 'User')
     : 'User';
   
-  const messageId = uuidv4();
-  const query = `
-    INSERT INTO messages (id, conversation_id, sender_id, sender_name, message, created_at)
-    VALUES ($1, $2, $3, $4, $5, NOW())
-    RETURNING *
+  const checkColumnsQuery = `
+    SELECT column_name 
+    FROM information_schema.columns 
+    WHERE table_name = 'messages' 
+    AND column_name IN ('media_url', 'message_type', 'post_data')
   `;
-
-  const values = [messageId, conversationId, senderId, senderName, message];
-  const result = await dbClient.query(query, values);
-  return result.rows[0];
+  const columnsResult = await dbClient.query(checkColumnsQuery);
+  const hasMediaUrl = columnsResult.rows.some(row => row.column_name === 'media_url');
+  const hasMessageType = columnsResult.rows.some(row => row.column_name === 'message_type');
+  const hasPostData = columnsResult.rows.some(row => row.column_name === 'post_data');
+  
+  const messageId = uuidv4();
+  const postDataJson = postData ? (typeof postData === 'string' ? postData : JSON.stringify(postData)) : null;
+  
+  if (hasMediaUrl && hasMessageType && hasPostData) {
+    const query = `
+      INSERT INTO messages (id, conversation_id, sender_id, sender_name, message, media_url, message_type, post_data, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+      RETURNING *
+    `;
+    const values = [messageId, conversationId, senderId, senderName, message, mediaUrl, messageType, postDataJson];
+    const result = await dbClient.query(query, values);
+    return {
+      ...result.rows[0],
+      post_data: result.rows[0].post_data ? (typeof result.rows[0].post_data === 'string' ? JSON.parse(result.rows[0].post_data) : result.rows[0].post_data) : null,
+    };
+  } else if (hasMediaUrl && hasMessageType) {
+    const query = `
+      INSERT INTO messages (id, conversation_id, sender_id, sender_name, message, media_url, message_type, created_at)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+      RETURNING *
+    `;
+    const values = [messageId, conversationId, senderId, senderName, message, mediaUrl, messageType];
+    const result = await dbClient.query(query, values);
+    return {
+      ...result.rows[0],
+      post_data: postDataJson ? (typeof postDataJson === 'string' ? JSON.parse(postDataJson) : postDataJson) : null,
+    };
+  } else {
+    const query = `
+      INSERT INTO messages (id, conversation_id, sender_id, sender_name, message, created_at)
+      VALUES ($1, $2, $3, $4, $5, NOW())
+      RETURNING *
+    `;
+    const values = [messageId, conversationId, senderId, senderName, message];
+    const result = await dbClient.query(query, values);
+    return {
+      ...result.rows[0],
+      media_url: null,
+      message_type: 'text',
+      post_data: postDataJson ? (typeof postDataJson === 'string' ? JSON.parse(postDataJson) : postDataJson) : null,
+    };
+  }
 }
 
 /**
@@ -128,12 +151,6 @@ async function updateConversationLastMessage(conversationId, lastMessage, client
   await dbClient.query(query, [lastMessage, conversationId]);
 }
 
-/**
- * Increment unread count for a user in a conversation
- * @param {string} conversationId - Conversation ID
- * @param {string} userId - User ID
- * @param {object} client - Optional database client for transactions
- */
 async function incrementUnreadCount(conversationId, userId, client = null) {
   const query = `
     UPDATE conversation_participants
@@ -180,7 +197,6 @@ async function getConversationsForUser(userId) {
  * @returns {Promise<Array>} Array of message data
  */
 async function getMessagesForConversation(conversationId, userId) {
-  // Get the other user in the conversation
   const otherUserQuery = `
     SELECT user_id
     FROM conversation_participants
@@ -190,12 +206,30 @@ async function getMessagesForConversation(conversationId, userId) {
   const otherUserResult = await pool.query(otherUserQuery, [conversationId, userId]);
   const otherUserId = otherUserResult.rows.length > 0 ? otherUserResult.rows[0].user_id : null;
 
+  const checkColumnsQuery = `
+    SELECT column_name 
+    FROM information_schema.columns 
+    WHERE table_name = 'messages' 
+    AND column_name IN ('media_url', 'message_type', 'post_data')
+  `;
+  const columnsResult = await pool.query(checkColumnsQuery);
+  const hasMediaUrl = columnsResult.rows.some(row => row.column_name === 'media_url');
+  const hasMessageType = columnsResult.rows.some(row => row.column_name === 'message_type');
+  const hasPostData = columnsResult.rows.some(row => row.column_name === 'post_data');
+
+  const mediaUrlSelect = hasMediaUrl ? 'm.media_url,' : 'NULL as media_url,';
+  const messageTypeSelect = hasMessageType ? 'm.message_type,' : 'NULL as message_type,';
+  const postDataSelect = hasPostData ? 'm.post_data,' : 'NULL as post_data,';
+
   const query = `
     SELECT 
       m.id as message_id,
       m.sender_id,
       COALESCE(m.sender_name, u.full_name, u.username, 'User') as sender_name,
       m.message,
+      ${mediaUrlSelect}
+      ${messageTypeSelect}
+      ${postDataSelect}
       m.created_at,
       -- is_read: true if current user has read this message (for received messages)
       CASE WHEN mr.id IS NOT NULL THEN true ELSE false END as is_read,
@@ -230,7 +264,6 @@ async function getMessagesForConversation(conversationId, userId) {
 async function markMessagesAsRead(conversationId, readerId, senderId, client = null) {
   const dbClient = client || pool;
 
-  // Get all unread messages from the sender in this conversation
   const unreadMessagesQuery = `
     SELECT m.id
     FROM messages m
@@ -248,7 +281,6 @@ async function markMessagesAsRead(conversationId, readerId, senderId, client = n
     readerId,
   ]);
 
-  // Insert read receipts for all unread messages
   if (unreadResult.rows.length > 0) {
     const insertReadQuery = `
       INSERT INTO message_reads (id, message_id, user_id, read_at)
@@ -262,7 +294,6 @@ async function markMessagesAsRead(conversationId, readerId, senderId, client = n
     }
   }
 
-  // Reset unread count for the reader
   const resetUnreadQuery = `
     UPDATE conversation_participants
     SET unread_count = 0
@@ -272,12 +303,6 @@ async function markMessagesAsRead(conversationId, readerId, senderId, client = n
   await dbClient.query(resetUnreadQuery, [conversationId, readerId]);
 }
 
-/**
- * Get sender ID for a conversation (the other user)
- * @param {string} conversationId - Conversation ID
- * @param {string} currentUserId - Current user ID
- * @returns {Promise<string|null>} Sender ID or null
- */
 async function getSenderIdForConversation(conversationId, currentUserId) {
   const query = `
     SELECT user_id
@@ -290,14 +315,7 @@ async function getSenderIdForConversation(conversationId, currentUserId) {
   return result.rows.length > 0 ? result.rows[0].user_id : null;
 }
 
-/**
- * Search users from followers and following by name
- * @param {string} userId - Current user ID
- * @param {string} searchQuery - Search query string
- * @returns {Promise<Array>} Array of user data
- */
 async function searchNetworkUsers(userId, searchQuery) {
-  // Get users the current user is following
   const followingQuery = `
     SELECT 
       u.id,
@@ -315,7 +333,6 @@ async function searchNetworkUsers(userId, searchQuery) {
       )
   `;
 
-  // Get users who follow the current user
   const followersQuery = `
     SELECT 
       u.id,
@@ -336,28 +353,23 @@ async function searchNetworkUsers(userId, searchQuery) {
   try {
     const searchPattern = `%${searchQuery}%`;
     
-    // Execute both queries in parallel
     const [followingResult, followersResult] = await Promise.all([
       pool.query(followingQuery, [userId, searchPattern]),
       pool.query(followersQuery, [userId, searchPattern]),
     ]);
 
-    // Combine results and remove duplicates (in case user follows someone who also follows them)
     const allUsers = new Map();
     
-    // Add following users first (they get priority)
     followingResult.rows.forEach(user => {
       allUsers.set(user.id, user);
     });
     
-    // Add followers (only if not already in the map)
     followersResult.rows.forEach(user => {
       if (!allUsers.has(user.id)) {
         allUsers.set(user.id, user);
       }
     });
 
-    // Convert map to array and sort (following first, then followers)
     const result = Array.from(allUsers.values()).sort((a, b) => {
       if (a.relationship === 'following' && b.relationship === 'follower') return -1;
       if (a.relationship === 'follower' && b.relationship === 'following') return 1;
@@ -374,11 +386,6 @@ async function searchNetworkUsers(userId, searchQuery) {
   }
 }
 
-/**
- * Update user names in existing records (useful when user updates their name)
- * @param {string} userId - User ID
- * @param {string} userName - New user name
- */
 async function updateUserNameInMessages(userId, userName) {
   const updateMessagesQuery = `
     UPDATE messages
