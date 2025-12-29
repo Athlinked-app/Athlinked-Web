@@ -21,6 +21,8 @@ interface EditProfileModalProps {
     primary_sport?: string;
     profile_completion?: number;
     background_image_url?: string | null;
+    bio?: string;
+    education?: string;
   };
   onSave?: (data: {
     full_name?: string;
@@ -31,6 +33,8 @@ interface EditProfileModalProps {
     primary_sport?: string;
     profile_url?: File;
     background_image_url?: File;
+    bio?: string;
+    education?: string;
   }) => void;
 }
 
@@ -63,6 +67,8 @@ export default function EditProfileModal({
   const [age, setAge] = useState(userData?.age?.toString() || '');
   const [sportsPlayed, setSportsPlayed] = useState(userData?.sports_played || '');
   const [primarySport, setPrimarySport] = useState(userData?.primary_sport || '');
+  const [bio, setBio] = useState(userData?.bio || '');
+  const [education, setEducation] = useState(userData?.education || '');
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(
     userData?.profile_url || null
@@ -135,6 +141,38 @@ export default function EditProfileModal({
           if (data.user.age) {
             setAge(data.user.age.toString());
           }
+          // Note: bio and education are fetched from profile API, not user API
+        }
+        
+        // Also fetch profile data if we have user ID
+        if (data.success && data.user && data.user.id) {
+          try {
+            const profileResponse = await fetch(`http://localhost:3001/api/profile/${data.user.id}`);
+            if (profileResponse.ok) {
+              const profileData = await profileResponse.json();
+              console.log('Fetched profile data in EditProfileModal:', profileData);
+              if (profileData.bio) setBio(profileData.bio);
+              if (profileData.education) setEducation(profileData.education);
+              if (profileData.profileImage) {
+                const profileUrl = profileData.profileImage.startsWith('http') 
+                  ? profileData.profileImage 
+                  : `http://localhost:3001${profileData.profileImage}`;
+                setProfileImagePreview(profileUrl);
+              }
+              if (profileData.coverImage) {
+                const bgUrl = profileData.coverImage.startsWith('http')
+                  ? profileData.coverImage
+                  : `http://localhost:3001${profileData.coverImage}`;
+                setBackgroundImagePreview(bgUrl);
+              }
+              if (profileData.primarySport) {
+                setPrimarySport(profileData.primarySport);
+                setSportsPlayed(profileData.primarySport);
+              }
+            }
+          } catch (error) {
+            console.error('Error fetching profile data in EditProfileModal:', error);
+          }
         }
       } catch (error) {
         console.error('Error fetching user data in EditProfileModal:', error);
@@ -148,6 +186,32 @@ export default function EditProfileModal({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // Update state when userData props change (from parent)
+  useEffect(() => {
+    if (userData) {
+      if (userData.full_name) setFullName(userData.full_name);
+      if (userData.username) setUsername(userData.username);
+      if (userData.location) setLocation(userData.location);
+      if (userData.age) setAge(userData.age.toString());
+      if (userData.sports_played) setSportsPlayed(userData.sports_played);
+      if (userData.primary_sport) setPrimarySport(userData.primary_sport);
+      if (userData.bio !== undefined) setBio(userData.bio);
+      if (userData.education !== undefined) setEducation(userData.education);
+      if (userData.profile_url) {
+        const profileUrl = userData.profile_url.startsWith('http') 
+          ? userData.profile_url 
+          : `http://localhost:3001${userData.profile_url}`;
+        setProfileImagePreview(profileUrl);
+      }
+      if (userData.background_image_url) {
+        const bgUrl = userData.background_image_url.startsWith('http')
+          ? userData.background_image_url
+          : `http://localhost:3001${userData.background_image_url}`;
+        setBackgroundImagePreview(bgUrl);
+      }
+    }
+  }, [userData]);
 
   const handleBackToHome = () => {
     router.push('/home');
@@ -228,6 +292,8 @@ export default function EditProfileModal({
         profile_url: data.profile_url,
         background_image_url: data.background_image_url,
         sports_played: data.sports_played,
+        bio: data.bio !== undefined ? data.bio : undefined,
+        education: data.education !== undefined ? data.education : undefined,
       });
     }
   };
@@ -433,17 +499,33 @@ export default function EditProfileModal({
 
               {/* Sports Information */}
               <div className="space-y-1 mt-2">
-  <div className="text-md flex">
-    <span className="font-semibold text-gray-900 w-40 text-right">Sports Played</span>
-    <span className="mx-3">:</span>
-    <span className="text-gray-700">{sportsPlayed || '—'}</span>
-  </div>
-  <div className="text-md flex">
-    <span className="font-semibold text-gray-900 w-40 text-right">Primary Sports</span>
-    <span className="mx-3">:</span>
-    <span className="text-gray-700">{primarySport || '—'}</span>
-  </div>
-</div>
+                <div className="text-md flex">
+                  <span className="font-semibold text-gray-900 w-40 text-right">Sports Played</span>
+                  <span className="mx-3">:</span>
+                  <span className="text-gray-700">{sportsPlayed || '—'}</span>
+                </div>
+                <div className="text-md flex">
+                  <span className="font-semibold text-gray-900 w-40 text-right">Primary Sports</span>
+                  <span className="mx-3">:</span>
+                  <span className="text-gray-700">{primarySport || '—'}</span>
+                </div>
+                {(education || userData?.education) && (
+                  <div className="text-md flex">
+                    <span className="font-semibold text-gray-900 w-40 text-right">Education</span>
+                    <span className="mx-3">:</span>
+                    <span className="text-gray-700">{education || userData?.education || ''}</span>
+                  </div>
+                )}
+                {(bio || userData?.bio) && (
+                  <div className="text-md flex flex-col">
+                    <div className="flex">
+                      <span className="font-semibold text-gray-900 w-40 text-right">Bio</span>
+                      <span className="mx-3">:</span>
+                    </div>
+                    <span className="text-gray-700 ml-[11.5rem] mt-1">{bio || userData?.bio || ''}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -457,6 +539,8 @@ export default function EditProfileModal({
             profile_url: profileImagePreview,
             background_image_url: backgroundImagePreview,
             sports_played: sportsPlayed,
+            bio: bio,
+            education: education,
           }}
           onSave={handleEditPopupSave}
         />

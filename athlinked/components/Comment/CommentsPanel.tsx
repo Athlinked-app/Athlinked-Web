@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Send } from 'lucide-react';
 import type { PostData } from '../Post';
+import MentionInputField from '../Mention/MentionInputField';
 
 export interface CommentData {
   id: string;
@@ -18,6 +19,7 @@ interface CommentsPanelProps {
   post: PostData;
   currentUserProfileUrl?: string;
   currentUsername?: string;
+  currentUserId?: string;
   onClose: () => void;
   onCommentAdded?: () => void;
 }
@@ -26,6 +28,7 @@ export default function CommentsPanel({
   post,
   currentUserProfileUrl,
   currentUsername = 'You',
+  currentUserId,
   onClose,
   onCommentAdded,
 }: CommentsPanelProps) {
@@ -364,16 +367,34 @@ export default function CommentsPanel({
                             </span>
                           )}
                         </div>
-                        <input
-                          ref={replyInputRef}
-                          type="text"
-                          value={replyText}
-                          onChange={e => setReplyText(e.target.value)}
-                          onKeyPress={e => handleReplyKeyPress(e, comment.id)}
-                          placeholder={`Reply to ${comment.username}...`}
-                          className="flex-1 px-3 py-1.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-xs text-gray-900"
-                          disabled={isLoading}
-                        />
+                        {currentUserId ? (
+                          <MentionInputField
+                            value={replyText}
+                            onChange={setReplyText}
+                            currentUserId={currentUserId}
+                            placeholder={`Reply to ${comment.username}...`}
+                            className="flex-1 px-3 py-1.5 rounded-full text-xs"
+                            type="input"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleAddReply(comment.id);
+                              }
+                            }}
+                            disabled={isLoading}
+                          />
+                        ) : (
+                          <input
+                            ref={replyInputRef}
+                            type="text"
+                            value={replyText}
+                            onChange={e => setReplyText(e.target.value)}
+                            onKeyPress={e => handleReplyKeyPress(e, comment.id)}
+                            placeholder={`Reply to ${comment.username}...`}
+                            className="flex-1 px-3 py-1.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-xs text-gray-900"
+                            disabled={isLoading}
+                          />
+                        )}
                         <button
                           onClick={() => handleAddReply(comment.id)}
                           disabled={!replyText.trim() || isLoading}
@@ -418,23 +439,44 @@ export default function CommentsPanel({
               </span>
             )}
           </div>
-          <input
-            type="text"
-            value={commentText}
-            onChange={e => setCommentText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (commentText.trim() && !isLoading) {
-                  handleAddComment();
+          {currentUserId ? (
+            <MentionInputField
+              value={commentText}
+              onChange={setCommentText}
+              currentUserId={currentUserId}
+              placeholder="Add comment"
+              className="flex-1 px-4 py-2 rounded-full text-sm"
+              type="input"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (commentText.trim() && !isLoading) {
+                    handleAddComment();
+                  }
                 }
-              }
-            }}
-            placeholder="Add comment"
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-sm text-gray-900"
-            disabled={isLoading}
-          />
+              }}
+              disabled={isLoading}
+            />
+          ) : (
+            <input
+              type="text"
+              value={commentText}
+              onChange={e => setCommentText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (commentText.trim() && !isLoading) {
+                    handleAddComment();
+                  }
+                }
+              }}
+              placeholder="Add comment"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-sm text-gray-900"
+              disabled={isLoading}
+            />
+          )}
           <button
             type="button"
             onClick={(e) => {

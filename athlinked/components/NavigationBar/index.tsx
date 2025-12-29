@@ -208,6 +208,8 @@ export default function NavigationBar({
                   return '/resources';
                 case 'message':
                   return '/messages';
+                case 'notifications':
+                  return '/notifications';
                 default:
                   return '#';
               }
