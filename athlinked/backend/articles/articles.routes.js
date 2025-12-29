@@ -23,4 +23,3 @@ router.get('/', articlesController.getAllArticles);
 router.delete('/:id', articlesController.deleteArticle);
 
 module.exports = router;
-

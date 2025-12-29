@@ -8,14 +8,8 @@ const { v4: uuidv4 } = require('uuid');
  * @returns {Promise<object>} Created template data
  */
 async function createTemplate(templateData, client = null) {
-  const {
-    user_id,
-    title,
-    description,
-    file_url,
-    file_type,
-    file_size,
-  } = templateData;
+  const { user_id, title, description, file_url, file_type, file_size } =
+    templateData;
 
   const id = uuidv4();
   const query = `
@@ -106,9 +100,10 @@ async function deleteTemplate(templateId, userId) {
   try {
     await dbClient.query('BEGIN');
 
-    const deleteQuery = 'DELETE FROM templates WHERE id = $1 AND user_id = $2 RETURNING id';
+    const deleteQuery =
+      'DELETE FROM templates WHERE id = $1 AND user_id = $2 RETURNING id';
     const result = await dbClient.query(deleteQuery, [templateId, userId]);
-    
+
     await dbClient.query('COMMIT');
     return result.rows.length > 0;
   } catch (error) {
@@ -151,4 +146,3 @@ module.exports = {
   deleteTemplate,
   softDeleteTemplate,
 };
-

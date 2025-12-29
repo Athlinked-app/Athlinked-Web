@@ -15,11 +15,7 @@ async function createArticle(req, res) {
       });
     }
 
-    const {
-      title,
-      description,
-      article_link,
-    } = req.body;
+    const { title, description, article_link } = req.body;
 
     const result = await articlesService.createArticleService({
       user_id: userId,
@@ -65,14 +61,14 @@ async function getAllArticles(req, res) {
 async function deleteArticle(req, res) {
   try {
     const userId = req.body?.user_id || req.query?.user_id || req.user?.id;
-    
+
     console.log('Delete article request:', {
       id: req.params.id,
       userId: userId ? userId.substring(0, 8) + '...' : null,
       body: req.body,
       query: req.query,
     });
-    
+
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -108,4 +104,3 @@ module.exports = {
   getAllArticles,
   deleteArticle,
 };
-

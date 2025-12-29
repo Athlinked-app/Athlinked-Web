@@ -2,12 +2,14 @@
 
 import { useState, useRef, useEffect, type ChangeEvent } from 'react';
 import { X, Briefcase, Plane, Trophy, Heart, Stethoscope, GraduationCap, Smile, Flag, Image as ImageIcon, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Type, Link as LinkIcon, UploadCloud } from 'lucide-react';
+import MentionInputField from '../Mention/MentionInputField';
 
 type EventType = 'work' | 'travel' | 'sports' | 'relationship' | 'health' | 'academy' | 'feeling' | 'custom';
 
 type ArticleEventModalProps = {
   open: boolean;
   postType: 'article' | 'event';
+  currentUserId?: string;
   onClose: () => void;
   onSubmit: (data: {
     title: string;
@@ -39,6 +41,7 @@ const getEventTypeLabel = (type: EventType): string => {
 export default function ArticleEventModal({
   open,
   postType,
+  currentUserId,
   onClose,
   onSubmit,
 }: ArticleEventModalProps) {
@@ -576,13 +579,25 @@ export default function ArticleEventModal({
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Caption
                 </label>
-                <textarea
-                  value={caption}
-                  onChange={e => setCaption(e.target.value)}
-                  placeholder="Add a caption..."
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900 resize-none"
-                />
+                {currentUserId ? (
+                  <MentionInputField
+                    value={caption}
+                    onChange={setCaption}
+                    currentUserId={currentUserId}
+                    placeholder="Add a caption..."
+                    className="px-4 py-2 text-gray-900 resize-none"
+                    type="textarea"
+                    rows={3}
+                  />
+                ) : (
+                  <textarea
+                    value={caption}
+                    onChange={e => setCaption(e.target.value)}
+                    placeholder="Add a caption..."
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900 resize-none"
+                  />
+                )}
               </div>
             </>
           )}
@@ -608,7 +623,11 @@ export default function ArticleEventModal({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!title.trim() || (postType === 'article' && !body.trim()) || (postType === 'event' && !date)}
+            disabled={
+              !title.trim() ||
+              (postType === 'article' && !body.trim()) ||
+              (postType === 'event' && !date)
+            }
             className="px-6 py-2 rounded-md bg-[#CB9729] text-white font-semibold hover:bg-[#b78322] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Post
@@ -618,4 +637,3 @@ export default function ArticleEventModal({
     </div>
   );
 }
-

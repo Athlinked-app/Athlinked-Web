@@ -222,7 +222,7 @@ async function getUserFirstResource(userId, client = null) {
  */
 async function userHasResourceType(userId, resourceType, client = null) {
   let query;
-  
+
   if (resourceType === 'article') {
     // Check if user has any resources with article_link
     query = `
@@ -262,9 +262,12 @@ async function userHasResourceType(userId, resourceType, client = null) {
   }
 
   const dbClient = client || pool;
-  const values = resourceType === 'article' || resourceType === 'video' || resourceType === 'template' 
-    ? [userId] 
-    : [userId, resourceType];
+  const values =
+    resourceType === 'article' ||
+    resourceType === 'video' ||
+    resourceType === 'template'
+      ? [userId]
+      : [userId, resourceType];
   const result = await dbClient.query(query, values);
   return parseInt(result.rows[0].count) > 0;
 }
@@ -363,4 +366,3 @@ module.exports = {
   userHasResourceType,
   updateResource,
 };
-

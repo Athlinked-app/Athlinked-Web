@@ -32,7 +32,7 @@ export default function CommentsModal({
   onCommentAdded,
 }: CommentsModalProps) {
   const [comments, setComments] = useState<CommentData[]>([]);
-  
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -44,7 +44,9 @@ export default function CommentsModal({
   const [commentText, setCommentText] = useState('');
   const [replyText, setReplyText] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [showReplies, setShowReplies] = useState<{ [key: string]: boolean }>({});
+  const [showReplies, setShowReplies] = useState<{ [key: string]: boolean }>(
+    {}
+  );
   const [isLoading, setIsLoading] = useState(false);
   const commentsEndRef = useRef<HTMLDivElement>(null);
   const replyInputRef = useRef<HTMLInputElement>(null);
@@ -62,7 +64,9 @@ export default function CommentsModal({
   }, [comments]);
 
   const loadComments = () => {
-    const storedComments = localStorage.getItem(`athlinked_comments_${post.id}`);
+    const storedComments = localStorage.getItem(
+      `athlinked_comments_${post.id}`
+    );
     if (storedComments) {
       try {
         const parsedComments = JSON.parse(storedComments);
@@ -79,7 +83,7 @@ export default function CommentsModal({
   const organizeComments = (allComments: CommentData[]) => {
     const parentComments = allComments.filter(c => !c.parent_comment_id);
     const replies = allComments.filter(c => c.parent_comment_id);
-    
+
     return parentComments.map(parent => ({
       ...parent,
       replies: replies.filter(r => r.parent_comment_id === parent.id),
@@ -119,7 +123,9 @@ export default function CommentsModal({
     setComments(updatedComments);
     setCommentText('');
 
-    const parentCommentsCount = updatedComments.filter(c => !c.parent_comment_id).length;
+    const parentCommentsCount = updatedComments.filter(
+      c => !c.parent_comment_id
+    ).length;
     const posts = JSON.parse(localStorage.getItem('athlinked_posts') || '[]');
     const updatedPosts = posts.map((p: PostData) => {
       if (p.id === post.id) {
@@ -195,7 +201,10 @@ export default function CommentsModal({
     }
   };
 
-  const handleReplyKeyPress = (e: React.KeyboardEvent<HTMLInputElement>, parentCommentId: string) => {
+  const handleReplyKeyPress = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    parentCommentId: string
+  ) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleAddReply(parentCommentId);
@@ -241,7 +250,9 @@ export default function CommentsModal({
           )}
 
           {/* Right Side - Comments */}
-          <div className={`${post.image_url ? 'w-1/2' : 'w-full'} flex flex-col overflow-hidden`}>
+          <div
+            className={`${post.image_url ? 'w-1/2' : 'w-full'} flex flex-col overflow-hidden`}
+          >
             {/* Comments List */}
             <div className="flex-1 overflow-y-auto p-4">
               {comments.length === 0 ? (
@@ -260,9 +271,14 @@ export default function CommentsModal({
                         {/* Parent Comment */}
                         <div className="flex gap-3">
                           <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
-                            {comment.user_profile_url && comment.user_profile_url.trim() !== '' ? (
+                            {comment.user_profile_url &&
+                            comment.user_profile_url.trim() !== '' ? (
                               <img
-                                src={comment.user_profile_url.startsWith('http') ? comment.user_profile_url : `http://localhost:3001${comment.user_profile_url}`}
+                                src={
+                                  comment.user_profile_url.startsWith('http')
+                                    ? comment.user_profile_url
+                                    : `https://qd9ngjg1-3001.inc1.devtunnels.ms${comment.user_profile_url}`
+                                }
                                 alt={comment.username}
                                 className="w-full h-full object-cover"
                               />
@@ -277,7 +293,9 @@ export default function CommentsModal({
                               <p className="font-semibold text-sm text-gray-900 mb-1">
                                 {comment.username}
                               </p>
-                              <p className="text-sm text-gray-700">{comment.comment}</p>
+                              <p className="text-sm text-gray-700">
+                                {comment.comment}
+                              </p>
                             </div>
                             <div className="flex items-center gap-3 mt-1">
                               <button
@@ -301,35 +319,46 @@ export default function CommentsModal({
                         </div>
 
                         {/* Replies */}
-                        {isShowingReplies && comment.replies && comment.replies.length > 0 && (
-                          <div className="ml-11 mt-2 space-y-3 border-l-2 border-gray-200 pl-4">
-                            {comment.replies.map(reply => (
-                              <div key={reply.id} className="flex gap-3">
-                                <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
-                                  {reply.user_profile_url && reply.user_profile_url.trim() !== '' ? (
-                                    <img
-                                      src={reply.user_profile_url.startsWith('http') ? reply.user_profile_url : `http://localhost:3001${reply.user_profile_url}`}
-                                      alt={reply.username}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  ) : (
-                                    <span className="text-gray-600 font-semibold text-xs">
-                                      {getInitials(reply.username)}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="flex-1">
-                                  <div className="bg-gray-50 rounded-lg p-2">
-                                    <p className="font-semibold text-xs text-gray-900 mb-1">
-                                      {reply.username}
-                                    </p>
-                                    <p className="text-xs text-gray-700">{reply.comment}</p>
+                        {isShowingReplies &&
+                          comment.replies &&
+                          comment.replies.length > 0 && (
+                            <div className="ml-11 mt-2 space-y-3 border-l-2 border-gray-200 pl-4">
+                              {comment.replies.map(reply => (
+                                <div key={reply.id} className="flex gap-3">
+                                  <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
+                                    {reply.user_profile_url &&
+                                    reply.user_profile_url.trim() !== '' ? (
+                                      <img
+                                        src={
+                                          reply.user_profile_url.startsWith(
+                                            'http'
+                                          )
+                                            ? reply.user_profile_url
+                                            : `https://qd9ngjg1-3001.inc1.devtunnels.ms${reply.user_profile_url}`
+                                        }
+                                        alt={reply.username}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <span className="text-gray-600 font-semibold text-xs">
+                                        {getInitials(reply.username)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="bg-gray-50 rounded-lg p-2">
+                                      <p className="font-semibold text-xs text-gray-900 mb-1">
+                                        {reply.username}
+                                      </p>
+                                      <p className="text-xs text-gray-700">
+                                        {reply.comment}
+                                      </p>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
+                              ))}
+                            </div>
+                          )}
 
                         {/* Reply Input */}
                         {isReplying && (
@@ -353,7 +382,9 @@ export default function CommentsModal({
                                 type="text"
                                 value={replyText}
                                 onChange={e => setReplyText(e.target.value)}
-                                onKeyPress={e => handleReplyKeyPress(e, comment.id)}
+                                onKeyPress={e =>
+                                  handleReplyKeyPress(e, comment.id)
+                                }
                                 placeholder={`Reply to ${comment.username}...`}
                                 className="flex-1 px-3 py-1.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-xs"
                                 disabled={isLoading}
@@ -427,4 +458,3 @@ export default function CommentsModal({
     </div>
   );
 }
-

@@ -2,6 +2,7 @@ const signupModel = require('./signup.model');
 const { hashPassword } = require('../utils/hash');
 const { startOTPFlow, verifyOTP } = require('./otp.service');
 const { sendOTPEmail, sendParentSignupLink } = require('../utils/email');
+const profileModel = require('../profile/profile.model');
 
 /**
  * Check if string is an email
@@ -146,6 +147,30 @@ async function verifyOtpService(email, otp) {
         ? await signupModel.findByUsername(createdUser.username)
         : null;
 
+    // Create profile entry with sports data
+    try {
+      const sportsArray = Array.isArray(signupData.sports_played)
+        ? signupData.sports_played
+        : signupData.sports_played
+          ? [signupData.sports_played]
+          : [];
+      
+      // Remove duplicates from sports array
+      const uniqueSportsArray = [...new Set(sportsArray)];
+      const primarySport = signupData.primary_sport || (uniqueSportsArray.length > 0 ? uniqueSportsArray[0] : null);
+
+      await profileModel.upsertUserProfile(createdUser.id, {
+        fullName: signupData.full_name,
+        primarySport: primarySport,
+      });
+
+      const sportsString = uniqueSportsArray.join(', ');
+      console.log(`✅ Profile created for user ${createdUser.id} with sports: ${sportsString}`);
+    } catch (profileError) {
+      console.error('⚠️ Error creating profile during signup:', profileError.message);
+      // Don't fail signup if profile creation fails
+    }
+
     return {
       success: true,
       message: 'Welcome',
@@ -252,7 +277,7 @@ async function parentCompleteService(username, email, password) {
 async function getAllUsersService(excludeUserId = null, limit = 10) {
   try {
     const users = await signupModel.getAllUsers(excludeUserId, limit);
-    
+
     // Remove password from all users
     const sanitizedUsers = users.map(user => {
       const { password, ...userData } = user;

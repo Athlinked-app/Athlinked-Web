@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Send } from 'lucide-react';
 import type { PostData } from '../Post';
+import MentionInputField from '../Mention/MentionInputField';
 
 export interface CommentData {
   id: string;
@@ -18,6 +19,7 @@ interface CommentsPanelProps {
   post: PostData;
   currentUserProfileUrl?: string;
   currentUsername?: string;
+  currentUserId?: string;
   onClose: () => void;
   onCommentAdded?: () => void;
 }
@@ -26,6 +28,7 @@ export default function CommentsPanel({
   post,
   currentUserProfileUrl,
   currentUsername = 'You',
+  currentUserId,
   onClose,
   onCommentAdded,
 }: CommentsPanelProps) {
@@ -33,11 +36,13 @@ export default function CommentsPanel({
   const [commentText, setCommentText] = useState('');
   const [replyText, setReplyText] = useState('');
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [showReplies, setShowReplies] = useState<{ [key: string]: boolean }>({});
+  const [showReplies, setShowReplies] = useState<{ [key: string]: boolean }>(
+    {}
+  );
   const [isLoading, setIsLoading] = useState(false);
   const commentsEndRef = useRef<HTMLDivElement>(null);
   const replyInputRef = useRef<HTMLInputElement>(null);
-  
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -59,7 +64,9 @@ export default function CommentsPanel({
 
   const loadComments = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/posts/${post.id}/comments`);
+      const response = await fetch(
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}/comments`
+      );
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.comments) {
@@ -74,7 +81,7 @@ export default function CommentsPanel({
   const organizeComments = (allComments: CommentData[]) => {
     const parentComments = allComments.filter(c => !c.parent_comment_id);
     const replies = allComments.filter(c => c.parent_comment_id);
-    
+
     return parentComments.map(parent => ({
       ...parent,
       replies: replies.filter(r => r.parent_comment_id === parent.id),
@@ -101,11 +108,11 @@ export default function CommentsPanel({
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -118,16 +125,19 @@ export default function CommentsPanel({
         throw new Error('User not found');
       }
 
-      const response = await fetch(`http://localhost:3001/api/posts/${post.id}/comments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userData.user.id,
-          comment: commentText.trim(),
-        }),
-      });
+      const response = await fetch(
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}/comments`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: userData.user.id,
+            comment: commentText.trim(),
+          }),
+        }
+      );
 
       const result = await response.json();
       if (result.success) {
@@ -171,11 +181,11 @@ export default function CommentsPanel({
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -188,16 +198,19 @@ export default function CommentsPanel({
         throw new Error('User not found');
       }
 
-      const response = await fetch(`http://localhost:3001/api/posts/comments/${parentCommentId}/reply`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userData.user.id,
-          comment: replyText.trim(),
-        }),
-      });
+      const response = await fetch(
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/comments/${parentCommentId}/reply`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: userData.user.id,
+            comment: replyText.trim(),
+          }),
+        }
+      );
 
       const result = await response.json();
       if (result.success) {
@@ -236,7 +249,10 @@ export default function CommentsPanel({
     }
   };
 
-  const handleReplyKeyPress = (e: React.KeyboardEvent<HTMLInputElement>, parentCommentId: string) => {
+  const handleReplyKeyPress = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    parentCommentId: string
+  ) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleAddReply(parentCommentId);
@@ -259,7 +275,10 @@ export default function CommentsPanel({
       </div>
 
       {/* Comments List */}
-      <div className="flex-1 overflow-y-auto p-4" style={{ scrollbarWidth: 'thin' }}>
+      <div
+        className="flex-1 overflow-y-auto p-4"
+        style={{ scrollbarWidth: 'thin' }}
+      >
         {comments.length === 0 ? (
           <div className="flex items-center justify-center h-full text-gray-500">
             <p className="text-sm">No comments yet. Be the first to comment!</p>
@@ -276,9 +295,14 @@ export default function CommentsPanel({
                   {/* Parent Comment */}
                   <div className="flex gap-3">
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
-                      {comment.user_profile_url && comment.user_profile_url.trim() !== '' ? (
+                      {comment.user_profile_url &&
+                      comment.user_profile_url.trim() !== '' ? (
                         <img
-                          src={comment.user_profile_url.startsWith('http') ? comment.user_profile_url : `http://localhost:3001${comment.user_profile_url}`}
+                          src={
+                            comment.user_profile_url.startsWith('http')
+                              ? comment.user_profile_url
+                              : `https://qd9ngjg1-3001.inc1.devtunnels.ms${comment.user_profile_url}`
+                          }
                           alt={comment.username}
                           className="w-full h-full object-cover"
                         />
@@ -293,7 +317,9 @@ export default function CommentsPanel({
                         <p className="font-semibold text-sm text-gray-900 mb-1">
                           {comment.username}
                         </p>
-                        <p className="text-sm text-gray-700 break-words">{comment.comment}</p>
+                        <p className="text-sm text-gray-700 break-words">
+                          {comment.comment}
+                        </p>
                       </div>
                       <div className="flex items-center gap-3 mt-1">
                         <button
@@ -317,35 +343,44 @@ export default function CommentsPanel({
                   </div>
 
                   {/* Replies */}
-                  {isShowingReplies && comment.replies && comment.replies.length > 0 && (
-                    <div className="ml-11 mt-2 space-y-3 border-l-2 border-gray-200 pl-4">
-                      {comment.replies.map(reply => (
-                        <div key={reply.id} className="flex gap-3">
-                          <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
-                            {reply.user_profile_url && reply.user_profile_url.trim() !== '' ? (
-                              <img
-                                src={reply.user_profile_url.startsWith('http') ? reply.user_profile_url : `http://localhost:3001${reply.user_profile_url}`}
-                                alt={reply.username}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-gray-600 font-semibold text-xs">
-                                {getInitials(reply.username)}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="bg-gray-50 rounded-lg p-2">
-                              <p className="font-semibold text-xs text-gray-900 mb-1">
-                                {reply.username}
-                              </p>
-                              <p className="text-xs text-gray-700 break-words">{reply.comment}</p>
+                  {isShowingReplies &&
+                    comment.replies &&
+                    comment.replies.length > 0 && (
+                      <div className="ml-11 mt-2 space-y-3 border-l-2 border-gray-200 pl-4">
+                        {comment.replies.map(reply => (
+                          <div key={reply.id} className="flex gap-3">
+                            <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
+                              {reply.user_profile_url &&
+                              reply.user_profile_url.trim() !== '' ? (
+                                <img
+                                  src={
+                                    reply.user_profile_url.startsWith('http')
+                                      ? reply.user_profile_url
+                                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${reply.user_profile_url}`
+                                  }
+                                  alt={reply.username}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-gray-600 font-semibold text-xs">
+                                  {getInitials(reply.username)}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="bg-gray-50 rounded-lg p-2">
+                                <p className="font-semibold text-xs text-gray-900 mb-1">
+                                  {reply.username}
+                                </p>
+                                <p className="text-xs text-gray-700 break-words">
+                                  {reply.comment}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                        ))}
+                      </div>
+                    )}
 
                   {/* Reply Input */}
                   {isReplying && (
@@ -364,16 +399,34 @@ export default function CommentsPanel({
                             </span>
                           )}
                         </div>
-                        <input
-                          ref={replyInputRef}
-                          type="text"
-                          value={replyText}
-                          onChange={e => setReplyText(e.target.value)}
-                          onKeyPress={e => handleReplyKeyPress(e, comment.id)}
-                          placeholder={`Reply to ${comment.username}...`}
-                          className="flex-1 px-3 py-1.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-xs text-gray-900"
-                          disabled={isLoading}
-                        />
+                        {currentUserId ? (
+                          <MentionInputField
+                            value={replyText}
+                            onChange={setReplyText}
+                            currentUserId={currentUserId}
+                            placeholder={`Reply to ${comment.username}...`}
+                            className="flex-1 px-3 py-1.5 rounded-full text-xs"
+                            type="input"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleAddReply(comment.id);
+                              }
+                            }}
+                            disabled={isLoading}
+                          />
+                        ) : (
+                          <input
+                            ref={replyInputRef}
+                            type="text"
+                            value={replyText}
+                            onChange={e => setReplyText(e.target.value)}
+                            onKeyPress={e => handleReplyKeyPress(e, comment.id)}
+                            placeholder={`Reply to ${comment.username}...`}
+                            className="flex-1 px-3 py-1.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-xs text-gray-900"
+                            disabled={isLoading}
+                          />
+                        )}
                         <button
                           onClick={() => handleAddReply(comment.id)}
                           disabled={!replyText.trim() || isLoading}
@@ -418,26 +471,47 @@ export default function CommentsPanel({
               </span>
             )}
           </div>
-          <input
-            type="text"
-            value={commentText}
-            onChange={e => setCommentText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                e.stopPropagation();
-                if (commentText.trim() && !isLoading) {
-                  handleAddComment();
+          {currentUserId ? (
+            <MentionInputField
+              value={commentText}
+              onChange={setCommentText}
+              currentUserId={currentUserId}
+              placeholder="Add comment"
+              className="flex-1 px-4 py-2 rounded-full text-sm"
+              type="input"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (commentText.trim() && !isLoading) {
+                    handleAddComment();
+                  }
                 }
-              }
-            }}
-            placeholder="Add comment"
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-sm text-gray-900"
-            disabled={isLoading}
-          />
+              }}
+              disabled={isLoading}
+            />
+          ) : (
+            <input
+              type="text"
+              value={commentText}
+              onChange={e => setCommentText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (commentText.trim() && !isLoading) {
+                    handleAddComment();
+                  }
+                }
+              }}
+              placeholder="Add comment"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-sm text-gray-900"
+              disabled={isLoading}
+            />
+          )}
           <button
             type="button"
-            onClick={(e) => {
+            onClick={e => {
               e.preventDefault();
               e.stopPropagation();
               handleAddComment();
@@ -453,4 +527,3 @@ export default function CommentsPanel({
     </div>
   );
 }
-

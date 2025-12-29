@@ -65,7 +65,6 @@ export default function Post({
   onCommentCountUpdate,
   onPostDeleted,
 }: PostProps) {
-  
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -104,11 +103,15 @@ export default function Post({
   useEffect(() => {
     const fetchCommentCount = async () => {
       try {
-        const response = await fetch(`http://localhost:3001/api/posts/${post.id}/comments`);
+        const response = await fetch(
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}/comments`
+        );
         if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.comments) {
-          const parentComments = data.comments.filter((c: any) => !c.parent_comment_id);
+          const data = await response.json();
+          if (data.success && data.comments) {
+            const parentComments = data.comments.filter(
+              (c: any) => !c.parent_comment_id
+            );
             setCommentCount(parentComments.length);
           }
         }
@@ -132,71 +135,49 @@ export default function Post({
     checkSavedStatus();
   }, [post.id]);
 
-  const handleLike = () => {
+  // Check if current user has liked this post
+  useEffect(() => {
+    const checkLikeStatus = async () => {
+      if (!currentUserId) return;
+
+      try {
+        const response = await fetch(
+          `http://localhost:3001/api/posts/${post.id}/like-status?user_id=${currentUserId}`
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setLiked(data.isLiked);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking like status:', error);
+      }
+    };
+
+    checkLikeStatus();
+  }, [post.id, currentUserId]);
+
+  const handleLike = async () => {
+    if (!currentUserId) {
+      alert('Please log in to like posts');
+      return;
+    }
+
+    const wasLiked = liked;
+    // Optimistic update
     setLiked(!liked);
     setLikeCount(prev => liked ? prev - 1 : prev + 1);
-  };
 
-  const handleComment = () => {
-    setShowComments(true);
-  };
-
-  const handleCommentAdded = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/posts/${post.id}/comments`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.comments) {
-          const parentComments = data.comments.filter((c: any) => !c.parent_comment_id);
-          setCommentCount(parentComments.length);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching comment count:', error);
-    }
-    
-    if (onCommentCountUpdate) {
-      onCommentCountUpdate();
-    }
-  };
-
-  const handleShare = () => {
-    setShowShare(true);
-  };
-
-  const handleShareComplete = () => {
-  };
-
-  const handleSave = () => {
-    const newSavedStatus = toggleSave(post.id);
-    setIsSaved(newSavedStatus);
-    
-    if (newSavedStatus) {
-      setSaveAlertMessage('This post is saved');
-    } else {
-      setSaveAlertMessage('This post is unsaved');
-    }
-    
-    setShowSaveAlert(true);
-    setTimeout(() => {
-      setShowSaveAlert(false);
-    }, 2000);
-  };
-
-  const handleDelete = async () => {
-    if (!currentUserId || post.user_id !== currentUserId) {
-      return;
-    }
-
-    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
+      // Get user data
       const userIdentifier = localStorage.getItem('userEmail');
       if (!userIdentifier) {
         alert('User not logged in');
+        // Revert optimistic update
+        setLiked(wasLiked);
+        setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
         return;
       }
 
@@ -221,8 +202,13 @@ export default function Post({
         throw new Error('User not found');
       }
 
-      const response = await fetch(`http://localhost:3001/api/posts/${post.id}`, {
-        method: 'DELETE',
+      // Call like or unlike API based on current state
+      const endpoint = wasLiked 
+        ? `http://localhost:3001/api/posts/${post.id}/unlike`
+        : `http://localhost:3001/api/posts/${post.id}/like`;
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -230,6 +216,133 @@ export default function Post({
           user_id: userData.user.id,
         }),
       });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Update like count from API response
+        if (result.like_count !== undefined) {
+          setLikeCount(result.like_count);
+        }
+      } else {
+        // Revert optimistic update on error
+        setLiked(wasLiked);
+        setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
+        alert(result.message || 'Failed to update like status');
+      }
+    } catch (error) {
+      console.error('Error updating like status:', error);
+      // Revert optimistic update on error
+      setLiked(wasLiked);
+      setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
+      alert('Failed to update like status. Please try again.');
+    }
+  };
+
+  const handleComment = () => {
+    setShowComments(true);
+  };
+
+  const handleCommentAdded = async () => {
+    try {
+      const response = await fetch(
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}/comments`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.comments) {
+          const parentComments = data.comments.filter(
+            (c: any) => !c.parent_comment_id
+          );
+          setCommentCount(parentComments.length);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching comment count:', error);
+    }
+
+    if (onCommentCountUpdate) {
+      onCommentCountUpdate();
+    }
+  };
+
+  const handleShare = () => {
+    setShowShare(true);
+  };
+
+  const handleShareComplete = () => {
+  };
+
+  const handleSave = () => {
+    const newSavedStatus = toggleSave(post.id);
+    setIsSaved(newSavedStatus);
+
+    if (newSavedStatus) {
+      setSaveAlertMessage('This post is saved');
+    } else {
+      setSaveAlertMessage('This post is unsaved');
+    }
+
+    setShowSaveAlert(true);
+    setTimeout(() => {
+      setShowSaveAlert(false);
+    }, 2000);
+  };
+
+  const handleDelete = async () => {
+    if (!currentUserId || post.user_id !== currentUserId) {
+      return;
+    }
+
+    if (
+      !confirm(
+        'Are you sure you want to delete this post? This action cannot be undone.'
+      )
+    ) {
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const userIdentifier = localStorage.getItem('userEmail');
+      if (!userIdentifier) {
+        alert('User not logged in');
+        return;
+      }
+
+      let userResponse;
+      if (userIdentifier.startsWith('username:')) {
+        const username = userIdentifier.replace('username:', '');
+        userResponse = await fetch(
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+        );
+      } else {
+        userResponse = await fetch(
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+        );
+      }
+
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const userData = await userResponse.json();
+      if (!userData.success || !userData.user) {
+        throw new Error('User not found');
+      }
+
+      const response = await fetch(
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: userData.user.id,
+          }),
+        }
+      );
 
       const result = await response.json();
       if (result.success) {
@@ -248,7 +361,8 @@ export default function Post({
     }
   };
 
-  const isOwnPost = currentUserId && post.user_id && currentUserId === post.user_id;
+  const isOwnPost =
+    currentUserId && post.user_id && currentUserId === post.user_id;
 
   const handleDownloadPDF = () => {
     if (!post.article_title || !post.article_body) return;
@@ -322,7 +436,9 @@ export default function Post({
         </div>
         <div className="flex-1">
           <p className="text-sm text-gray-500 font-medium">Athlete</p>
-          <p className="text-base font-semibold text-gray-900">{post.username}</p>
+          <p className="text-base font-semibold text-gray-900">
+            {post.username}
+          </p>
         </div>
         {isOwnPost && (
           <div className="relative">
@@ -466,6 +582,9 @@ export default function Post({
               <h3 className="text-4xl font-bold text-gray-900 mb-3">
                 {post.event_title}
               </h3>
+              {post.caption && (
+                <p className="text-md text-gray-600 mb-3">{post.caption}</p>
+              )}
               {post.event_date && (
                 <p className="text-xl text-gray-600 mb-3">
                   {new Date(post.event_date).toLocaleDateString('en-US', { 
@@ -500,18 +619,27 @@ export default function Post({
 
           {(post.media_url || post.image_url) && post.post_type !== 'text' && (
             <div className="w-full aspect-auto px-12">
-              {post.post_type === 'video' || (post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ? (
+              {post.post_type === 'video' ||
+              (post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ? (
                 <video
-                  src={post.media_url && post.media_url.startsWith('http') ? post.media_url : `http://localhost:3001${post.media_url || post.image_url || ''}`}
+                  src={
+                    post.media_url && post.media_url.startsWith('http')
+                      ? post.media_url
+                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
+                  }
                   controls
                   className="w-full h-auto object-cover"
                 />
               ) : (
                 <img
-                  src={post.media_url && post.media_url.startsWith('http') ? post.media_url : `http://localhost:3001${post.media_url || post.image_url || ''}`}
+                  src={
+                    post.media_url && post.media_url.startsWith('http')
+                      ? post.media_url
+                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
+                  }
                   alt={post.caption || post.description || 'Post media'}
                   className="w-full h-auto object-cover"
-                  onError={(e) => {
+                  onError={e => {
                     console.error('Error loading image:', post.media_url);
                     e.currentTarget.style.display = 'none';
                   }}
@@ -526,7 +654,9 @@ export default function Post({
         <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
           <div className="flex items-center gap-2">
             <ThumbsUp className="w-5 h-5 text-gray-600" fill="currentColor" />
-            <span className="text-sm font-medium text-gray-600">{likeCount}</span>
+            <span className="text-sm font-medium text-gray-600">
+              {likeCount}
+            </span>
           </div>
           <span className="text-sm text-gray-600">{commentCount} comments</span>
         </div>
@@ -540,9 +670,7 @@ export default function Post({
                 : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            <ThumbsUp
-              className={`w-5 h-5 ${liked ? 'fill-current' : ''}`}
-            />
+            <ThumbsUp className={`w-5 h-5 ${liked ? 'fill-current' : ''}`} />
             <span className="text-sm font-medium">Like</span>
           </button>
 
@@ -570,10 +698,10 @@ export default function Post({
                 : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            <Bookmark
-              className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`}
-            />
-            <span className="text-sm font-medium">{isSaved ? 'Saved' : 'Save'}</span>
+            <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+            <span className="text-sm font-medium">
+              {isSaved ? 'Saved' : 'Save'}
+            </span>
           </button>
         </div>
       </div>
@@ -680,21 +808,31 @@ export default function Post({
             onClick={() => setShowComments(false)}
           />
 
-          <div 
+          {/* Modal */}
+          <div
             className="relative z-10 w-full max-w-5xl h-[80vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-row"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <div className="w-1/2 bg-black flex items-center justify-center">
               {post.media_url || post.image_url ? (
-                post.post_type === 'video' || (post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ? (
+                post.post_type === 'video' ||
+                (post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ? (
                   <video
-                    src={post.media_url && post.media_url.startsWith('http') ? post.media_url : `http://localhost:3001${post.media_url || post.image_url || ''}`}
+                    src={
+                      post.media_url && post.media_url.startsWith('http')
+                        ? post.media_url
+                        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
+                    }
                     controls
                     className="w-full h-full object-contain"
                   />
                 ) : (
                   <img
-                    src={post.media_url && post.media_url.startsWith('http') ? post.media_url : `http://localhost:3001${post.media_url || post.image_url || ''}`}
+                    src={
+                      post.media_url && post.media_url.startsWith('http')
+                        ? post.media_url
+                        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
+                    }
                     alt={post.caption || post.description || 'Post media'}
                     className="w-full h-full object-contain"
                   />
@@ -708,6 +846,7 @@ export default function Post({
                 post={post}
                 currentUserProfileUrl={currentUserProfileUrl}
                 currentUsername={currentUsername}
+                currentUserId={currentUserId}
                 onClose={() => setShowComments(false)}
                 onCommentAdded={handleCommentAdded}
               />

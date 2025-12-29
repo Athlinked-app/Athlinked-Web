@@ -1,6 +1,7 @@
 'use client';
 
 import { X } from 'lucide-react';
+import MentionInput from '@/components/Mention/MentionInput';
 
 type PostDetailsModalProps = {
   open: boolean;
@@ -13,6 +14,7 @@ type PostDetailsModalProps = {
   onClose: () => void;
   onPost: () => void;
   onRemoveFile: () => void;
+  currentUserId?: string;
 };
 
 export default function PostDetailsModal({
@@ -26,6 +28,7 @@ export default function PostDetailsModal({
   onClose,
   onPost,
   onRemoveFile,
+  currentUserId,
 }: PostDetailsModalProps) {
   if (!open) return null;
 
@@ -91,13 +94,23 @@ export default function PostDetailsModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Description
               </label>
-              <textarea
-                value={caption}
-                onChange={e => onCaptionChange(e.target.value)}
-                placeholder="Write a caption or description..."
-                rows={4}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 resize-none"
-              />
+              {currentUserId ? (
+                <MentionInput
+                  value={caption}
+                  onChange={onCaptionChange}
+                  placeholder="Write a caption or description..."
+                  currentUserId={currentUserId}
+                  className="text-gray-900 placeholder:text-gray-400"
+                />
+              ) : (
+                <textarea
+                  value={caption}
+                  onChange={e => onCaptionChange(e.target.value)}
+                  placeholder="Write a caption or description..."
+                  rows={4}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 resize-none"
+                />
+              )}
             </div>
           </div>
         </div>
@@ -122,4 +135,3 @@ export default function PostDetailsModal({
     </div>
   );
 }
-

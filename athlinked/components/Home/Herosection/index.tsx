@@ -11,10 +11,12 @@ import {
 import PostUploadModal from '@/components/Post/PostUploadModal';
 import PostDetailsModal from '@/components/Post/PostDetailsModal';
 import ArticleEventModal from '@/components/Post/ArticleEventModal';
+import MentionInput from '@/components/Mention/MentionInput';
 
 type HomeHerosectionProps = {
   userProfileUrl?: string;
   username?: string;
+  currentUserId?: string;
   onPostCreated?: () => void;
 };
 
@@ -23,9 +25,9 @@ type PostType = 'photo' | 'video' | 'article' | 'event' | 'text';
 export default function HomeHerosection({
   userProfileUrl,
   username = 'User',
+  currentUserId,
   onPostCreated,
 }: HomeHerosectionProps) {
-  
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -37,7 +39,9 @@ export default function HomeHerosection({
   const [showUpload, setShowUpload] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [showArticleEvent, setShowArticleEvent] = useState(false);
-  const [selectedPostType, setSelectedPostType] = useState<PostType | null>(null);
+  const [selectedPostType, setSelectedPostType] = useState<PostType | null>(
+    null
+  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
@@ -313,22 +317,33 @@ export default function HomeHerosection({
           </div>
 
           <div className="flex-1">
-            <div className="flex items-center w-full border border-gray-200 rounded-lg px-3 py-2 bg-white">
-              <Search className="w-5 h-5 text-gray-500 mr-3" />
-              <input
-                type="text"
-                placeholder="What's on your mind?"
+            {currentUserId ? (
+              <MentionInput
                 value={postText}
-                onChange={e => setPostText(e.target.value)}
-                onKeyPress={e => {
-                  if (e.key === 'Enter') {
-                    handleTextPost();
-                  }
-                }}
-                className="w-full text-gray-700 placeholder:text-gray-400 focus:outline-none"
+                onChange={setPostText}
+                placeholder="What's on your mind?"
+                currentUserId={currentUserId}
+                className="text-gray-700 placeholder:text-gray-400"
                 disabled={isUploading}
               />
-            </div>
+            ) : (
+              <div className="flex items-center w-full border border-gray-200 rounded-lg px-3 py-2 bg-white">
+                <Search className="w-5 h-5 text-gray-500 mr-3" />
+                <input
+                  type="text"
+                  placeholder="What's on your mind?"
+                  value={postText}
+                  onChange={e => setPostText(e.target.value)}
+                  onKeyPress={e => {
+                    if (e.key === 'Enter') {
+                      handleTextPost();
+                    }
+                  }}
+                  className="w-full text-gray-700 placeholder:text-gray-400 focus:outline-none"
+                  disabled={isUploading}
+                />
+              </div>
+            )}
           </div>
 
           <button
@@ -411,6 +426,7 @@ export default function HomeHerosection({
           onClose={resetFileState}
           onPost={handleMediaPost}
           onRemoveFile={resetFileState}
+          currentUserId={currentUserId}
         />
       )}
 
@@ -418,6 +434,7 @@ export default function HomeHerosection({
         <ArticleEventModal
           open={showArticleEvent}
           postType={selectedPostType}
+          currentUserId={currentUserId}
           onClose={() => setShowArticleEvent(false)}
           onSubmit={handleArticleEventSubmit}
         />
