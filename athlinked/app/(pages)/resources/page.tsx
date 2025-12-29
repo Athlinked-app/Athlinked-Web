@@ -74,11 +74,11 @@ export default function ManageResourcesPage() {
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -116,7 +116,9 @@ export default function ManageResourcesPage() {
     const videoUrl = video.video_url
       ? video.video_url.startsWith('http')
         ? video.video_url
+
         : `http://localhost:3001${video.video_url}`
+
       : undefined;
 
     return {
@@ -133,7 +135,9 @@ export default function ManageResourcesPage() {
     const fileUrl = template.file_url
       ? template.file_url.startsWith('http')
         ? template.file_url
+
         : `http://localhost:3001${template.file_url}`
+
       : undefined;
 
     return {
@@ -231,11 +235,11 @@ export default function ManageResourcesPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -251,11 +255,11 @@ export default function ManageResourcesPage() {
       // Determine endpoint based on active tab
       let endpoint = '';
       if (activeTab === 'guides') {
-        endpoint = `http://localhost:3001/api/articles/${resourceToDelete}`;
+        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/articles/${resourceToDelete}`;
       } else if (activeTab === 'videos') {
-        endpoint = `http://localhost:3001/api/videos/${resourceToDelete}`;
+        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/videos/${resourceToDelete}`;
       } else {
-        endpoint = `http://localhost:3001/api/templates/${resourceToDelete}`;
+        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/templates/${resourceToDelete}`;
       }
 
       // Send DELETE request with user_id in body (same pattern as Post component)
@@ -334,17 +338,20 @@ export default function ManageResourcesPage() {
     try {
       const { title } = await scrapeArticleMetadata(articleUrl);
 
-      const response = await fetch('http://localhost:3001/api/articles', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: currentUserId,
-          title: title,
-          article_link: articleUrl,
-        }),
-      });
+      const response = await fetch(
+        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/articles',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: currentUserId,
+            title: title,
+            article_link: articleUrl,
+          }),
+        }
+      );
 
       // Check if response is JSON
       const contentType = response.headers.get('content-type');

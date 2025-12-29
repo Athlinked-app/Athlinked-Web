@@ -29,7 +29,7 @@ export default function RightSideBar() {
     if (!profileUrl || profileUrl.trim() === '') return null;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };
@@ -47,11 +47,11 @@ export default function RightSideBar() {
             if (userIdentifier.startsWith('username:')) {
               const username = userIdentifier.replace('username:', '');
               response = await fetch(
-                `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+                `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
               );
             } else {
               response = await fetch(
-                `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+                `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
               );
             }
 
@@ -69,7 +69,7 @@ export default function RightSideBar() {
 
         const excludeParam = userId ? `&excludeUserId=${userId}` : '';
         const response = await fetch(
-          `http://localhost:3001/api/signup/users?limit=10${excludeParam}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/users?limit=10${excludeParam}`
         );
 
         if (!response.ok) {
@@ -86,7 +86,7 @@ export default function RightSideBar() {
               if (userId) {
                 try {
                   const isFollowingResponse = await fetch(
-                    `http://localhost:3001/api/network/is-following/${user.id}?follower_id=${userId}`
+                    `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/is-following/${user.id}?follower_id=${userId}`
                   );
                   if (isFollowingResponse.ok) {
                     const isFollowingData = await isFollowingResponse.json();
@@ -137,8 +137,8 @@ export default function RightSideBar() {
 
     try {
       const endpoint = isCurrentlyFollowing
-        ? `http://localhost:3001/api/network/unfollow/${id}`
-        : `http://localhost:3001/api/network/follow/${id}`;
+        ? `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/unfollow/${id}`
+        : `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/follow/${id}`;
 
       const userIdentifier = localStorage.getItem('userEmail');
       if (!userIdentifier) {
@@ -150,11 +150,11 @@ export default function RightSideBar() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 

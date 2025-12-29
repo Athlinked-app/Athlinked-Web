@@ -69,6 +69,13 @@ async function deleteVideo(req, res) {
     // Try to get user_id from body first, then from query, then from req.user
     const userId = req.body?.user_id || req.query?.user_id || req.user?.id;
 
+    console.log('Delete video request:', {
+      id: req.params.id,
+      userId: userId ? userId.substring(0, 8) + '...' : null,
+      body: req.body,
+      query: req.query,
+    });
+
     if (!userId) {
       return res.status(401).json({
         success: false,

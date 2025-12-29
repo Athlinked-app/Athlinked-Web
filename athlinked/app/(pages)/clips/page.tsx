@@ -418,11 +418,11 @@ export default function ClipsPage() {
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -587,7 +587,7 @@ export default function ClipsPage() {
   const fetchComments = async (clipId: string) => {
     try {
       const response = await fetch(
-        `http://localhost:3001/api/clips/${clipId}/comments`
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/clips/${clipId}/comments`
       );
 
       const contentType = response.headers.get('content-type');
@@ -658,11 +658,11 @@ export default function ClipsPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
       const userDataResponse = await userResponse.json();
@@ -672,7 +672,7 @@ export default function ClipsPage() {
       }
 
       const response = await fetch(
-        `http://localhost:3001/api/clips/${reelId}/comments`,
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/clips/${reelId}/comments`,
         {
           method: 'POST',
           headers: {
@@ -710,7 +710,7 @@ export default function ClipsPage() {
   const fetchClips = async () => {
     try {
       const response = await fetch(
-        'http://localhost:3001/api/clips?page=1&limit=50'
+        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/clips?page=1&limit=50'
       );
 
       const contentType = response.headers.get('content-type');
@@ -730,7 +730,7 @@ export default function ClipsPage() {
           id: clip.id,
           videoUrl: clip.video_url?.startsWith('http')
             ? clip.video_url
-            : `http://localhost:3001${clip.video_url}`,
+            : `https://qd9ngjg1-3001.inc1.devtunnels.ms${clip.video_url}`,
           author: clip.username || fallbackName,
           authorAvatar:
             clip.user_profile_url && clip.user_profile_url.trim() !== ''
@@ -783,11 +783,11 @@ export default function ClipsPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
       const userData = await userResponse.json();
@@ -802,10 +802,12 @@ export default function ClipsPage() {
       formData.append('user_id', userData.user.id);
 
       // Upload clip via API (multipart/form-data)
+
       const response = await fetch('http://localhost:3001/api/clips', {
         method: 'POST',
         body: formData, // Don't set Content-Type, browser will set it with boundary
       });
+
 
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
@@ -865,11 +867,11 @@ export default function ClipsPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -906,7 +908,9 @@ export default function ClipsPage() {
       }
 
       const response = await fetch(
+
         `http://localhost:3001/api/clips/${clipId}`,
+
         {
           method: 'DELETE',
           headers: {

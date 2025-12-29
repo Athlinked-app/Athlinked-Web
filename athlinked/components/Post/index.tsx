@@ -316,11 +316,11 @@ export default function Post({
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -618,6 +618,9 @@ export default function Post({
               <h3 className="text-4xl font-bold text-gray-900 mb-3">
                 {post.event_title}
               </h3>
+              {post.caption && (
+                <p className="text-md text-gray-600 mb-3">{post.caption}</p>
+              )}
               {post.event_date && (
                 <p className="text-xl text-gray-600 mb-3">
                   {new Date(post.event_date).toLocaleDateString('en-US', {

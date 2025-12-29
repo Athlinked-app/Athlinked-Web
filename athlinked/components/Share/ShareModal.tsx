@@ -332,6 +332,34 @@ export default function ShareModal({
     });
   };
 
+  const handleSend = () => {
+    if (selectedUsers.size === 0) return;
+
+    const selectedUserIds = Array.from(selectedUsers);
+
+    const shareData = {
+      post_id: post.id,
+      shared_with: selectedUserIds,
+      message: message.trim(),
+      shared_at: new Date().toISOString(),
+    };
+
+    const existingShares = JSON.parse(
+      localStorage.getItem('athlinked_shares') || '[]'
+    );
+    existingShares.push(shareData);
+    localStorage.setItem('athlinked_shares', JSON.stringify(existingShares));
+
+    if (onShare) {
+      onShare(selectedUserIds, message.trim());
+    }
+
+    setSelectedUsers(new Set());
+    setMessage('');
+    setSearchQuery('');
+    onClose();
+  };
+
   const handleClose = () => {
     setSelectedUsers(new Set());
     setMessage('');
