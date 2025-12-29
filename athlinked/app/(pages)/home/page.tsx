@@ -163,7 +163,6 @@ export default function Landing() {
             <HomeHerosection
               userProfileUrl={getProfileUrl(currentUser?.profile_url)}
               username={currentUser?.full_name || 'User'}
-              currentUserId={currentUserId || undefined}
               onPostCreated={handlePostCreated}
             />
           </div>

@@ -18,7 +18,9 @@ import {
   X,
   Trash2,
   MoreVertical,
+  Bookmark,
 } from 'lucide-react';
+import SaveModal from '@/components/Save/SaveModal';
 
 interface UserData {
   full_name: string;
@@ -67,11 +69,32 @@ export default function ClipsPage() {
   const [showDeleteMenu, setShowDeleteMenu] = useState<{ [key: string]: boolean }>({});
   const [isDeleting, setIsDeleting] = useState(false);
   const [userHasInteracted, setUserHasInteracted] = useState(false);
+  const [savedClips, setSavedClips] = useState<{ [key: string]: boolean }>({});
+  const [showSaveAlert, setShowSaveAlert] = useState(false);
+  const [saveAlertMessage, setSaveAlertMessage] = useState('');
+  const [saveAlertClipId, setSaveAlertClipId] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const playPromisesRef = useRef<{ [key: string]: Promise<void> | null }>({});
 
   const [reels, setReels] = useState<Reel[]>([]);
+  
+  // Check saved status for clips
+  useEffect(() => {
+    const checkSavedClips = () => {
+      const savedClipIds = JSON.parse(
+        localStorage.getItem('athlinked_saved_clips') || '[]'
+      );
+      const savedMap: { [key: string]: boolean } = {};
+      reels.forEach(reel => {
+        savedMap[reel.id] = savedClipIds.includes(reel.id);
+      });
+      setSavedClips(savedMap);
+    };
+    
+    checkSavedClips();
+  }, [reels]);
+
   useEffect(() => {
     const initialMuted: { [key: string]: boolean } = {};
     reels.forEach(reel => {
@@ -770,6 +793,45 @@ export default function ClipsPage() {
     }
   };
 
+  // Toggle save clip
+  const handleSaveClip = (clipId: string) => {
+    const savedClipIds = JSON.parse(
+      localStorage.getItem('athlinked_saved_clips') || '[]'
+    );
+
+    let isNowSaved: boolean;
+    if (savedClipIds.includes(clipId)) {
+      // Unsave
+      const updatedSavedClips = savedClipIds.filter((id: string) => id !== clipId);
+      localStorage.setItem('athlinked_saved_clips', JSON.stringify(updatedSavedClips));
+      isNowSaved = false;
+      setSaveAlertMessage('This clip is unsaved');
+    } else {
+      // Save
+      const updatedSavedClips = [...savedClipIds, clipId];
+      localStorage.setItem('athlinked_saved_clips', JSON.stringify(updatedSavedClips));
+      isNowSaved = true;
+      setSaveAlertMessage('This clip is saved');
+    }
+
+    // Update saved state
+    setSavedClips(prev => ({
+      ...prev,
+      [clipId]: isNowSaved,
+    }));
+
+    // Show alert
+    setSaveAlertClipId(clipId);
+    setShowSaveAlert(true);
+    setTimeout(() => {
+      setShowSaveAlert(false);
+      setSaveAlertClipId(null);
+    }, 2000);
+
+    // Close menu
+    setShowDeleteMenu({});
+  };
+
   const handleDelete = async (clipId: string) => {
     if (!currentUserId) {
       return;
@@ -1024,21 +1086,33 @@ export default function ClipsPage() {
                         Your browser does not support the video tag.
                       </video>
 
-                      {/* Top Right - Delete Button (only for clips owned by current user) */}
-                      {reel.user_id === currentUserId && (
-                        <div className="absolute top-10 right-4 z-20">
-                          <div className="relative">
-                            <button
-                              onClick={() => setShowDeleteMenu(prev => ({
-                                ...prev,
-                                [reel.id]: !prev[reel.id],
-                              }))}
-                              className="p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors backdrop-blur-sm"
-                            >
-                              <MoreVertical size={20} />
-                            </button>
-                            {showDeleteMenu[reel.id] && (
-                              <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg overflow-hidden z-30 min-w-[150px]">
+                      {/* Top Right - Menu Button (Save for all, Delete only for owner) */}
+                      <div className="absolute top-10 right-4 z-20">
+                        <div className="relative">
+                          <button
+                            onClick={() => setShowDeleteMenu(prev => ({
+                              ...prev,
+                              [reel.id]: !prev[reel.id],
+                            }))}
+                            className="p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors backdrop-blur-sm"
+                          >
+                            <MoreVertical size={20} />
+                          </button>
+                          {showDeleteMenu[reel.id] && (
+                            <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg overflow-hidden z-30 min-w-[150px]">
+                              <button
+                                onClick={() => handleSaveClip(reel.id)}
+                                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors w-full text-left border-b border-gray-100"
+                              >
+                                <Bookmark 
+                                  size={18} 
+                                  fill={savedClips[reel.id] ? 'currentColor' : 'none'}
+                                />
+                                <span className="text-sm font-medium">
+                                  {savedClips[reel.id] ? 'Saved' : 'Save'}
+                                </span>
+                              </button>
+                              {reel.user_id === currentUserId && (
                                 <button
                                   onClick={() => {
                                     setShowDeleteMenu({});
@@ -1052,11 +1126,11 @@ export default function ClipsPage() {
                                     {isDeleting ? 'Deleting...' : 'Delete Clip'}
                                   </span>
                                 </button>
-                              </div>
-                            )}
-                          </div>
+                              )}
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
 
                       {/* Bottom Section - Profile, Username, and Description */}
                       <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10" style={{ pointerEvents: 'none' }}>
@@ -1317,6 +1391,16 @@ export default function ClipsPage() {
           }}
           onShare={handleShareComplete}
           currentUserId={currentUserId || undefined}
+        />
+      )}
+
+      {/* Save Alert Modal */}
+      {saveAlertClipId && (
+        <SaveModal
+          postId={saveAlertClipId}
+          showAlert={showSaveAlert}
+          alertMessage={saveAlertMessage}
+          isSaved={savedClips[saveAlertClipId] || false}
         />
       )}
     </div>

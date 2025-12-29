@@ -21,6 +21,8 @@ interface EditProfileModalProps {
     primary_sport?: string;
     profile_completion?: number;
     background_image_url?: string | null;
+    bio?: string;
+    education?: string;
   };
   onSave?: (data: {
     full_name?: string;
@@ -32,6 +34,7 @@ interface EditProfileModalProps {
     profile_url?: File;
     background_image_url?: File;
     bio?: string;
+    education?: string;
   }) => void;
 }
 

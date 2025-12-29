@@ -65,7 +65,7 @@ export default function HomeHerosection({
     }
 
     const headers = {
-      'ngrok-skip-browser-warning': 'true',
+   
       'Content-Type': 'application/json'
     };
 

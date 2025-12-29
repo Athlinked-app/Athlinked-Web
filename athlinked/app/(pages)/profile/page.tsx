@@ -1,9 +1,8 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import RightSideBar from '@/components/RightSideBar';
-import Post, { type PostData } from '@/components/Post';
+import { type PostData } from '@/components/Post';
 import EditProfileModal from '@/components/Profile/EditProfileModel';
 import AboutMe from '@/components/Profile/AboutMe';
 import SocialHandles, { type SocialHandle } from '@/components/Profile/SocialHandle';
@@ -21,15 +20,20 @@ import HealthAndReadinessComponent from '@/components/Profile/HealthandReadiness
 import type { HealthAndReadiness } from '@/components/Profile/HealthandReadiness';
 import VideoAndMediaComponent from '@/components/Profile/VideoandMedia';
 import type { VideoAndMedia } from '@/components/Profile/VideoandMedia';
-
-
+import Posts from '@/components/Activity/Posts';
+import Clips from '@/components/Activity/Clips';
+import Article from '@/components/Activity/Article';
+import Event from '@/components/Activity/Event';
+import MySavePost from '@/components/MySave/Post';
+import MySaveClips from '@/components/MySave/Clips';
+import MySaveArticle from '@/components/MySave/Article';
+import MySaveOpportunity from '@/components/MySave/Opportunity';
 interface CurrentUser {
   id: string;
   full_name: string;
   profile_url?: string;
   username?: string;
 }
-
 interface ProfileData {
   userId: string;
   fullName: string | null;
@@ -49,6 +53,8 @@ export default function Profile() {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [activeTab, setActiveTab] = useState<'profile' | 'activity' | 'mysave'>('profile');
+  const [activeFilter, setActiveFilter] = useState<'posts' | 'clips' | 'article' | 'event'>('posts');
+  const [activeSaveFilter, setActiveSaveFilter] = useState<'posts' | 'clips' | 'article' | 'opportunities'>('posts');
   const [userBio, setUserBio] = useState<string>('');
   const [socialHandles, setSocialHandles] = useState<SocialHandle[]>([]);
   const [academicBackgrounds, setAcademicBackgrounds] = useState<AcademicBackground[]>([]);
@@ -196,8 +202,6 @@ export default function Profile() {
   const handlePostCreated = () => {
     fetchPosts();
   };
-
-  // Construct profile URL - return undefined if no profileUrl exists (don't use default)
   const getProfileUrl = (profileUrl?: string | null): string | undefined => {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
@@ -206,8 +210,6 @@ export default function Profile() {
     }
     return profileUrl;
   };
-  
-  // Get initials for placeholder
   const getInitials = (name?: string) => {
     if (!name) return 'U';
     return name
@@ -226,7 +228,6 @@ export default function Profile() {
       />
 
       <main className="flex flex-1 w-full mt-5 overflow-hidden">
-        {/* Left Side - Edit Profile Modal and Tabs (3/4 width) */}
         <div className="hidden lg:block flex-[3] flex-shrink-0 border-r border-gray-200 overflow-hidden px-6 flex flex-col">
           <EditProfileModal
             open={true}
@@ -246,8 +247,8 @@ export default function Profile() {
                     : `http://localhost:3001${profileData.coverImage}`)
                 : null,
               user_type: 'coach',
-              location: 'Rochester, NY', // You can fetch this from user data
-              age: 35, // You can fetch this from user data
+              location: 'Rochester, NY', 
+              age: 35, 
               followers_count: 10000,
               sports_played: profileData?.sportsPlayed 
                 ? profileData.sportsPlayed.replace(/[{}"']/g, '') // Remove curly brackets and quotes
@@ -265,8 +266,6 @@ export default function Profile() {
                   console.error('No user ID available');
                   return;
                 }
-
-                // Prepare data for API
                 const profileData: {
                   userId: string;
                   bio?: string;
@@ -277,8 +276,6 @@ export default function Profile() {
                 } = {
                   userId: currentUserId,
                 };
-
-                // Handle text fields - allow empty strings to clear the field
                 console.log('Received data from EditProfilePopup:', {
                   bio: data.bio,
                   education: data.education,
@@ -287,26 +284,20 @@ export default function Profile() {
                 });
                 
                 if (data.bio !== undefined) {
-                  profileData.bio = data.bio || undefined; // Convert empty string to undefined
+                  profileData.bio = data.bio || undefined; 
                 }
                 if (data.education !== undefined) {
-                  profileData.education = data.education || undefined; // Convert empty string to undefined
+                  profileData.education = data.education || undefined; 
                 }
                 
                 console.log('Profile data being sent to API:', profileData);
-                
-                // Handle sports - parse from sports_played string (take first sport as primary)
                 if (data.sports_played) {
                   const sports = data.sports_played.split(',').map(s => s.trim()).filter(Boolean);
                   if (sports.length > 0) profileData.primarySport = sports[0];
                 }
-
-                // Handle image files - upload them first
                 if (data.profile_url instanceof File) {
                   const formData = new FormData();
                   formData.append('file', data.profile_url);
-                  
-                  // Upload profile image
                   const uploadResponse = await fetch('http://localhost:3001/api/profile/upload', {
                     method: 'POST',
                     body: formData,
@@ -325,8 +316,6 @@ export default function Profile() {
                 if (data.background_image_url instanceof File) {
                   const formData = new FormData();
                   formData.append('file', data.background_image_url);
-                  
-                  // Upload cover image
                   const uploadResponse = await fetch('http://localhost:3001/api/profile/upload', {
                     method: 'POST',
                     body: formData,
@@ -341,8 +330,6 @@ export default function Profile() {
                 } else if (typeof data.background_image_url === 'string') {
                   profileData.coverImageUrl = data.background_image_url;
                 }
-
-                // Call profile API
                 const response = await fetch('http://localhost:3001/api/profile', {
                   method: 'POST',
                   headers: {
@@ -360,8 +347,6 @@ export default function Profile() {
 
                 const result = await response.json();
                 console.log('Profile saved successfully:', result);
-                
-                // Refresh user data and profile data
                 fetchCurrentUser();
                 fetchProfileData();
               } catch (error) {
@@ -371,8 +356,6 @@ export default function Profile() {
               }
             }}
           />
-
-          {/* Tab Navigation */}
           <div className="bg-white mt-4 rounded-lg flex flex-col flex-1 min-h-0">
             <div className="flex items-center border-b border-gray-200 flex-shrink-0">
               <button
@@ -418,7 +401,7 @@ export default function Profile() {
               </button>
             </div>
 
-            <div className="mt-4 space-y-4 overflow-y-auto flex-1 pb-4 px-1 max-h-[400px] lg:max-h-[450px]">
+            <div className="mt-4 space-y-4 overflow-y-auto flex-1 pb-4 px-1 max-h-[400px] lg:max-h-[450px] ">
               {activeTab === 'profile' && (
                 <>
                   <AboutMe bio={userBio} />
@@ -460,20 +443,195 @@ export default function Profile() {
               {activeTab === 'activity' && (
                 <div className="w-full bg-white rounded-lg p-6">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">Activity</h2>
-                  <p className="text-gray-700">Activity content will be displayed here.</p>
+                  
+                  {/* Filter Buttons */}
+                  <div className="flex gap-3 mb-6">
+                    <button
+                      onClick={() => setActiveFilter('posts')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        activeFilter === 'posts'
+                          ? 'bg-gray-800 text-white'
+                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Posts
+                    </button>
+                    <button
+                      onClick={() => setActiveFilter('clips')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        activeFilter === 'clips'
+                          ? 'bg-gray-800 text-white'
+                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Clips
+                    </button>
+                    <button
+                      onClick={() => setActiveFilter('article')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        activeFilter === 'article'
+                          ? 'bg-gray-800 text-white'
+                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Article
+                    </button>
+                    <button
+                      onClick={() => setActiveFilter('event')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        activeFilter === 'event'
+                          ? 'bg-gray-800 text-white'
+                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Event
+                    </button>
+                  </div>
+
+                  {/* Filtered Content */}
+                  {activeFilter === 'posts' && (
+                    <Posts
+                      posts={posts}
+                      currentUserId={currentUserId || undefined}
+                      currentUserProfileUrl={getProfileUrl(currentUser?.profile_url)}
+                      currentUsername={currentUser?.full_name || 'User'}
+                      loading={loading}
+                      onCommentCountUpdate={fetchPosts}
+                      onPostDeleted={fetchPosts}
+                    />
+                  )}
+                  {activeFilter === 'clips' && (
+                    <Clips
+                      currentUserId={currentUserId || undefined}
+                      currentUserProfileUrl={getProfileUrl(currentUser?.profile_url)}
+                      currentUsername={currentUser?.full_name || 'User'}
+                      onClipDeleted={() => {
+                        // Refresh clips if needed
+                        window.location.reload();
+                      }}
+                    />
+                  )}
+                  {activeFilter === 'article' && (
+                    <Article
+                      posts={posts}
+                      currentUserId={currentUserId || undefined}
+                      currentUserProfileUrl={getProfileUrl(currentUser?.profile_url)}
+                      currentUsername={currentUser?.full_name || 'User'}
+                      loading={loading}
+                      onCommentCountUpdate={fetchPosts}
+                      onPostDeleted={fetchPosts}
+                    />
+                  )}
+                  {activeFilter === 'event' && (
+                    <Event
+                      posts={posts}
+                      currentUserId={currentUserId || undefined}
+                      currentUserProfileUrl={getProfileUrl(currentUser?.profile_url)}
+                      currentUsername={currentUser?.full_name || 'User'}
+                      loading={loading}
+                      onCommentCountUpdate={fetchPosts}
+                      onPostDeleted={fetchPosts}
+                    />
+                  )}
                 </div>
               )}
               {activeTab === 'mysave' && (
                 <div className="w-full bg-white rounded-lg p-6">
                   <h2 className="text-2xl font-bold text-gray-900 mb-4">My Save</h2>
-                  <p className="text-gray-700">Saved content will be displayed here.</p>
+                  
+                  {/* Filter Buttons */}
+                  <div className="flex gap-3 mb-6">
+                    <button
+                      onClick={() => setActiveSaveFilter('posts')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        activeSaveFilter === 'posts'
+                          ? 'bg-gray-800 text-white'
+                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Posts
+                    </button>
+                    <button
+                      onClick={() => setActiveSaveFilter('clips')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        activeSaveFilter === 'clips'
+                          ? 'bg-gray-800 text-white'
+                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Clips
+                    </button>
+                    <button
+                      onClick={() => setActiveSaveFilter('article')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        activeSaveFilter === 'article'
+                          ? 'bg-gray-800 text-white'
+                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Article
+                    </button>
+                    <button
+                      onClick={() => setActiveSaveFilter('opportunities')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        activeSaveFilter === 'opportunities'
+                          ? 'bg-gray-800 text-white'
+                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Opportunities
+                    </button>
+                  </div>
+
+                  {/* Filtered Content */}
+                  {activeSaveFilter === 'posts' && (
+                    <MySavePost
+                      posts={posts}
+                      currentUserId={currentUserId || undefined}
+                      currentUserProfileUrl={getProfileUrl(currentUser?.profile_url)}
+                      currentUsername={currentUser?.full_name || 'User'}
+                      loading={loading}
+                      onCommentCountUpdate={fetchPosts}
+                      onPostDeleted={fetchPosts}
+                    />
+                  )}
+                  {activeSaveFilter === 'clips' && (
+                    <MySaveClips
+                      currentUserId={currentUserId || undefined}
+                      currentUserProfileUrl={getProfileUrl(currentUser?.profile_url)}
+                      currentUsername={currentUser?.full_name || 'User'}
+                      onClipDeleted={() => {
+                        window.location.reload();
+                      }}
+                    />
+                  )}
+                  {activeSaveFilter === 'article' && (
+                    <MySaveArticle
+                      posts={posts}
+                      currentUserId={currentUserId || undefined}
+                      currentUserProfileUrl={getProfileUrl(currentUser?.profile_url)}
+                      currentUsername={currentUser?.full_name || 'User'}
+                      loading={loading}
+                      onCommentCountUpdate={fetchPosts}
+                      onPostDeleted={fetchPosts}
+                    />
+                  )}
+                  {activeSaveFilter === 'opportunities' && (
+                    <MySaveOpportunity
+                      posts={posts}
+                      currentUserId={currentUserId || undefined}
+                      currentUserProfileUrl={getProfileUrl(currentUser?.profile_url)}
+                      currentUsername={currentUser?.full_name || 'User'}
+                      loading={loading}
+                      onCommentCountUpdate={fetchPosts}
+                      onPostDeleted={fetchPosts}
+                    />
+                  )}
                 </div>
               )}
             </div>
           </div>
         </div>
-
-        {/* Right Side - Sidebar (1/4 width) */}
         <div className="hidden lg:flex flex-1 flex-shrink-0">
           <RightSideBar />
         </div>
