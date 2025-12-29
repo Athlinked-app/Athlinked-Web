@@ -146,7 +146,7 @@ function ForgotPasswordContent() {
           {/* Back Button */}
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6"
+            className="flex items-center gap-2 text-black hover:text-black mb-6"
           >
             <ArrowLeft size={20} />
             <span className="text-sm">Back</span>
@@ -162,12 +162,12 @@ function ForgotPasswordContent() {
           </div>
 
           {/* Title */}
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">
             {step === 'request' && 'Forgot Password'}
             {step === 'verify' && 'Verify OTP'}
             {step === 'reset' && 'Reset Password'}
           </h1>
-          <p className="text-gray-600 mb-8">
+          <p className="text-black mb-8">
             {step === 'request' &&
               'Enter your email or username to receive a reset code'}
             {step === 'verify' && `Enter the OTP sent to ${userEmail}`}
@@ -187,7 +187,7 @@ function ForgotPasswordContent() {
               <div>
                 <label
                   htmlFor="identifier"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-black mb-2"
                 >
                   Email/Username
                 </label>
@@ -197,7 +197,7 @@ function ForgotPasswordContent() {
                   value={identifier}
                   onChange={e => setIdentifier(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-black"
                   placeholder="Enter your email or username"
                   disabled={loading}
                 />
@@ -219,7 +219,7 @@ function ForgotPasswordContent() {
               <div>
                 <label
                   htmlFor="otp"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-black mb-2"
                 >
                   Enter OTP
                 </label>
@@ -232,7 +232,7 @@ function ForgotPasswordContent() {
                   }
                   required
                   maxLength={6}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-center text-lg tracking-widest text-gray-900"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-center text-lg tracking-widest text-black"
                   placeholder="000000"
                   disabled={loading}
                 />
@@ -254,7 +254,7 @@ function ForgotPasswordContent() {
               <div>
                 <label
                   htmlFor="newPassword"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-black mb-2"
                 >
                   New Password
                 </label>
@@ -265,14 +265,14 @@ function ForgotPasswordContent() {
                     value={newPassword}
                     onChange={e => setNewPassword(e.target.value)}
                     required
-                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-black"
                     placeholder="Enter new password"
                     disabled={loading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:text-black"
                     disabled={loading}
                   >
                     {showPassword ? (
@@ -287,7 +287,7 @@ function ForgotPasswordContent() {
               <div>
                 <label
                   htmlFor="confirmPassword"
-                  className="block text-sm font-medium text-gray-700 mb-2"
+                  className="block text-sm font-medium text-black mb-2"
                 >
                   Confirm Password
                 </label>
@@ -298,14 +298,14 @@ function ForgotPasswordContent() {
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
+                    className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-black"
                     placeholder="Confirm new password"
                     disabled={loading}
                   />
                   <button
                     type="button"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:text-black"
                     disabled={loading}
                   >
                     {showConfirmPassword ? (
@@ -329,7 +329,7 @@ function ForgotPasswordContent() {
 
           {/* Sign In Link */}
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-black">
               Remember your password?{' '}
               <a
                 href="/login"
@@ -350,7 +350,7 @@ export default function ForgotPasswordPage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen items-center justify-center bg-gray-100">
-          <p className="text-gray-700">Loading...</p>
+          <p className="text-black">Loading...</p>
         </div>
       }
     >

@@ -35,11 +35,12 @@ async function createTemplateService(templateData) {
 
 /**
  * Get all active templates
+ * @param {string} userId - Optional user ID to filter by
  * @returns {Promise<object>} Service result with templates array
  */
-async function getAllTemplatesService() {
+async function getAllTemplatesService(userId = null) {
   try {
-    const templates = await templatesModel.getAllTemplates();
+    const templates = await templatesModel.getAllTemplates(userId);
     return {
       success: true,
       templates,

@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Header from '@/components/Header';
 import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 
 interface User {
   id: string;
   username: string | null;
+  full_name: string | null;
+  user_type: string | null;
   profile_url: string | null;
 }
 
@@ -18,9 +21,8 @@ export default function NetworkPage() {
   const [following, setFollowing] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [followStatuses, setFollowStatuses] = useState<{
-    [key: string]: boolean;
-  }>({});
+  const [currentUser, setCurrentUser] = useState<{ full_name?: string; profile_url?: string } | null>(null);
+  const [followStatuses, setFollowStatuses] = useState<{ [key: string]: boolean }>({});
 
   // Fetch current user ID
   useEffect(() => {
@@ -47,6 +49,10 @@ export default function NetworkPage() {
           const data = await response.json();
           if (data.success && data.user) {
             setCurrentUserId(data.user.id);
+            setCurrentUser({
+              full_name: data.user.full_name,
+              profile_url: data.user.profile_url,
+            });
           }
         }
       } catch (error) {
@@ -164,11 +170,14 @@ export default function NetworkPage() {
       .slice(0, 2);
   };
 
+  // Get display name (full_name only)
+  const getDisplayName = (user: User) => {
+    return user.full_name || 'User';
+  };
+
   // Get profile URL helper
-  const getProfileUrl = (
-    profileUrl: string | null | undefined
-  ): string | null => {
-    if (!profileUrl || profileUrl.trim() === '') return null;
+  const getProfileUrl = (profileUrl?: string | null): string | undefined => {
+    if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
       return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
@@ -306,12 +315,21 @@ export default function NetworkPage() {
   const currentList = activeTab === 'followers' ? followers : following;
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <NavigationBar activeItem="network" />
-
-      <div className="flex-1 flex p-5 gap-5">
-        {/* Main Content */}
-        <div className="flex-1 bg-white rounded-xl p-6">
+    <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
+      <Header
+        userName={currentUser?.full_name}
+        userProfileUrl={getProfileUrl(currentUser?.profile_url)}
+      />
+      
+      <div className="flex flex-1 w-full mt-5 overflow-hidden">
+        {/* Navigation Bar */}
+        <div className="hidden md:flex px-6">
+          <NavigationBar activeItem="network" />
+        </div>
+        
+        <div className="flex-1 flex gap-5 overflow-y-auto">
+          {/* Main Content */}
+          <div className="flex-1 bg-white rounded-xl p-6">
           {/* Followers/Followings Section */}
           <div className="mb-8">
             <div className="flex border-b border-gray-200 mb-6">
@@ -320,7 +338,7 @@ export default function NetworkPage() {
                 className={`px-6 py-3 font-medium text-base relative ${
                   activeTab === 'followers'
                     ? 'text-[#CB9729]'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-black hover:text-black'
                 }`}
               >
                 Followers
@@ -333,7 +351,7 @@ export default function NetworkPage() {
                 className={`px-6 py-3 font-medium text-base relative ${
                   activeTab === 'following'
                     ? 'text-[#CB9729]'
-                    : 'text-gray-600 hover:text-gray-900'
+                    : 'text-black hover:text-black'
                 }`}
               >
                 Followings
@@ -344,9 +362,9 @@ export default function NetworkPage() {
             </div>
 
             {loading ? (
-              <div className="text-center py-8 text-gray-500">Loading...</div>
+              <div className="text-center py-8 text-black">Loading...</div>
             ) : currentList.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-black">
                 No {activeTab === 'followers' ? 'followers' : 'followings'} yet
               </div>
             ) : (
@@ -365,27 +383,31 @@ export default function NetworkPage() {
                           {profileUrl ? (
                             <img
                               src={profileUrl}
-                              alt={user.username ?? 'User'}
+                              alt={getDisplayName(user)}
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <span className="text-gray-600 font-semibold text-sm">
-                              {getInitials(user.username)}
+                            <span className="text-black font-semibold text-sm">
+                              {getInitials(user.full_name || 'User')}
                             </span>
                           )}
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">
-                            {user.username || 'User'}
+                          <div className="font-medium text-black">
+                            {user.full_name || 'User'}
                           </div>
-                          <div className="text-sm text-gray-500">Athlete</div>
+                          <div className="text-sm text-black">
+                            {user.user_type 
+                              ? user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1).toLowerCase()
+                              : 'User'}
+                          </div>
                         </div>
                       </div>
                       <button
                         onClick={() => handleFollowToggle(user.id, isFollowing)}
                         className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
                           isFollowing
-                            ? 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            ? 'bg-gray-200 text-black hover:bg-gray-300'
                             : 'bg-[#CB9729] text-white hover:bg-yellow-600'
                         }`}
                       >
@@ -397,11 +419,12 @@ export default function NetworkPage() {
               </div>
             )}
           </div>
-        </div>
+          </div>
 
-        {/* Right Sidebar */}
-        <div className="hidden lg:flex">
-          <RightSideBar />
+          {/* Right Sidebar */}
+          <div className="hidden lg:flex">
+            <RightSideBar />
+          </div>
         </div>
       </div>
     </div>

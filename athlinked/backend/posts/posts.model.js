@@ -14,6 +14,7 @@ async function createPost(postData, client = null) {
     event_title,
     event_date,
     event_location,
+    event_type,
   } = postData;
 
   const id = uuidv4();
@@ -31,12 +32,13 @@ async function createPost(postData, client = null) {
       event_title,
       event_date,
       event_location,
+      event_type,
       like_count,
       comment_count,
       save_count,
       is_active,
       created_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
     RETURNING *
   `;
 
@@ -53,6 +55,7 @@ async function createPost(postData, client = null) {
     event_title || null,
     event_date || null,
     event_location || null,
+    event_type || null,
     0,
     0,
     0,
@@ -99,6 +102,17 @@ async function getPostById(postId) {
   }
 }
 
+async function checkLikeStatus(postId, userId) {
+  const query = 'SELECT * FROM post_likes WHERE post_id = $1 AND user_id = $2';
+  try {
+    const result = await pool.query(query, [postId, userId]);
+    return result.rows.length > 0;
+  } catch (error) {
+    console.error('Error checking like status:', error);
+    throw error;
+  }
+}
+
 async function likePost(postId, userId, client = null) {
   const checkQuery =
     'SELECT * FROM post_likes WHERE post_id = $1 AND user_id = $2';
@@ -121,6 +135,23 @@ async function likePost(postId, userId, client = null) {
     return { like_count: updateResult.rows[0].like_count };
   } catch (error) {
     console.error('Error liking post:', error);
+    throw error;
+  }
+}
+
+async function unlikePost(postId, userId, client = null) {
+  const deleteLikeQuery = 'DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2';
+  const updateCountQuery = 'UPDATE posts SET like_count = GREATEST(like_count - 1, 0) WHERE id = $1 RETURNING like_count';
+
+  try {
+    const dbClient = client || pool;
+    
+    await dbClient.query(deleteLikeQuery, [postId, userId]);
+    const updateResult = await dbClient.query(updateCountQuery, [postId]);
+    
+    return { like_count: updateResult.rows[0].like_count };
+  } catch (error) {
+    console.error('Error unliking post:', error);
     throw error;
   }
 }
@@ -225,7 +256,7 @@ async function getCommentsByPostId(postId) {
   const query = `
     SELECT 
       pc.*,
-      u.username,
+      COALESCE(u.full_name, 'User') as username,
       u.profile_url as user_profile_url
     FROM post_comments pc
     LEFT JOIN users u ON pc.user_id = u.id
@@ -236,7 +267,7 @@ async function getCommentsByPostId(postId) {
   const repliesQuery = `
     SELECT 
       pc.*,
-      u.username,
+      COALESCE(u.full_name, 'User') as username,
       u.profile_url as user_profile_url
     FROM post_comments pc
     LEFT JOIN users u ON pc.user_id = u.id
@@ -293,7 +324,9 @@ module.exports = {
   createPost,
   getPostsFeed,
   getPostById,
+  checkLikeStatus,
   likePost,
+  unlikePost,
   addComment,
   replyToComment,
   savePost,

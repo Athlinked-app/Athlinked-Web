@@ -66,13 +66,18 @@ export default function SignupPage() {
       setIsLoadingOTP(true);
       try {
         // Prepare signup data for OTP request
+        // Parse sports_played string into array
+        const sportsArray = formData.sportsPlayed
+          ? formData.sportsPlayed.split(',').map(s => s.trim()).filter(Boolean)
+          : [];
+        
         const signupData = {
           email: formData.email,
           user_type: selectedUserType,
           full_name: formData.fullName,
           dob: formData.dateOfBirth,
-          sports_played: formData.sportsPlayed ? [formData.sportsPlayed] : [],
-          primary_sport: formData.primarySport || null,
+          sports_played: sportsArray,
+          primary_sport: formData.primarySport || (sportsArray.length > 0 ? sportsArray[0] : null),
           password: formData.password,
           parent_name: formData.parentName || null,
           parent_email: formData.parentEmail || null,
@@ -81,7 +86,7 @@ export default function SignupPage() {
 
         // Call backend to send OTP via email
         const response = await fetch(
-          'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/start',
+          'http://localhost:3001/api/signup/start',
           {
             method: 'POST',
             headers: {

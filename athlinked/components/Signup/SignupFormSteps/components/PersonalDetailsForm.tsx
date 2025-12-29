@@ -7,6 +7,7 @@ import {
   Building2,
   Briefcase,
 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 
 interface PersonalDetailsFormProps {
   selectedUserType: string;
@@ -20,6 +21,11 @@ interface PersonalDetailsFormProps {
   onToggleConfirmPassword: () => void;
 }
 
+interface Sport {
+  id: string;
+  name: string;
+}
+
 export default function PersonalDetailsForm({
   selectedUserType,
   formData,
@@ -31,6 +37,88 @@ export default function PersonalDetailsForm({
   onTogglePassword,
   onToggleConfirmPassword,
 }: PersonalDetailsFormProps) {
+  const [sports, setSports] = useState<Sport[]>([]);
+  const [loadingSports, setLoadingSports] = useState(false);
+  const [selectedSports, setSelectedSports] = useState<string[]>(
+    formData.sportsPlayed ? formData.sportsPlayed.split(',').map((s: string) => s.trim()).filter(Boolean) : []
+  );
+  const [showSportsDropdown, setShowSportsDropdown] = useState(false);
+  const sportsDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (selectedUserType === 'athlete') {
+      fetchSports();
+    }
+  }, [selectedUserType]);
+
+  // Sync selectedSports with formData when it changes externally
+  useEffect(() => {
+    if (formData.sportsPlayed) {
+      const sportsArray = formData.sportsPlayed.split(',').map((s: string) => s.trim()).filter(Boolean);
+      setSelectedSports(sportsArray);
+    } else {
+      setSelectedSports([]);
+    }
+  }, [formData.sportsPlayed]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sportsDropdownRef.current && !sportsDropdownRef.current.contains(event.target as Node)) {
+        setShowSportsDropdown(false);
+      }
+    };
+
+    if (showSportsDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showSportsDropdown]);
+
+  const fetchSports = async () => {
+    setLoadingSports(true);
+    try {
+      const response = await fetch('http://localhost:3001/api/sports');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.sports) {
+          setSports(data.sports);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching sports:', error);
+    } finally {
+      setLoadingSports(false);
+    }
+  };
+
+  const handleSportToggle = (sportName: string) => {
+    const newSelectedSports = selectedSports.includes(sportName)
+      ? selectedSports.filter(s => s !== sportName)
+      : [...selectedSports, sportName];
+    
+    setSelectedSports(newSelectedSports);
+    const sportsString = newSelectedSports.join(', ');
+    
+    // Update primary sport: keep it if it's still in the selected list, otherwise set to first selected or empty
+    let newPrimarySport = formData.primarySport;
+    if (formData.primarySport && !newSelectedSports.includes(formData.primarySport)) {
+      // Primary sport was deselected, reset to first available or empty
+      newPrimarySport = newSelectedSports.length > 0 ? newSelectedSports[0] : '';
+    } else if (!formData.primarySport && newSelectedSports.length > 0) {
+      // No primary sport set yet, auto-set to first selected
+      newPrimarySport = newSelectedSports[0];
+    }
+    
+    onFormDataChange({
+      ...formData,
+      sportsPlayed: sportsString,
+      primarySport: newPrimarySport,
+    });
+  };
   return (
     <>
       <div className="space-y-4 mb-6">
@@ -74,48 +162,100 @@ export default function PersonalDetailsForm({
         {/* Sports Played - Only for Athlete */}
         {selectedUserType === 'athlete' && (
           <>
-            <div>
+            <div className="relative" ref={sportsDropdownRef}>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Sports played
+                Sports played (Select all that apply)
               </label>
-              <select
-                value={formData.sportsPlayed}
-                onChange={e =>
-                  onFormDataChange({
-                    ...formData,
-                    sportsPlayed: e.target.value,
-                  })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent appearance-none bg-white text-gray-900"
-              >
-                <option value="">Select sport</option>
-                <option value="basketball">Basketball</option>
-                <option value="soccer">Soccer</option>
-                <option value="tennis">Tennis</option>
-                <option value="swimming">Swimming</option>
-              </select>
+              {loadingSports ? (
+                <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+                  Loading sports...
+                </div>
+              ) : (
+                <>
+                  <div
+                    onClick={() => setShowSportsDropdown(!showSportsDropdown)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent bg-white text-gray-900 cursor-pointer flex items-center justify-between"
+                  >
+                    <span className={selectedSports.length > 0 ? 'text-gray-900' : 'text-gray-500'}>
+                      {selectedSports.length > 0
+                        ? `${selectedSports.length} sport${selectedSports.length > 1 ? 's' : ''} selected`
+                        : 'Select sports'}
+                    </span>
+                    <svg
+                      className={`w-5 h-5 text-gray-400 transition-transform ${showSportsDropdown ? 'transform rotate-180' : ''}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                  {showSportsDropdown && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                      <div className="p-2 space-y-1">
+                        {sports.map((sport) => (
+                          <label
+                            key={sport.id}
+                            className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer rounded"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedSports.includes(sport.name)}
+                              onChange={() => handleSportToggle(sport.name)}
+                              className="w-4 h-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500 focus:ring-2"
+                            />
+                            <span className="ml-3 text-sm text-gray-700">{sport.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {selectedSports.length > 0 && (
+                    <p className="mt-2 text-xs text-gray-600">
+                      Selected: {selectedSports.join(', ')}
+                    </p>
+                  )}
+                </>
+              )}
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Primary sport
               </label>
-              <select
-                value={formData.primarySport}
-                onChange={e =>
-                  onFormDataChange({
-                    ...formData,
-                    primarySport: e.target.value,
-                  })
-                }
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent appearance-none bg-white text-gray-900"
-              >
-                <option value="">Select primary sport</option>
-                <option value="basketball">Basketball</option>
-                <option value="soccer">Soccer</option>
-                <option value="tennis">Tennis</option>
-                <option value="swimming">Swimming</option>
-              </select>
+              {loadingSports ? (
+                <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
+                  Loading sports...
+                </div>
+              ) : (
+                <select
+                  value={formData.primarySport}
+                  onChange={e =>
+                    onFormDataChange({
+                      ...formData,
+                      primarySport: e.target.value,
+                    })
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent appearance-none bg-white text-gray-900"
+                  disabled={selectedSports.length === 0}
+                >
+                  <option value="">Select primary sport</option>
+                  {selectedSports.length > 0 ? (
+                    selectedSports.map((sportName) => (
+                      <option key={sportName} value={sportName}>
+                        {sportName}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="" disabled>Please select sports played first</option>
+                  )}
+                </select>
+              )}
+              {selectedSports.length === 0 && (
+                <p className="mt-1 text-xs text-gray-500">
+                  Select sports played first to choose a primary sport
+                </p>
+              )}
             </div>
           </>
         )}

@@ -1,4 +1,3 @@
-/* eslint-disable jsx-a11y/label-has-associated-control */
 'use client';
 
 import { useState, type ChangeEvent } from 'react';
@@ -12,18 +11,21 @@ import {
 import PostUploadModal from '@/components/Post/PostUploadModal';
 import PostDetailsModal from '@/components/Post/PostDetailsModal';
 import ArticleEventModal from '@/components/Post/ArticleEventModal';
+import MentionInput from '@/components/Mention/MentionInput';
 
 type HomeHerosectionProps = {
   userProfileUrl?: string;
   username?: string;
+  currentUserId?: string;
   onPostCreated?: () => void;
 };
 
-type PostType = 'photo' | 'video' | 'article' | 'event';
+type PostType = 'photo' | 'video' | 'article' | 'event' | 'text';
 
 export default function HomeHerosection({
   userProfileUrl,
   username = 'User',
+  currentUserId,
   onPostCreated,
 }: HomeHerosectionProps) {
   const getInitials = (name: string) => {
@@ -66,15 +68,22 @@ export default function HomeHerosection({
       throw new Error('User not logged in');
     }
 
+    const headers = {
+      'ngrok-skip-browser-warning': 'true',
+      'Content-Type': 'application/json'
+    };
+
     let userResponse;
     if (userIdentifier.startsWith('username:')) {
       const username = userIdentifier.replace('username:', '');
       userResponse = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+        `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`,
+        { headers }
       );
     } else {
       userResponse = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+        `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`,
+        { headers }
       );
     }
 
@@ -97,20 +106,18 @@ export default function HomeHerosection({
     try {
       const userData = await getUserData();
 
-      const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: userData.id,
-            post_type: 'photo',
-            caption: postText.trim(),
-          }),
-        }
-      );
+      const response = await fetch('http://localhost:3001/api/posts', {
+        method: 'POST',
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userData.id,
+          post_type: 'text',
+          caption: postText.trim(),
+        }),
+      });
 
       const data = await response.json();
       if (data.success) {
@@ -142,13 +149,13 @@ export default function HomeHerosection({
       formData.append('post_type', selectedPostType!);
       formData.append('caption', caption);
 
-      const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts',
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
+      const response = await fetch('http://localhost:3001/api/posts', {
+        method: 'POST',
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: formData,
+      });
 
       const data = await response.json();
       if (data.success) {
@@ -173,55 +180,108 @@ export default function HomeHerosection({
     date?: string;
     location?: string;
     caption?: string;
+    image?: File;
+    eventType?: string;
   }) => {
     setIsUploading(true);
     try {
       const userData = await getUserData();
 
-      const postData: any = {
-        user_id: userData.id,
-        post_type: selectedPostType,
-        caption: data.caption || null,
-      };
+      // If there's an image, use FormData
+      if (data.image) {
+        const formData = new FormData();
+        formData.append('media', data.image);
+        formData.append('user_id', userData.id);
+        formData.append('post_type', selectedPostType!);
+        if (data.caption) {
+          formData.append('caption', data.caption);
+        }
 
-      if (selectedPostType === 'article') {
-        postData.article_title = data.title;
-        postData.article_body = data.body;
-      } else if (selectedPostType === 'event') {
-        postData.event_title = data.title;
-        postData.event_date = data.date;
-        postData.event_location = data.location;
-      }
+        if (selectedPostType === 'article') {
+          formData.append('article_title', data.title);
+          if (data.body) {
+            formData.append('article_body', data.body);
+          }
+          if (data.caption) {
+            formData.append('caption', data.caption);
+          }
+        } else if (selectedPostType === 'event') {
+          formData.append('event_title', data.title);
+          if (data.date) {
+            formData.append('event_date', data.date);
+          }
+          if (data.location) {
+            formData.append('event_location', data.location);
+          }
+          if (data.eventType) {
+            formData.append('event_type', data.eventType);
+          }
+        }
 
-      const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts',
-        {
+        const response = await fetch('http://localhost:3001/api/posts', {
           method: 'POST',
           headers: {
+            'ngrok-skip-browser-warning': 'true',
+          },
+          body: formData,
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          setShowArticleEvent(false);
+          if (onPostCreated) {
+            onPostCreated();
+          }
+        } else {
+          alert(result.message || 'Failed to create post');
+        }
+      } else {
+        const postData: any = {
+          user_id: userData.id,
+          post_type: selectedPostType,
+          caption: data.caption || null,
+        };
+
+        if (selectedPostType === 'article') {
+          postData.article_title = data.title;
+          postData.article_body = data.body;
+        } else if (selectedPostType === 'event') {
+          postData.event_title = data.title;
+          postData.event_date = data.date;
+          postData.event_location = data.location;
+          if (data.eventType) {
+            postData.event_type = data.eventType;
+          }
+        }
+
+        const response = await fetch('http://localhost:3001/api/posts', {
+          method: 'POST',
+          headers: {
+            'ngrok-skip-browser-warning': 'true',
             'Content-Type': 'application/json',
           },
           body: JSON.stringify(postData),
+        });
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await response.text();
+          console.error('Non-JSON response:', text.substring(0, 200));
+          alert('Failed to create post. Server returned invalid response.');
+          return;
         }
-      );
 
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response:', text.substring(0, 200));
-        alert('Failed to create post. Server returned invalid response.');
-        return;
-      }
-
-      const result = await response.json();
-      console.log('Create article/event post response:', result);
-
-      if (result.success) {
-        setShowArticleEvent(false);
-        if (onPostCreated) {
-          onPostCreated();
+        const result = await response.json();
+        
+        if (result.success) {
+          setShowArticleEvent(false);
+          if (onPostCreated) {
+            onPostCreated();
+          }
+        } else {
+          alert(result.message || 'Failed to create post');
         }
-      } else {
-        alert(result.message || 'Failed to create post');
       }
     } catch (error) {
       console.error('Error creating article/event post:', error);
@@ -257,22 +317,33 @@ export default function HomeHerosection({
           </div>
 
           <div className="flex-1">
-            <div className="flex items-center w-full border border-gray-200 rounded-lg px-3 py-2 bg-white">
-              <Search className="w-5 h-5 text-gray-500 mr-3" />
-              <input
-                type="text"
-                placeholder="What's on your mind?"
+            {currentUserId ? (
+              <MentionInput
                 value={postText}
-                onChange={e => setPostText(e.target.value)}
-                onKeyPress={e => {
-                  if (e.key === 'Enter') {
-                    handleTextPost();
-                  }
-                }}
-                className="w-full text-gray-700 placeholder:text-gray-400 focus:outline-none"
+                onChange={setPostText}
+                placeholder="What's on your mind?"
+                currentUserId={currentUserId}
+                className="text-gray-700 placeholder:text-gray-400"
                 disabled={isUploading}
               />
-            </div>
+            ) : (
+              <div className="flex items-center w-full border border-gray-200 rounded-lg px-3 py-2 bg-white">
+                <Search className="w-5 h-5 text-gray-500 mr-3" />
+                <input
+                  type="text"
+                  placeholder="What's on your mind?"
+                  value={postText}
+                  onChange={e => setPostText(e.target.value)}
+                  onKeyPress={e => {
+                    if (e.key === 'Enter') {
+                      handleTextPost();
+                    }
+                  }}
+                  className="w-full text-gray-700 placeholder:text-gray-400 focus:outline-none"
+                  disabled={isUploading}
+                />
+              </div>
+            )}
           </div>
 
           <button
@@ -343,31 +414,31 @@ export default function HomeHerosection({
         />
       )}
 
-      {selectedPostType &&
-        (selectedPostType === 'photo' || selectedPostType === 'video') && (
-          <PostDetailsModal
-            open={showDetails}
-            postType={selectedPostType}
-            filePreview={filePreview}
-            fileName={selectedFile?.name || 'No file selected'}
-            fileSizeLabel={selectedFile ? formatSize(selectedFile.size) : ''}
-            caption={caption}
-            onCaptionChange={setCaption}
-            onClose={resetFileState}
-            onPost={handleMediaPost}
-            onRemoveFile={resetFileState}
-          />
-        )}
+      {selectedPostType && (selectedPostType === 'photo' || selectedPostType === 'video') && (
+        <PostDetailsModal
+          open={showDetails}
+          postType={selectedPostType}
+          filePreview={filePreview}
+          fileName={selectedFile?.name || 'No file selected'}
+          fileSizeLabel={selectedFile ? formatSize(selectedFile.size) : ''}
+          caption={caption}
+          onCaptionChange={setCaption}
+          onClose={resetFileState}
+          onPost={handleMediaPost}
+          onRemoveFile={resetFileState}
+          currentUserId={currentUserId}
+        />
+      )}
 
-      {selectedPostType &&
-        (selectedPostType === 'article' || selectedPostType === 'event') && (
-          <ArticleEventModal
-            open={showArticleEvent}
-            postType={selectedPostType}
-            onClose={() => setShowArticleEvent(false)}
-            onSubmit={handleArticleEventSubmit}
-          />
-        )}
+      {selectedPostType && (selectedPostType === 'article' || selectedPostType === 'event') && (
+        <ArticleEventModal
+          open={showArticleEvent}
+          postType={selectedPostType}
+          currentUserId={currentUserId}
+          onClose={() => setShowArticleEvent(false)}
+          onSubmit={handleArticleEventSubmit}
+        />
+      )}
     </div>
   );
 }

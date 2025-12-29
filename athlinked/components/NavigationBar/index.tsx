@@ -26,7 +26,8 @@ interface NavigationBarProps {
 }
 
 interface UserData {
-  full_name: string;
+  full_name: string | null;
+  username: string | null;
   profile_url?: string;
   user_type?: string;
 }
@@ -127,18 +128,13 @@ export default function NavigationBar({
       ? rawProfileUrl.startsWith('http')
         ? rawProfileUrl
         : rawProfileUrl.startsWith('/') && !rawProfileUrl.startsWith('/assets')
-          ? `https://qd9ngjg1-3001.inc1.devtunnels.ms${rawProfileUrl}`
-          : rawProfileUrl
-      : null;
-
-  const userRole =
-    propUserRole ||
-    (userData?.user_type
-      ? userData.user_type.charAt(0).toUpperCase() +
-        userData.user_type.slice(1).toLowerCase()
-      : 'Athlete');
-  const displayName = userName?.split(' ')[0] || 'User';
-
+          ? `http://localhost:3001${rawProfileUrl}`
+          : rawProfileUrl)
+    : null;
+    
+  const userRole = propUserRole || (userData?.user_type ? userData.user_type.charAt(0).toUpperCase() + userData.user_type.slice(1).toLowerCase() : 'Athlete');
+  const displayName = userName || 'User';
+  
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -152,7 +148,12 @@ export default function NavigationBar({
     <div className="w-72 bg-white flex flex-col border-r border-gray-200 rounded-lg">
       {/* Athlete Profile Section */}
       <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center gap-3">
+        <div 
+          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => {
+            router.push('/profile');
+          }}
+        >
           <div className="w-12 h-12 md:w-20 md:h-20 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center">
             {userProfileUrl ? (
               <img
@@ -212,6 +213,10 @@ export default function NavigationBar({
                   return '/network';
                 case 'resource':
                   return '/resources';
+                case 'message':
+                  return '/messages';
+                case 'notifications':
+                  return '/notifications';
                 default:
                   return '#';
               }
@@ -226,7 +231,7 @@ export default function NavigationBar({
                     href={href}
                     className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
                       isActive
-                        ? 'bg-[#CB9729] text-white'
+                        ? ' text-[#CB9729]'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
                   >

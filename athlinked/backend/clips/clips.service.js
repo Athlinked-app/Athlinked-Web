@@ -25,7 +25,7 @@ async function createClipService(clipData) {
 
       const clipDataWithUser = {
         user_id,
-        username: user.full_name || user.email.split('@')[0],
+        username: user.full_name || 'User',
         user_profile_url: null, // You can add profile_url to users table later
         video_url,
         description: description || null,
