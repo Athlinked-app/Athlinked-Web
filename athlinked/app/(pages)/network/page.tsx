@@ -42,11 +42,11 @@ export default function NetworkPage() {
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -77,7 +77,7 @@ export default function NetworkPage() {
 
       // Fetch followers
       const followersResponse = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/followers/${currentUserId}`
+        `http://localhost:3001/api/network/followers/${currentUserId}`
       );
       let followersList: User[] = [];
       if (followersResponse.ok) {
@@ -90,7 +90,7 @@ export default function NetworkPage() {
 
       // Fetch following
       const followingResponse = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/following/${currentUserId}`
+        `http://localhost:3001/api/network/following/${currentUserId}`
       );
       let followingList: User[] = [];
       if (followingResponse.ok) {
@@ -113,7 +113,7 @@ export default function NetworkPage() {
         if (user.id !== currentUserId && !statuses[user.id]) {
           try {
             const isFollowingResponse = await fetch(
-              `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/is-following/${user.id}?follower_id=${currentUserId}`
+              `http://localhost:3001/api/network/is-following/${user.id}?follower_id=${currentUserId}`
             );
             if (isFollowingResponse.ok) {
               const isFollowingData = await isFollowingResponse.json();
@@ -185,7 +185,7 @@ export default function NetworkPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
+      return `http://localhost:3001${profileUrl}`;
     }
     return profileUrl;
   };
@@ -202,8 +202,8 @@ export default function NetworkPage() {
 
     try {
       const endpoint = isCurrentlyFollowing
-        ? `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/unfollow/${userId}`
-        : `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/follow/${userId}`;
+        ? `http://localhost:3001/api/network/unfollow/${userId}`
+        : `http://localhost:3001/api/network/follow/${userId}`;
 
       const userIdentifier = localStorage.getItem('userEmail');
       if (!userIdentifier) {
@@ -216,11 +216,11 @@ export default function NetworkPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -281,7 +281,7 @@ export default function NetworkPage() {
         // Refresh the lists
         if (activeTab === 'followers') {
           const followersResponse = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/followers/${currentUserId}`
+            `http://localhost:3001/api/network/followers/${currentUserId}`
           );
           if (followersResponse.ok) {
             const followersData = await followersResponse.json();
@@ -291,7 +291,7 @@ export default function NetworkPage() {
           }
         } else {
           const followingResponse = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/following/${currentUserId}`
+            `http://localhost:3001/api/network/following/${currentUserId}`
           );
           if (followingResponse.ok) {
             const followingData = await followingResponse.json();
