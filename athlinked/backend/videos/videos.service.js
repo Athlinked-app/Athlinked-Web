@@ -7,13 +7,8 @@ const videosModel = require('./videos.model');
  */
 async function createVideoService(videoData) {
   try {
-    const {
-      user_id,
-      title,
-      description,
-      video_url,
-      video_duration,
-    } = videoData;
+    const { user_id, title, description, video_url, video_duration } =
+      videoData;
 
     if (!video_url) {
       throw new Error('video_url is required');
@@ -107,7 +102,9 @@ async function softDeleteVideoService(videoId, userId) {
     const video = await videosModel.softDeleteVideo(videoId, userId);
 
     if (!video) {
-      throw new Error('Video not found or you do not have permission to delete it');
+      throw new Error(
+        'Video not found or you do not have permission to delete it'
+      );
     }
 
     return {
@@ -126,4 +123,3 @@ module.exports = {
   deleteVideoService,
   softDeleteVideoService,
 };
-

@@ -59,7 +59,7 @@ export default function PhotosUploadModal({
 
         // Set files on the input element using DataTransfer
         fileInputRef.current.files = dataTransfer.files;
-        
+
         // Create a synthetic change event that properly exposes files
         const syntheticEvent = {
           target: {
@@ -181,7 +181,7 @@ export function PostDetailsModal({
       <div className="relative z-10 w-full max-w-3xl bg-white rounded-xl shadow-2xl border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-semibold text-gray-900">Post Details</h2>
-          
+
           <button
             type="button"
             aria-label="Close"

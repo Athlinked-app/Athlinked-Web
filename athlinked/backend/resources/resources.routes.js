@@ -25,4 +25,3 @@ router.get('/', resourcesController.getAllResources);
 router.delete('/:id', resourcesController.deleteResource);
 
 module.exports = router;
-

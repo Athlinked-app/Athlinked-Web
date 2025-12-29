@@ -277,7 +277,7 @@ async function parentCompleteService(username, email, password) {
 async function getAllUsersService(excludeUserId = null, limit = 10) {
   try {
     const users = await signupModel.getAllUsers(excludeUserId, limit);
-    
+
     // Remove password from all users
     const sanitizedUsers = users.map(user => {
       const { password, ...userData } = user;

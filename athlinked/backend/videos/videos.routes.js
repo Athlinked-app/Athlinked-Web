@@ -24,4 +24,3 @@ router.get('/', videosController.getAllVideos);
 router.delete('/:id', videosController.deleteVideo);
 
 module.exports = router;
-

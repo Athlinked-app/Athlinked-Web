@@ -27,7 +27,10 @@ async function createResource(req, res) {
       file_size,
     } = req.body;
 
-    if (!resource_type || !['article', 'video', 'template'].includes(resource_type)) {
+    if (
+      !resource_type ||
+      !['article', 'video', 'template'].includes(resource_type)
+    ) {
       return res.status(400).json({
         success: false,
         message: 'Invalid resource_type. Must be article, video, or template',
@@ -41,7 +44,7 @@ async function createResource(req, res) {
 
     if (req.file) {
       const uploadedFileUrl = `/uploads/${req.file.filename}`;
-      
+
       if (resource_type === 'video') {
         finalVideoUrl = uploadedFileUrl;
         finalFileType = req.file.mimetype;
@@ -64,7 +67,9 @@ async function createResource(req, res) {
       resourceData.article_link = article_link;
     } else if (resource_type === 'video') {
       resourceData.video_url = finalVideoUrl;
-      resourceData.video_duration = video_duration ? parseInt(video_duration) : null;
+      resourceData.video_duration = video_duration
+        ? parseInt(video_duration)
+        : null;
     } else if (resource_type === 'template') {
       resourceData.file_url = finalFileUrl;
       resourceData.file_type = finalFileType;
@@ -148,4 +153,3 @@ module.exports = {
   getAllResources,
   deleteResource,
 };
-

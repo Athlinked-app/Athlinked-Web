@@ -623,7 +623,11 @@ export default function ArticleEventModal({
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={!title.trim() || (postType === 'article' && !body.trim()) || (postType === 'event' && !date)}
+            disabled={
+              !title.trim() ||
+              (postType === 'article' && !body.trim()) ||
+              (postType === 'event' && !date)
+            }
             className="px-6 py-2 rounded-md bg-[#CB9729] text-white font-semibold hover:bg-[#b78322] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Post
@@ -633,4 +637,3 @@ export default function ArticleEventModal({
     </div>
   );
 }
-

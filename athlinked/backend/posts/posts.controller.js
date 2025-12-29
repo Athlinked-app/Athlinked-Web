@@ -106,7 +106,7 @@ async function likePost(req, res) {
   try {
     const postId = req.params.postId;
     const userId = req.body.user_id || req.user?.id;
-    
+
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -174,7 +174,11 @@ async function addComment(req, res) {
       });
     }
 
-    const result = await postsService.addCommentService(postId, userId, comment.trim());
+    const result = await postsService.addCommentService(
+      postId,
+      userId,
+      comment.trim()
+    );
     return res.status(201).json(result);
   } catch (error) {
     console.error('Add comment controller error:', error);
@@ -205,7 +209,11 @@ async function replyToComment(req, res) {
       });
     }
 
-    const result = await postsService.replyToCommentService(commentId, userId, comment.trim());
+    const result = await postsService.replyToCommentService(
+      commentId,
+      userId,
+      comment.trim()
+    );
     return res.status(201).json(result);
   } catch (error) {
     console.error('Reply to comment controller error:', error);
@@ -306,4 +314,3 @@ module.exports = {
   getComments,
   deletePost,
 };
-

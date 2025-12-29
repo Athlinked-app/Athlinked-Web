@@ -240,7 +240,12 @@ async function addCommentService(postId, userId, comment) {
 
     await client.query('BEGIN');
     try {
-      const commentResult = await postsModel.addComment(postId, userId, comment, client);
+      const commentResult = await postsModel.addComment(
+        postId,
+        userId,
+        comment,
+        client
+      );
       await client.query('COMMIT');
 
       // Handle mentions in comment
@@ -307,7 +312,12 @@ async function replyToCommentService(commentId, userId, comment) {
   try {
     await client.query('BEGIN');
     try {
-      const replyResult = await postsModel.replyToComment(commentId, userId, comment, client);
+      const replyResult = await postsModel.replyToComment(
+        commentId,
+        userId,
+        comment,
+        client
+      );
       await client.query('COMMIT');
       return {
         success: true,
@@ -412,4 +422,3 @@ module.exports = {
   getCommentsByPostIdService,
   deletePostService,
 };
-
