@@ -35,13 +35,19 @@ async function getOrCreateConversation(userId1, userId2, client = null) {
       dbClient.query(userQuery, [userId1]),
       dbClient.query(userQuery, [userId2]),
     ]);
-    
-    const user1Name = user1Result.rows.length > 0 
-      ? (user1Result.rows[0].full_name || user1Result.rows[0].username || 'User')
-      : 'User';
-    const user2Name = user2Result.rows.length > 0 
-      ? (user2Result.rows[0].full_name || user2Result.rows[0].username || 'User')
-      : 'User';
+
+    const user1Name =
+      user1Result.rows.length > 0
+        ? user1Result.rows[0].full_name ||
+          user1Result.rows[0].username ||
+          'User'
+        : 'User';
+    const user2Name =
+      user2Result.rows.length > 0
+        ? user2Result.rows[0].full_name ||
+          user2Result.rows[0].username ||
+          'User'
+        : 'User';
 
     const participant1Id = uuidv4();
     const participant2Id = uuidv4();
@@ -53,8 +59,18 @@ async function getOrCreateConversation(userId1, userId2, client = null) {
       DO UPDATE SET user_name = EXCLUDED.user_name
     `;
 
-    await dbClient.query(insertParticipantQuery, [participant1Id, conversationId, userId1, user1Name]);
-    await dbClient.query(insertParticipantQuery, [participant2Id, conversationId, userId2, user2Name]);
+    await dbClient.query(insertParticipantQuery, [
+      participant1Id,
+      conversationId,
+      userId1,
+      user1Name,
+    ]);
+    await dbClient.query(insertParticipantQuery, [
+      participant2Id,
+      conversationId,
+      userId2,
+      user2Name,
+    ]);
 
     return { id: conversationId };
   } catch (error) {
@@ -70,15 +86,24 @@ async function getOrCreateConversation(userId1, userId2, client = null) {
   }
 }
 
-async function createMessage(conversationId, senderId, message, client = null, mediaUrl = null, messageType = 'text', postData = null) {
+async function createMessage(
+  conversationId,
+  senderId,
+  message,
+  client = null,
+  mediaUrl = null,
+  messageType = 'text',
+  postData = null
+) {
   const dbClient = client || pool;
-  
+
   const userQuery = 'SELECT full_name, username FROM users WHERE id = $1';
   const userResult = await dbClient.query(userQuery, [senderId]);
-  const senderName = userResult.rows.length > 0 
-    ? (userResult.rows[0].full_name || userResult.rows[0].username || 'User')
-    : 'User';
-  
+  const senderName =
+    userResult.rows.length > 0
+      ? userResult.rows[0].full_name || userResult.rows[0].username || 'User'
+      : 'User';
+
   const checkColumnsQuery = `
     SELECT column_name 
     FROM information_schema.columns 
@@ -86,24 +111,47 @@ async function createMessage(conversationId, senderId, message, client = null, m
     AND column_name IN ('media_url', 'message_type', 'post_data')
   `;
   const columnsResult = await dbClient.query(checkColumnsQuery);
-  const hasMediaUrl = columnsResult.rows.some(row => row.column_name === 'media_url');
-  const hasMessageType = columnsResult.rows.some(row => row.column_name === 'message_type');
-  const hasPostData = columnsResult.rows.some(row => row.column_name === 'post_data');
-  
+  const hasMediaUrl = columnsResult.rows.some(
+    row => row.column_name === 'media_url'
+  );
+  const hasMessageType = columnsResult.rows.some(
+    row => row.column_name === 'message_type'
+  );
+  const hasPostData = columnsResult.rows.some(
+    row => row.column_name === 'post_data'
+  );
+
   const messageId = uuidv4();
-  const postDataJson = postData ? (typeof postData === 'string' ? postData : JSON.stringify(postData)) : null;
-  
+  const postDataJson = postData
+    ? typeof postData === 'string'
+      ? postData
+      : JSON.stringify(postData)
+    : null;
+
   if (hasMediaUrl && hasMessageType && hasPostData) {
     const query = `
       INSERT INTO messages (id, conversation_id, sender_id, sender_name, message, media_url, message_type, post_data, created_at)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
       RETURNING *
     `;
-    const values = [messageId, conversationId, senderId, senderName, message, mediaUrl, messageType, postDataJson];
+    const values = [
+      messageId,
+      conversationId,
+      senderId,
+      senderName,
+      message,
+      mediaUrl,
+      messageType,
+      postDataJson,
+    ];
     const result = await dbClient.query(query, values);
     return {
       ...result.rows[0],
-      post_data: result.rows[0].post_data ? (typeof result.rows[0].post_data === 'string' ? JSON.parse(result.rows[0].post_data) : result.rows[0].post_data) : null,
+      post_data: result.rows[0].post_data
+        ? typeof result.rows[0].post_data === 'string'
+          ? JSON.parse(result.rows[0].post_data)
+          : result.rows[0].post_data
+        : null,
     };
   } else if (hasMediaUrl && hasMessageType) {
     const query = `
@@ -111,11 +159,23 @@ async function createMessage(conversationId, senderId, message, client = null, m
       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
       RETURNING *
     `;
-    const values = [messageId, conversationId, senderId, senderName, message, mediaUrl, messageType];
+    const values = [
+      messageId,
+      conversationId,
+      senderId,
+      senderName,
+      message,
+      mediaUrl,
+      messageType,
+    ];
     const result = await dbClient.query(query, values);
     return {
       ...result.rows[0],
-      post_data: postDataJson ? (typeof postDataJson === 'string' ? JSON.parse(postDataJson) : postDataJson) : null,
+      post_data: postDataJson
+        ? typeof postDataJson === 'string'
+          ? JSON.parse(postDataJson)
+          : postDataJson
+        : null,
     };
   } else {
     const query = `
@@ -129,7 +189,11 @@ async function createMessage(conversationId, senderId, message, client = null, m
       ...result.rows[0],
       media_url: null,
       message_type: 'text',
-      post_data: postDataJson ? (typeof postDataJson === 'string' ? JSON.parse(postDataJson) : postDataJson) : null,
+      post_data: postDataJson
+        ? typeof postDataJson === 'string'
+          ? JSON.parse(postDataJson)
+          : postDataJson
+        : null,
     };
   }
 }
@@ -140,7 +204,11 @@ async function createMessage(conversationId, senderId, message, client = null, m
  * @param {string} lastMessage - Last message text
  * @param {object} client - Optional database client for transactions
  */
-async function updateConversationLastMessage(conversationId, lastMessage, client = null) {
+async function updateConversationLastMessage(
+  conversationId,
+  lastMessage,
+  client = null
+) {
   const query = `
     UPDATE conversations
     SET last_message = $1, last_message_at = NOW()
@@ -203,8 +271,12 @@ async function getMessagesForConversation(conversationId, userId) {
     WHERE conversation_id = $1 AND user_id != $2
     LIMIT 1
   `;
-  const otherUserResult = await pool.query(otherUserQuery, [conversationId, userId]);
-  const otherUserId = otherUserResult.rows.length > 0 ? otherUserResult.rows[0].user_id : null;
+  const otherUserResult = await pool.query(otherUserQuery, [
+    conversationId,
+    userId,
+  ]);
+  const otherUserId =
+    otherUserResult.rows.length > 0 ? otherUserResult.rows[0].user_id : null;
 
   const checkColumnsQuery = `
     SELECT column_name 
@@ -213,12 +285,20 @@ async function getMessagesForConversation(conversationId, userId) {
     AND column_name IN ('media_url', 'message_type', 'post_data')
   `;
   const columnsResult = await pool.query(checkColumnsQuery);
-  const hasMediaUrl = columnsResult.rows.some(row => row.column_name === 'media_url');
-  const hasMessageType = columnsResult.rows.some(row => row.column_name === 'message_type');
-  const hasPostData = columnsResult.rows.some(row => row.column_name === 'post_data');
+  const hasMediaUrl = columnsResult.rows.some(
+    row => row.column_name === 'media_url'
+  );
+  const hasMessageType = columnsResult.rows.some(
+    row => row.column_name === 'message_type'
+  );
+  const hasPostData = columnsResult.rows.some(
+    row => row.column_name === 'post_data'
+  );
 
   const mediaUrlSelect = hasMediaUrl ? 'm.media_url,' : 'NULL as media_url,';
-  const messageTypeSelect = hasMessageType ? 'm.message_type,' : 'NULL as message_type,';
+  const messageTypeSelect = hasMessageType
+    ? 'm.message_type,'
+    : 'NULL as message_type,';
   const postDataSelect = hasPostData ? 'm.post_data,' : 'NULL as post_data,';
 
   const query = `
@@ -261,7 +341,12 @@ async function getMessagesForConversation(conversationId, userId) {
  * @param {string} senderId - User ID who sent the messages
  * @param {object} client - Optional database client for transactions
  */
-async function markMessagesAsRead(conversationId, readerId, senderId, client = null) {
+async function markMessagesAsRead(
+  conversationId,
+  readerId,
+  senderId,
+  client = null
+) {
   const dbClient = client || pool;
 
   const unreadMessagesQuery = `
@@ -352,18 +437,18 @@ async function searchNetworkUsers(userId, searchQuery) {
 
   try {
     const searchPattern = `%${searchQuery}%`;
-    
+
     const [followingResult, followersResult] = await Promise.all([
       pool.query(followingQuery, [userId, searchPattern]),
       pool.query(followersQuery, [userId, searchPattern]),
     ]);
 
     const allUsers = new Map();
-    
+
     followingResult.rows.forEach(user => {
       allUsers.set(user.id, user);
     });
-    
+
     followersResult.rows.forEach(user => {
       if (!allUsers.has(user.id)) {
         allUsers.set(user.id, user);
@@ -371,8 +456,10 @@ async function searchNetworkUsers(userId, searchQuery) {
     });
 
     const result = Array.from(allUsers.values()).sort((a, b) => {
-      if (a.relationship === 'following' && b.relationship === 'follower') return -1;
-      if (a.relationship === 'follower' && b.relationship === 'following') return 1;
+      if (a.relationship === 'following' && b.relationship === 'follower')
+        return -1;
+      if (a.relationship === 'follower' && b.relationship === 'following')
+        return 1;
       const nameA = (a.full_name || a.username || '').toLowerCase();
       const nameB = (b.full_name || b.username || '').toLowerCase();
       return nameA.localeCompare(nameB);
@@ -392,13 +479,13 @@ async function updateUserNameInMessages(userId, userName) {
     SET sender_name = $1
     WHERE sender_id = $2 AND (sender_name IS NULL OR sender_name != $1)
   `;
-  
+
   const updateParticipantsQuery = `
     UPDATE conversation_participants
     SET user_name = $1
     WHERE user_id = $2 AND (user_name IS NULL OR user_name != $1)
   `;
-  
+
   await Promise.all([
     pool.query(updateMessagesQuery, [userName, userId]),
     pool.query(updateParticipantsQuery, [userName, userId]),
@@ -417,4 +504,3 @@ module.exports = {
   searchNetworkUsers,
   updateUserNameInMessages,
 };
-

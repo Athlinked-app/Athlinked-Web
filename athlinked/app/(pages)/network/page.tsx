@@ -21,8 +21,13 @@ export default function NetworkPage() {
   const [following, setFollowing] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<{ full_name?: string; profile_url?: string } | null>(null);
-  const [followStatuses, setFollowStatuses] = useState<{ [key: string]: boolean }>({});
+  const [currentUser, setCurrentUser] = useState<{
+    full_name?: string;
+    profile_url?: string;
+  } | null>(null);
+  const [followStatuses, setFollowStatuses] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   // Fetch current user ID
   useEffect(() => {
@@ -320,105 +325,109 @@ export default function NetworkPage() {
         userName={currentUser?.full_name}
         userProfileUrl={getProfileUrl(currentUser?.profile_url)}
       />
-      
+
       <div className="flex flex-1 w-full mt-5 overflow-hidden">
         {/* Navigation Bar */}
         <div className="hidden md:flex px-6">
           <NavigationBar activeItem="network" />
         </div>
-        
+
         <div className="flex-1 flex gap-5 overflow-y-auto">
           {/* Main Content */}
           <div className="flex-1 bg-white rounded-xl p-6">
-          {/* Followers/Followings Section */}
-          <div className="mb-8">
-            <div className="flex border-b border-gray-200 mb-6">
-              <button
-                onClick={() => setActiveTab('followers')}
-                className={`px-6 py-3 font-medium text-base relative ${
-                  activeTab === 'followers'
-                    ? 'text-[#CB9729]'
-                    : 'text-black hover:text-black'
-                }`}
-              >
-                Followers
-                {activeTab === 'followers' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
-                )}
-              </button>
-              <button
-                onClick={() => setActiveTab('following')}
-                className={`px-6 py-3 font-medium text-base relative ${
-                  activeTab === 'following'
-                    ? 'text-[#CB9729]'
-                    : 'text-black hover:text-black'
-                }`}
-              >
-                Followings
-                {activeTab === 'following' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
-                )}
-              </button>
-            </div>
-
-            {loading ? (
-              <div className="text-center py-8 text-black">Loading...</div>
-            ) : currentList.length === 0 ? (
-              <div className="text-center py-8 text-black">
-                No {activeTab === 'followers' ? 'followers' : 'followings'} yet
+            {/* Followers/Followings Section */}
+            <div className="mb-8">
+              <div className="flex border-b border-gray-200 mb-6">
+                <button
+                  onClick={() => setActiveTab('followers')}
+                  className={`px-6 py-3 font-medium text-base relative ${
+                    activeTab === 'followers'
+                      ? 'text-[#CB9729]'
+                      : 'text-black hover:text-black'
+                  }`}
+                >
+                  Followers
+                  {activeTab === 'followers' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
+                  )}
+                </button>
+                <button
+                  onClick={() => setActiveTab('following')}
+                  className={`px-6 py-3 font-medium text-base relative ${
+                    activeTab === 'following'
+                      ? 'text-[#CB9729]'
+                      : 'text-black hover:text-black'
+                  }`}
+                >
+                  Followings
+                  {activeTab === 'following' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
+                  )}
+                </button>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {currentList.map(user => {
-                  const isFollowing = followStatuses[user.id] || false;
-                  const profileUrl = getProfileUrl(user.profile_url);
 
-                  return (
-                    <div
-                      key={user.id}
-                      className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-full bg-gray-300 overflow-hidden flex items-center justify-center">
-                          {profileUrl ? (
-                            <img
-                              src={profileUrl}
-                              alt={getDisplayName(user)}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-black font-semibold text-sm">
-                              {getInitials(user.full_name || 'User')}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <div className="font-medium text-black">
-                            {user.full_name || 'User'}
-                          </div>
-                          <div className="text-sm text-black">
-                            {user.user_type 
-                              ? user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1).toLowerCase()
-                              : 'User'}
-                          </div>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleFollowToggle(user.id, isFollowing)}
-                        className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                          isFollowing
-                            ? 'bg-gray-200 text-black hover:bg-gray-300'
-                            : 'bg-[#CB9729] text-white hover:bg-yellow-600'
-                        }`}
+              {loading ? (
+                <div className="text-center py-8 text-black">Loading...</div>
+              ) : currentList.length === 0 ? (
+                <div className="text-center py-8 text-black">
+                  No {activeTab === 'followers' ? 'followers' : 'followings'}{' '}
+                  yet
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {currentList.map(user => {
+                    const isFollowing = followStatuses[user.id] || false;
+                    const profileUrl = getProfileUrl(user.profile_url);
+
+                    return (
+                      <div
+                        key={user.id}
+                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                       >
-                        {isFollowing ? 'Following' : 'Follow'}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-full bg-gray-300 overflow-hidden flex items-center justify-center">
+                            {profileUrl ? (
+                              <img
+                                src={profileUrl}
+                                alt={getDisplayName(user)}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-black font-semibold text-sm">
+                                {getInitials(user.full_name || 'User')}
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-medium text-black">
+                              {user.full_name || 'User'}
+                            </div>
+                            <div className="text-sm text-black">
+                              {user.user_type
+                                ? user.user_type.charAt(0).toUpperCase() +
+                                  user.user_type.slice(1).toLowerCase()
+                                : 'User'}
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() =>
+                            handleFollowToggle(user.id, isFollowing)
+                          }
+                          className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                            isFollowing
+                              ? 'bg-gray-200 text-black hover:bg-gray-300'
+                              : 'bg-[#CB9729] text-white hover:bg-yellow-600'
+                          }`}
+                        >
+                          {isFollowing ? 'Following' : 'Follow'}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right Sidebar */}

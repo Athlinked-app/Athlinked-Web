@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { Plus, Trash2, Pencil } from 'lucide-react';
-import AthleticAndPerformancePopup, { type AthleticAndPerformance } from '../AthleticandPerformancePopup';
+import AthleticAndPerformancePopup, {
+  type AthleticAndPerformance,
+} from '../AthleticandPerformancePopup';
 
 export type { AthleticAndPerformance };
 
@@ -12,12 +14,14 @@ interface AthleticAndPerformanceProps {
   sportsPlayed?: string; // Comma-separated string of sports
 }
 
-export default function AthleticAndPerformanceComponent({ 
-  athleticAndPerformance = [], 
+export default function AthleticAndPerformanceComponent({
+  athleticAndPerformance = [],
   onAthleticAndPerformanceChange,
   sportsPlayed = '',
 }: AthleticAndPerformanceProps) {
-  const [athleticAndPerformanceList, setAthleticAndPerformanceList] = useState<AthleticAndPerformance[]>(athleticAndPerformance);
+  const [athleticAndPerformanceList, setAthleticAndPerformanceList] = useState<
+    AthleticAndPerformance[]
+  >(athleticAndPerformance);
   const [showPopup, setShowPopup] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
@@ -52,7 +56,9 @@ export default function AthleticAndPerformanceComponent({
   };
 
   const handleDelete = (index: number) => {
-    const updatedList = athleticAndPerformanceList.filter((_, i) => i !== index);
+    const updatedList = athleticAndPerformanceList.filter(
+      (_, i) => i !== index
+    );
     setAthleticAndPerformanceList(updatedList);
     if (onAthleticAndPerformanceChange) {
       onAthleticAndPerformanceChange(updatedList);
@@ -63,7 +69,9 @@ export default function AthleticAndPerformanceComponent({
     <>
       <div className="w-full bg-white rounded-lg p-6 mt-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">Athletic and Performance Data</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Athletic and Performance Data
+          </h2>
           <button
             onClick={() => {
               setEditingIndex(null);
@@ -76,7 +84,10 @@ export default function AthleticAndPerformanceComponent({
         </div>
 
         {athleticAndPerformanceList.length === 0 ? (
-          <p className="text-gray-500 italic">No athletic and performance data added yet. Click the + button to add one.</p>
+          <p className="text-gray-500 italic">
+            No athletic and performance data added yet. Click the + button to
+            add one.
+          </p>
         ) : (
           <div className="space-y-4">
             {athleticAndPerformanceList.map((data, index) => (
@@ -93,27 +104,34 @@ export default function AthleticAndPerformanceComponent({
                     )}
                     {data.height && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Height:</span> {data.height} cm
+                        <span className="font-medium">Height:</span>{' '}
+                        {data.height} cm
                       </p>
                     )}
                     {data.weight && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Weight:</span> {data.weight} lbs
+                        <span className="font-medium">Weight:</span>{' '}
+                        {data.weight} lbs
                       </p>
                     )}
                     {data.athleteHandedness && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Handedness:</span> {data.athleteHandedness}
+                        <span className="font-medium">Handedness:</span>{' '}
+                        {data.athleteHandedness}
                       </p>
                     )}
                     {data.jerseyNumber && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Jersey Number:</span> {data.jerseyNumber}
+                        <span className="font-medium">Jersey Number:</span>{' '}
+                        {data.jerseyNumber}
                       </p>
                     )}
                     {data.trainingHoursPerWeek && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Training Hours/Week:</span> {data.trainingHoursPerWeek}
+                        <span className="font-medium">
+                          Training Hours/Week:
+                        </span>{' '}
+                        {data.trainingHoursPerWeek}
                       </p>
                     )}
                   </div>
@@ -142,10 +160,13 @@ export default function AthleticAndPerformanceComponent({
         open={showPopup}
         onClose={handleClose}
         onSave={handleAdd}
-        existingData={editingIndex !== null ? athleticAndPerformanceList[editingIndex] : undefined}
+        existingData={
+          editingIndex !== null
+            ? athleticAndPerformanceList[editingIndex]
+            : undefined
+        }
         sportsPlayed={sportsPlayed}
       />
     </>
   );
 }
-

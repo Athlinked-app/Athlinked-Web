@@ -40,7 +40,12 @@ export default function PersonalDetailsForm({
   const [sports, setSports] = useState<Sport[]>([]);
   const [loadingSports, setLoadingSports] = useState(false);
   const [selectedSports, setSelectedSports] = useState<string[]>(
-    formData.sportsPlayed ? formData.sportsPlayed.split(',').map((s: string) => s.trim()).filter(Boolean) : []
+    formData.sportsPlayed
+      ? formData.sportsPlayed
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter(Boolean)
+      : []
   );
   const [showSportsDropdown, setShowSportsDropdown] = useState(false);
   const sportsDropdownRef = useRef<HTMLDivElement>(null);
@@ -54,7 +59,10 @@ export default function PersonalDetailsForm({
   // Sync selectedSports with formData when it changes externally
   useEffect(() => {
     if (formData.sportsPlayed) {
-      const sportsArray = formData.sportsPlayed.split(',').map((s: string) => s.trim()).filter(Boolean);
+      const sportsArray = formData.sportsPlayed
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter(Boolean);
       setSelectedSports(sportsArray);
     } else {
       setSelectedSports([]);
@@ -64,7 +72,10 @@ export default function PersonalDetailsForm({
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (sportsDropdownRef.current && !sportsDropdownRef.current.contains(event.target as Node)) {
+      if (
+        sportsDropdownRef.current &&
+        !sportsDropdownRef.current.contains(event.target as Node)
+      ) {
         setShowSportsDropdown(false);
       }
     };
@@ -81,7 +92,9 @@ export default function PersonalDetailsForm({
   const fetchSports = async () => {
     setLoadingSports(true);
     try {
-      const response = await fetch('http://localhost:3001/api/sports');
+      const response = await fetch(
+        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/sports'
+      );
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.sports) {
@@ -99,20 +112,24 @@ export default function PersonalDetailsForm({
     const newSelectedSports = selectedSports.includes(sportName)
       ? selectedSports.filter(s => s !== sportName)
       : [...selectedSports, sportName];
-    
+
     setSelectedSports(newSelectedSports);
     const sportsString = newSelectedSports.join(', ');
-    
+
     // Update primary sport: keep it if it's still in the selected list, otherwise set to first selected or empty
     let newPrimarySport = formData.primarySport;
-    if (formData.primarySport && !newSelectedSports.includes(formData.primarySport)) {
+    if (
+      formData.primarySport &&
+      !newSelectedSports.includes(formData.primarySport)
+    ) {
       // Primary sport was deselected, reset to first available or empty
-      newPrimarySport = newSelectedSports.length > 0 ? newSelectedSports[0] : '';
+      newPrimarySport =
+        newSelectedSports.length > 0 ? newSelectedSports[0] : '';
     } else if (!formData.primarySport && newSelectedSports.length > 0) {
       // No primary sport set yet, auto-set to first selected
       newPrimarySport = newSelectedSports[0];
     }
-    
+
     onFormDataChange({
       ...formData,
       sportsPlayed: sportsString,
@@ -176,7 +193,13 @@ export default function PersonalDetailsForm({
                     onClick={() => setShowSportsDropdown(!showSportsDropdown)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent bg-white text-gray-900 cursor-pointer flex items-center justify-between"
                   >
-                    <span className={selectedSports.length > 0 ? 'text-gray-900' : 'text-gray-500'}>
+                    <span
+                      className={
+                        selectedSports.length > 0
+                          ? 'text-gray-900'
+                          : 'text-gray-500'
+                      }
+                    >
                       {selectedSports.length > 0
                         ? `${selectedSports.length} sport${selectedSports.length > 1 ? 's' : ''} selected`
                         : 'Select sports'}
@@ -187,13 +210,18 @@ export default function PersonalDetailsForm({
                       stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
                     </svg>
                   </div>
                   {showSportsDropdown && (
                     <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
                       <div className="p-2 space-y-1">
-                        {sports.map((sport) => (
+                        {sports.map(sport => (
                           <label
                             key={sport.id}
                             className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer rounded"
@@ -204,7 +232,9 @@ export default function PersonalDetailsForm({
                               onChange={() => handleSportToggle(sport.name)}
                               className="w-4 h-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500 focus:ring-2"
                             />
-                            <span className="ml-3 text-sm text-gray-700">{sport.name}</span>
+                            <span className="ml-3 text-sm text-gray-700">
+                              {sport.name}
+                            </span>
                           </label>
                         ))}
                       </div>
@@ -241,13 +271,15 @@ export default function PersonalDetailsForm({
                 >
                   <option value="">Select primary sport</option>
                   {selectedSports.length > 0 ? (
-                    selectedSports.map((sportName) => (
+                    selectedSports.map(sportName => (
                       <option key={sportName} value={sportName}>
                         {sportName}
                       </option>
                     ))
                   ) : (
-                    <option value="" disabled>Please select sports played first</option>
+                    <option value="" disabled>
+                      Please select sports played first
+                    </option>
                   )}
                 </select>
               )}

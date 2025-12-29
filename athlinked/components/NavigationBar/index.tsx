@@ -128,13 +128,18 @@ export default function NavigationBar({
       ? rawProfileUrl.startsWith('http')
         ? rawProfileUrl
         : rawProfileUrl.startsWith('/') && !rawProfileUrl.startsWith('/assets')
-          ? `http://localhost:3001${rawProfileUrl}`
-          : rawProfileUrl)
-    : null;
-    
-  const userRole = propUserRole || (userData?.user_type ? userData.user_type.charAt(0).toUpperCase() + userData.user_type.slice(1).toLowerCase() : 'Athlete');
+          ? `https://qd9ngjg1-3001.inc1.devtunnels.ms${rawProfileUrl}`
+          : rawProfileUrl // ✅ Removed the extra )
+      : null;
+
+  const userRole =
+    propUserRole ||
+    (userData?.user_type
+      ? userData.user_type.charAt(0).toUpperCase() +
+        userData.user_type.slice(1).toLowerCase()
+      : 'Athlete');
   const displayName = userName || 'User';
-  
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -148,7 +153,7 @@ export default function NavigationBar({
     <div className="w-72 bg-white flex flex-col border-r border-gray-200 rounded-lg">
       {/* Athlete Profile Section */}
       <div className="p-6 border-b border-gray-200">
-        <div 
+        <div
           className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => {
             router.push('/profile');
@@ -203,6 +208,8 @@ export default function NavigationBar({
 
             const getHref = () => {
               switch (item.id) {
+                case 'search':
+                  return '/search';
                 case 'home':
                   return '/home';
                 case 'stats':

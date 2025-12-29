@@ -49,7 +49,8 @@ interface SearchUser {
 
 export default function MessagesPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
+  const [selectedConversation, setSelectedConversation] =
+    useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [messageInput, setMessageInput] = useState('');
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
@@ -76,11 +77,11 @@ export default function MessagesPage() {
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -108,7 +109,7 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!currentUser?.id) return;
 
-    const newSocket = io('http://localhost:3001', {
+    const newSocket = io('https://qd9ngjg1-3001.inc1.devtunnels.ms', {
       transports: ['websocket'],
     });
 
@@ -116,88 +117,133 @@ export default function MessagesPage() {
       newSocket.emit('userId', { userId: currentUser.id });
     });
 
-    newSocket.on('receive_message', (data: Message & { conversation_id: string; is_delivered?: boolean; media_url?: string; message_type?: string }) => {
-      if (selectedConversation?.conversation_id === data.conversation_id) {
-        const isOurMessage = data.sender_id === currentUser.id;
-        
-        setMessages(prev => {
-          const filtered = prev.filter(msg => {
-            if (!msg.message_id.startsWith('temp-')) return true;
-            if (msg.sender_id === data.sender_id) {
-              if (msg.media_url && data.media_url) {
-                return false;
+    newSocket.on(
+      'receive_message',
+      (
+        data: Message & {
+          conversation_id: string;
+          is_delivered?: boolean;
+          media_url?: string;
+          message_type?: string;
+        }
+      ) => {
+        if (selectedConversation?.conversation_id === data.conversation_id) {
+          const isOurMessage = data.sender_id === currentUser.id;
+
+          setMessages(prev => {
+            const filtered = prev.filter(msg => {
+              if (!msg.message_id.startsWith('temp-')) return true;
+              if (msg.sender_id === data.sender_id) {
+                if (msg.media_url && data.media_url) {
+                  return false;
+                }
+                if (
+                  msg.message === data.message &&
+                  Math.abs(
+                    new Date(msg.created_at).getTime() -
+                      new Date(data.created_at).getTime()
+                  ) < 5000
+                ) {
+                  return false;
+                }
               }
-              if (msg.message === data.message && Math.abs(new Date(msg.created_at).getTime() - new Date(data.created_at).getTime()) < 5000) {
-                return false;
+              return true;
+            });
+
+            let messageType = data.message_type as
+              | 'text'
+              | 'image'
+              | 'video'
+              | 'file'
+              | 'gif'
+              | 'post';
+            if (!messageType && data.post_data) {
+              messageType = 'post';
+            } else if (!messageType && data.media_url) {
+              const url = data.media_url.toLowerCase();
+              if (
+                url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ||
+                url.includes('giphy.com')
+              ) {
+                messageType = url.includes('giphy.com') ? 'gif' : 'image';
+              } else if (url.match(/\.(mp4|mov|webm|ogg)$/i)) {
+                messageType = 'video';
+              } else {
+                messageType = 'file';
               }
             }
-            return true;
+
+            let postData = null;
+            if (data.post_data) {
+              try {
+                postData =
+                  typeof data.post_data === 'string'
+                    ? JSON.parse(data.post_data)
+                    : data.post_data;
+              } catch (e) {
+                console.error('Error parsing post_data:', e);
+              }
+            }
+
+            return [
+              ...filtered,
+              {
+                message_id: data.message_id,
+                sender_id: data.sender_id,
+                message: data.message || '',
+                created_at: data.created_at,
+                is_read: false,
+                is_read_by_recipient: false,
+                is_delivered: isOurMessage ? data.is_delivered || false : true,
+                media_url: data.media_url || null,
+                message_type: messageType || 'text',
+                post_data: postData,
+              },
+            ];
           });
-          
-          let messageType = data.message_type as 'text' | 'image' | 'video' | 'file' | 'gif' | 'post';
-          if (!messageType && data.post_data) {
-            messageType = 'post';
-          } else if (!messageType && data.media_url) {
-            const url = data.media_url.toLowerCase();
-            if (url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || url.includes('giphy.com')) {
-              messageType = url.includes('giphy.com') ? 'gif' : 'image';
-            } else if (url.match(/\.(mp4|mov|webm|ogg)$/i)) {
-              messageType = 'video';
-            } else {
-              messageType = 'file';
-            }
-          }
-          
-          let postData = null;
-          if (data.post_data) {
-            try {
-              postData = typeof data.post_data === 'string' ? JSON.parse(data.post_data) : data.post_data;
-            } catch (e) {
-              console.error('Error parsing post_data:', e);
-            }
-          }
-          
-          return [...filtered, {
-            message_id: data.message_id,
-            sender_id: data.sender_id,
-            message: data.message || '',
-            created_at: data.created_at,
-            is_read: false,
-            is_read_by_recipient: false,
-            is_delivered: isOurMessage ? (data.is_delivered || false) : true,
-            media_url: data.media_url || null,
-            message_type: messageType || 'text',
-            post_data: postData,
-          }];
-        });
+        }
+        fetchConversations();
       }
-      fetchConversations();
-    });
+    );
 
-    newSocket.on('message_delivered', (data: { message_id: string; conversation_id: string }) => {
-      if (selectedConversation?.conversation_id === data.conversation_id) {
-        setMessages(prev =>
-          prev.map(msg =>
-            msg.message_id === data.message_id ? { ...msg, is_delivered: true } : msg
-          )
-        );
+    newSocket.on(
+      'message_delivered',
+      (data: { message_id: string; conversation_id: string }) => {
+        if (selectedConversation?.conversation_id === data.conversation_id) {
+          setMessages(prev =>
+            prev.map(msg =>
+              msg.message_id === data.message_id
+                ? { ...msg, is_delivered: true }
+                : msg
+            )
+          );
+        }
       }
-    });
+    );
 
-    newSocket.on('messages_read', (data: { conversationId: string; readerId: string }) => {
-      if (selectedConversation?.conversation_id === data.conversationId) {
-        setMessages(prev =>
-          prev.map(msg => {
-            if (msg.sender_id === currentUser?.id && data.readerId === selectedConversation.other_user_id) {
-              return { ...msg, is_read_by_recipient: true };
-            } else if (msg.sender_id === data.readerId && msg.sender_id !== currentUser?.id) {
-              return { ...msg, is_read: true };
-            }
-            return msg;
-          })
-        );
+    newSocket.on(
+      'messages_read',
+      (data: { conversationId: string; readerId: string }) => {
+        if (selectedConversation?.conversation_id === data.conversationId) {
+          setMessages(prev =>
+            prev.map(msg => {
+              if (
+                msg.sender_id === currentUser?.id &&
+                data.readerId === selectedConversation.other_user_id
+              ) {
+                return { ...msg, is_read_by_recipient: true };
+              } else if (
+                msg.sender_id === data.readerId &&
+                msg.sender_id !== currentUser?.id
+              ) {
+                return { ...msg, is_read: true };
+              }
+              return msg;
+            })
+          );
+        }
       }
-    });
+    );
 
     socketRef.current = newSocket;
     setSocket(newSocket);
@@ -209,10 +255,10 @@ export default function MessagesPage() {
 
   const fetchConversations = async () => {
     if (!currentUser?.id) return;
-    
+
     try {
       const response = await fetch(
-        `http://localhost:3001/api/messages/conversations?user_id=${currentUser.id}`
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/conversations?user_id=${currentUser.id}`
       );
 
       if (!response.ok) {
@@ -231,10 +277,10 @@ export default function MessagesPage() {
 
   const fetchMessages = async (conversationId: string) => {
     if (!currentUser?.id) return;
-    
+
     try {
       const response = await fetch(
-        `http://localhost:3001/api/messages/${conversationId}?user_id=${currentUser.id}`
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/${conversationId}?user_id=${currentUser.id}`
       );
 
       if (!response.ok) {
@@ -256,7 +302,10 @@ export default function MessagesPage() {
           let messageType = msg.message_type;
           if (!messageType && msg.media_url) {
             const url = msg.media_url.toLowerCase();
-            if (url.match(/\.(jpg|jpeg|png|gif|webp)$/i) || url.includes('giphy.com')) {
+            if (
+              url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ||
+              url.includes('giphy.com')
+            ) {
               messageType = url.includes('giphy.com') ? 'gif' : 'image';
             } else if (url.match(/\.(mp4|mov|webm|ogg)$/i)) {
               messageType = 'video';
@@ -264,16 +313,19 @@ export default function MessagesPage() {
               messageType = 'file';
             }
           }
-          
+
           let postData = null;
           if (msg.post_data) {
             try {
-              postData = typeof msg.post_data === 'string' ? JSON.parse(msg.post_data) : msg.post_data;
+              postData =
+                typeof msg.post_data === 'string'
+                  ? JSON.parse(msg.post_data)
+                  : msg.post_data;
             } catch (e) {
               console.error('Error parsing post_data:', e);
             }
           }
-          
+
           return {
             ...msg,
             is_delivered: msg.is_read_by_recipient !== undefined ? true : false,
@@ -297,17 +349,20 @@ export default function MessagesPage() {
 
   const markAsRead = async (conversationId: string) => {
     if (!currentUser?.id) return;
-    
+
     try {
-      await fetch(`http://localhost:3001/api/messages/${conversationId}/read`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: currentUser.id,
-        }),
-      });
+      await fetch(
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/${conversationId}/read`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: currentUser.id,
+          }),
+        }
+      );
       fetchConversations();
     } catch (error) {
       console.error('Error marking messages as read:', error);
@@ -323,7 +378,7 @@ export default function MessagesPage() {
 
     try {
       const response = await fetch(
-        `http://localhost:3001/api/messages/search/users?q=${encodeURIComponent(query)}&user_id=${currentUser.id}`
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/search/users?q=${encodeURIComponent(query)}&user_id=${currentUser.id}`
       );
 
       if (!response.ok) {
@@ -370,7 +425,7 @@ export default function MessagesPage() {
 
     try {
       const existingConv = conversations.find(
-        (conv) => conv.other_user_id === user.id
+        conv => conv.other_user_id === user.id
       );
 
       if (existingConv) {
@@ -380,7 +435,7 @@ export default function MessagesPage() {
         return;
       }
       const response = await fetch(
-        'http://localhost:3001/api/messages/conversations/create',
+        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/conversations/create',
         {
           method: 'POST',
           headers: {
@@ -401,8 +456,14 @@ export default function MessagesPage() {
         } catch (e) {
           console.error('Failed to parse error response:', e);
         }
-        console.error('Failed to create conversation:', response.status, errorData);
-        alert(`Failed to create conversation: ${errorData?.message || 'Unknown error'}`);
+        console.error(
+          'Failed to create conversation:',
+          response.status,
+          errorData
+        );
+        alert(
+          `Failed to create conversation: ${errorData?.message || 'Unknown error'}`
+        );
         return;
       }
 
@@ -446,10 +507,13 @@ export default function MessagesPage() {
     setFilePreview(null);
   };
 
-  const handleFileSelect = async (file: File, type: 'image' | 'video' | 'file') => {
+  const handleFileSelect = async (
+    file: File,
+    type: 'image' | 'video' | 'file'
+  ) => {
     setSelectedFile(file);
     setSelectedGIF(null);
-    
+
     if (type === 'image' || type === 'video') {
       const preview = URL.createObjectURL(file);
       setFilePreview(preview);
@@ -468,7 +532,13 @@ export default function MessagesPage() {
   };
 
   const handleSendMessage = async () => {
-    if ((!messageInput.trim() && !selectedFile && !selectedGIF) || !selectedConversation || !socket || !currentUser) return;
+    if (
+      (!messageInput.trim() && !selectedFile && !selectedGIF) ||
+      !selectedConversation ||
+      !socket ||
+      !currentUser
+    )
+      return;
 
     const tempMessageId = `temp-${Date.now()}`;
     const messageText = messageInput.trim();
@@ -483,17 +553,23 @@ export default function MessagesPage() {
       try {
         const formData = new FormData();
         formData.append('file', selectedFile);
-        formData.append('conversation_id', selectedConversation.conversation_id);
+        formData.append(
+          'conversation_id',
+          selectedConversation.conversation_id
+        );
         formData.append('sender_id', currentUser.id);
         formData.append('receiver_id', selectedConversation.other_user_id);
         if (messageText) {
           formData.append('message', messageText);
         }
 
-        const uploadResponse = await fetch('http://localhost:3001/api/messages/upload', {
-          method: 'POST',
-          body: formData,
-        });
+        const uploadResponse = await fetch(
+          'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/upload',
+          {
+            method: 'POST',
+            body: formData,
+          }
+        );
 
         if (!uploadResponse.ok) {
           throw new Error('Failed to upload file');
@@ -502,8 +578,11 @@ export default function MessagesPage() {
         const uploadData = await uploadResponse.json();
         if (uploadData.success) {
           mediaUrl = uploadData.media_url;
-          messageType = selectedFile.type.startsWith('image/') ? 'image' : 
-                       selectedFile.type.startsWith('video/') ? 'video' : 'file';
+          messageType = selectedFile.type.startsWith('image/')
+            ? 'image'
+            : selectedFile.type.startsWith('video/')
+              ? 'video'
+              : 'file';
         } else {
           throw new Error(uploadData.message || 'Failed to upload file');
         }
@@ -545,7 +624,7 @@ export default function MessagesPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };
@@ -663,14 +742,19 @@ export default function MessagesPage() {
         <div className="flex-1 flex gap-4 px-4 overflow-hidden">
           <div className="w-80 bg-white rounded-lg border border-gray-200 flex flex-col overflow-hidden">
             <div className="p-4 border-b border-gray-200 relative">
-              <h2 className="text-xl font-semibold text-black mb-4">Messages</h2>
+              <h2 className="text-xl font-semibold text-black mb-4">
+                Messages
+              </h2>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black" size={18} />
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black"
+                  size={18}
+                />
                 <input
                   type="text"
                   placeholder="Search"
                   value={searchQuery}
-                  onChange={(e) => {
+                  onChange={e => {
                     setSearchQuery(e.target.value);
                     if (e.target.value.trim()) {
                       setShowSearchResults(true);
@@ -688,10 +772,10 @@ export default function MessagesPage() {
                   }}
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black"
                 />
-                
+
                 {showSearchResults && searchResults.length > 0 && (
                   <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
-                    {searchResults.map((user) => (
+                    {searchResults.map(user => (
                       <div
                         key={user.id}
                         onClick={() => handleSelectUser(user)}
@@ -717,7 +801,9 @@ export default function MessagesPage() {
                                 {user.full_name || 'User'}
                               </span>
                               <span className="text-xs text-black">
-                                {user.relationship === 'following' ? 'Following' : 'Follower'}
+                                {user.relationship === 'following'
+                                  ? 'Following'
+                                  : 'Follower'}
                               </span>
                             </div>
                           </div>
@@ -735,12 +821,13 @@ export default function MessagesPage() {
                   No conversations found
                 </div>
               ) : (
-                filteredConversations.map((conv) => (
+                filteredConversations.map(conv => (
                   <div
                     key={conv.conversation_id}
                     onClick={() => setSelectedConversation(conv)}
                     className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                      selectedConversation?.conversation_id === conv.conversation_id
+                      selectedConversation?.conversation_id ===
+                      conv.conversation_id
                         ? 'bg-yellow-50'
                         : ''
                     }`}
@@ -749,7 +836,9 @@ export default function MessagesPage() {
                       <div className="w-12 h-12 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center flex-shrink-0">
                         {conv.other_user_profile_image ? (
                           <img
-                            src={getProfileUrl(conv.other_user_profile_image) || ''}
+                            src={
+                              getProfileUrl(conv.other_user_profile_image) || ''
+                            }
                             alt={conv.other_user_username}
                             className="w-full h-full object-cover"
                           />
@@ -795,7 +884,11 @@ export default function MessagesPage() {
                   <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center">
                     {selectedConversation.other_user_profile_image ? (
                       <img
-                        src={getProfileUrl(selectedConversation.other_user_profile_image) || ''}
+                        src={
+                          getProfileUrl(
+                            selectedConversation.other_user_profile_image
+                          ) || ''
+                        }
                         alt={selectedConversation.other_user_username}
                         className="w-full h-full object-cover"
                       />
@@ -835,15 +928,18 @@ export default function MessagesPage() {
                               {selectedConversation.other_user_profile_image ? (
                                 <img
                                   src={
-                                    getProfileUrl(selectedConversation.other_user_profile_image) ||
-                                    ''
+                                    getProfileUrl(
+                                      selectedConversation.other_user_profile_image
+                                    ) || ''
                                   }
                                   alt={selectedConversation.other_user_username}
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
                                 <span className="text-black font-semibold text-xs">
-                                  {getInitials(selectedConversation.other_user_username)}
+                                  {getInitials(
+                                    selectedConversation.other_user_username
+                                  )}
                                 </span>
                               )}
                             </div>
@@ -861,11 +957,18 @@ export default function MessagesPage() {
                                   {msg.post_data.user_profile_url && (
                                     <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0">
                                       <img
-                                        src={msg.post_data.user_profile_url.startsWith('http') ? msg.post_data.user_profile_url : `http://localhost:3001${msg.post_data.user_profile_url}`}
+                                        src={
+                                          msg.post_data.user_profile_url.startsWith(
+                                            'http'
+                                          )
+                                            ? msg.post_data.user_profile_url
+                                            : `https://qd9ngjg1-3001.inc1.devtunnels.ms${msg.post_data.user_profile_url}`
+                                        }
                                         alt={msg.post_data.username || 'User'}
                                         className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                          e.currentTarget.style.display = 'none';
+                                        onError={e => {
+                                          e.currentTarget.style.display =
+                                            'none';
                                         }}
                                       />
                                     </div>
@@ -876,56 +979,83 @@ export default function MessagesPage() {
                                     </p>
                                   </div>
                                 </div>
-                                {msg.post_data.media_url && (() => {
-                                  const mediaUrl = msg.post_data.media_url.startsWith('http') ? msg.post_data.media_url : `http://localhost:3001${msg.post_data.media_url}`;
-                                  const isVideo = msg.post_data.post_type === 'video' || 
-                                                msg.post_data.media_url.match(/\.(mp4|mov|webm|ogg)$/i);
-                                  
-                                  if (isVideo) {
-                                    return (
-                                      <div className="w-full">
-                                        <video
-                                          src={mediaUrl}
-                                          controls
-                                          className="w-full h-auto object-cover"
-                                          onError={(e) => {
-                                            e.currentTarget.style.display = 'none';
-                                          }}
-                                        />
-                                      </div>
-                                    );
-                                  } else {
-                                    return (
-                                      <div className="w-full">
-                                        <img
-                                          src={mediaUrl}
-                                          alt={msg.post_data.caption || msg.post_data.article_title || msg.post_data.event_title || 'Post'}
-                                          className="w-full h-auto object-cover"
-                                          onError={(e) => {
-                                            e.currentTarget.style.display = 'none';
-                                          }}
-                                        />
-                                      </div>
-                                    );
-                                  }
-                                })()}
+                                {msg.post_data.media_url &&
+                                  (() => {
+                                    const mediaUrl =
+                                      msg.post_data.media_url.startsWith('http')
+                                        ? msg.post_data.media_url
+                                        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${msg.post_data.media_url}`;
+                                    const isVideo =
+                                      msg.post_data.post_type === 'video' ||
+                                      msg.post_data.media_url.match(
+                                        /\.(mp4|mov|webm|ogg)$/i
+                                      );
+
+                                    if (isVideo) {
+                                      return (
+                                        <div className="w-full">
+                                          <video
+                                            src={mediaUrl}
+                                            controls
+                                            className="w-full h-auto object-cover"
+                                            onError={e => {
+                                              e.currentTarget.style.display =
+                                                'none';
+                                            }}
+                                          />
+                                        </div>
+                                      );
+                                    } else {
+                                      return (
+                                        <div className="w-full">
+                                          <img
+                                            src={mediaUrl}
+                                            alt={
+                                              msg.post_data.caption ||
+                                              msg.post_data.article_title ||
+                                              msg.post_data.event_title ||
+                                              'Post'
+                                            }
+                                            className="w-full h-auto object-cover"
+                                            onError={e => {
+                                              e.currentTarget.style.display =
+                                                'none';
+                                            }}
+                                          />
+                                        </div>
+                                      );
+                                    }
+                                  })()}
                                 <div className="p-3">
                                   {msg.post_data.article_title && (
-                                    <h4 className="font-semibold text-black mb-2 text-base">{msg.post_data.article_title}</h4>
+                                    <h4 className="font-semibold text-black mb-2 text-base">
+                                      {msg.post_data.article_title}
+                                    </h4>
                                   )}
                                   {msg.post_data.event_title && (
                                     <div className="mb-2">
-                                      <h4 className="font-semibold text-black mb-1 text-base">{msg.post_data.event_title}</h4>
+                                      <h4 className="font-semibold text-black mb-1 text-base">
+                                        {msg.post_data.event_title}
+                                      </h4>
                                       {msg.post_data.event_date && (
-                                        <p className="text-xs text-black">📅 {new Date(msg.post_data.event_date).toLocaleDateString()}</p>
+                                        <p className="text-xs text-black">
+                                          📅{' '}
+                                          {new Date(
+                                            msg.post_data.event_date
+                                          ).toLocaleDateString()}
+                                        </p>
                                       )}
                                       {msg.post_data.event_location && (
-                                        <p className="text-xs text-black">📍 {msg.post_data.event_location}</p>
+                                        <p className="text-xs text-black">
+                                          📍 {msg.post_data.event_location}
+                                        </p>
                                       )}
                                     </div>
                                   )}
                                   {msg.post_data.caption && (
-                                    <p className="text-sm text-black mb-2">{msg.post_data.caption}</p>
+                                    <p className="text-sm text-black mb-2">
+                                      {msg.post_data.caption}
+                                    </p>
                                   )}
                                   {msg.post_data.post_url && (
                                     <a
@@ -939,76 +1069,113 @@ export default function MessagesPage() {
                                   )}
                                 </div>
                               </div>
-                            ) : msg.media_url && (() => {
-                              const mediaUrl = msg.media_url.startsWith('http') ? msg.media_url : `http://localhost:3001${msg.media_url}`;
-                              const urlLower = msg.media_url.toLowerCase();
-                              const isImage = msg.message_type === 'image' || msg.message_type === 'gif' || 
-                                            (!msg.message_type && (urlLower.match(/\.(jpg|jpeg|png|gif|webp)$/i) || urlLower.includes('giphy.com')));
-                              const isVideo = msg.message_type === 'video' || 
-                                            (!msg.message_type && urlLower.match(/\.(mp4|mov|webm|ogg)$/i));
-                              const isGif = msg.message_type === 'gif' || urlLower.includes('giphy.com');
-                              
-                              if (isImage || isGif) {
-                                return (
-                                  <div className="w-full">
-                                    <img
-                                      src={mediaUrl}
-                                      alt={msg.message || 'Media'}
-                                      className="w-full h-auto object-cover max-w-md rounded-lg"
-                                      onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                      }}
-                                    />
-                                  </div>
-                                );
-                              } else if (isVideo) {
-                                return (
-                                  <div className="w-full">
-                                    <video
-                                      src={mediaUrl}
-                                      controls
-                                      className="w-full h-auto max-w-md rounded-lg"
-                                      onError={(e) => {
-                                        e.currentTarget.style.display = 'none';
-                                      }}
-                                    />
-                                  </div>
-                                );
-                              } else {
-                                return (
-                                  <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                                    <a
-                                      href={mediaUrl}
-                                      download
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
-                                    >
-                                      <span className="text-sm font-medium">{msg.message || 'Download file'}</span>
-                                    </a>
-                                  </div>
-                                );
-                              }
-                            })()}
-                            
+                            ) : (
+                              msg.media_url &&
+                              (() => {
+                                const mediaUrl = msg.media_url.startsWith(
+                                  'http'
+                                )
+                                  ? msg.media_url
+                                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${msg.media_url}`;
+                                const urlLower = msg.media_url.toLowerCase();
+                                const isImage =
+                                  msg.message_type === 'image' ||
+                                  msg.message_type === 'gif' ||
+                                  (!msg.message_type &&
+                                    (urlLower.match(
+                                      /\.(jpg|jpeg|png|gif|webp)$/i
+                                    ) ||
+                                      urlLower.includes('giphy.com')));
+                                const isVideo =
+                                  msg.message_type === 'video' ||
+                                  (!msg.message_type &&
+                                    urlLower.match(/\.(mp4|mov|webm|ogg)$/i));
+                                const isGif =
+                                  msg.message_type === 'gif' ||
+                                  urlLower.includes('giphy.com');
+
+                                if (isImage || isGif) {
+                                  return (
+                                    <div className="w-full">
+                                      <img
+                                        src={mediaUrl}
+                                        alt={msg.message || 'Media'}
+                                        className="w-full h-auto object-cover max-w-md rounded-lg"
+                                        onError={e => {
+                                          e.currentTarget.style.display =
+                                            'none';
+                                        }}
+                                      />
+                                    </div>
+                                  );
+                                } else if (isVideo) {
+                                  return (
+                                    <div className="w-full">
+                                      <video
+                                        src={mediaUrl}
+                                        controls
+                                        className="w-full h-auto max-w-md rounded-lg"
+                                        onError={e => {
+                                          e.currentTarget.style.display =
+                                            'none';
+                                        }}
+                                      />
+                                    </div>
+                                  );
+                                } else {
+                                  return (
+                                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                      <a
+                                        href={mediaUrl}
+                                        download
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
+                                      >
+                                        <span className="text-sm font-medium">
+                                          {msg.message || 'Download file'}
+                                        </span>
+                                      </a>
+                                    </div>
+                                  );
+                                }
+                              })()
+                            )}
+
                             {msg.message && (
-                              <p className={`text-sm text-black ${msg.media_url ? 'px-4 py-2' : 'px-4 py-2'}`}>
+                              <p
+                                className={`text-sm text-black ${msg.media_url ? 'px-4 py-2' : 'px-4 py-2'}`}
+                              >
                                 {msg.message}
                               </p>
                             )}
-                            
-                            <div className={`flex items-center justify-end gap-1.5 px-4 pb-2 ${isOwnMessage ? '' : 'justify-start'}`}>
+
+                            <div
+                              className={`flex items-center justify-end gap-1.5 px-4 pb-2 ${isOwnMessage ? '' : 'justify-start'}`}
+                            >
                               <span className="text-xs text-black">
                                 {formatMessageTimestamp(msg.created_at)}
                               </span>
                               {isOwnMessage && (
                                 <div className="flex items-center">
                                   {msg.is_read_by_recipient ? (
-                                    <CheckCheck size={16} className="text-[#53BDEB]" strokeWidth={2.5} />
+                                    <CheckCheck
+                                      size={16}
+                                      className="text-[#53BDEB]"
+                                      strokeWidth={2.5}
+                                    />
                                   ) : msg.is_delivered ? (
-                                    <CheckCheck size={16} className="text-[#8696A0]" strokeWidth={2.5} />
+                                    <CheckCheck
+                                      size={16}
+                                      className="text-[#8696A0]"
+                                      strokeWidth={2.5}
+                                    />
                                   ) : (
-                                    <Check size={12} className="text-[#8696A0]" strokeWidth={2.5} />
+                                    <Check
+                                      size={12}
+                                      className="text-[#8696A0]"
+                                      strokeWidth={2.5}
+                                    />
                                   )}
                                 </div>
                               )}
@@ -1047,7 +1214,9 @@ export default function MessagesPage() {
                           )
                         ) : selectedFile ? (
                           <div className="flex items-center gap-2 p-2 bg-gray-100 rounded-lg">
-                            <span className="text-sm text-black">{selectedFile.name}</span>
+                            <span className="text-sm text-black">
+                              {selectedFile.name}
+                            </span>
                             <span className="text-xs text-black">
                               ({(selectedFile.size / 1024).toFixed(1)} KB)
                             </span>
@@ -1071,8 +1240,8 @@ export default function MessagesPage() {
                       type="text"
                       placeholder="Message"
                       value={messageInput}
-                      onChange={(e) => setMessageInput(e.target.value)}
-                      onKeyPress={(e) => {
+                      onChange={e => setMessageInput(e.target.value)}
+                      onKeyPress={e => {
                         if (e.key === 'Enter') {
                           handleSendMessage();
                         }
@@ -1082,7 +1251,9 @@ export default function MessagesPage() {
                     <FileUpload onFileSelect={handleFileSelect} />
                     <button
                       onClick={handleSendMessage}
-                      disabled={(!messageInput.trim() && !selectedFile && !selectedGIF)}
+                      disabled={
+                        !messageInput.trim() && !selectedFile && !selectedGIF
+                      }
                       className="px-4 py-2 bg-[#CB9729] text-white font-semibold rounded-lg hover:bg-[#b78322] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       Send
@@ -1101,4 +1272,3 @@ export default function MessagesPage() {
     </div>
   );
 }
-

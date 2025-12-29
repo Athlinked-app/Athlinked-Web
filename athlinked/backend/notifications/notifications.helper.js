@@ -3,7 +3,7 @@ const notificationModel = require('./notifications.model');
 /**
  * Helper function to create a notification
  * This is for INTERNAL USE ONLY - not exposed as a public API
- * 
+ *
  * @param {object} options - Notification options
  * @param {string} options.recipientUserId - User ID who will receive the notification
  * @param {string} [options.actorUserId] - User ID who performed the action (nullable)
@@ -13,7 +13,7 @@ const notificationModel = require('./notifications.model');
  * @param {string} options.entityId - ID of the entity (post ID, comment ID, etc.)
  * @param {string} options.message - Pre-built message text
  * @returns {Promise<object>} Created notification
- * 
+ *
  * @example
  * await createNotification({
  *   recipientUserId: 'user-uuid',
@@ -89,4 +89,3 @@ async function createNotification(options) {
 module.exports = {
   createNotification,
 };
-

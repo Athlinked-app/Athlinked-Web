@@ -54,7 +54,10 @@ export default function ManageResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<{ full_name?: string; profile_url?: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{
+    full_name?: string;
+    profile_url?: string;
+  } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [resourceToDelete, setResourceToDelete] = useState<string | null>(null);
 
@@ -156,11 +159,11 @@ export default function ManageResourcesPage() {
       let endpoint = '';
 
       if (activeTab === 'guides') {
-        endpoint = `http://localhost:3001/api/articles?user_id=${encodeURIComponent(currentUserId)}`;
+        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/articles?user_id=${encodeURIComponent(currentUserId)}`;
       } else if (activeTab === 'videos') {
-        endpoint = `http://localhost:3001/api/videos?user_id=${encodeURIComponent(currentUserId)}`;
+        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/videos?user_id=${encodeURIComponent(currentUserId)}`;
       } else {
-        endpoint = `http://localhost:3001/api/templates?user_id=${encodeURIComponent(currentUserId)}`;
+        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/templates?user_id=${encodeURIComponent(currentUserId)}`;
       }
 
       const response = await fetch(endpoint);
@@ -591,7 +594,7 @@ export default function ManageResourcesPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };
@@ -602,7 +605,7 @@ export default function ManageResourcesPage() {
         userName={currentUser?.full_name}
         userProfileUrl={getProfileUrl(currentUser?.profile_url)}
       />
-      
+
       <div className="flex flex-1 w-full mt-5 overflow-hidden">
         {/* Navigation Bar */}
         <div className="hidden md:flex px-6">
@@ -611,117 +614,117 @@ export default function ManageResourcesPage() {
 
         <div className="flex-1 flex overflow-y-auto">
           <div className="flex-1 bg-white rounded-xl flex flex-col">
-          {/* Tabs Navigation */}
-          <div className="border-b border-gray-200">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex justify-center gap-20">
-                <button
-                  onClick={() => setActiveTab('guides')}
-                  className={`pl-6 pr-10 py-4 text-base font-medium relative transition-colors border-r border-gray-300 ${
-                    activeTab === 'guides'
-                      ? 'text-[#CB9729]'
-                      : 'text-black hover:text-black'
-                  }`}
-                >
-                  Guides & Articles
-                  {activeTab === 'guides' && (
-                    <div className="absolute bottom-0 left-0 right-4 h-0.5 bg-[#CB9729]" />
-                  )}
-                </button>
-                <button
-                  onClick={() => setActiveTab('videos')}
-                  className={`pl-6 pr-10 py-4 text-base font-medium relative transition-colors border-r border-gray-300 ${
-                    activeTab === 'videos'
-                      ? 'text-[#CB9729]'
-                      : 'text-black hover:text-black'
-                  }`}
-                >
-                  Video Library
-                  {activeTab === 'videos' && (
-                    <div className="absolute bottom-0 left-0 right-4 h-0.5 bg-[#CB9729]" />
-                  )}
-                </button>
-                <button
-                  onClick={() => setActiveTab('templates')}
-                  className={`px-6 py-4 text-base font-medium relative transition-colors ${
-                    activeTab === 'templates'
-                      ? 'text-[#CB9729]'
-                      : 'text-black hover:text-black'
-                  }`}
-                >
-                  Templates
-                  {activeTab === 'templates' && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]" />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Content Area */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="max-w-7xl mx-auto p-6">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-semibold text-black">
-                  Manage Resources
-                </h1>
-                <button
-                  onClick={handleUpload}
-                  disabled={isLoading}
-                  className="flex items-center gap-2 bg-[#CB9729] text-white px-5 py-2.5 rounded-lg hover:bg-[#B88624] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Upload className="w-4 h-4" />
-                  <span className="font-medium">Upload</span>
-                </button>
-              </div>
-
-              {/* Resource Grid */}
-              {loading ? (
-                <div className="text-center py-16">
-                  <p className="text-black text-base">Loading resources...</p>
+            {/* Tabs Navigation */}
+            <div className="border-b border-gray-200">
+              <div className="max-w-7xl mx-auto">
+                <div className="flex justify-center gap-20">
+                  <button
+                    onClick={() => setActiveTab('guides')}
+                    className={`pl-6 pr-10 py-4 text-base font-medium relative transition-colors border-r border-gray-300 ${
+                      activeTab === 'guides'
+                        ? 'text-[#CB9729]'
+                        : 'text-black hover:text-black'
+                    }`}
+                  >
+                    Guides & Articles
+                    {activeTab === 'guides' && (
+                      <div className="absolute bottom-0 left-0 right-4 h-0.5 bg-[#CB9729]" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('videos')}
+                    className={`pl-6 pr-10 py-4 text-base font-medium relative transition-colors border-r border-gray-300 ${
+                      activeTab === 'videos'
+                        ? 'text-[#CB9729]'
+                        : 'text-black hover:text-black'
+                    }`}
+                  >
+                    Video Library
+                    {activeTab === 'videos' && (
+                      <div className="absolute bottom-0 left-0 right-4 h-0.5 bg-[#CB9729]" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('templates')}
+                    className={`px-6 py-4 text-base font-medium relative transition-colors ${
+                      activeTab === 'templates'
+                        ? 'text-[#CB9729]'
+                        : 'text-black hover:text-black'
+                    }`}
+                  >
+                    Templates
+                    {activeTab === 'templates' && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]" />
+                    )}
+                  </button>
                 </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {resources.map(resource => (
-                      <ResourceCard
-                        key={resource.id}
-                        id={resource.id}
-                        title={resource.title}
-                        image={resource.image}
-                        link={resource.link}
-                        type={resource.type}
-                        onDelete={handleDeleteClick}
-                        onClick={() => handleCardClick(resource)}
-                      />
-                    ))}
-                  </div>
+              </div>
+            </div>
 
-                  {/* Empty State */}
-                  {resources.length === 0 && (
-                    <div className="text-center py-16">
-                      <p className="text-black text-base mb-2">
-                        No resources available
-                      </p>
-                      <p className="text-black text-sm">
-                        {activeTab === 'guides'
-                          ? 'Click Upload to add article URL'
-                          : 'Click Upload to add new content'}
-                      </p>
+            {/* Content Area */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="max-w-7xl mx-auto p-6">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <h1 className="text-2xl font-semibold text-black">
+                    Manage Resources
+                  </h1>
+                  <button
+                    onClick={handleUpload}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 bg-[#CB9729] text-white px-5 py-2.5 rounded-lg hover:bg-[#B88624] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span className="font-medium">Upload</span>
+                  </button>
+                </div>
+
+                {/* Resource Grid */}
+                {loading ? (
+                  <div className="text-center py-16">
+                    <p className="text-black text-base">Loading resources...</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {resources.map(resource => (
+                        <ResourceCard
+                          key={resource.id}
+                          id={resource.id}
+                          title={resource.title}
+                          image={resource.image}
+                          link={resource.link}
+                          type={resource.type}
+                          onDelete={handleDeleteClick}
+                          onClick={() => handleCardClick(resource)}
+                        />
+                      ))}
                     </div>
-                  )}
-                </>
-              )}
+
+                    {/* Empty State */}
+                    {resources.length === 0 && (
+                      <div className="text-center py-16">
+                        <p className="text-black text-base mb-2">
+                          No resources available
+                        </p>
+                        <p className="text-black text-sm">
+                          {activeTab === 'guides'
+                            ? 'Click Upload to add article URL'
+                            : 'Click Upload to add new content'}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="hidden lg:flex ml-5">
-          <RightSideBar />
+          <div className="hidden lg:flex ml-5">
+            <RightSideBar />
+          </div>
         </div>
       </div>
-    </div>
 
       <ResourceModals
         showUrlModal={showUrlModal}
@@ -753,7 +756,8 @@ export default function ManageResourcesPage() {
                 Confirm Delete
               </h3>
               <p className="text-black mb-6">
-                Are you sure you want to delete this resource? This action cannot be undone.
+                Are you sure you want to delete this resource? This action
+                cannot be undone.
               </p>
               <div className="flex gap-3">
                 <button

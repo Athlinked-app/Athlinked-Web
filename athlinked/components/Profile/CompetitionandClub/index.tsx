@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { Plus, Trash2, Pencil } from 'lucide-react';
-import CompetitionAndClubPopup, { type CompetitionAndClub } from '../CompetitionandClubPopup';
+import CompetitionAndClubPopup, {
+  type CompetitionAndClub,
+} from '../CompetitionandClubPopup';
 
 export type { CompetitionAndClub };
 
@@ -11,9 +13,9 @@ interface CompetitionAndClubProps {
   onClubsChange?: (clubs: CompetitionAndClub[]) => void;
 }
 
-export default function CompetitionAndClub({ 
-  clubs = [], 
-  onClubsChange 
+export default function CompetitionAndClub({
+  clubs = [],
+  onClubsChange,
 }: CompetitionAndClubProps) {
   const [clubsList, setClubsList] = useState<CompetitionAndClub[]>(clubs);
   const [showPopup, setShowPopup] = useState(false);
@@ -61,7 +63,9 @@ export default function CompetitionAndClub({
     <>
       <div className="w-full bg-white rounded-lg p-6 mt-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">Competition and Club Information</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Competition and Club Information
+          </h2>
           <button
             onClick={() => {
               setEditingIndex(null);
@@ -74,7 +78,10 @@ export default function CompetitionAndClub({
         </div>
 
         {clubsList.length === 0 ? (
-          <p className="text-gray-500 italic">No competition and club information added yet. Click the + button to add one.</p>
+          <p className="text-gray-500 italic">
+            No competition and club information added yet. Click the + button to
+            add one.
+          </p>
         ) : (
           <div className="space-y-4">
             {clubsList.map((club, index) => (
@@ -85,19 +92,29 @@ export default function CompetitionAndClub({
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">{club.clubOrTravelTeamName}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {club.clubOrTravelTeamName}
+                      </h3>
                       {club.teamLevel && (
-                        <span className="text-sm text-gray-600">- {club.teamLevel}</span>
+                        <span className="text-sm text-gray-600">
+                          - {club.teamLevel}
+                        </span>
                       )}
                     </div>
                     {club.leagueOrOrganizationName && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">League/Organization:</span> {club.leagueOrOrganizationName}
+                        <span className="font-medium">
+                          League/Organization:
+                        </span>{' '}
+                        {club.leagueOrOrganizationName}
                       </p>
                     )}
                     {club.tournamentParticipation && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Tournament Participation:</span> {club.tournamentParticipation}
+                        <span className="font-medium">
+                          Tournament Participation:
+                        </span>{' '}
+                        {club.tournamentParticipation}
                       </p>
                     )}
                   </div>
@@ -126,9 +143,10 @@ export default function CompetitionAndClub({
         open={showPopup}
         onClose={handleClose}
         onSave={handleAdd}
-        existingData={editingIndex !== null ? clubsList[editingIndex] : undefined}
+        existingData={
+          editingIndex !== null ? clubsList[editingIndex] : undefined
+        }
       />
     </>
   );
 }
-

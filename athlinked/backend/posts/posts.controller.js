@@ -21,10 +21,14 @@ async function createPost(req, res) {
       event_type,
     } = req.body;
 
-    if (!post_type || !['photo', 'video', 'article', 'event', 'text'].includes(post_type)) {
+    if (
+      !post_type ||
+      !['photo', 'video', 'article', 'event', 'text'].includes(post_type)
+    ) {
       return res.status(400).json({
         success: false,
-        message: 'Invalid post_type. Must be photo, video, article, event, or text',
+        message:
+          'Invalid post_type. Must be photo, video, article, event, or text',
       });
     }
 
@@ -83,7 +87,7 @@ async function checkLikeStatus(req, res) {
   try {
     const postId = req.params.postId;
     const userId = req.query.user_id || req.user?.id;
-    
+
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -135,7 +139,7 @@ async function unlikePost(req, res) {
   try {
     const postId = req.params.postId;
     const userId = req.body.user_id || req.user?.id;
-    
+
     if (!userId) {
       return res.status(401).json({
         success: false,

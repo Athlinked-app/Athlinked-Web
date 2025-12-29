@@ -1,6 +1,9 @@
 // Field definitions for each sport and position
 
-export const getFieldsForPosition = (sport: string, position: string): string[] => {
+export const getFieldsForPosition = (
+  sport: string,
+  position: string
+): string[] => {
   if (sport === 'basketball') {
     switch (position) {
       case 'Point Guard':
@@ -193,10 +196,7 @@ export const getPositionOptions = (sport: string): string[] => {
       'Punter',
     ];
   } else if (sport === 'golf') {
-    return [
-      'General',
-    ];
+    return ['General'];
   }
   return [];
 };
-

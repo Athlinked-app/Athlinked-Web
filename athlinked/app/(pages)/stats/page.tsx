@@ -2,7 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import NavigationBar from '@/components/NavigationBar';
-import { Search, ChevronDown, Edit, Plus, X, Calendar, Trash2 } from 'lucide-react';
+import {
+  Search,
+  ChevronDown,
+  Edit,
+  Plus,
+  X,
+  Calendar,
+  Trash2,
+} from 'lucide-react';
 import { getFieldsForPosition, getPositionOptions } from './sportsFields';
 
 interface UserData {
@@ -48,7 +56,6 @@ export default function StatsPage() {
     position: '',
   });
 
-  
   // Get initials for placeholder
   const getInitials = (name?: string) => {
     if (!name) return 'U';
@@ -132,9 +139,11 @@ export default function StatsPage() {
       setLoadingPositions(true);
       try {
         // Get all sports first
-        const sportsResponse = await fetch('http://localhost:3001/api/sports');
+        const sportsResponse = await fetch(
+          'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/sports'
+        );
         const sportsData = await sportsResponse.json();
-        
+
         if (!sportsData.success) {
           console.error('Failed to fetch sports');
           setAvailablePositions([]);
@@ -158,17 +167,23 @@ export default function StatsPage() {
 
         // Get positions for this sport
         const positionsResponse = await fetch(
-          `http://localhost:3001/api/sports/${sport.id}/positions`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/sports/${sport.id}/positions`
         );
         const positionsData = await positionsResponse.json();
-        
+
         if (positionsData.success && positionsData.positions) {
           setAvailablePositions(positionsData.positions);
           // Reset selected position when sport changes
           setSelectedPosition('');
-          console.log(`Loaded ${positionsData.positions.length} positions for ${sportName}:`, positionsData.positions.map((p: any) => p.name));
+          console.log(
+            `Loaded ${positionsData.positions.length} positions for ${sportName}:`,
+            positionsData.positions.map((p: any) => p.name)
+          );
         } else {
-          console.error('Failed to fetch positions:', positionsData.message || 'Unknown error');
+          console.error(
+            'Failed to fetch positions:',
+            positionsData.message || 'Unknown error'
+          );
           setAvailablePositions([]);
         }
       } catch (error) {
@@ -190,10 +205,10 @@ export default function StatsPage() {
       setLoadingStats(true);
       try {
         const response = await fetch(
-          `http://localhost:3001/api/user/sport-profiles?user_id=${userId}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/user/sport-profiles?user_id=${userId}`
         );
         const data = await response.json();
-        
+
         if (data.success) {
           setUserProfiles(data.profiles);
         } else {
@@ -240,17 +255,19 @@ export default function StatsPage() {
     const sportName = getSportDisplayName(activeSport);
     const normalizedSportName = sportName.toLowerCase().replace(/\s+/g, '');
     let profiles = userProfiles.filter(profile => {
-      const normalizedProfileSport = profile.sport_name.toLowerCase().replace(/\s+/g, '');
+      const normalizedProfileSport = profile.sport_name
+        .toLowerCase()
+        .replace(/\s+/g, '');
       return normalizedProfileSport === normalizedSportName;
     });
-    
+
     // Filter by selected position if one is selected
     if (selectedPosition) {
-      profiles = profiles.filter(profile => 
-        profile.position_name === selectedPosition
+      profiles = profiles.filter(
+        profile => profile.position_name === selectedPosition
       );
     }
-    
+
     return profiles;
   };
 
@@ -278,7 +295,10 @@ export default function StatsPage() {
   };
 
   // Get value for a field in a profile
-  const getValueForField = (profile: UserSportProfile, fieldLabel: string): string => {
+  const getValueForField = (
+    profile: UserSportProfile,
+    fieldLabel: string
+  ): string => {
     const stat = profile.stats.find(s => s.field_label === fieldLabel);
     if (!stat) return '';
     return stat.value + (stat.unit ? ` ${stat.unit}` : '');
@@ -398,19 +418,29 @@ export default function StatsPage() {
                     />
                   </div>
                   <div className="relative">
-                    <select 
+                    <select
                       value={selectedPosition}
-                      onChange={(e) => setSelectedPosition(e.target.value)}
+                      onChange={e => setSelectedPosition(e.target.value)}
                       className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-yellow-500 min-w-[180px] text-black"
                     >
-                      <option value="" className="text-black">All Positions</option>
+                      <option value="" className="text-black">
+                        All Positions
+                      </option>
                       {loadingPositions ? (
-                        <option disabled className="text-black">Loading positions...</option>
+                        <option disabled className="text-black">
+                          Loading positions...
+                        </option>
                       ) : availablePositions.length === 0 ? (
-                        <option disabled className="text-black">No positions available</option>
+                        <option disabled className="text-black">
+                          No positions available
+                        </option>
                       ) : (
-                        availablePositions.map((position) => (
-                          <option key={position.id} value={position.name} className="text-black">
+                        availablePositions.map(position => (
+                          <option
+                            key={position.id}
+                            value={position.name}
+                            className="text-black"
+                          >
                             {position.name}
                           </option>
                         ))
@@ -425,7 +455,7 @@ export default function StatsPage() {
                     <Edit size={18} />
                     <span>Edit</span>
                   </button>
-                  <button 
+                  <button
                     onClick={() => setShowAddStatsModal(true)}
                     className="flex items-center gap-2 px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-yellow-600 transition-colors"
                   >
@@ -438,10 +468,13 @@ export default function StatsPage() {
               {/* Statistics Table */}
               <div className="overflow-x-auto">
                 {loadingStats ? (
-                  <div className="p-6 text-center text-black">Loading stats...</div>
+                  <div className="p-6 text-center text-black">
+                    Loading stats...
+                  </div>
                 ) : currentProfiles.length === 0 ? (
                   <div className="p-6 text-center text-black">
-                    No stats data available. Click "Add Data" to add your first stats entry.
+                    No stats data available. Click "Add Data" to add your first
+                    stats entry.
                   </div>
                 ) : (
                   <table className="w-full">
@@ -453,7 +486,7 @@ export default function StatsPage() {
                         <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">
                           Position
                         </th>
-                        {allFieldLabels.map((fieldLabel) => (
+                        {allFieldLabels.map(fieldLabel => (
                           <th
                             key={fieldLabel}
                             className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider"
@@ -464,7 +497,7 @@ export default function StatsPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {currentProfiles.map((profile) => (
+                      {currentProfiles.map(profile => (
                         <tr
                           key={profile.id}
                           className="hover:bg-gray-50 transition-colors"
@@ -475,7 +508,7 @@ export default function StatsPage() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
                             {profile.position_name}
                           </td>
-                          {allFieldLabels.map((fieldLabel) => (
+                          {allFieldLabels.map(fieldLabel => (
                             <td
                               key={fieldLabel}
                               className="px-6 py-4 whitespace-nowrap text-sm text-black"
@@ -510,24 +543,24 @@ export default function StatsPage() {
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-black">Add Stats</h2>
                 <div className="flex items-center gap-3">
-                <button
-                  onClick={() => {
-                    setFormData({
-                      year: '',
-                      position: '',
-                    });
-                  }}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm text-black hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
-                >
-                  <Trash2 size={16} />
-                  <span>Clear all</span>
-                </button>
-                <button
-                  onClick={() => setShowAddStatsModal(false)}
-                  className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-                >
-                  <X size={20} className="text-black" />
-                </button>
+                  <button
+                    onClick={() => {
+                      setFormData({
+                        year: '',
+                        position: '',
+                      });
+                    }}
+                    className="flex items-center gap-2 px-3 py-1.5 text-sm text-black hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <Trash2 size={16} />
+                    <span>Clear all</span>
+                  </button>
+                  <button
+                    onClick={() => setShowAddStatsModal(false)}
+                    className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                  >
+                    <X size={20} className="text-black" />
+                  </button>
                 </div>
               </div>
             </div>
@@ -550,11 +583,16 @@ export default function StatsPage() {
                   <input
                     type="text"
                     value={formData.year}
-                    onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+                    onChange={e =>
+                      setFormData({ ...formData, year: e.target.value })
+                    }
                     placeholder="Select Year (e.g., 2024)"
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black"
                   />
-                  <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black" size={20} />
+                  <Calendar
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black"
+                    size={20}
+                  />
                 </div>
               </div>
 
@@ -566,7 +604,7 @@ export default function StatsPage() {
                 <div className="relative">
                   <select
                     value={formData.position || ''}
-                    onChange={(e) => {
+                    onChange={e => {
                       const newPosition = e.target.value;
                       // Reset form data except year and position when position changes
                       const newFormData: Record<string, string> = {
@@ -578,40 +616,60 @@ export default function StatsPage() {
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black appearance-none bg-white"
                   >
                     <option value="" className="text-black">
-                      Select Position {activeSport === 'basketball' ? '(e.g., Point Guard)' : activeSport === 'golf' ? '(e.g., General)' : '(e.g., Quarterback)'}
+                      Select Position{' '}
+                      {activeSport === 'basketball'
+                        ? '(e.g., Point Guard)'
+                        : activeSport === 'golf'
+                          ? '(e.g., General)'
+                          : '(e.g., Quarterback)'}
                     </option>
-                    {getPositionOptions(activeSport).map((pos) => (
+                    {getPositionOptions(activeSport).map(pos => (
                       <option key={pos} value={pos} className="text-black">
                         {pos}
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black pointer-events-none" size={20} />
+                  <ChevronDown
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black pointer-events-none"
+                    size={20}
+                  />
                 </div>
               </div>
 
               {/* Dynamic Fields based on Position */}
-              {formData.position && getFieldsForPosition(activeSport, formData.position)
-                .filter(field => field !== 'Year') // Year is already shown above
-                .map((field, index) => {
-                  // Create a unique key for each field
-                  const fieldKey = `field_${index}_${field.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')}`;
-                  const displayKey = field.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-                  return (
-                    <div key={fieldKey}>
-                      <label className="block text-sm font-medium text-black mb-2">
-                        {field}
-                      </label>
-                      <input
-                        type="text"
-                        value={formData[displayKey] || ''}
-                        onChange={(e) => setFormData({ ...formData, [displayKey]: e.target.value })}
-                        placeholder={`Enter ${field}${field.includes('%') ? '' : ' (e.g., 0)'}`}
-                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black"
-                      />
-                    </div>
-                  );
-                })}
+              {formData.position &&
+                getFieldsForPosition(activeSport, formData.position)
+                  .filter(field => field !== 'Year') // Year is already shown above
+                  .map((field, index) => {
+                    // Create a unique key for each field
+                    const fieldKey = `field_${index}_${field
+                      .toLowerCase()
+                      .replace(/\s+/g, '_')
+                      .replace(/[^a-z0-9_]/g, '')}`;
+                    const displayKey = field
+                      .toLowerCase()
+                      .replace(/\s+/g, '_')
+                      .replace(/[^a-z0-9_]/g, '');
+                    return (
+                      <div key={fieldKey}>
+                        <label className="block text-sm font-medium text-black mb-2">
+                          {field}
+                        </label>
+                        <input
+                          type="text"
+                          value={formData[displayKey] || ''}
+                          onChange={e =>
+                            setFormData({
+                              ...formData,
+                              [displayKey]: e.target.value,
+                            })
+                          }
+                          placeholder={`Enter ${field}${field.includes('%') ? '' : ' (e.g., 0)'}`}
+                          className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black"
+                        />
+                      </div>
+                    );
+                  })}
             </div>
 
             {/* Save Button */}
@@ -636,20 +694,28 @@ export default function StatsPage() {
                   setSaving(true);
                   try {
                     // Step 1: Get all sports to find sport ID
-                    const sportsResponse = await fetch('http://localhost:3001/api/sports');
+                    const sportsResponse = await fetch(
+                      'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/sports'
+                    );
                     const sportsData = await sportsResponse.json();
-                    
+
                     if (!sportsData.success) {
                       throw new Error('Failed to fetch sports');
                     }
 
                     // Find the sport ID by name
-                    const sportName = activeSport === 'basketball' ? 'Basketball' : 
-                                    activeSport === 'football' ? 'Football' : 
-                                    activeSport === 'golf' ? 'Golf' :
-                                    activeSport.charAt(0).toUpperCase() + activeSport.slice(1);
-                    const sport = sportsData.sports.find((s: any) => 
-                      s.name.toLowerCase() === sportName.toLowerCase()
+                    const sportName =
+                      activeSport === 'basketball'
+                        ? 'Basketball'
+                        : activeSport === 'football'
+                          ? 'Football'
+                          : activeSport === 'golf'
+                            ? 'Golf'
+                            : activeSport.charAt(0).toUpperCase() +
+                              activeSport.slice(1);
+                    const sport = sportsData.sports.find(
+                      (s: any) =>
+                        s.name.toLowerCase() === sportName.toLowerCase()
                     );
 
                     if (!sport) {
@@ -658,36 +724,38 @@ export default function StatsPage() {
 
                     // Step 2: Get positions for the sport
                     const positionsResponse = await fetch(
-                      `http://localhost:3001/api/sports/${sport.id}/positions`
+                      `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/sports/${sport.id}/positions`
                     );
                     const positionsData = await positionsResponse.json();
-                    
+
                     if (!positionsData.success) {
                       throw new Error('Failed to fetch positions');
                     }
 
                     // Find the position ID by name
-                    const position = positionsData.positions.find((p: any) => 
-                      p.name === formData.position
+                    const position = positionsData.positions.find(
+                      (p: any) => p.name === formData.position
                     );
 
                     if (!position) {
-                      throw new Error(`Position "${formData.position}" not found`);
+                      throw new Error(
+                        `Position "${formData.position}" not found`
+                      );
                     }
 
                     // Step 3: Get fields for the position
                     const fieldsResponse = await fetch(
-                      `http://localhost:3001/api/positions/${position.id}/fields`
+                      `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/positions/${position.id}/fields`
                     );
                     const fieldsData = await fieldsResponse.json();
-                    
+
                     if (!fieldsData.success) {
                       throw new Error('Failed to fetch fields');
                     }
 
                     // Step 4: Create or update user sport profile
                     const profileResponse = await fetch(
-                      'http://localhost:3001/api/user/sport-profile',
+                      'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/user/sport-profile',
                       {
                         method: 'POST',
                         headers: {
@@ -701,9 +769,11 @@ export default function StatsPage() {
                       }
                     );
                     const profileData = await profileResponse.json();
-                    
+
                     if (!profileData.success) {
-                      throw new Error(profileData.message || 'Failed to create profile');
+                      throw new Error(
+                        profileData.message || 'Failed to create profile'
+                      );
                     }
 
                     // Step 5: Map form data to field IDs and prepare stats
@@ -711,20 +781,36 @@ export default function StatsPage() {
                     for (const field of fieldsData.fields) {
                       // Try to find the value in formData using field_key first, then field_label
                       let value = formData[field.field_key];
-                      
+
                       // If not found by field_key, try by converting field_label to key format
-                      if (value === undefined || value === null || value === '') {
-                        const fieldKeyFromLabel = field.field_label.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+                      if (
+                        value === undefined ||
+                        value === null ||
+                        value === ''
+                      ) {
+                        const fieldKeyFromLabel = field.field_label
+                          .toLowerCase()
+                          .replace(/\s+/g, '_')
+                          .replace(/[^a-z0-9_]/g, '');
                         value = formData[fieldKeyFromLabel];
                       }
-                      
+
                       // Also check direct field_label match
-                      if ((value === undefined || value === null || value === '') && formData[field.field_label]) {
+                      if (
+                        (value === undefined ||
+                          value === null ||
+                          value === '') &&
+                        formData[field.field_label]
+                      ) {
                         value = formData[field.field_label];
                       }
-                      
+
                       // Include the value if it exists (even if empty, but not undefined/null)
-                      if (value !== undefined && value !== null && value !== '') {
+                      if (
+                        value !== undefined &&
+                        value !== null &&
+                        value !== ''
+                      ) {
                         stats.push({
                           fieldId: field.field_id,
                           value: String(value),
@@ -735,7 +821,7 @@ export default function StatsPage() {
                     // Step 6: Save position stats
                     if (stats.length > 0) {
                       const statsResponse = await fetch(
-                        'http://localhost:3001/api/user/position-stats',
+                        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/user/position-stats',
                         {
                           method: 'POST',
                           headers: {
@@ -743,15 +829,18 @@ export default function StatsPage() {
                           },
                           body: JSON.stringify({
                             user_id: userId,
-                            userSportProfileId: profileData.user_sport_profile_id,
+                            userSportProfileId:
+                              profileData.user_sport_profile_id,
                             stats: stats,
                           }),
                         }
                       );
                       const statsData = await statsResponse.json();
-                      
+
                       if (!statsData.success) {
-                        throw new Error(statsData.message || 'Failed to save stats');
+                        throw new Error(
+                          statsData.message || 'Failed to save stats'
+                        );
                       }
                     }
 
@@ -764,7 +853,7 @@ export default function StatsPage() {
                     });
                     // Refresh stats data
                     const refreshResponse = await fetch(
-                      `http://localhost:3001/api/user/sport-profiles?user_id=${userId}`
+                      `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/user/sport-profiles?user_id=${userId}`
                     );
                     const refreshData = await refreshResponse.json();
                     if (refreshData.success) {
@@ -772,7 +861,9 @@ export default function StatsPage() {
                     }
                   } catch (error: any) {
                     console.error('Error saving stats:', error);
-                    alert(`Failed to save stats: ${error.message || 'Unknown error'}`);
+                    alert(
+                      `Failed to save stats: ${error.message || 'Unknown error'}`
+                    );
                   } finally {
                     setSaving(false);
                   }

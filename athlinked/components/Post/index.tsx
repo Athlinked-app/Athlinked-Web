@@ -75,7 +75,10 @@ export default function Post({
   };
 
   const getEventTypeIcon = (eventType: string | null | undefined) => {
-    const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+    const iconMap: Record<
+      string,
+      React.ComponentType<{ className?: string }>
+    > = {
       work: Briefcase,
       travel: Plane,
       sports: Trophy,
@@ -142,7 +145,7 @@ export default function Post({
 
       try {
         const response = await fetch(
-          `http://localhost:3001/api/posts/${post.id}/like-status?user_id=${currentUserId}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}/like-status?user_id=${currentUserId}`
         );
 
         if (response.ok) {
@@ -168,7 +171,7 @@ export default function Post({
     const wasLiked = liked;
     // Optimistic update
     setLiked(!liked);
-    setLikeCount(prev => liked ? prev - 1 : prev + 1);
+    setLikeCount(prev => (liked ? prev - 1 : prev + 1));
 
     try {
       // Get user data
@@ -177,7 +180,7 @@ export default function Post({
         alert('User not logged in');
         // Revert optimistic update
         setLiked(wasLiked);
-        setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
+        setLikeCount(prev => (wasLiked ? prev + 1 : prev - 1));
         return;
       }
 
@@ -185,11 +188,11 @@ export default function Post({
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -203,10 +206,10 @@ export default function Post({
       }
 
       // Call like or unlike API based on current state
-      const endpoint = wasLiked 
-        ? `http://localhost:3001/api/posts/${post.id}/unlike`
-        : `http://localhost:3001/api/posts/${post.id}/like`;
-      
+      const endpoint = wasLiked
+        ? `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}/unlike`
+        : `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}/like`;
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -218,7 +221,7 @@ export default function Post({
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         // Update like count from API response
         if (result.like_count !== undefined) {
@@ -227,14 +230,14 @@ export default function Post({
       } else {
         // Revert optimistic update on error
         setLiked(wasLiked);
-        setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
+        setLikeCount(prev => (wasLiked ? prev + 1 : prev - 1));
         alert(result.message || 'Failed to update like status');
       }
     } catch (error) {
       console.error('Error updating like status:', error);
       // Revert optimistic update on error
       setLiked(wasLiked);
-      setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
+      setLikeCount(prev => (wasLiked ? prev + 1 : prev - 1));
       alert('Failed to update like status. Please try again.');
     }
   };
@@ -270,8 +273,7 @@ export default function Post({
     setShowShare(true);
   };
 
-  const handleShareComplete = () => {
-  };
+  const handleShareComplete = () => {};
 
   const handleSave = () => {
     const newSavedStatus = toggleSave(post.id);
@@ -412,7 +414,7 @@ export default function Post({
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
-    
+
     setTimeout(() => {
       printWindow.print();
     }, 250);
@@ -475,45 +477,54 @@ export default function Post({
           {(post.media_url || post.image_url) && (
             <div className="w-full">
               <img
-                src={post.media_url && post.media_url.startsWith('http') ? post.media_url : `http://localhost:3001${post.media_url || post.image_url || ''}`}
+                src={
+                  post.media_url && post.media_url.startsWith('http')
+                    ? post.media_url
+                    : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
+                }
                 alt={post.article_title || 'Article image'}
                 className="w-full h-auto object-cover"
-                onError={(e) => {
+                onError={e => {
                   console.error('Error loading image:', post.media_url);
                   e.currentTarget.style.display = 'none';
                 }}
               />
             </div>
           )}
-          
+
           {post.article_title && (
             <div className="px-6 py-4">
               <h3 className="text-3xl font-bold text-gray-900 mb-3">
                 {post.article_title}
               </h3>
               {post.caption && (
-                <p className="text-lg text-gray-600 mb-4">
-                  {post.caption}
-                </p>
+                <p className="text-lg text-gray-600 mb-4">{post.caption}</p>
               )}
               {post.article_body && (
                 <div className="mb-4">
                   {(() => {
-                    const textContent = post.article_body.replace(/<[^>]*>/g, '');
+                    const textContent = post.article_body.replace(
+                      /<[^>]*>/g,
+                      ''
+                    );
                     const previewLength = 200;
                     const shouldTruncate = textContent.length > previewLength;
-                    const preview = shouldTruncate 
+                    const preview = shouldTruncate
                       ? textContent.substring(0, previewLength) + '...'
                       : textContent;
-                    
+
                     return (
                       <>
                         {shouldTruncate ? (
-                          <p className="text-base text-gray-800 mb-3">{preview}</p>
+                          <p className="text-base text-gray-800 mb-3">
+                            {preview}
+                          </p>
                         ) : (
-                          <div 
+                          <div
                             className="text-base text-gray-800 prose max-w-none mb-3"
-                            dangerouslySetInnerHTML={{ __html: post.article_body }}
+                            dangerouslySetInnerHTML={{
+                              __html: post.article_body,
+                            }}
                           />
                         )}
                         <div className="flex justify-end gap-3 mt-4">
@@ -539,18 +550,27 @@ export default function Post({
         <>
           {(post.media_url || post.image_url) && (
             <div className="w-full relative">
-              {(post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) || (post.image_url && post.image_url.match(/\.(mp4|mov)$/i)) ? (
+              {(post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ||
+              (post.image_url && post.image_url.match(/\.(mp4|mov)$/i)) ? (
                 <video
-                  src={post.media_url && post.media_url.startsWith('http') ? post.media_url : `http://localhost:3001${post.media_url || post.image_url || ''}`}
+                  src={
+                    post.media_url && post.media_url.startsWith('http')
+                      ? post.media_url
+                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
+                  }
                   controls
                   className="w-full h-auto object-cover"
                 />
               ) : (
                 <img
-                  src={post.media_url && post.media_url.startsWith('http') ? post.media_url : `http://localhost:3001${post.media_url || post.image_url || ''}`}
+                  src={
+                    post.media_url && post.media_url.startsWith('http')
+                      ? post.media_url
+                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
+                  }
                   alt={post.event_title || 'Event image'}
                   className="w-full h-auto object-cover"
-                  onError={(e) => {
+                  onError={e => {
                     console.error('Error loading image:', post.media_url);
                     e.currentTarget.style.display = 'none';
                   }}
@@ -568,7 +588,9 @@ export default function Post({
           )}
 
           {post.event_title && (
-            <div className={`px-6 text-center ${(post.media_url || post.image_url) ? 'pt-12 pb-6' : 'py-6'}`}>
+            <div
+              className={`px-6 text-center ${post.media_url || post.image_url ? 'pt-12 pb-6' : 'py-6'}`}
+            >
               {!(post.media_url || post.image_url) && (
                 <div className="flex justify-center mb-4">
                   <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center shadow-xl border-4 border-white">
@@ -587,10 +609,10 @@ export default function Post({
               )}
               {post.event_date && (
                 <p className="text-xl text-gray-600 mb-3">
-                  {new Date(post.event_date).toLocaleDateString('en-US', { 
-                    month: 'long', 
-                    day: 'numeric', 
-                    year: 'numeric' 
+                  {new Date(post.event_date).toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
                   })}
                 </p>
               )}
@@ -609,7 +631,10 @@ export default function Post({
         </>
       )}
 
-      {(post.post_type === 'photo' || post.post_type === 'video' || post.post_type === 'text' || !post.post_type) && (
+      {(post.post_type === 'photo' ||
+        post.post_type === 'video' ||
+        post.post_type === 'text' ||
+        !post.post_type) && (
         <>
           {(post.caption || post.description) && (
             <p className="text-md text-gray-800 px-6 mb-4">
@@ -741,7 +766,8 @@ export default function Post({
 
             <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-3">
               <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
-                {post.user_profile_url && post.user_profile_url.trim() !== '' ? (
+                {post.user_profile_url &&
+                post.user_profile_url.trim() !== '' ? (
                   <img
                     src={post.user_profile_url}
                     alt={post.username}
@@ -762,7 +788,11 @@ export default function Post({
             {(post.media_url || post.image_url) && (
               <div className="w-full">
                 <img
-                  src={post.media_url && post.media_url.startsWith('http') ? post.media_url : `http://localhost:3001${post.media_url || post.image_url || ''}`}
+                  src={
+                    post.media_url && post.media_url.startsWith('http')
+                      ? post.media_url
+                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
+                  }
                   alt={post.article_title || 'Article image'}
                   className="w-full h-auto object-cover"
                 />
@@ -776,12 +806,10 @@ export default function Post({
                 </h3>
               )}
               {post.caption && (
-                <p className="text-lg text-gray-600 mb-6">
-                  {post.caption}
-                </p>
+                <p className="text-lg text-gray-600 mb-6">{post.caption}</p>
               )}
               {post.article_body && (
-                <div 
+                <div
                   className="prose max-w-none text-gray-800"
                   dangerouslySetInnerHTML={{ __html: post.article_body }}
                 />

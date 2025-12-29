@@ -70,19 +70,19 @@ export default function HomeHerosection({
 
     const headers = {
       'ngrok-skip-browser-warning': 'true',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     };
 
     let userResponse;
     if (userIdentifier.startsWith('username:')) {
       const username = userIdentifier.replace('username:', '');
       userResponse = await fetch(
-        `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`,
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`,
         { headers }
       );
     } else {
       userResponse = await fetch(
-        `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`,
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`,
         { headers }
       );
     }
@@ -106,18 +106,21 @@ export default function HomeHerosection({
     try {
       const userData = await getUserData();
 
-      const response = await fetch('http://localhost:3001/api/posts', {
-        method: 'POST',
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userData.id,
-          post_type: 'text',
-          caption: postText.trim(),
-        }),
-      });
+      const response = await fetch(
+        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts',
+        {
+          method: 'POST',
+          headers: {
+            'ngrok-skip-browser-warning': 'true',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: userData.id,
+            post_type: 'text',
+            caption: postText.trim(),
+          }),
+        }
+      );
 
       const data = await response.json();
       if (data.success) {
@@ -149,13 +152,16 @@ export default function HomeHerosection({
       formData.append('post_type', selectedPostType!);
       formData.append('caption', caption);
 
-      const response = await fetch('http://localhost:3001/api/posts', {
-        method: 'POST',
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-        },
-        body: formData,
-      });
+      const response = await fetch(
+        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts',
+        {
+          method: 'POST',
+          headers: {
+            'ngrok-skip-browser-warning': 'true',
+          },
+          body: formData,
+        }
+      );
 
       const data = await response.json();
       if (data.success) {
@@ -218,16 +224,19 @@ export default function HomeHerosection({
           }
         }
 
-        const response = await fetch('http://localhost:3001/api/posts', {
-          method: 'POST',
-          headers: {
-            'ngrok-skip-browser-warning': 'true',
-          },
-          body: formData,
-        });
+        const response = await fetch(
+          'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts',
+          {
+            method: 'POST',
+            headers: {
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: formData,
+          }
+        );
 
         const result = await response.json();
-        
+
         if (result.success) {
           setShowArticleEvent(false);
           if (onPostCreated) {
@@ -255,14 +264,17 @@ export default function HomeHerosection({
           }
         }
 
-        const response = await fetch('http://localhost:3001/api/posts', {
-          method: 'POST',
-          headers: {
-            'ngrok-skip-browser-warning': 'true',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(postData),
-        });
+        const response = await fetch(
+          'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts',
+          {
+            method: 'POST',
+            headers: {
+              'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(postData),
+          }
+        );
 
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
@@ -273,7 +285,7 @@ export default function HomeHerosection({
         }
 
         const result = await response.json();
-        
+
         if (result.success) {
           setShowArticleEvent(false);
           if (onPostCreated) {
@@ -414,31 +426,33 @@ export default function HomeHerosection({
         />
       )}
 
-      {selectedPostType && (selectedPostType === 'photo' || selectedPostType === 'video') && (
-        <PostDetailsModal
-          open={showDetails}
-          postType={selectedPostType}
-          filePreview={filePreview}
-          fileName={selectedFile?.name || 'No file selected'}
-          fileSizeLabel={selectedFile ? formatSize(selectedFile.size) : ''}
-          caption={caption}
-          onCaptionChange={setCaption}
-          onClose={resetFileState}
-          onPost={handleMediaPost}
-          onRemoveFile={resetFileState}
-          currentUserId={currentUserId}
-        />
-      )}
+      {selectedPostType &&
+        (selectedPostType === 'photo' || selectedPostType === 'video') && (
+          <PostDetailsModal
+            open={showDetails}
+            postType={selectedPostType}
+            filePreview={filePreview}
+            fileName={selectedFile?.name || 'No file selected'}
+            fileSizeLabel={selectedFile ? formatSize(selectedFile.size) : ''}
+            caption={caption}
+            onCaptionChange={setCaption}
+            onClose={resetFileState}
+            onPost={handleMediaPost}
+            onRemoveFile={resetFileState}
+            currentUserId={currentUserId}
+          />
+        )}
 
-      {selectedPostType && (selectedPostType === 'article' || selectedPostType === 'event') && (
-        <ArticleEventModal
-          open={showArticleEvent}
-          postType={selectedPostType}
-          currentUserId={currentUserId}
-          onClose={() => setShowArticleEvent(false)}
-          onSubmit={handleArticleEventSubmit}
-        />
-      )}
+      {selectedPostType &&
+        (selectedPostType === 'article' || selectedPostType === 'event') && (
+          <ArticleEventModal
+            open={showArticleEvent}
+            postType={selectedPostType}
+            currentUserId={currentUserId}
+            onClose={() => setShowArticleEvent(false)}
+            onSubmit={handleArticleEventSubmit}
+          />
+        )}
     </div>
   );
 }

@@ -74,7 +74,13 @@ async function getSportAndPositionNames(sportId, positionId) {
 /**
  * Get or create user sport profile
  */
-async function getOrCreateUserSportProfile(userId, sportId, positionId, sportName, positionName) {
+async function getOrCreateUserSportProfile(
+  userId,
+  sportId,
+  positionId,
+  sportName,
+  positionName
+) {
   // Check if profile already exists
   const checkQuery = `
     SELECT id
@@ -82,7 +88,11 @@ async function getOrCreateUserSportProfile(userId, sportId, positionId, sportNam
     WHERE user_id = $1 AND sport_id = $2 AND position_id = $3
     LIMIT 1
   `;
-  const checkResult = await pool.query(checkQuery, [userId, sportId, positionId]);
+  const checkResult = await pool.query(checkQuery, [
+    userId,
+    sportId,
+    positionId,
+  ]);
 
   if (checkResult.rows.length > 0) {
     return checkResult.rows[0].id;
@@ -226,7 +236,7 @@ async function getAllUserSportProfiles(userId) {
 
   // Get stats for each profile
   const profilesWithStats = await Promise.all(
-    profilesResult.rows.map(async (profile) => {
+    profilesResult.rows.map(async profile => {
       const statsQuery = `
         SELECT 
           field_label,
@@ -263,4 +273,3 @@ module.exports = {
   getUserStatsByProfile,
   getAllUserSportProfiles,
 };
-

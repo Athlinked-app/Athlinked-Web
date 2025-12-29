@@ -22,9 +22,15 @@ export default function HealthAndReadinessPopup({
   onSave,
   existingData,
 }: HealthAndReadinessPopupProps) {
-  const [injuryHistory, setInjuryHistory] = useState(existingData?.injuryHistory || '');
-  const [restingHeartRate, setRestingHeartRate] = useState(existingData?.restingHeartRate || '');
-  const [enduranceMetric, setEnduranceMetric] = useState(existingData?.enduranceMetric || '');
+  const [injuryHistory, setInjuryHistory] = useState(
+    existingData?.injuryHistory || ''
+  );
+  const [restingHeartRate, setRestingHeartRate] = useState(
+    existingData?.restingHeartRate || ''
+  );
+  const [enduranceMetric, setEnduranceMetric] = useState(
+    existingData?.enduranceMetric || ''
+  );
 
   // Update form when existingData changes (for editing)
   useEffect(() => {
@@ -61,7 +67,8 @@ export default function HealthAndReadinessPopup({
   };
 
   // Check if all required fields are filled
-  const isFormValid = injuryHistory && restingHeartRate.trim() && enduranceMetric.trim();
+  const isFormValid =
+    injuryHistory && restingHeartRate.trim() && enduranceMetric.trim();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -72,7 +79,9 @@ export default function HealthAndReadinessPopup({
       <div className="relative z-10 w-full max-w-2xl bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">Health and Readiness</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Health and Readiness
+          </h2>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -84,7 +93,9 @@ export default function HealthAndReadinessPopup({
         <div className="px-6 py-6 space-y-6">
           {/* Injury History in Past 12 Months */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Injury History in Past 12 Months</label>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Injury History in Past 12 Months
+            </label>
             <div className="flex gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -92,7 +103,7 @@ export default function HealthAndReadinessPopup({
                   name="injuryHistory"
                   value="Yes"
                   checked={injuryHistory === 'Yes'}
-                  onChange={(e) => setInjuryHistory(e.target.value)}
+                  onChange={e => setInjuryHistory(e.target.value)}
                   className="w-4 h-4 text-[#CB9729] focus:ring-[#CB9729]"
                 />
                 <span className="text-gray-700">Yes</span>
@@ -103,7 +114,7 @@ export default function HealthAndReadinessPopup({
                   name="injuryHistory"
                   value="No"
                   checked={injuryHistory === 'No'}
-                  onChange={(e) => setInjuryHistory(e.target.value)}
+                  onChange={e => setInjuryHistory(e.target.value)}
                   className="w-4 h-4 text-[#CB9729] focus:ring-[#CB9729]"
                 />
                 <span className="text-gray-700">No</span>
@@ -113,11 +124,13 @@ export default function HealthAndReadinessPopup({
 
           {/* Resting Heart Rate or Fitness Indicator */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Resting Heart Rate or Fitness Indicator</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Resting Heart Rate or Fitness Indicator
+            </label>
             <input
               type="number"
               value={restingHeartRate}
-              onChange={(e) => setRestingHeartRate(e.target.value)}
+              onChange={e => setRestingHeartRate(e.target.value)}
               placeholder="60"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
             />
@@ -126,16 +139,20 @@ export default function HealthAndReadinessPopup({
 
           {/* Endurance Metric */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Endurance Metric</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Endurance Metric
+            </label>
             <input
               type="number"
               value={enduranceMetric}
-              onChange={(e) => setEnduranceMetric(e.target.value)}
+              onChange={e => setEnduranceMetric(e.target.value)}
               placeholder="45.8"
               step="0.1"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
             />
-            <p className="mt-1 text-xs text-gray-500">Enter your endurance metric (e.g., VO2 Max, Beep Test level)</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Enter your endurance metric (e.g., VO2 Max, Beep Test level)
+            </p>
           </div>
         </div>
 
@@ -145,8 +162,8 @@ export default function HealthAndReadinessPopup({
             onClick={handleSave}
             disabled={!isFormValid}
             className={`px-6 py-2 rounded-lg transition-colors font-semibold ${
-              isFormValid 
-                ? 'bg-[#CB9729] text-white hover:bg-[#b78322] cursor-pointer' 
+              isFormValid
+                ? 'bg-[#CB9729] text-white hover:bg-[#b78322] cursor-pointer'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
@@ -157,4 +174,3 @@ export default function HealthAndReadinessPopup({
     </div>
   );
 }
-

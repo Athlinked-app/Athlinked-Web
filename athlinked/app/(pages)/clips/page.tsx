@@ -54,12 +54,16 @@ export default function ClipsPage() {
   const [currentReelIndex, setCurrentReelIndex] = useState(0);
   const [mutedReels, setMutedReels] = useState<{ [key: string]: boolean }>({});
   const [likedReels, setLikedReels] = useState<{ [key: string]: boolean }>({});
-  const [pausedReels, setPausedReels] = useState<{ [key: string]: boolean }>({});
+  const [pausedReels, setPausedReels] = useState<{ [key: string]: boolean }>(
+    {}
+  );
   const [selectedReelId, setSelectedReelId] = useState<string | null>(null);
   const [showComments, setShowComments] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
-  const [selectedReelForShare, setSelectedReelForShare] = useState<Reel | null>(null);
+  const [selectedReelForShare, setSelectedReelForShare] = useState<Reel | null>(
+    null
+  );
   const [isUploading, setIsUploading] = useState(false);
   const [commentTexts, setCommentTexts] = useState<{ [key: string]: string }>(
     {}
@@ -98,14 +102,16 @@ export default function ClipsPage() {
           const playPromise = video.play();
           if (playPromise !== undefined) {
             playPromisesRef.current[reelId] = playPromise;
-            playPromise.catch(err => {
-              // Silently handle autoplay errors
-              if (err.name !== 'AbortError') {
-                console.error('Error playing video with audio:', err);
-              }
-            }).finally(() => {
-              playPromisesRef.current[reelId] = null;
-            });
+            playPromise
+              .catch(err => {
+                // Silently handle autoplay errors
+                if (err.name !== 'AbortError') {
+                  console.error('Error playing video with audio:', err);
+                }
+              })
+              .finally(() => {
+                playPromisesRef.current[reelId] = null;
+              });
           }
         }
       }
@@ -137,53 +143,63 @@ export default function ClipsPage() {
             if (!shouldBeMuted) {
               video.volume = 1;
             }
-            
+
             // Cancel any pending play promise
             if (playPromisesRef.current[reel.id]) {
               playPromisesRef.current[reel.id] = null;
             }
-            
+
             const playPromise = video.play();
             if (playPromise !== undefined) {
               playPromisesRef.current[reel.id] = playPromise;
-              playPromise.catch(err => {
-                // If autoplay with audio fails, try multiple strategies to enable audio
-                if (err.name === 'NotAllowedError' && !shouldBeMuted) {
-                  video.muted = true;
-                  const mutedPlayPromise = video.play();
-                  if (mutedPlayPromise !== undefined) {
-                    mutedPlayPromise.then(() => {
-                      // Try multiple times with different delays to enable audio
-                      const tryEnableAudio = (attempt: number) => {
-                        if (attempt > 5) return; // Max 5 attempts
-                        
-                        setTimeout(() => {
-                          if (!video.paused && !mutedReels[reel.id]) {
-                            video.muted = false;
-                            video.volume = 1;
-                            video.play().then(() => {
-                              // Success! Audio is now enabled
-                            }).catch(() => {
-                              // Try again with longer delay
-                              tryEnableAudio(attempt + 1);
-                            });
+              playPromise
+                .catch(err => {
+                  // If autoplay with audio fails, try multiple strategies to enable audio
+                  if (err.name === 'NotAllowedError' && !shouldBeMuted) {
+                    video.muted = true;
+                    const mutedPlayPromise = video.play();
+                    if (mutedPlayPromise !== undefined) {
+                      mutedPlayPromise
+                        .then(() => {
+                          // Try multiple times with different delays to enable audio
+                          const tryEnableAudio = (attempt: number) => {
+                            if (attempt > 5) return; // Max 5 attempts
+
+                            setTimeout(() => {
+                              if (!video.paused && !mutedReels[reel.id]) {
+                                video.muted = false;
+                                video.volume = 1;
+                                video
+                                  .play()
+                                  .then(() => {
+                                    // Success! Audio is now enabled
+                                  })
+                                  .catch(() => {
+                                    // Try again with longer delay
+                                    tryEnableAudio(attempt + 1);
+                                  });
+                              }
+                            }, attempt * 50); // Increasing delay: 50ms, 100ms, 150ms, etc.
+                          };
+
+                          tryEnableAudio(1);
+                        })
+                        .catch(mutedErr => {
+                          if (mutedErr.name !== 'AbortError') {
+                            console.error(
+                              'Error playing muted video:',
+                              mutedErr
+                            );
                           }
-                        }, attempt * 50); // Increasing delay: 50ms, 100ms, 150ms, etc.
-                      };
-                      
-                      tryEnableAudio(1);
-                    }).catch(mutedErr => {
-                      if (mutedErr.name !== 'AbortError') {
-                        console.error('Error playing muted video:', mutedErr);
-                      }
-                    });
+                        });
+                    }
+                  } else if (err.name !== 'AbortError') {
+                    console.error('Error playing video:', err);
                   }
-                } else if (err.name !== 'AbortError') {
-                  console.error('Error playing video:', err);
-                }
-              }).finally(() => {
-                playPromisesRef.current[reel.id] = null;
-              });
+                })
+                .finally(() => {
+                  playPromisesRef.current[reel.id] = null;
+                });
             }
           } else {
             // Cancel any pending play promise before pausing
@@ -213,48 +229,64 @@ export default function ClipsPage() {
         const playPromise = firstVideo.play();
         if (playPromise !== undefined) {
           playPromisesRef.current[reels[0].id] = playPromise;
-          playPromise.then(() => {
-            // If play succeeds, ensure audio is enabled if it should be
-            if (!mutedReels[reels[0].id] && firstVideo.muted) {
-              firstVideo.muted = false;
-              firstVideo.volume = 1;
-            }
-          }).catch(err => {
-            // If autoplay with audio fails, try multiple strategies to enable audio
-            if (err.name === 'NotAllowedError' && !firstVideo.muted) {
-              // Strategy 1: Play muted first, then try to unmute immediately
-              firstVideo.muted = true;
-              firstVideo.play().then(() => {
-                // Try multiple times with different delays to enable audio
-                const tryEnableAudio = (attempt: number) => {
-                  if (attempt > 5) return; // Max 5 attempts
-                  
-                  setTimeout(() => {
-                    if (!firstVideo.paused && !mutedReels[reels[0].id]) {
-                      firstVideo.muted = false;
-                      firstVideo.volume = 1;
-                      firstVideo.play().then(() => {
-                        // Success! Audio is now enabled
-                      }).catch(() => {
-                        // Try again with longer delay
-                        tryEnableAudio(attempt + 1);
-                      });
-                    }
-                  }, attempt * 50); // Increasing delay: 50ms, 100ms, 150ms, etc.
-                };
-                
-                tryEnableAudio(1);
-              }).catch(() => {});
-            }
-          }).finally(() => {
-            playPromisesRef.current[reels[0].id] = null;
-          });
+          playPromise
+            .then(() => {
+              // If play succeeds, ensure audio is enabled if it should be
+              if (!mutedReels[reels[0].id] && firstVideo.muted) {
+                firstVideo.muted = false;
+                firstVideo.volume = 1;
+              }
+            })
+            .catch(err => {
+              // If autoplay with audio fails, try multiple strategies to enable audio
+              if (err.name === 'NotAllowedError' && !firstVideo.muted) {
+                // Strategy 1: Play muted first, then try to unmute immediately
+                firstVideo.muted = true;
+                firstVideo
+                  .play()
+                  .then(() => {
+                    // Try multiple times with different delays to enable audio
+                    const tryEnableAudio = (attempt: number) => {
+                      if (attempt > 5) return; // Max 5 attempts
+
+                      setTimeout(() => {
+                        if (!firstVideo.paused && !mutedReels[reels[0].id]) {
+                          firstVideo.muted = false;
+                          firstVideo.volume = 1;
+                          firstVideo
+                            .play()
+                            .then(() => {
+                              // Success! Audio is now enabled
+                            })
+                            .catch(() => {
+                              // Try again with longer delay
+                              tryEnableAudio(attempt + 1);
+                            });
+                        }
+                      }, attempt * 50); // Increasing delay: 50ms, 100ms, 150ms, etc.
+                    };
+
+                    tryEnableAudio(1);
+                  })
+                  .catch(() => {});
+              }
+            })
+            .finally(() => {
+              playPromisesRef.current[reels[0].id] = null;
+            });
         }
       }
     }
 
     return () => container.removeEventListener('scroll', handleScroll);
-  }, [reels, selectedReelId, pausedReels, currentReelIndex, mutedReels, userHasInteracted]);
+  }, [
+    reels,
+    selectedReelId,
+    pausedReels,
+    currentReelIndex,
+    mutedReels,
+    userHasInteracted,
+  ]);
 
   // Enable audio on any page interaction (makes it feel automatic)
   useEffect(() => {
@@ -262,7 +294,11 @@ export default function ClipsPage() {
       if (!userHasInteracted) {
         setUserHasInteracted(true);
         // Enable audio for current video
-        if (reels.length > 0 && currentReelIndex >= 0 && currentReelIndex < reels.length) {
+        if (
+          reels.length > 0 &&
+          currentReelIndex >= 0 &&
+          currentReelIndex < reels.length
+        ) {
           const currentReel = reels[currentReelIndex];
           const video = videoRefs.current[currentReel.id];
           if (video && !mutedReels[currentReel.id] && video.muted) {
@@ -277,9 +313,15 @@ export default function ClipsPage() {
     };
 
     // Listen for any user interaction on the page
-    document.addEventListener('click', enableAudioOnInteraction, { once: true });
-    document.addEventListener('touchstart', enableAudioOnInteraction, { once: true });
-    document.addEventListener('keydown', enableAudioOnInteraction, { once: true });
+    document.addEventListener('click', enableAudioOnInteraction, {
+      once: true,
+    });
+    document.addEventListener('touchstart', enableAudioOnInteraction, {
+      once: true,
+    });
+    document.addEventListener('keydown', enableAudioOnInteraction, {
+      once: true,
+    });
 
     return () => {
       document.removeEventListener('click', enableAudioOnInteraction);
@@ -290,7 +332,11 @@ export default function ClipsPage() {
 
   // Ensure current video plays when reels are loaded or current index changes
   useEffect(() => {
-    if (reels.length > 0 && currentReelIndex >= 0 && currentReelIndex < reels.length) {
+    if (
+      reels.length > 0 &&
+      currentReelIndex >= 0 &&
+      currentReelIndex < reels.length
+    ) {
       const currentReel = reels[currentReelIndex];
       const video = videoRefs.current[currentReel.id];
       if (video && !pausedReels[currentReel.id]) {
@@ -298,51 +344,60 @@ export default function ClipsPage() {
         if (!mutedReels[currentReel.id]) {
           video.volume = 1;
         }
-        
+
         // Cancel any pending play promise
         if (playPromisesRef.current[currentReel.id]) {
           playPromisesRef.current[currentReel.id] = null;
         }
-        
+
         const playPromise = video.play();
         if (playPromise !== undefined) {
           playPromisesRef.current[currentReel.id] = playPromise;
-          playPromise.then(() => {
-            // If play succeeds, ensure audio is enabled if it should be
-            if (!mutedReels[currentReel.id] && video.muted) {
-              video.muted = false;
-              video.volume = 1;
-            }
-          }).catch(err => {
-            // If autoplay with audio fails, try multiple strategies to enable audio
-            if (err.name === 'NotAllowedError' && !video.muted) {
-              // Strategy 1: Play muted first, then try to unmute immediately
-              video.muted = true;
-              video.play().then(() => {
-                // Try multiple times with different delays to enable audio
-                const tryEnableAudio = (attempt: number) => {
-                  if (attempt > 5) return; // Max 5 attempts
-                  
-                  setTimeout(() => {
-                    if (!video.paused && !mutedReels[currentReel.id]) {
-                      video.muted = false;
-                      video.volume = 1;
-                      video.play().then(() => {
-                        // Success! Audio is now enabled
-                      }).catch(() => {
-                        // Try again with longer delay
-                        tryEnableAudio(attempt + 1);
-                      });
-                    }
-                  }, attempt * 50); // Increasing delay: 50ms, 100ms, 150ms, etc.
-                };
-                
-                tryEnableAudio(1);
-              }).catch(() => {});
-            }
-          }).finally(() => {
-            playPromisesRef.current[currentReel.id] = null;
-          });
+          playPromise
+            .then(() => {
+              // If play succeeds, ensure audio is enabled if it should be
+              if (!mutedReels[currentReel.id] && video.muted) {
+                video.muted = false;
+                video.volume = 1;
+              }
+            })
+            .catch(err => {
+              // If autoplay with audio fails, try multiple strategies to enable audio
+              if (err.name === 'NotAllowedError' && !video.muted) {
+                // Strategy 1: Play muted first, then try to unmute immediately
+                video.muted = true;
+                video
+                  .play()
+                  .then(() => {
+                    // Try multiple times with different delays to enable audio
+                    const tryEnableAudio = (attempt: number) => {
+                      if (attempt > 5) return; // Max 5 attempts
+
+                      setTimeout(() => {
+                        if (!video.paused && !mutedReels[currentReel.id]) {
+                          video.muted = false;
+                          video.volume = 1;
+                          video
+                            .play()
+                            .then(() => {
+                              // Success! Audio is now enabled
+                            })
+                            .catch(() => {
+                              // Try again with longer delay
+                              tryEnableAudio(attempt + 1);
+                            });
+                        }
+                      }, attempt * 50); // Increasing delay: 50ms, 100ms, 150ms, etc.
+                    };
+
+                    tryEnableAudio(1);
+                  })
+                  .catch(() => {});
+              }
+            })
+            .finally(() => {
+              playPromisesRef.current[currentReel.id] = null;
+            });
         }
       }
     }
@@ -454,7 +509,7 @@ export default function ClipsPage() {
     if (!userHasInteracted) {
       setUserHasInteracted(true);
     }
-    
+
     setMutedReels(prev => {
       const newMuted = !prev[reelId];
       // Update video muted state immediately - only affects audio, not playback
@@ -476,10 +531,13 @@ export default function ClipsPage() {
     });
   };
 
-  const handleVideoClick = (e: React.MouseEvent<HTMLVideoElement>, reelId: string) => {
+  const handleVideoClick = (
+    e: React.MouseEvent<HTMLVideoElement>,
+    reelId: string
+  ) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     const video = videoRefs.current[reelId];
     if (video) {
       if (video.paused) {
@@ -489,22 +547,24 @@ export default function ClipsPage() {
         if (!shouldBeMuted) {
           video.volume = 1;
         }
-        
+
         // Cancel any pending play promise
         if (playPromisesRef.current[reelId]) {
           playPromisesRef.current[reelId] = null;
         }
-        
+
         const playPromise = video.play();
         if (playPromise !== undefined) {
           playPromisesRef.current[reelId] = playPromise;
-          playPromise.catch(err => {
-            if (err.name !== 'AbortError') {
-              console.error('Error playing video:', err);
-            }
-          }).finally(() => {
-            playPromisesRef.current[reelId] = null;
-          });
+          playPromise
+            .catch(err => {
+              if (err.name !== 'AbortError') {
+                console.error('Error playing video:', err);
+              }
+            })
+            .finally(() => {
+              playPromisesRef.current[reelId] = null;
+            });
         }
         setPausedReels(prev => ({ ...prev, [reelId]: false }));
       } else {
@@ -917,7 +977,8 @@ export default function ClipsPage() {
     // Strategy 1: Try to play a silent audio context to unlock audio (browser trick)
     const unlockAudio = async () => {
       try {
-        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+        const AudioContext =
+          window.AudioContext || (window as any).webkitAudioContext;
         if (AudioContext) {
           const audioContext = new AudioContext();
           const buffer = audioContext.createBuffer(1, 1, 22050);
@@ -996,7 +1057,7 @@ export default function ClipsPage() {
           >
             {/* Create Button - Fixed on video container when videos exist */}
             {reels.length > 0 && (
-              <div 
+              <div
                 className="absolute top-15 z-30"
                 style={{ left: 'calc(50% - 250px + 20px)' }}
               >
@@ -1030,7 +1091,6 @@ export default function ClipsPage() {
                       className="relative bg-black rounded-lg overflow-hidden shadow-2xl"
                       style={{ width: '500px', aspectRatio: '9/16' }}
                     >
-
                       <video
                         ref={el => {
                           if (el) {
@@ -1040,7 +1100,7 @@ export default function ClipsPage() {
                             el.volume = 1;
                           }
                         }}
-                        onClick={(e) => handleVideoClick(e, reel.id)}
+                        onClick={e => handleVideoClick(e, reel.id)}
                         className="w-full h-full object-contain cursor-pointer"
                         style={{ pointerEvents: 'auto' }}
                         controls={false}
@@ -1090,8 +1150,14 @@ export default function ClipsPage() {
                       )}
 
                       {/* Bottom Section - Profile, Username, and Description */}
-                      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10" style={{ pointerEvents: 'none' }}>
-                        <div className="flex items-start gap-3" style={{ pointerEvents: 'auto' }}>
+                      <div
+                        className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10"
+                        style={{ pointerEvents: 'none' }}
+                      >
+                        <div
+                          className="flex items-start gap-3"
+                          style={{ pointerEvents: 'auto' }}
+                        >
                           <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden flex-shrink-0 border-2 border-white flex items-center justify-center">
                             {reel.authorAvatar ? (
                               <img
@@ -1124,7 +1190,10 @@ export default function ClipsPage() {
                       </div>
 
                       {/* Right Side - Interaction Buttons */}
-                      <div className="absolute right-4 bottom-15 flex flex-col items-center gap-6" style={{ pointerEvents: 'auto' }}>
+                      <div
+                        className="absolute right-4 bottom-15 flex flex-col items-center gap-6"
+                        style={{ pointerEvents: 'auto' }}
+                      >
                         <button
                           onClick={() => handleLike(reel.id)}
                           className="flex flex-col items-center gap-1 text-white hover:scale-110 transition-transform"
@@ -1204,9 +1273,7 @@ export default function ClipsPage() {
             >
               {/* Comments Header */}
               <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
-                <h2 className="text-lg font-semibold text-black">
-                  Comments
-                </h2>
+                <h2 className="text-lg font-semibold text-black">Comments</h2>
                 <button
                   onClick={() => setShowComments(false)}
                   className="p-1 hover:bg-gray-100 rounded-full transition-colors"
@@ -1249,9 +1316,7 @@ export default function ClipsPage() {
                             {comment.text}
                           </p>
                           <div className="flex items-center gap-4 text-xs text-black">
-                            <button className="hover:text-black">
-                              Reply
-                            </button>
+                            <button className="hover:text-black">Reply</button>
                             {comment.hasReplies && (
                               <button className="hover:text-black">
                                 View replies
@@ -1294,7 +1359,9 @@ export default function ClipsPage() {
                           .slice(0, 2)}
                       </span>
                     ) : (
-                      <span className="text-black font-semibold text-xs">U</span>
+                      <span className="text-black font-semibold text-xs">
+                        U
+                      </span>
                     )}
                   </div>
                   <input

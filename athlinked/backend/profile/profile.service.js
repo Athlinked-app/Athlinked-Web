@@ -72,7 +72,7 @@ async function upsertUserProfileService(userId, profileData) {
     console.log('=== SERVICE: upsertUserProfileService ===');
     console.log('UserId:', userId);
     console.log('ProfileData:', JSON.stringify(profileData, null, 2));
-    
+
     if (!userId) {
       throw new Error('User ID is required');
     }
@@ -81,7 +81,10 @@ async function upsertUserProfileService(userId, profileData) {
       console.log('WARNING: No profile data provided');
     }
 
-    const updatedProfile = await profileModel.upsertUserProfile(userId, profileData);
+    const updatedProfile = await profileModel.upsertUserProfile(
+      userId,
+      profileData
+    );
 
     console.log('Service: Profile updated successfully');
     return {
@@ -116,7 +119,10 @@ async function updateProfileImagesService(userId, imageData) {
       throw new Error('User ID is required');
     }
 
-    const updatedProfile = await profileModel.updateProfileImages(userId, imageData);
+    const updatedProfile = await profileModel.updateProfileImages(
+      userId,
+      imageData
+    );
 
     return {
       success: true,
@@ -138,4 +144,3 @@ module.exports = {
   upsertUserProfileService,
   updateProfileImagesService,
 };
-
