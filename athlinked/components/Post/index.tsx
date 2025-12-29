@@ -132,9 +132,108 @@ export default function Post({
     checkSavedStatus();
   }, [post.id]);
 
-  const handleLike = () => {
+  // Check if current user has liked this post
+  useEffect(() => {
+    const checkLikeStatus = async () => {
+      if (!currentUserId) return;
+
+      try {
+        const response = await fetch(
+          `http://localhost:3001/api/posts/${post.id}/like-status?user_id=${currentUserId}`
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setLiked(data.isLiked);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking like status:', error);
+      }
+    };
+
+    checkLikeStatus();
+  }, [post.id, currentUserId]);
+
+  const handleLike = async () => {
+    if (!currentUserId) {
+      alert('Please log in to like posts');
+      return;
+    }
+
+    const wasLiked = liked;
+    // Optimistic update
     setLiked(!liked);
     setLikeCount(prev => liked ? prev - 1 : prev + 1);
+
+    try {
+      // Get user data
+      const userIdentifier = localStorage.getItem('userEmail');
+      if (!userIdentifier) {
+        alert('User not logged in');
+        // Revert optimistic update
+        setLiked(wasLiked);
+        setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
+        return;
+      }
+
+      let userResponse;
+      if (userIdentifier.startsWith('username:')) {
+        const username = userIdentifier.replace('username:', '');
+        userResponse = await fetch(
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+        );
+      } else {
+        userResponse = await fetch(
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+        );
+      }
+
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const userData = await userResponse.json();
+      if (!userData.success || !userData.user) {
+        throw new Error('User not found');
+      }
+
+      // Call like or unlike API based on current state
+      const endpoint = wasLiked 
+        ? `http://localhost:3001/api/posts/${post.id}/unlike`
+        : `http://localhost:3001/api/posts/${post.id}/like`;
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userData.user.id,
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Update like count from API response
+        if (result.like_count !== undefined) {
+          setLikeCount(result.like_count);
+        }
+      } else {
+        // Revert optimistic update on error
+        setLiked(wasLiked);
+        setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
+        alert(result.message || 'Failed to update like status');
+      }
+    } catch (error) {
+      console.error('Error updating like status:', error);
+      // Revert optimistic update on error
+      setLiked(wasLiked);
+      setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
+      alert('Failed to update like status. Please try again.');
+    }
   };
 
   const handleComment = () => {
@@ -708,6 +807,7 @@ export default function Post({
                 post={post}
                 currentUserProfileUrl={currentUserProfileUrl}
                 currentUsername={currentUsername}
+                currentUserId={currentUserId}
                 onClose={() => setShowComments(false)}
                 onCommentAdded={handleCommentAdded}
               />

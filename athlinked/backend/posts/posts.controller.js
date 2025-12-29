@@ -79,6 +79,29 @@ async function getPostsFeed(req, res) {
   }
 }
 
+async function checkLikeStatus(req, res) {
+  try {
+    const postId = req.params.postId;
+    const userId = req.query.user_id || req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
+
+    const result = await postsService.checkLikeStatusService(postId, userId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Check like status controller error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 async function likePost(req, res) {
   try {
     const postId = req.params.postId;
@@ -101,6 +124,29 @@ async function likePost(req, res) {
         message: error.message,
       });
     }
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
+async function unlikePost(req, res) {
+  try {
+    const postId = req.params.postId;
+    const userId = req.body.user_id || req.user?.id;
+    
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
+
+    const result = await postsService.unlikePostService(postId, userId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Unlike post controller error:', error);
     return res.status(500).json({
       success: false,
       message: error.message || 'Internal server error',
@@ -251,7 +297,9 @@ async function deletePost(req, res) {
 module.exports = {
   createPost,
   getPostsFeed,
+  checkLikeStatus,
   likePost,
+  unlikePost,
   addComment,
   replyToComment,
   savePost,

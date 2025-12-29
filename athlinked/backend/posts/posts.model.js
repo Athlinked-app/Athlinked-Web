@@ -102,6 +102,17 @@ async function getPostById(postId) {
   }
 }
 
+async function checkLikeStatus(postId, userId) {
+  const query = 'SELECT * FROM post_likes WHERE post_id = $1 AND user_id = $2';
+  try {
+    const result = await pool.query(query, [postId, userId]);
+    return result.rows.length > 0;
+  } catch (error) {
+    console.error('Error checking like status:', error);
+    throw error;
+  }
+}
+
 async function likePost(postId, userId, client = null) {
   const checkQuery = 'SELECT * FROM post_likes WHERE post_id = $1 AND user_id = $2';
   const insertLikeQuery = 'INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2)';
@@ -121,6 +132,23 @@ async function likePost(postId, userId, client = null) {
     return { like_count: updateResult.rows[0].like_count };
   } catch (error) {
     console.error('Error liking post:', error);
+    throw error;
+  }
+}
+
+async function unlikePost(postId, userId, client = null) {
+  const deleteLikeQuery = 'DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2';
+  const updateCountQuery = 'UPDATE posts SET like_count = GREATEST(like_count - 1, 0) WHERE id = $1 RETURNING like_count';
+
+  try {
+    const dbClient = client || pool;
+    
+    await dbClient.query(deleteLikeQuery, [postId, userId]);
+    const updateResult = await dbClient.query(updateCountQuery, [postId]);
+    
+    return { like_count: updateResult.rows[0].like_count };
+  } catch (error) {
+    console.error('Error unliking post:', error);
     throw error;
   }
 }
@@ -271,7 +299,9 @@ module.exports = {
   createPost,
   getPostsFeed,
   getPostById,
+  checkLikeStatus,
   likePost,
+  unlikePost,
   addComment,
   replyToComment,
   savePost,

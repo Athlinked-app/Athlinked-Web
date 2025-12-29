@@ -3,6 +3,11 @@
 import { useState, useRef, useEffect, type ChangeEvent } from 'react';
 import { X, Camera, Pencil, GraduationCap } from 'lucide-react';
 
+interface Sport {
+  id: string;
+  name: string;
+}
+
 interface EditProfilePopupProps {
   open: boolean;
   onClose: () => void;
@@ -43,29 +48,53 @@ export default function EditProfilePopup({
   const [showSportsDropdown, setShowSportsDropdown] = useState(false);
   const [selectedSports, setSelectedSports] = useState<string[]>(() => {
     if (userData?.sports_played) {
-      return userData.sports_played.split(',').map(s => s.trim()).filter(Boolean);
+      // Remove curly brackets and quotes if present
+      const cleaned = userData.sports_played.replace(/[{}"']/g, '');
+      return cleaned.split(',').map(s => s.trim()).filter(Boolean);
     }
     return [];
   });
+  const [allSports, setAllSports] = useState<Sport[]>([]);
+  const [loadingSports, setLoadingSports] = useState(false);
 
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const coverImageInputRef = useRef<HTMLInputElement>(null);
   const sportsDropdownRef = useRef<HTMLDivElement>(null);
 
-  const sportsList = [
-    'Football',
-    'Basketball',
-    'Baseball',
-    'Swimming',
-    'Soccer',
-    'Track & Field',
-    'Wrestling',
-    'Tennis',
-    'Golf',
-    'Lacrosse',
-    'Hockey',
-    'Volleyball',
-  ];
+  // Fetch sports from API when popup opens
+  useEffect(() => {
+    if (open) {
+      fetchSports();
+    }
+  }, [open]);
+
+  // Update selectedSports when userData changes
+  useEffect(() => {
+    if (userData?.sports_played) {
+      // Remove curly brackets and quotes if present
+      const cleaned = userData.sports_played.replace(/[{}"']/g, '');
+      const sportsArray = cleaned.split(',').map(s => s.trim()).filter(Boolean);
+      setSelectedSports(sportsArray);
+      setSportsPlayed(sportsArray.join(', '));
+    }
+  }, [userData?.sports_played]);
+
+  const fetchSports = async () => {
+    setLoadingSports(true);
+    try {
+      const response = await fetch('http://localhost:3001/api/sports');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.sports) {
+          setAllSports(data.sports);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching sports:', error);
+    } finally {
+      setLoadingSports(false);
+    }
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -110,12 +139,12 @@ export default function EditProfilePopup({
     coverImageInputRef.current?.click();
   };
 
-  const handleSportToggle = (sport: string) => {
+  const handleSportToggle = (sportName: string) => {
     setSelectedSports(prev => {
-      const isSelected = prev.includes(sport);
+      const isSelected = prev.includes(sportName);
       const newSports = isSelected
-        ? prev.filter(s => s !== sport)
-        : [...prev, sport];
+        ? prev.filter(s => s !== sportName)
+        : [...prev, sportName];
       setSportsPlayed(newSports.join(', '));
       return newSports;
     });
@@ -263,23 +292,38 @@ export default function EditProfilePopup({
             {/* Dropdown */}
             {showSportsDropdown && (
               <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
-                <div className="p-2 space-y-1">
-                  {sportsList.map((sport) => (
-                    <label
-                      key={sport}
-                      className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer rounded"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedSports.includes(sport)}
-                        onChange={() => handleSportToggle(sport)}
-                        className="w-4 h-4 text-[#CB9729] border-gray-300 rounded focus:ring-[#CB9729] focus:ring-2"
-                      />
-                      <span className="ml-3 text-sm text-gray-700">{sport}</span>
-                    </label>
-                  ))}
-                </div>
+                {loadingSports ? (
+                  <div className="p-4 text-center text-gray-500 text-sm">
+                    Loading sports...
+                  </div>
+                ) : allSports.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500 text-sm">
+                    No sports available
+                  </div>
+                ) : (
+                  <div className="p-2 space-y-1">
+                    {allSports.map((sport) => (
+                      <label
+                        key={sport.id}
+                        className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer rounded"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedSports.includes(sport.name)}
+                          onChange={() => handleSportToggle(sport.name)}
+                          className="w-4 h-4 text-[#CB9729] border-gray-300 rounded focus:ring-[#CB9729] focus:ring-2"
+                        />
+                        <span className="ml-3 text-sm text-gray-700">{sport.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
               </div>
+            )}
+            {selectedSports.length > 0 && (
+              <p className="mt-2 text-xs text-gray-600">
+                Selected: {selectedSports.join(', ')}
+              </p>
             )}
           </div>
           <div>
