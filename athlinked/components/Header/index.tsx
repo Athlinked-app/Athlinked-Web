@@ -26,7 +26,12 @@ export default function Header({
     let isMounted = true;
 
     const fetchUserData = async () => {
-      if (propUserName && propUserName !== 'User' && propUserProfileUrl && propUserProfileUrl !== '/assets/Header/profiledummy.jpeg') {
+      if (
+        propUserName &&
+        propUserName !== 'User' &&
+        propUserProfileUrl &&
+        propUserProfileUrl !== '/assets/Header/profiledummy.jpeg'
+      ) {
         if (isMounted) {
           setLoading(false);
         }
@@ -82,17 +87,24 @@ export default function Header({
   }, [propUserName, propUserProfileUrl]);
 
   const userName = propUserName || userData?.full_name || 'User';
-  
-  const rawProfileUrl = propUserProfileUrl || (userData?.profile_url && typeof userData.profile_url === 'string' && userData.profile_url.trim() !== '' ? userData.profile_url : null);
-  
-  const userProfileUrl = rawProfileUrl && rawProfileUrl.trim() !== ''
-    ? (rawProfileUrl.startsWith('http') 
-        ? rawProfileUrl 
+
+  const rawProfileUrl =
+    propUserProfileUrl ||
+    (userData?.profile_url &&
+    typeof userData.profile_url === 'string' &&
+    userData.profile_url.trim() !== ''
+      ? userData.profile_url
+      : null);
+
+  const userProfileUrl =
+    rawProfileUrl && rawProfileUrl.trim() !== ''
+      ? rawProfileUrl.startsWith('http')
+        ? rawProfileUrl
         : rawProfileUrl.startsWith('/') && !rawProfileUrl.startsWith('/assets')
           ? `http://localhost:3001${rawProfileUrl}`
-          : rawProfileUrl)
-    : null;
-  
+          : rawProfileUrl
+      : null;
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -118,7 +130,6 @@ export default function Header({
       </div>
 
       <div className="flex items-center">
-       
         <div className="ml-2">
           {userProfileUrl ? (
             <Image

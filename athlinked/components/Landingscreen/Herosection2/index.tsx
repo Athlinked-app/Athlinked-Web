@@ -195,9 +195,9 @@ export default function Herosection2() {
               AthLinked
             </p>
             <Link href="/login">
-            <button className="px-10 py-4 bg-white text-[#002767] text-xl font-bold rounded-md hover:bg-gray-100 transition-colors shadow-lg">
-              Join us
-            </button>
+              <button className="px-10 py-4 bg-white text-[#002767] text-xl font-bold rounded-md hover:bg-gray-100 transition-colors shadow-lg">
+                Join us
+              </button>
             </Link>
           </div>
 

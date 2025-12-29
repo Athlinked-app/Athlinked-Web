@@ -65,7 +65,6 @@ export default function Post({
   onCommentCountUpdate,
   onPostDeleted,
 }: PostProps) {
-  
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -76,7 +75,10 @@ export default function Post({
   };
 
   const getEventTypeIcon = (eventType: string | null | undefined) => {
-    const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+    const iconMap: Record<
+      string,
+      React.ComponentType<{ className?: string }>
+    > = {
       work: Briefcase,
       travel: Plane,
       sports: Trophy,
@@ -104,11 +106,15 @@ export default function Post({
   useEffect(() => {
     const fetchCommentCount = async () => {
       try {
-        const response = await fetch(`http://localhost:3001/api/posts/${post.id}/comments`);
+        const response = await fetch(
+          `http://localhost:3001/api/posts/${post.id}/comments`
+        );
         if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.comments) {
-          const parentComments = data.comments.filter((c: any) => !c.parent_comment_id);
+          const data = await response.json();
+          if (data.success && data.comments) {
+            const parentComments = data.comments.filter(
+              (c: any) => !c.parent_comment_id
+            );
             setCommentCount(parentComments.length);
           }
         }
@@ -165,7 +171,7 @@ export default function Post({
     const wasLiked = liked;
     // Optimistic update
     setLiked(!liked);
-    setLikeCount(prev => liked ? prev - 1 : prev + 1);
+    setLikeCount(prev => (liked ? prev - 1 : prev + 1));
 
     try {
       // Get user data
@@ -174,7 +180,7 @@ export default function Post({
         alert('User not logged in');
         // Revert optimistic update
         setLiked(wasLiked);
-        setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
+        setLikeCount(prev => (wasLiked ? prev + 1 : prev - 1));
         return;
       }
 
@@ -200,10 +206,10 @@ export default function Post({
       }
 
       // Call like or unlike API based on current state
-      const endpoint = wasLiked 
+      const endpoint = wasLiked
         ? `http://localhost:3001/api/posts/${post.id}/unlike`
         : `http://localhost:3001/api/posts/${post.id}/like`;
-      
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -215,7 +221,7 @@ export default function Post({
       });
 
       const result = await response.json();
-      
+
       if (result.success) {
         // Update like count from API response
         if (result.like_count !== undefined) {
@@ -224,14 +230,14 @@ export default function Post({
       } else {
         // Revert optimistic update on error
         setLiked(wasLiked);
-        setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
+        setLikeCount(prev => (wasLiked ? prev + 1 : prev - 1));
         alert(result.message || 'Failed to update like status');
       }
     } catch (error) {
       console.error('Error updating like status:', error);
       // Revert optimistic update on error
       setLiked(wasLiked);
-      setLikeCount(prev => wasLiked ? prev + 1 : prev - 1);
+      setLikeCount(prev => (wasLiked ? prev + 1 : prev - 1));
       alert('Failed to update like status. Please try again.');
     }
   };
@@ -242,18 +248,22 @@ export default function Post({
 
   const handleCommentAdded = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/posts/${post.id}/comments`);
+      const response = await fetch(
+        `http://localhost:3001/api/posts/${post.id}/comments`
+      );
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.comments) {
-          const parentComments = data.comments.filter((c: any) => !c.parent_comment_id);
+          const parentComments = data.comments.filter(
+            (c: any) => !c.parent_comment_id
+          );
           setCommentCount(parentComments.length);
         }
       }
     } catch (error) {
       console.error('Error fetching comment count:', error);
     }
-    
+
     if (onCommentCountUpdate) {
       onCommentCountUpdate();
     }
@@ -263,19 +273,18 @@ export default function Post({
     setShowShare(true);
   };
 
-  const handleShareComplete = () => {
-  };
+  const handleShareComplete = () => {};
 
   const handleSave = () => {
     const newSavedStatus = toggleSave(post.id);
     setIsSaved(newSavedStatus);
-    
+
     if (newSavedStatus) {
       setSaveAlertMessage('This post is saved');
     } else {
       setSaveAlertMessage('This post is unsaved');
     }
-    
+
     setShowSaveAlert(true);
     setTimeout(() => {
       setShowSaveAlert(false);
@@ -287,7 +296,11 @@ export default function Post({
       return;
     }
 
-    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete this post? This action cannot be undone.'
+      )
+    ) {
       return;
     }
 
@@ -320,15 +333,18 @@ export default function Post({
         throw new Error('User not found');
       }
 
-      const response = await fetch(`http://localhost:3001/api/posts/${post.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userData.user.id,
-        }),
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/posts/${post.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: userData.user.id,
+          }),
+        }
+      );
 
       const result = await response.json();
       if (result.success) {
@@ -347,7 +363,8 @@ export default function Post({
     }
   };
 
-  const isOwnPost = currentUserId && post.user_id && currentUserId === post.user_id;
+  const isOwnPost =
+    currentUserId && post.user_id && currentUserId === post.user_id;
 
   const handleDownloadPDF = () => {
     if (!post.article_title || !post.article_body) return;
@@ -397,7 +414,7 @@ export default function Post({
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
-    
+
     setTimeout(() => {
       printWindow.print();
     }, 250);
@@ -421,7 +438,9 @@ export default function Post({
         </div>
         <div className="flex-1">
           <p className="text-sm text-gray-500 font-medium">Athlete</p>
-          <p className="text-base font-semibold text-gray-900">{post.username}</p>
+          <p className="text-base font-semibold text-gray-900">
+            {post.username}
+          </p>
         </div>
         {isOwnPost && (
           <div className="relative">
@@ -458,45 +477,61 @@ export default function Post({
           {(post.media_url || post.image_url) && (
             <div className="w-full">
               <img
-                src={post.media_url && post.media_url.startsWith('http') ? post.media_url : `http://localhost:3001${post.media_url || post.image_url || ''}`}
+                src={
+                  post.media_url && post.media_url.startsWith('http')
+                    ? post.media_url
+                    : `http://localhost:3001${post.media_url || post.image_url || ''}`
+                }
                 alt={post.article_title || 'Article image'}
                 className="w-full h-auto object-cover"
-                onError={(e) => {
-                  console.error('Error loading image:', post.media_url);
+                onError={e => {
+                  // Only log in development, and log the full URL that was attempted
+                  if (process.env.NODE_ENV === 'development') {
+                    const attemptedUrl =
+                      post.media_url && post.media_url.startsWith('http')
+                        ? post.media_url
+                        : `http://localhost:3001${post.media_url || post.image_url || ''}`;
+                    console.warn('Image failed to load:', attemptedUrl);
+                  }
                   e.currentTarget.style.display = 'none';
                 }}
               />
             </div>
           )}
-          
+
           {post.article_title && (
             <div className="px-6 py-4">
               <h3 className="text-3xl font-bold text-gray-900 mb-3">
                 {post.article_title}
               </h3>
               {post.caption && (
-                <p className="text-lg text-gray-600 mb-4">
-                  {post.caption}
-                </p>
+                <p className="text-lg text-gray-600 mb-4">{post.caption}</p>
               )}
               {post.article_body && (
                 <div className="mb-4">
                   {(() => {
-                    const textContent = post.article_body.replace(/<[^>]*>/g, '');
+                    const textContent = post.article_body.replace(
+                      /<[^>]*>/g,
+                      ''
+                    );
                     const previewLength = 200;
                     const shouldTruncate = textContent.length > previewLength;
-                    const preview = shouldTruncate 
+                    const preview = shouldTruncate
                       ? textContent.substring(0, previewLength) + '...'
                       : textContent;
-                    
+
                     return (
                       <>
                         {shouldTruncate ? (
-                          <p className="text-base text-gray-800 mb-3">{preview}</p>
+                          <p className="text-base text-gray-800 mb-3">
+                            {preview}
+                          </p>
                         ) : (
-                          <div 
+                          <div
                             className="text-base text-gray-800 prose max-w-none mb-3"
-                            dangerouslySetInnerHTML={{ __html: post.article_body }}
+                            dangerouslySetInnerHTML={{
+                              __html: post.article_body,
+                            }}
                           />
                         )}
                         <div className="flex justify-end gap-3 mt-4">
@@ -522,19 +557,35 @@ export default function Post({
         <>
           {(post.media_url || post.image_url) && (
             <div className="w-full relative">
-              {(post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) || (post.image_url && post.image_url.match(/\.(mp4|mov)$/i)) ? (
+              {(post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ||
+              (post.image_url && post.image_url.match(/\.(mp4|mov)$/i)) ? (
                 <video
-                  src={post.media_url && post.media_url.startsWith('http') ? post.media_url : `http://localhost:3001${post.media_url || post.image_url || ''}`}
+                  src={
+                    post.media_url && post.media_url.startsWith('http')
+                      ? post.media_url
+                      : `http://localhost:3001${post.media_url || post.image_url || ''}`
+                  }
                   controls
                   className="w-full h-auto object-cover"
                 />
               ) : (
                 <img
-                  src={post.media_url && post.media_url.startsWith('http') ? post.media_url : `http://localhost:3001${post.media_url || post.image_url || ''}`}
+                  src={
+                    post.media_url && post.media_url.startsWith('http')
+                      ? post.media_url
+                      : `http://localhost:3001${post.media_url || post.image_url || ''}`
+                  }
                   alt={post.event_title || 'Event image'}
                   className="w-full h-auto object-cover"
-                  onError={(e) => {
-                    console.error('Error loading image:', post.media_url);
+                  onError={e => {
+                    // Only log in development, and log the full URL that was attempted
+                    if (process.env.NODE_ENV === 'development') {
+                      const attemptedUrl =
+                        post.media_url && post.media_url.startsWith('http')
+                          ? post.media_url
+                          : `http://localhost:3001${post.media_url || post.image_url || ''}`;
+                      console.warn('Image failed to load:', attemptedUrl);
+                    }
                     e.currentTarget.style.display = 'none';
                   }}
                 />
@@ -551,7 +602,9 @@ export default function Post({
           )}
 
           {post.event_title && (
-            <div className={`px-6 text-center ${(post.media_url || post.image_url) ? 'pt-12 pb-6' : 'py-6'}`}>
+            <div
+              className={`px-6 text-center ${post.media_url || post.image_url ? 'pt-12 pb-6' : 'py-6'}`}
+            >
               {!(post.media_url || post.image_url) && (
                 <div className="flex justify-center mb-4">
                   <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center shadow-xl border-4 border-white">
@@ -567,10 +620,10 @@ export default function Post({
               </h3>
               {post.event_date && (
                 <p className="text-xl text-gray-600 mb-3">
-                  {new Date(post.event_date).toLocaleDateString('en-US', { 
-                    month: 'long', 
-                    day: 'numeric', 
-                    year: 'numeric' 
+                  {new Date(post.event_date).toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
                   })}
                 </p>
               )}
@@ -589,7 +642,10 @@ export default function Post({
         </>
       )}
 
-      {(post.post_type === 'photo' || post.post_type === 'video' || post.post_type === 'text' || !post.post_type) && (
+      {(post.post_type === 'photo' ||
+        post.post_type === 'video' ||
+        post.post_type === 'text' ||
+        !post.post_type) && (
         <>
           {(post.caption || post.description) && (
             <p className="text-md text-gray-800 px-6 mb-4">
@@ -599,19 +655,35 @@ export default function Post({
 
           {(post.media_url || post.image_url) && post.post_type !== 'text' && (
             <div className="w-full aspect-auto px-12">
-              {post.post_type === 'video' || (post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ? (
+              {post.post_type === 'video' ||
+              (post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ? (
                 <video
-                  src={post.media_url && post.media_url.startsWith('http') ? post.media_url : `http://localhost:3001${post.media_url || post.image_url || ''}`}
+                  src={
+                    post.media_url && post.media_url.startsWith('http')
+                      ? post.media_url
+                      : `http://localhost:3001${post.media_url || post.image_url || ''}`
+                  }
                   controls
                   className="w-full h-auto object-cover"
                 />
               ) : (
                 <img
-                  src={post.media_url && post.media_url.startsWith('http') ? post.media_url : `http://localhost:3001${post.media_url || post.image_url || ''}`}
+                  src={
+                    post.media_url && post.media_url.startsWith('http')
+                      ? post.media_url
+                      : `http://localhost:3001${post.media_url || post.image_url || ''}`
+                  }
                   alt={post.caption || post.description || 'Post media'}
                   className="w-full h-auto object-cover"
-                  onError={(e) => {
-                    console.error('Error loading image:', post.media_url);
+                  onError={e => {
+                    // Only log in development, and log the full URL that was attempted
+                    if (process.env.NODE_ENV === 'development') {
+                      const attemptedUrl =
+                        post.media_url && post.media_url.startsWith('http')
+                          ? post.media_url
+                          : `http://localhost:3001${post.media_url || post.image_url || ''}`;
+                      console.warn('Image failed to load:', attemptedUrl);
+                    }
                     e.currentTarget.style.display = 'none';
                   }}
                 />
@@ -625,7 +697,9 @@ export default function Post({
         <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
           <div className="flex items-center gap-2">
             <ThumbsUp className="w-5 h-5 text-gray-600" fill="currentColor" />
-            <span className="text-sm font-medium text-gray-600">{likeCount}</span>
+            <span className="text-sm font-medium text-gray-600">
+              {likeCount}
+            </span>
           </div>
           <span className="text-sm text-gray-600">{commentCount} comments</span>
         </div>
@@ -639,9 +713,7 @@ export default function Post({
                 : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            <ThumbsUp
-              className={`w-5 h-5 ${liked ? 'fill-current' : ''}`}
-            />
+            <ThumbsUp className={`w-5 h-5 ${liked ? 'fill-current' : ''}`} />
             <span className="text-sm font-medium">Like</span>
           </button>
 
@@ -669,10 +741,10 @@ export default function Post({
                 : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            <Bookmark
-              className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`}
-            />
-            <span className="text-sm font-medium">{isSaved ? 'Saved' : 'Save'}</span>
+            <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
+            <span className="text-sm font-medium">
+              {isSaved ? 'Saved' : 'Save'}
+            </span>
           </button>
         </div>
       </div>
@@ -712,7 +784,8 @@ export default function Post({
 
             <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-3">
               <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
-                {post.user_profile_url && post.user_profile_url.trim() !== '' ? (
+                {post.user_profile_url &&
+                post.user_profile_url.trim() !== '' ? (
                   <img
                     src={post.user_profile_url}
                     alt={post.username}
@@ -733,7 +806,11 @@ export default function Post({
             {(post.media_url || post.image_url) && (
               <div className="w-full">
                 <img
-                  src={post.media_url && post.media_url.startsWith('http') ? post.media_url : `http://localhost:3001${post.media_url || post.image_url || ''}`}
+                  src={
+                    post.media_url && post.media_url.startsWith('http')
+                      ? post.media_url
+                      : `http://localhost:3001${post.media_url || post.image_url || ''}`
+                  }
                   alt={post.article_title || 'Article image'}
                   className="w-full h-auto object-cover"
                 />
@@ -747,12 +824,10 @@ export default function Post({
                 </h3>
               )}
               {post.caption && (
-                <p className="text-lg text-gray-600 mb-6">
-                  {post.caption}
-                </p>
+                <p className="text-lg text-gray-600 mb-6">{post.caption}</p>
               )}
               {post.article_body && (
-                <div 
+                <div
                   className="prose max-w-none text-gray-800"
                   dangerouslySetInnerHTML={{ __html: post.article_body }}
                 />
@@ -779,21 +854,30 @@ export default function Post({
             onClick={() => setShowComments(false)}
           />
 
-          <div 
+          <div
             className="relative z-10 w-full max-w-5xl h-[80vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-row"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <div className="w-1/2 bg-black flex items-center justify-center">
               {post.media_url || post.image_url ? (
-                post.post_type === 'video' || (post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ? (
+                post.post_type === 'video' ||
+                (post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ? (
                   <video
-                    src={post.media_url && post.media_url.startsWith('http') ? post.media_url : `http://localhost:3001${post.media_url || post.image_url || ''}`}
+                    src={
+                      post.media_url && post.media_url.startsWith('http')
+                        ? post.media_url
+                        : `http://localhost:3001${post.media_url || post.image_url || ''}`
+                    }
                     controls
                     className="w-full h-full object-contain"
                   />
                 ) : (
                   <img
-                    src={post.media_url && post.media_url.startsWith('http') ? post.media_url : `http://localhost:3001${post.media_url || post.image_url || ''}`}
+                    src={
+                      post.media_url && post.media_url.startsWith('http')
+                        ? post.media_url
+                        : `http://localhost:3001${post.media_url || post.image_url || ''}`
+                    }
                     alt={post.caption || post.description || 'Post media'}
                     className="w-full h-full object-contain"
                   />

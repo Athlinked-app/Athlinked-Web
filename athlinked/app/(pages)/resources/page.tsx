@@ -54,7 +54,10 @@ export default function ManageResourcesPage() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<{ full_name?: string; profile_url?: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{
+    full_name?: string;
+    profile_url?: string;
+  } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [resourceToDelete, setResourceToDelete] = useState<string | null>(null);
 
@@ -102,7 +105,8 @@ export default function ManageResourcesPage() {
     return {
       id: article.id,
       title: article.title || 'Untitled',
-      image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=500&h=300&fit=crop',
+      image:
+        'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=500&h=300&fit=crop',
       link: article.article_link,
       type: 'article',
     };
@@ -110,13 +114,16 @@ export default function ManageResourcesPage() {
 
   const mapVideoToResource = (video: Video): Resource => {
     const videoUrl = video.video_url
-      ? (video.video_url.startsWith('http') ? video.video_url : `http://localhost:3001${video.video_url}`)
+      ? video.video_url.startsWith('http')
+        ? video.video_url
+        : `http://localhost:3001${video.video_url}`
       : undefined;
-    
+
     return {
       id: video.id,
       title: video.title || 'Untitled',
-      image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=500&h=300&fit=crop',
+      image:
+        'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=500&h=300&fit=crop',
       link: videoUrl,
       type: 'video',
     };
@@ -124,13 +131,16 @@ export default function ManageResourcesPage() {
 
   const mapTemplateToResource = (template: Template): Resource => {
     const fileUrl = template.file_url
-      ? (template.file_url.startsWith('http') ? template.file_url : `http://localhost:3001${template.file_url}`)
+      ? template.file_url.startsWith('http')
+        ? template.file_url
+        : `http://localhost:3001${template.file_url}`
       : undefined;
-    
+
     return {
       id: template.id,
       title: template.title || 'Untitled',
-      image: 'https://images.unsplash.com/photo-1568667256549-094345857637?w=500&h=300&fit=crop',
+      image:
+        'https://images.unsplash.com/photo-1568667256549-094345857637?w=500&h=300&fit=crop',
       link: fileUrl,
       type: 'pdf',
     };
@@ -147,7 +157,7 @@ export default function ManageResourcesPage() {
 
       setLoading(true);
       let endpoint = '';
-      
+
       if (activeTab === 'guides') {
         endpoint = `http://localhost:3001/api/articles?user_id=${encodeURIComponent(currentUserId)}`;
       } else if (activeTab === 'videos') {
@@ -167,7 +177,7 @@ export default function ManageResourcesPage() {
       const data = await response.json();
       if (data.success) {
         let mappedResources: Resource[] = [];
-        
+
         if (activeTab === 'guides' && data.articles) {
           mappedResources = data.articles.map(mapArticleToResource);
         } else if (activeTab === 'videos' && data.videos) {
@@ -175,7 +185,7 @@ export default function ManageResourcesPage() {
         } else if (activeTab === 'templates' && data.templates) {
           mappedResources = data.templates.map(mapTemplateToResource);
         }
-        
+
         setResources(mappedResources);
       } else {
         setResources([]);
@@ -339,7 +349,7 @@ export default function ManageResourcesPage() {
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
       let data;
-      
+
       if (contentType && contentType.includes('application/json')) {
         try {
           data = await response.json();
@@ -347,13 +357,22 @@ export default function ManageResourcesPage() {
           console.error('JSON parse error:', jsonError);
           const text = await response.text();
           console.error('Response text:', text);
-          throw new Error(`Failed to parse response: ${text.substring(0, 100)}`);
+          throw new Error(
+            `Failed to parse response: ${text.substring(0, 100)}`
+          );
         }
       } else {
         // If not JSON, read as text to see what we got
         const text = await response.text();
-        console.error('Non-JSON response (status:', response.status, '):', text.substring(0, 200));
-        throw new Error(`Server returned non-JSON response (status: ${response.status}). Check backend logs.`);
+        console.error(
+          'Non-JSON response (status:',
+          response.status,
+          '):',
+          text.substring(0, 200)
+        );
+        throw new Error(
+          `Server returned non-JSON response (status: ${response.status}). Check backend logs.`
+        );
       }
 
       if (response.ok) {
@@ -427,15 +446,18 @@ export default function ManageResourcesPage() {
 
                 formData.append('video_duration', duration.toString());
 
-                const response = await fetch('http://localhost:3001/api/videos', {
-                  method: 'POST',
-                  body: formData,
-                });
+                const response = await fetch(
+                  'http://localhost:3001/api/videos',
+                  {
+                    method: 'POST',
+                    body: formData,
+                  }
+                );
 
                 // Check if response is JSON
                 const contentType = response.headers.get('content-type');
                 let data;
-                
+
                 if (contentType && contentType.includes('application/json')) {
                   try {
                     data = await response.json();
@@ -443,12 +465,21 @@ export default function ManageResourcesPage() {
                     console.error('JSON parse error:', jsonError);
                     const text = await response.text();
                     console.error('Response text:', text);
-                    throw new Error(`Failed to parse response: ${text.substring(0, 100)}`);
+                    throw new Error(
+                      `Failed to parse response: ${text.substring(0, 100)}`
+                    );
                   }
                 } else {
                   const text = await response.text();
-                  console.error('Non-JSON response (status:', response.status, '):', text.substring(0, 200));
-                  throw new Error(`Server returned non-JSON response (status: ${response.status}). Check backend logs.`);
+                  console.error(
+                    'Non-JSON response (status:',
+                    response.status,
+                    '):',
+                    text.substring(0, 200)
+                  );
+                  throw new Error(
+                    `Server returned non-JSON response (status: ${response.status}). Check backend logs.`
+                  );
                 }
 
                 if (response.ok) {
@@ -475,15 +506,18 @@ export default function ManageResourcesPage() {
               formData.append('file_type', file.type);
               formData.append('file_size', file.size.toString());
 
-              const response = await fetch('http://localhost:3001/api/templates', {
-                method: 'POST',
-                body: formData,
-              });
+              const response = await fetch(
+                'http://localhost:3001/api/templates',
+                {
+                  method: 'POST',
+                  body: formData,
+                }
+              );
 
               // Check if response is JSON
               const contentType = response.headers.get('content-type');
               let data;
-              
+
               if (contentType && contentType.includes('application/json')) {
                 try {
                   data = await response.json();
@@ -491,12 +525,21 @@ export default function ManageResourcesPage() {
                   console.error('JSON parse error:', jsonError);
                   const text = await response.text();
                   console.error('Response text:', text);
-                  throw new Error(`Failed to parse response: ${text.substring(0, 100)}`);
+                  throw new Error(
+                    `Failed to parse response: ${text.substring(0, 100)}`
+                  );
                 }
               } else {
                 const text = await response.text();
-                console.error('Non-JSON response (status:', response.status, '):', text.substring(0, 200));
-                throw new Error(`Server returned non-JSON response (status: ${response.status}). Check backend logs.`);
+                console.error(
+                  'Non-JSON response (status:',
+                  response.status,
+                  '):',
+                  text.substring(0, 200)
+                );
+                throw new Error(
+                  `Server returned non-JSON response (status: ${response.status}). Check backend logs.`
+                );
               }
 
               if (response.ok) {
@@ -559,7 +602,7 @@ export default function ManageResourcesPage() {
         userName={currentUser?.full_name}
         userProfileUrl={getProfileUrl(currentUser?.profile_url)}
       />
-      
+
       <div className="flex flex-1 w-full mt-5 overflow-hidden">
         {/* Navigation Bar */}
         <div className="hidden md:flex px-6">
@@ -568,117 +611,117 @@ export default function ManageResourcesPage() {
 
         <div className="flex-1 flex overflow-y-auto">
           <div className="flex-1 bg-white rounded-xl flex flex-col">
-          {/* Tabs Navigation */}
-          <div className="border-b border-gray-200">
-            <div className="max-w-7xl mx-auto">
-              <div className="flex justify-center gap-20">
-                <button
-                  onClick={() => setActiveTab('guides')}
-                  className={`pl-6 pr-10 py-4 text-base font-medium relative transition-colors border-r border-gray-300 ${
-                    activeTab === 'guides'
-                      ? 'text-[#CB9729]'
-                      : 'text-black hover:text-black'
-                  }`}
-                >
-                  Guides & Articles
-                  {activeTab === 'guides' && (
-                    <div className="absolute bottom-0 left-0 right-4 h-0.5 bg-[#CB9729]" />
-                  )}
-                </button>
-                <button
-                  onClick={() => setActiveTab('videos')}
-                  className={`pl-6 pr-10 py-4 text-base font-medium relative transition-colors border-r border-gray-300 ${
-                    activeTab === 'videos'
-                      ? 'text-[#CB9729]'
-                      : 'text-black hover:text-black'
-                  }`}
-                >
-                  Video Library
-                  {activeTab === 'videos' && (
-                    <div className="absolute bottom-0 left-0 right-4 h-0.5 bg-[#CB9729]" />
-                  )}
-                </button>
-                <button
-                  onClick={() => setActiveTab('templates')}
-                  className={`px-6 py-4 text-base font-medium relative transition-colors ${
-                    activeTab === 'templates'
-                      ? 'text-[#CB9729]'
-                      : 'text-black hover:text-black'
-                  }`}
-                >
-                  Templates
-                  {activeTab === 'templates' && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]" />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Content Area */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="max-w-7xl mx-auto p-6">
-              {/* Header */}
-              <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-semibold text-black">
-                  Manage Resources
-                </h1>
-                <button
-                  onClick={handleUpload}
-                  disabled={isLoading}
-                  className="flex items-center gap-2 bg-[#CB9729] text-white px-5 py-2.5 rounded-lg hover:bg-[#B88624] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Upload className="w-4 h-4" />
-                  <span className="font-medium">Upload</span>
-                </button>
-              </div>
-
-              {/* Resource Grid */}
-              {loading ? (
-                <div className="text-center py-16">
-                  <p className="text-black text-base">Loading resources...</p>
+            {/* Tabs Navigation */}
+            <div className="border-b border-gray-200">
+              <div className="max-w-7xl mx-auto">
+                <div className="flex justify-center gap-20">
+                  <button
+                    onClick={() => setActiveTab('guides')}
+                    className={`pl-6 pr-10 py-4 text-base font-medium relative transition-colors border-r border-gray-300 ${
+                      activeTab === 'guides'
+                        ? 'text-[#CB9729]'
+                        : 'text-black hover:text-black'
+                    }`}
+                  >
+                    Guides & Articles
+                    {activeTab === 'guides' && (
+                      <div className="absolute bottom-0 left-0 right-4 h-0.5 bg-[#CB9729]" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('videos')}
+                    className={`pl-6 pr-10 py-4 text-base font-medium relative transition-colors border-r border-gray-300 ${
+                      activeTab === 'videos'
+                        ? 'text-[#CB9729]'
+                        : 'text-black hover:text-black'
+                    }`}
+                  >
+                    Video Library
+                    {activeTab === 'videos' && (
+                      <div className="absolute bottom-0 left-0 right-4 h-0.5 bg-[#CB9729]" />
+                    )}
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('templates')}
+                    className={`px-6 py-4 text-base font-medium relative transition-colors ${
+                      activeTab === 'templates'
+                        ? 'text-[#CB9729]'
+                        : 'text-black hover:text-black'
+                    }`}
+                  >
+                    Templates
+                    {activeTab === 'templates' && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]" />
+                    )}
+                  </button>
                 </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {resources.map(resource => (
-                      <ResourceCard
-                        key={resource.id}
-                        id={resource.id}
-                        title={resource.title}
-                        image={resource.image}
-                        link={resource.link}
-                        type={resource.type}
-                        onDelete={handleDeleteClick}
-                        onClick={() => handleCardClick(resource)}
-                      />
-                    ))}
-                  </div>
+              </div>
+            </div>
 
-                  {/* Empty State */}
-                  {resources.length === 0 && (
-                    <div className="text-center py-16">
-                      <p className="text-black text-base mb-2">
-                        No resources available
-                      </p>
-                      <p className="text-black text-sm">
-                        {activeTab === 'guides'
-                          ? 'Click Upload to add article URL'
-                          : 'Click Upload to add new content'}
-                      </p>
+            {/* Content Area */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="max-w-7xl mx-auto p-6">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <h1 className="text-2xl font-semibold text-black">
+                    Manage Resources
+                  </h1>
+                  <button
+                    onClick={handleUpload}
+                    disabled={isLoading}
+                    className="flex items-center gap-2 bg-[#CB9729] text-white px-5 py-2.5 rounded-lg hover:bg-[#B88624] transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span className="font-medium">Upload</span>
+                  </button>
+                </div>
+
+                {/* Resource Grid */}
+                {loading ? (
+                  <div className="text-center py-16">
+                    <p className="text-black text-base">Loading resources...</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {resources.map(resource => (
+                        <ResourceCard
+                          key={resource.id}
+                          id={resource.id}
+                          title={resource.title}
+                          image={resource.image}
+                          link={resource.link}
+                          type={resource.type}
+                          onDelete={handleDeleteClick}
+                          onClick={() => handleCardClick(resource)}
+                        />
+                      ))}
                     </div>
-                  )}
-                </>
-              )}
+
+                    {/* Empty State */}
+                    {resources.length === 0 && (
+                      <div className="text-center py-16">
+                        <p className="text-black text-base mb-2">
+                          No resources available
+                        </p>
+                        <p className="text-black text-sm">
+                          {activeTab === 'guides'
+                            ? 'Click Upload to add article URL'
+                            : 'Click Upload to add new content'}
+                        </p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="hidden lg:flex ml-5">
-          <RightSideBar />
+          <div className="hidden lg:flex ml-5">
+            <RightSideBar />
+          </div>
         </div>
       </div>
-    </div>
 
       <ResourceModals
         showUrlModal={showUrlModal}
@@ -710,7 +753,8 @@ export default function ManageResourcesPage() {
                 Confirm Delete
               </h3>
               <p className="text-black mb-6">
-                Are you sure you want to delete this resource? This action cannot be undone.
+                Are you sure you want to delete this resource? This action
+                cannot be undone.
               </p>
               <div className="flex gap-3">
                 <button

@@ -14,10 +14,10 @@ const io = new Server(server, {
   },
 });
 
-io.on('connection', (socket) => {
+io.on('connection', socket => {
   let socketUserId = null;
 
-  socket.on('userId', (data) => {
+  socket.on('userId', data => {
     const { userId } = data;
     if (userId) {
       socketUserId = userId;
@@ -26,18 +26,31 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('send_message', async (data) => {
+  socket.on('send_message', async data => {
     try {
-      const { conversationId, receiverId, message, media_url, message_type, post_data } = data;
+      const {
+        conversationId,
+        receiverId,
+        message,
+        media_url,
+        message_type,
+        post_data,
+      } = data;
 
-      if (!conversationId || !receiverId || (!message && !media_url && !post_data)) {
+      if (
+        !conversationId ||
+        !receiverId ||
+        (!message && !media_url && !post_data)
+      ) {
         socket.emit('error', { message: 'Missing required fields' });
         return;
       }
 
       const senderId = socket.userId || socketUserId;
       if (!senderId) {
-        socket.emit('error', { message: 'User not authenticated. Please send userId first.' });
+        socket.emit('error', {
+          message: 'User not authenticated. Please send userId first.',
+        });
         return;
       }
 
@@ -90,8 +103,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('disconnect', () => {
-  });
+  socket.on('disconnect', () => {});
 });
 
 app.set('io', io);

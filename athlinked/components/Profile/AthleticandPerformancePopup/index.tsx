@@ -27,7 +27,20 @@ interface AthleticAndPerformancePopupProps {
 
 const handednessOptions = ['Right', 'Left', 'Ambidextrous'];
 
-const sports = ['Football', 'Basketball', 'Baseball', 'Swimming', 'Soccer', 'Track & Field', 'Wrestling', 'Tennis', 'Golf', 'Lacrosse', 'Hockey', 'Volleyball'];
+const sports = [
+  'Football',
+  'Basketball',
+  'Baseball',
+  'Swimming',
+  'Soccer',
+  'Track & Field',
+  'Wrestling',
+  'Tennis',
+  'Golf',
+  'Lacrosse',
+  'Hockey',
+  'Volleyball',
+];
 
 export default function AthleticAndPerformancePopup({
   open,
@@ -39,12 +52,24 @@ export default function AthleticAndPerformancePopup({
   const [height, setHeight] = useState(existingData?.height || '');
   const [weight, setWeight] = useState(existingData?.weight || '');
   const [sport, setSport] = useState(existingData?.sport || '');
-  const [athleteHandedness, setAthleteHandedness] = useState(existingData?.athleteHandedness || '');
-  const [dominantSideOrFoot, setDominantSideOrFoot] = useState(existingData?.dominantSideOrFoot || '');
-  const [jerseyNumber, setJerseyNumber] = useState(existingData?.jerseyNumber || '');
-  const [trainingHoursPerWeek, setTrainingHoursPerWeek] = useState(existingData?.trainingHoursPerWeek || '');
-  const [multiSportAthlete, setMultiSportAthlete] = useState(existingData?.multiSportAthlete || '');
-  const [coachVerifiedProfile, setCoachVerifiedProfile] = useState(existingData?.coachVerifiedProfile || '');
+  const [athleteHandedness, setAthleteHandedness] = useState(
+    existingData?.athleteHandedness || ''
+  );
+  const [dominantSideOrFoot, setDominantSideOrFoot] = useState(
+    existingData?.dominantSideOrFoot || ''
+  );
+  const [jerseyNumber, setJerseyNumber] = useState(
+    existingData?.jerseyNumber || ''
+  );
+  const [trainingHoursPerWeek, setTrainingHoursPerWeek] = useState(
+    existingData?.trainingHoursPerWeek || ''
+  );
+  const [multiSportAthlete, setMultiSportAthlete] = useState(
+    existingData?.multiSportAthlete || ''
+  );
+  const [coachVerifiedProfile, setCoachVerifiedProfile] = useState(
+    existingData?.coachVerifiedProfile || ''
+  );
   const [hand, setHand] = useState(existingData?.hand || '');
   const [arm, setArm] = useState(existingData?.arm || '');
 
@@ -90,10 +115,16 @@ export default function AthleticAndPerformancePopup({
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (sportRef.current && !sportRef.current.contains(event.target as Node)) {
+      if (
+        sportRef.current &&
+        !sportRef.current.contains(event.target as Node)
+      ) {
         setShowSportDropdown(false);
       }
-      if (handednessRef.current && !handednessRef.current.contains(event.target as Node)) {
+      if (
+        handednessRef.current &&
+        !handednessRef.current.contains(event.target as Node)
+      ) {
         setShowHandednessDropdown(false);
       }
     };
@@ -106,9 +137,18 @@ export default function AthleticAndPerformancePopup({
 
   const handleSave = () => {
     // Validate required fields
-    if (!height.trim() || !weight.trim() || !sport || !athleteHandedness || 
-        !jerseyNumber.trim() || !trainingHoursPerWeek.trim() || !multiSportAthlete || 
-        !coachVerifiedProfile || !hand.trim() || !arm.trim()) {
+    if (
+      !height.trim() ||
+      !weight.trim() ||
+      !sport ||
+      !athleteHandedness ||
+      !jerseyNumber.trim() ||
+      !trainingHoursPerWeek.trim() ||
+      !multiSportAthlete ||
+      !coachVerifiedProfile ||
+      !hand.trim() ||
+      !arm.trim()
+    ) {
       return; // Don't save if required fields are empty
     }
 
@@ -141,19 +181,27 @@ export default function AthleticAndPerformancePopup({
   };
 
   // Check if all required fields are filled
-  const isFormValid = height.trim() && weight.trim() && sport && athleteHandedness && 
-                      jerseyNumber.trim() && trainingHoursPerWeek.trim() && multiSportAthlete && 
-                      coachVerifiedProfile && hand.trim() && arm.trim();
+  const isFormValid =
+    height.trim() &&
+    weight.trim() &&
+    sport &&
+    athleteHandedness &&
+    jerseyNumber.trim() &&
+    trainingHoursPerWeek.trim() &&
+    multiSportAthlete &&
+    coachVerifiedProfile &&
+    hand.trim() &&
+    arm.trim();
 
-  const DropdownField = ({ 
-    label, 
-    value, 
-    placeholder, 
-    options, 
-    showDropdown, 
-    setShowDropdown, 
-    onSelect, 
-    ref 
+  const DropdownField = ({
+    label,
+    value,
+    placeholder,
+    options,
+    showDropdown,
+    setShowDropdown,
+    onSelect,
+    ref,
   }: {
     label: string;
     value: string;
@@ -165,22 +213,28 @@ export default function AthleticAndPerformancePopup({
     ref: React.RefObject<HTMLDivElement | null>;
   }) => (
     <div className="relative" ref={ref}>
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {label}
+      </label>
       <div
         onClick={() => setShowDropdown(!showDropdown)}
         className={`w-full px-4 py-2 border rounded-lg cursor-pointer flex items-center justify-between ${
-          showDropdown ? 'border-[#CB9729] ring-2 ring-[#CB9729]' : 'border-gray-300'
+          showDropdown
+            ? 'border-[#CB9729] ring-2 ring-[#CB9729]'
+            : 'border-gray-300'
         }`}
       >
         <span className={value ? 'text-gray-900' : 'text-gray-500'}>
           {value || placeholder}
         </span>
-        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showDropdown ? 'transform rotate-180' : ''}`} />
+        <ChevronDown
+          className={`w-5 h-5 text-gray-400 transition-transform ${showDropdown ? 'transform rotate-180' : ''}`}
+        />
       </div>
       {showDropdown && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
           {options.length > 0 ? (
-            options.map((option) => (
+            options.map(option => (
               <div
                 key={option}
                 onClick={() => {
@@ -213,7 +267,9 @@ export default function AthleticAndPerformancePopup({
       <div className="relative z-10 w-full max-w-2xl bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">Athletic and Performance Data</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Athletic and Performance Data
+          </h2>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -224,22 +280,26 @@ export default function AthleticAndPerformancePopup({
 
         <div className="px-6 py-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Height (cm)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Height (cm)
+            </label>
             <input
               type="number"
               value={height}
-              onChange={(e) => setHeight(e.target.value)}
+              onChange={e => setHeight(e.target.value)}
               placeholder="155"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Weight (Pounds)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Weight (Pounds)
+            </label>
             <input
               type="number"
               value={weight}
-              onChange={(e) => setWeight(e.target.value)}
+              onChange={e => setWeight(e.target.value)}
               placeholder="185"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
             />
@@ -270,34 +330,42 @@ export default function AthleticAndPerformancePopup({
           />
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Dominant Side or Foot (Contextual to sport)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Dominant Side or Foot (Contextual to sport)
+            </label>
             <input
               type="text"
               value={dominantSideOrFoot}
-              onChange={(e) => setDominantSideOrFoot(e.target.value)}
+              onChange={e => setDominantSideOrFoot(e.target.value)}
               placeholder="Right foot, Left side, etc."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
             />
-            <p className="mt-1 text-xs text-gray-500">Enter your dominant side or foot relevant to your sport</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Enter your dominant side or foot relevant to your sport
+            </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Jersey Number</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Jersey Number
+            </label>
             <input
               type="number"
               value={jerseyNumber}
-              onChange={(e) => setJerseyNumber(e.target.value)}
+              onChange={e => setJerseyNumber(e.target.value)}
               placeholder="23"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Training Hours per Week</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Training Hours per Week
+            </label>
             <input
               type="number"
               value={trainingHoursPerWeek}
-              onChange={(e) => setTrainingHoursPerWeek(e.target.value)}
+              onChange={e => setTrainingHoursPerWeek(e.target.value)}
               placeholder="15"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
             />
@@ -305,7 +373,9 @@ export default function AthleticAndPerformancePopup({
 
           {/* Multi-Sport Athlete */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Multi-Sport Athlete</label>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Multi-Sport Athlete
+            </label>
             <div className="flex gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -313,7 +383,7 @@ export default function AthleticAndPerformancePopup({
                   name="multiSportAthlete"
                   value="Yes"
                   checked={multiSportAthlete === 'Yes'}
-                  onChange={(e) => setMultiSportAthlete(e.target.value)}
+                  onChange={e => setMultiSportAthlete(e.target.value)}
                   className="w-4 h-4 text-[#CB9729] focus:ring-[#CB9729]"
                 />
                 <span className="text-gray-700">Yes</span>
@@ -324,7 +394,7 @@ export default function AthleticAndPerformancePopup({
                   name="multiSportAthlete"
                   value="No"
                   checked={multiSportAthlete === 'No'}
-                  onChange={(e) => setMultiSportAthlete(e.target.value)}
+                  onChange={e => setMultiSportAthlete(e.target.value)}
                   className="w-4 h-4 text-[#CB9729] focus:ring-[#CB9729]"
                 />
                 <span className="text-gray-700">No</span>
@@ -334,7 +404,9 @@ export default function AthleticAndPerformancePopup({
 
           {/* Coach-Verified Profile */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Coach-Verified Profile</label>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Coach-Verified Profile
+            </label>
             <div className="flex gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -342,7 +414,7 @@ export default function AthleticAndPerformancePopup({
                   name="coachVerifiedProfile"
                   value="Yes"
                   checked={coachVerifiedProfile === 'Yes'}
-                  onChange={(e) => setCoachVerifiedProfile(e.target.value)}
+                  onChange={e => setCoachVerifiedProfile(e.target.value)}
                   className="w-4 h-4 text-[#CB9729] focus:ring-[#CB9729]"
                 />
                 <span className="text-gray-700">Yes</span>
@@ -353,7 +425,7 @@ export default function AthleticAndPerformancePopup({
                   name="coachVerifiedProfile"
                   value="No"
                   checked={coachVerifiedProfile === 'No'}
-                  onChange={(e) => setCoachVerifiedProfile(e.target.value)}
+                  onChange={e => setCoachVerifiedProfile(e.target.value)}
                   className="w-4 h-4 text-[#CB9729] focus:ring-[#CB9729]"
                 />
                 <span className="text-gray-700">No</span>
@@ -362,22 +434,26 @@ export default function AthleticAndPerformancePopup({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Hand</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Hand
+            </label>
             <input
               type="number"
               value={hand}
-              onChange={(e) => setHand(e.target.value)}
+              onChange={e => setHand(e.target.value)}
               placeholder="23"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Arm</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Arm
+            </label>
             <input
               type="number"
               value={arm}
-              onChange={(e) => setArm(e.target.value)}
+              onChange={e => setArm(e.target.value)}
               placeholder="23"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
             />
@@ -390,8 +466,8 @@ export default function AthleticAndPerformancePopup({
             onClick={handleSave}
             disabled={!isFormValid}
             className={`px-6 py-2 rounded-lg transition-colors font-semibold ${
-              isFormValid 
-                ? 'bg-[#CB9729] text-white hover:bg-[#b78322] cursor-pointer' 
+              isFormValid
+                ? 'bg-[#CB9729] text-white hover:bg-[#b78322] cursor-pointer'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
@@ -402,4 +478,3 @@ export default function AthleticAndPerformancePopup({
     </div>
   );
 }
-

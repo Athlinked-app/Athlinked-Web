@@ -24,4 +24,3 @@ router.get('/', templatesController.getAllTemplates);
 router.delete('/:id', templatesController.deleteTemplate);
 
 module.exports = router;
-

@@ -28,7 +28,6 @@ export default function HomeHerosection({
   currentUserId,
   onPostCreated,
 }: HomeHerosectionProps) {
-  
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -40,7 +39,9 @@ export default function HomeHerosection({
   const [showUpload, setShowUpload] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   const [showArticleEvent, setShowArticleEvent] = useState(false);
-  const [selectedPostType, setSelectedPostType] = useState<PostType | null>(null);
+  const [selectedPostType, setSelectedPostType] = useState<PostType | null>(
+    null
+  );
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
@@ -69,7 +70,7 @@ export default function HomeHerosection({
 
     const headers = {
       'ngrok-skip-browser-warning': 'true',
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     };
 
     let userResponse;
@@ -226,7 +227,7 @@ export default function HomeHerosection({
         });
 
         const result = await response.json();
-        
+
         if (result.success) {
           setShowArticleEvent(false);
           if (onPostCreated) {
@@ -272,7 +273,7 @@ export default function HomeHerosection({
         }
 
         const result = await response.json();
-        
+
         if (result.success) {
           setShowArticleEvent(false);
           if (onPostCreated) {
@@ -413,31 +414,33 @@ export default function HomeHerosection({
         />
       )}
 
-      {selectedPostType && (selectedPostType === 'photo' || selectedPostType === 'video') && (
-        <PostDetailsModal
-          open={showDetails}
-          postType={selectedPostType}
-          filePreview={filePreview}
-          fileName={selectedFile?.name || 'No file selected'}
-          fileSizeLabel={selectedFile ? formatSize(selectedFile.size) : ''}
-          caption={caption}
-          onCaptionChange={setCaption}
-          onClose={resetFileState}
-          onPost={handleMediaPost}
-          onRemoveFile={resetFileState}
-          currentUserId={currentUserId}
-        />
-      )}
+      {selectedPostType &&
+        (selectedPostType === 'photo' || selectedPostType === 'video') && (
+          <PostDetailsModal
+            open={showDetails}
+            postType={selectedPostType}
+            filePreview={filePreview}
+            fileName={selectedFile?.name || 'No file selected'}
+            fileSizeLabel={selectedFile ? formatSize(selectedFile.size) : ''}
+            caption={caption}
+            onCaptionChange={setCaption}
+            onClose={resetFileState}
+            onPost={handleMediaPost}
+            onRemoveFile={resetFileState}
+            currentUserId={currentUserId}
+          />
+        )}
 
-      {selectedPostType && (selectedPostType === 'article' || selectedPostType === 'event') && (
-        <ArticleEventModal
-          open={showArticleEvent}
-          postType={selectedPostType}
-          currentUserId={currentUserId}
-          onClose={() => setShowArticleEvent(false)}
-          onSubmit={handleArticleEventSubmit}
-        />
-      )}
+      {selectedPostType &&
+        (selectedPostType === 'article' || selectedPostType === 'event') && (
+          <ArticleEventModal
+            open={showArticleEvent}
+            postType={selectedPostType}
+            currentUserId={currentUserId}
+            onClose={() => setShowArticleEvent(false)}
+            onSubmit={handleArticleEventSubmit}
+          />
+        )}
     </div>
   );
 }

@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { Plus, Trash2, FileText, Pencil } from 'lucide-react';
-import AcademicBackgroundPopup, { type AcademicBackground } from '../AcademicBackgroundPopup';
+import AcademicBackgroundPopup, {
+  type AcademicBackground,
+} from '../AcademicBackgroundPopup';
 
 export type { AcademicBackground };
 
@@ -11,11 +13,12 @@ interface AcademicBackgroundProps {
   onBackgroundsChange?: (backgrounds: AcademicBackground[]) => void;
 }
 
-export default function AcademicBackgrounds({ 
-  backgrounds = [], 
-  onBackgroundsChange 
+export default function AcademicBackgrounds({
+  backgrounds = [],
+  onBackgroundsChange,
 }: AcademicBackgroundProps) {
-  const [academicBackgrounds, setAcademicBackgrounds] = useState<AcademicBackground[]>(backgrounds);
+  const [academicBackgrounds, setAcademicBackgrounds] =
+    useState<AcademicBackground[]>(backgrounds);
   const [showPopup, setShowPopup] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
@@ -50,7 +53,9 @@ export default function AcademicBackgrounds({
   };
 
   const handleDelete = (index: number) => {
-    const updatedBackgrounds = academicBackgrounds.filter((_, i) => i !== index);
+    const updatedBackgrounds = academicBackgrounds.filter(
+      (_, i) => i !== index
+    );
     setAcademicBackgrounds(updatedBackgrounds);
     if (onBackgroundsChange) {
       onBackgroundsChange(updatedBackgrounds);
@@ -61,7 +66,9 @@ export default function AcademicBackgrounds({
     <>
       <div className="w-full bg-white rounded-lg p-6 mt-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">Academic Background</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Academic Background
+          </h2>
           <button
             onClick={() => {
               setEditingIndex(null);
@@ -74,7 +81,9 @@ export default function AcademicBackgrounds({
         </div>
 
         {academicBackgrounds.length === 0 ? (
-          <p className="text-gray-500 italic">No academic background added yet. Click the + button to add one.</p>
+          <p className="text-gray-500 italic">
+            No academic background added yet. Click the + button to add one.
+          </p>
         ) : (
           <div className="space-y-4">
             {academicBackgrounds.map((bg, index) => (
@@ -85,31 +94,40 @@ export default function AcademicBackgrounds({
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">{bg.school}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {bg.school}
+                      </h3>
                       {bg.degree && (
-                        <span className="text-sm text-gray-600">- {bg.degree}</span>
+                        <span className="text-sm text-gray-600">
+                          - {bg.degree}
+                        </span>
                       )}
                     </div>
                     {bg.qualification && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Qualification:</span> {bg.qualification}
+                        <span className="font-medium">Qualification:</span>{' '}
+                        {bg.qualification}
                       </p>
                     )}
                     {(bg.startDate || bg.endDate) && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Duration:</span> {bg.startDate} to {bg.endDate}
+                        <span className="font-medium">Duration:</span>{' '}
+                        {bg.startDate} to {bg.endDate}
                       </p>
                     )}
                     {bg.academicGpa && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">GPA:</span> {bg.academicGpa}
+                        <span className="font-medium">GPA:</span>{' '}
+                        {bg.academicGpa}
                       </p>
                     )}
                     {bg.degreePdf && (
                       <div className="flex items-center gap-2 mt-2">
                         <FileText className="w-4 h-4 text-gray-600" />
                         <span className="text-sm text-gray-600">
-                          {typeof bg.degreePdf === 'string' ? bg.degreePdf : bg.degreePdf.name}
+                          {typeof bg.degreePdf === 'string'
+                            ? bg.degreePdf
+                            : bg.degreePdf.name}
                         </span>
                       </div>
                     )}
@@ -139,9 +157,10 @@ export default function AcademicBackgrounds({
         open={showPopup}
         onClose={handleClose}
         onSave={handleAdd}
-        existingData={editingIndex !== null ? academicBackgrounds[editingIndex] : undefined}
+        existingData={
+          editingIndex !== null ? academicBackgrounds[editingIndex] : undefined
+        }
       />
     </>
   );
 }
-

@@ -20,4 +20,3 @@ export default function AboutMe({ bio }: AboutMeProps) {
     </div>
   );
 }
-

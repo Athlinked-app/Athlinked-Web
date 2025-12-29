@@ -22,8 +22,13 @@ async function createResourceService(resourceData) {
     } = resourceData;
 
     // Validate resource_type
-    if (!resource_type || !['article', 'video', 'template'].includes(resource_type)) {
-      throw new Error('Invalid resource_type. Must be article, video, or template');
+    if (
+      !resource_type ||
+      !['article', 'video', 'template'].includes(resource_type)
+    ) {
+      throw new Error(
+        'Invalid resource_type. Must be article, video, or template'
+      );
     }
 
     // Validate required fields based on resource type
@@ -40,16 +45,23 @@ async function createResourceService(resourceData) {
     }
 
     // Check if this is the user's first resource of this type
-    const isFirstOfType = !(await resourcesModel.userHasResourceType(user_id, resource_type));
-    
-    console.log(`Resource upload - Type: ${resource_type}, IsFirstOfType: ${isFirstOfType}, UserId: ${user_id.substring(0, 8)}...`);
+    const isFirstOfType = !(await resourcesModel.userHasResourceType(
+      user_id,
+      resource_type
+    ));
+
+    console.log(
+      `Resource upload - Type: ${resource_type}, IsFirstOfType: ${isFirstOfType}, UserId: ${user_id.substring(0, 8)}...`
+    );
 
     // If this is the first resource of this type, check if user has a first combined row
     if (isFirstOfType) {
       const firstResource = await resourcesModel.getUserFirstResource(user_id);
 
       if (firstResource) {
-        console.log(`Updating first resource row (ID: ${firstResource.id}) with ${resource_type} data`);
+        console.log(
+          `Updating first resource row (ID: ${firstResource.id}) with ${resource_type} data`
+        );
         // User has a first resource row - update it with the new type data
         // Only update fields for the current resource_type being uploaded
         const updateData = {
@@ -73,12 +85,18 @@ async function createResourceService(resourceData) {
           }
         } else if (resource_type === 'video') {
           updateData.video_url = video_url;
-          updateData.video_duration = video_duration ? parseInt(video_duration) : null;
-          console.log(`Setting video_url: ${video_url}, video_duration: ${video_duration}`);
+          updateData.video_duration = video_duration
+            ? parseInt(video_duration)
+            : null;
+          console.log(
+            `Setting video_url: ${video_url}, video_duration: ${video_duration}`
+          );
           // Preserve existing article and template data if they exist
           if (firstResource.article_link) {
             updateData.article_link = firstResource.article_link;
-            console.log(`Preserving article_link: ${firstResource.article_link}`);
+            console.log(
+              `Preserving article_link: ${firstResource.article_link}`
+            );
           }
           if (firstResource.file_url) {
             updateData.file_url = firstResource.file_url;
@@ -101,11 +119,16 @@ async function createResourceService(resourceData) {
 
         console.log('Update data:', {
           ...updateData,
-          video_url: updateData.video_url ? updateData.video_url.substring(0, 50) + '...' : null,
+          video_url: updateData.video_url
+            ? updateData.video_url.substring(0, 50) + '...'
+            : null,
         });
 
-        const updatedResource = await resourcesModel.updateResource(firstResource.id, updateData);
-        
+        const updatedResource = await resourcesModel.updateResource(
+          firstResource.id,
+          updateData
+        );
+
         console.log('Updated resource:', {
           id: updatedResource.id,
           resource_type: updatedResource.resource_type,
@@ -169,8 +192,13 @@ async function getAllResourcesService() {
  */
 async function getResourcesByTypeService(resourceType) {
   try {
-    if (!resourceType || !['article', 'video', 'template'].includes(resourceType)) {
-      throw new Error('Invalid resource_type. Must be article, video, or template');
+    if (
+      !resourceType ||
+      !['article', 'video', 'template'].includes(resourceType)
+    ) {
+      throw new Error(
+        'Invalid resource_type. Must be article, video, or template'
+      );
     }
 
     const resources = await resourcesModel.getResourcesByType(resourceType);
@@ -200,10 +228,15 @@ async function softDeleteResourceService(resourceId, userId) {
       throw new Error('User ID is required');
     }
 
-    const resource = await resourcesModel.softDeleteResource(resourceId, userId);
+    const resource = await resourcesModel.softDeleteResource(
+      resourceId,
+      userId
+    );
 
     if (!resource) {
-      throw new Error('Resource not found or you do not have permission to delete it');
+      throw new Error(
+        'Resource not found or you do not have permission to delete it'
+      );
     }
 
     return {
@@ -222,4 +255,3 @@ module.exports = {
   getResourcesByTypeService,
   softDeleteResourceService,
 };
-

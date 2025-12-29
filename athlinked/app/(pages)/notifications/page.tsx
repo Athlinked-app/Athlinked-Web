@@ -18,10 +18,16 @@ interface Notification {
 }
 
 export default function NotificationsPage() {
-  const [activeTab, setActiveTab] = useState<'all' | 'myPost' | 'mentions'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'myPost' | 'mentions'>(
+    'all'
+  );
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState<{ id?: string; full_name?: string; profile_url?: string } | null>(null);
+  const [currentUser, setCurrentUser] = useState<{
+    id?: string;
+    full_name?: string;
+    profile_url?: string;
+  } | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   // Fetch current user data
@@ -80,7 +86,11 @@ export default function NotificationsPage() {
       );
 
       if (!response.ok) {
-        console.error('Failed to fetch notifications:', response.status, response.statusText);
+        console.error(
+          'Failed to fetch notifications:',
+          response.status,
+          response.statusText
+        );
         const errorText = await response.text();
         console.error('Error response:', errorText);
         setNotifications([]);
@@ -89,7 +99,7 @@ export default function NotificationsPage() {
 
       const data = await response.json();
       console.log('Fetched notifications:', data);
-      
+
       if (data.success && data.notifications) {
         setNotifications(data.notifications);
         console.log('Notifications set:', data.notifications.length);
@@ -124,7 +134,9 @@ export default function NotificationsPage() {
     if (activeTab === 'all') {
       return notifications;
     } else if (activeTab === 'myPost') {
-      return notifications.filter(n => n.type === 'like' || n.type === 'comment');
+      return notifications.filter(
+        n => n.type === 'like' || n.type === 'comment'
+      );
     } else if (activeTab === 'mentions') {
       return notifications.filter(n => n.type === 'mention');
     }
@@ -133,25 +145,28 @@ export default function NotificationsPage() {
 
   const handleDismiss = async (id: string) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/notifications/${id}/read`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/notifications/${id}/read`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       if (response.ok) {
         // Update local state
-        setNotifications(notifications.map(n => 
-          n.id === id ? { ...n, isRead: true } : n
-        ));
+        setNotifications(
+          notifications.map(n => (n.id === id ? { ...n, isRead: true } : n))
+        );
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);
       // Still update local state for better UX
-      setNotifications(notifications.map(n => 
-        n.id === id ? { ...n, isRead: true } : n
-      ));
+      setNotifications(
+        notifications.map(n => (n.id === id ? { ...n, isRead: true } : n))
+      );
     }
   };
 
@@ -206,13 +221,13 @@ export default function NotificationsPage() {
         userName={currentUser?.full_name}
         userProfileUrl={getProfileUrl(currentUser?.profile_url)}
       />
-      
+
       <div className="flex flex-1 w-full mt-5 overflow-hidden">
         {/* Navigation Bar */}
         <div className="hidden md:flex px-6">
           <NavigationBar activeItem="notifications" />
         </div>
-        
+
         <div className="flex-1 flex gap-5 overflow-y-auto">
           {/* Main Content */}
           <div className="flex-1 bg-white rounded-xl p-6">
@@ -280,7 +295,7 @@ export default function NotificationsPage() {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {currentList.map((notification) => {
+                  {currentList.map(notification => {
                     return (
                       <div
                         key={notification.id}
@@ -327,4 +342,3 @@ export default function NotificationsPage() {
     </div>
   );
 }
-

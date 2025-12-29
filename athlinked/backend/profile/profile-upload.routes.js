@@ -56,7 +56,7 @@ router.post('/upload', upload.single('file'), (req, res) => {
     }
 
     const fileUrl = `/uploads/profile/${req.file.filename}`;
-    
+
     return res.status(200).json({
       success: true,
       message: 'File uploaded successfully',
@@ -73,4 +73,3 @@ router.post('/upload', upload.single('file'), (req, res) => {
 });
 
 module.exports = router;
-

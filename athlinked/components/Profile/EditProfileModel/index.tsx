@@ -2,7 +2,16 @@
 
 import { useState, useRef, useEffect, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, ChevronLeft, Camera, Megaphone, Pencil, MapPin, Users, Calendar } from 'lucide-react';
+import {
+  X,
+  ChevronLeft,
+  Camera,
+  Megaphone,
+  Pencil,
+  MapPin,
+  Users,
+  Calendar,
+} from 'lucide-react';
 import EditProfilePopup from '../EditProfilePopup';
 
 interface EditProfileModalProps {
@@ -59,14 +68,19 @@ export default function EditProfileModal({
   onSave,
 }: EditProfileModalProps) {
   const router = useRouter();
-  const [fetchedUserData, setFetchedUserData] = useState<FetchedUserData | null>(null);
+  const [fetchedUserData, setFetchedUserData] =
+    useState<FetchedUserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [fullName, setFullName] = useState(userData?.full_name || '');
   const [username, setUsername] = useState(userData?.username || '');
   const [location, setLocation] = useState(userData?.location || '');
   const [age, setAge] = useState(userData?.age?.toString() || '');
-  const [sportsPlayed, setSportsPlayed] = useState(userData?.sports_played || '');
-  const [primarySport, setPrimarySport] = useState(userData?.primary_sport || '');
+  const [sportsPlayed, setSportsPlayed] = useState(
+    userData?.sports_played || ''
+  );
+  const [primarySport, setPrimarySport] = useState(
+    userData?.primary_sport || ''
+  );
   const [bio, setBio] = useState(userData?.bio || '');
   const [education, setEducation] = useState(userData?.education || '');
   const [profileImage, setProfileImage] = useState<File | null>(null);
@@ -74,12 +88,13 @@ export default function EditProfileModal({
     userData?.profile_url || null
   );
   const [backgroundImage, setBackgroundImage] = useState<File | null>(null);
-  const [backgroundImagePreview, setBackgroundImagePreview] = useState<string | null>(
-    userData?.background_image_url || null
+  const [backgroundImagePreview, setBackgroundImagePreview] = useState<
+    string | null
+  >(userData?.background_image_url || null);
+  const [profileCompletion, setProfileCompletion] = useState(
+    userData?.profile_completion || 60
   );
-  const [profileCompletion, setProfileCompletion] = useState(userData?.profile_completion || 60);
   const [showEditPopup, setShowEditPopup] = useState(false);
-  const [bio, setBio] = useState('');
 
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const backgroundImageInputRef = useRef<HTMLInputElement>(null);
@@ -119,8 +134,8 @@ export default function EditProfileModal({
             setFullName(data.user.full_name);
           }
           if (data.user.profile_url) {
-            const profileUrl = data.user.profile_url.startsWith('http') 
-              ? data.user.profile_url 
+            const profileUrl = data.user.profile_url.startsWith('http')
+              ? data.user.profile_url
               : `http://localhost:3001${data.user.profile_url}`;
             setProfileImagePreview(profileUrl);
           }
@@ -144,19 +159,24 @@ export default function EditProfileModal({
           }
           // Note: bio and education are fetched from profile API, not user API
         }
-        
+
         // Also fetch profile data if we have user ID
         if (data.success && data.user && data.user.id) {
           try {
-            const profileResponse = await fetch(`http://localhost:3001/api/profile/${data.user.id}`);
+            const profileResponse = await fetch(
+              `http://localhost:3001/api/profile/${data.user.id}`
+            );
             if (profileResponse.ok) {
               const profileData = await profileResponse.json();
-              console.log('Fetched profile data in EditProfileModal:', profileData);
+              console.log(
+                'Fetched profile data in EditProfileModal:',
+                profileData
+              );
               if (profileData.bio) setBio(profileData.bio);
               if (profileData.education) setEducation(profileData.education);
               if (profileData.profileImage) {
-                const profileUrl = profileData.profileImage.startsWith('http') 
-                  ? profileData.profileImage 
+                const profileUrl = profileData.profileImage.startsWith('http')
+                  ? profileData.profileImage
                   : `http://localhost:3001${profileData.profileImage}`;
                 setProfileImagePreview(profileUrl);
               }
@@ -172,7 +192,10 @@ export default function EditProfileModal({
               }
             }
           } catch (error) {
-            console.error('Error fetching profile data in EditProfileModal:', error);
+            console.error(
+              'Error fetching profile data in EditProfileModal:',
+              error
+            );
           }
         }
       } catch (error) {
@@ -195,13 +218,16 @@ export default function EditProfileModal({
       if (userData.username) setUsername(userData.username);
       if (userData.location) setLocation(userData.location);
       if (userData.age) setAge(userData.age.toString());
-      if (userData.sports_played) setSportsPlayed(userData.sports_played);
+      // Always update sports_played, even if empty (to clear it)
+      if (userData.sports_played !== undefined) {
+        setSportsPlayed(userData.sports_played || '');
+      }
       if (userData.primary_sport) setPrimarySport(userData.primary_sport);
       if (userData.bio !== undefined) setBio(userData.bio);
       if (userData.education !== undefined) setEducation(userData.education);
       if (userData.profile_url) {
-        const profileUrl = userData.profile_url.startsWith('http') 
-          ? userData.profile_url 
+        const profileUrl = userData.profile_url.startsWith('http')
+          ? userData.profile_url
           : `http://localhost:3001${userData.profile_url}`;
         setProfileImagePreview(profileUrl);
       }
@@ -232,7 +258,9 @@ export default function EditProfileModal({
     }
   };
 
-  const handleBackgroundImageSelect = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleBackgroundImageSelect = (
+    event: ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0];
     if (file) {
       setBackgroundImage(file);
@@ -316,7 +344,7 @@ export default function EditProfileModal({
   const calculateCompletion = () => {
     let completed = 0;
     const totalFields = 7;
-    
+
     // Check each field - must be non-empty
     if (fullName && fullName.trim() !== '') completed++;
     if (username && username.trim() !== '') completed++;
@@ -325,14 +353,17 @@ export default function EditProfileModal({
     if (sportsPlayed && sportsPlayed.trim() !== '') completed++;
     if (primarySport && primarySport.trim() !== '') completed++;
     if (profileImagePreview) completed++;
-    
-    const percentage = Math.min(Math.round((completed / totalFields) * 100), 100);
+
+    const percentage = Math.min(
+      Math.round((completed / totalFields) * 100),
+      100
+    );
     return percentage;
   };
 
   // Calculate completion percentage - this will recalculate on every render when fields change
   const currentCompletion = calculateCompletion();
-  
+
   // Calculate the circumference for the progress ring
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
@@ -368,11 +399,9 @@ export default function EditProfileModal({
               />
             </div>
           ) : (
-            <div className="absolute inset-0 w-full h-full flex items-center justify-center">
-              
-            </div>
+            <div className="absolute inset-0 w-full h-full flex items-center justify-center"></div>
           )}
-  
+
           <input
             ref={backgroundImageInputRef}
             type="file"
@@ -384,10 +413,12 @@ export default function EditProfileModal({
 
         {/* Profile Section */}
         <div className={`relative ${asSidebar ? 'px-4 pb-4' : 'px-6 pb-6'}`}>
-
           <div className="relative -mt-16 mb-4 flex justify-start px-6">
             <div className="relative">
-              <svg className={`${asSidebar ? 'w-32 h-32' : 'w-40 h-40'} transform -rotate-90`} viewBox="0 0 120 120">
+              <svg
+                className={`${asSidebar ? 'w-32 h-32' : 'w-40 h-40'} transform -rotate-90`}
+                viewBox="0 0 120 120"
+              >
                 {/* Background circle */}
                 <circle
                   cx="60"
@@ -411,9 +442,11 @@ export default function EditProfileModal({
                   className="transition-all duration-500 ease-in-out"
                 />
               </svg>
-      
+
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className={`${asSidebar ? 'w-28 h-28 border-2' : 'w-36 h-36 border-4'} rounded-full overflow-hidden border-white bg-gray-200`}>
+                <div
+                  className={`${asSidebar ? 'w-28 h-28 border-2' : 'w-36 h-36 border-4'} rounded-full overflow-hidden border-white bg-gray-200`}
+                >
                   {profileImagePreview ? (
                     <img
                       src={profileImagePreview}
@@ -463,13 +496,16 @@ export default function EditProfileModal({
               />
               <p className="text-lg text-gray-600 mb-4">
                 {(() => {
-                  const userType = fetchedUserData?.user_type || userData?.user_type;
-                  return userType === 'coach' ? 'Coach' : 
-                         userType === 'organization' ? 'Organization' : 
-                         'Athlete';
+                  const userType =
+                    fetchedUserData?.user_type || userData?.user_type;
+                  return userType === 'coach'
+                    ? 'Coach'
+                    : userType === 'organization'
+                      ? 'Organization'
+                      : 'Athlete';
                 })()}
               </p>
-              
+
               <div className="flex flex-row gap-3 text-gray-600">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
@@ -517,29 +553,41 @@ export default function EditProfileModal({
               {/* Sports Information */}
               <div className="space-y-1 mt-2">
                 <div className="text-md flex">
-                  <span className="font-semibold text-gray-900 w-40 text-right">Sports Played</span>
+                  <span className="font-semibold text-gray-900 w-40 text-right">
+                    Sports Played
+                  </span>
                   <span className="mx-3">:</span>
                   <span className="text-gray-700">{sportsPlayed || '—'}</span>
                 </div>
                 <div className="text-md flex">
-                  <span className="font-semibold text-gray-900 w-40 text-right">Primary Sports</span>
+                  <span className="font-semibold text-gray-900 w-40 text-right">
+                    Primary Sports
+                  </span>
                   <span className="mx-3">:</span>
                   <span className="text-gray-700">{primarySport || '—'}</span>
                 </div>
                 {(education || userData?.education) && (
                   <div className="text-md flex">
-                    <span className="font-semibold text-gray-900 w-40 text-right">Education</span>
+                    <span className="font-semibold text-gray-900 w-40 text-right">
+                      Education
+                    </span>
                     <span className="mx-3">:</span>
-                    <span className="text-gray-700">{education || userData?.education || ''}</span>
+                    <span className="text-gray-700">
+                      {education || userData?.education || ''}
+                    </span>
                   </div>
                 )}
                 {(bio || userData?.bio) && (
                   <div className="text-md flex flex-col">
                     <div className="flex">
-                      <span className="font-semibold text-gray-900 w-40 text-right">Bio</span>
+                      <span className="font-semibold text-gray-900 w-40 text-right">
+                        Bio
+                      </span>
                       <span className="mx-3">:</span>
                     </div>
-                    <span className="text-gray-700 ml-[11.5rem] mt-1">{bio || userData?.bio || ''}</span>
+                    <span className="text-gray-700 ml-[11.5rem] mt-1">
+                      {bio || userData?.bio || ''}
+                    </span>
                   </div>
                 )}
               </div>
@@ -564,7 +612,4 @@ export default function EditProfileModal({
       </div>
     );
   }
-
-
 }
-

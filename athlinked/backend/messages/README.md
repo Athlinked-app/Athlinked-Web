@@ -17,6 +17,7 @@ psql $DATABASE_URL -f add_media_support.sql
 ```
 
 This migration will:
+
 1. Add `media_url` column to `messages` table (TEXT, nullable)
 2. Add `message_type` column to `messages` table (TEXT with CHECK constraint: 'text', 'image', 'video', 'file', 'gif', 'post')
 
@@ -35,6 +36,7 @@ psql $DATABASE_URL -f add_post_data_support.sql
 ```
 
 This migration will:
+
 1. Add `post_data` column to `messages` table (JSONB, nullable) - stores post information when sharing posts
 
 ### 2. Add Name Fields (if not already done)
@@ -52,13 +54,14 @@ psql $DATABASE_URL -f messages.schema.sql
 ```
 
 This migration will:
+
 1. Add `sender_name` column to `messages` table
 2. Add `user_name` column to `conversation_participants` table
 3. Backfill existing records with names from the `users` table
 
 ## What Changed
 
-- **messages table**: 
+- **messages table**:
   - Stores `sender_name` alongside `sender_id` for faster queries
   - Stores `media_url` for uploaded files (photos, videos, files, GIFs)
   - Stores `message_type` to identify the type of media ('text', 'image', 'video', 'file', 'gif', 'post')
@@ -67,4 +70,3 @@ This migration will:
 - All new messages and participants will automatically have names stored
 - Media files are stored in `/public/uploads/messages/` directory
 - Queries will use stored names with fallback to users table if name is NULL
-

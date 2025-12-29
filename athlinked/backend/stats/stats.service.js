@@ -65,10 +65,17 @@ async function getFieldsByPositionService(positionId) {
 /**
  * Create or update user sport profile
  */
-async function createOrUpdateUserSportProfileService(userId, sportId, positionId) {
+async function createOrUpdateUserSportProfileService(
+  userId,
+  sportId,
+  positionId
+) {
   try {
     // Get sport and position names for denormalization
-    const names = await statsModel.getSportAndPositionNames(sportId, positionId);
+    const names = await statsModel.getSportAndPositionNames(
+      sportId,
+      positionId
+    );
     if (!names) {
       throw new Error('Invalid sport or position ID');
     }
@@ -120,19 +127,25 @@ async function saveUserPositionStatsService(userSportProfileId, stats) {
 
     // Create a map for quick lookup
     const fieldDataMap = new Map(fieldData.map(f => [f.id, f]));
-    
+
     // Validate all field IDs exist
     for (const stat of stats) {
       if (!fieldDataMap.has(stat.fieldId)) {
         throw new Error(`Invalid field ID: ${stat.fieldId}`);
       }
     }
-    
+
     // Use the map for efficient lookup
-    const fieldDataForInsert = stats.map(stat => fieldDataMap.get(stat.fieldId));
+    const fieldDataForInsert = stats.map(stat =>
+      fieldDataMap.get(stat.fieldId)
+    );
 
     // Upsert stats
-    await statsModel.upsertUserPositionStats(userSportProfileId, stats, fieldDataForInsert);
+    await statsModel.upsertUserPositionStats(
+      userSportProfileId,
+      stats,
+      fieldDataForInsert
+    );
 
     return {
       success: true,
@@ -207,4 +220,3 @@ module.exports = {
   getUserStatsByProfileService,
   getAllUserSportProfilesService,
 };
-

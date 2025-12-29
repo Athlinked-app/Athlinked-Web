@@ -72,7 +72,7 @@ async function upsertUserProfileService(userId, profileData) {
     console.log('=== SERVICE: upsertUserProfileService ===');
     console.log('UserId:', userId);
     console.log('ProfileData:', JSON.stringify(profileData, null, 2));
-    
+
     if (!userId) {
       throw new Error('User ID is required');
     }
@@ -81,7 +81,25 @@ async function upsertUserProfileService(userId, profileData) {
       console.log('WARNING: No profile data provided');
     }
 
-    const updatedProfile = await profileModel.upsertUserProfile(userId, profileData);
+    const updatedProfile = await profileModel.upsertUserProfile(
+      userId,
+      profileData
+    );
+
+    // Format sports_played for response
+    let sportsPlayed = null;
+    if (updatedProfile.sports_played) {
+      if (Array.isArray(updatedProfile.sports_played)) {
+        sportsPlayed = updatedProfile.sports_played.join(', ');
+      } else if (typeof updatedProfile.sports_played === 'string') {
+        let sportsString = updatedProfile.sports_played;
+        if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+          sportsString = sportsString.slice(1, -1);
+        }
+        sportsString = sportsString.replace(/["']/g, '');
+        sportsPlayed = sportsString;
+      }
+    }
 
     console.log('Service: Profile updated successfully');
     return {
@@ -94,6 +112,7 @@ async function upsertUserProfileService(userId, profileData) {
         bio: updatedProfile.bio,
         education: updatedProfile.education,
         primarySport: updatedProfile.primary_sport,
+        sportsPlayed: sportsPlayed,
       },
     };
   } catch (error) {
@@ -116,7 +135,10 @@ async function updateProfileImagesService(userId, imageData) {
       throw new Error('User ID is required');
     }
 
-    const updatedProfile = await profileModel.updateProfileImages(userId, imageData);
+    const updatedProfile = await profileModel.updateProfileImages(
+      userId,
+      imageData
+    );
 
     return {
       success: true,
@@ -138,4 +160,3 @@ module.exports = {
   upsertUserProfileService,
   updateProfileImagesService,
 };
-

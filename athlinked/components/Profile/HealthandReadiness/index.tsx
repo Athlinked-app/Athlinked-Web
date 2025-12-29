@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { Plus, Trash2, Pencil } from 'lucide-react';
-import HealthAndReadinessPopup, { type HealthAndReadiness } from '../HealthandReadinessPopup';
+import HealthAndReadinessPopup, {
+  type HealthAndReadiness,
+} from '../HealthandReadinessPopup';
 
 export type { HealthAndReadiness };
 
@@ -11,11 +13,12 @@ interface HealthAndReadinessProps {
   onHealthAndReadinessChange?: (data: HealthAndReadiness[]) => void;
 }
 
-export default function HealthAndReadinessComponent({ 
-  healthAndReadiness = [], 
-  onHealthAndReadinessChange 
+export default function HealthAndReadinessComponent({
+  healthAndReadiness = [],
+  onHealthAndReadinessChange,
 }: HealthAndReadinessProps) {
-  const [healthAndReadinessList, setHealthAndReadinessList] = useState<HealthAndReadiness[]>(healthAndReadiness);
+  const [healthAndReadinessList, setHealthAndReadinessList] =
+    useState<HealthAndReadiness[]>(healthAndReadiness);
   const [showPopup, setShowPopup] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
@@ -61,7 +64,9 @@ export default function HealthAndReadinessComponent({
     <>
       <div className="w-full bg-white rounded-lg p-6 mt-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">Health and Readiness</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Health and Readiness
+          </h2>
           <button
             onClick={() => {
               setEditingIndex(null);
@@ -74,7 +79,10 @@ export default function HealthAndReadinessComponent({
         </div>
 
         {healthAndReadinessList.length === 0 ? (
-          <p className="text-gray-500 italic">No health and readiness information added yet. Click the + button to add one.</p>
+          <p className="text-gray-500 italic">
+            No health and readiness information added yet. Click the + button to
+            add one.
+          </p>
         ) : (
           <div className="space-y-4">
             {healthAndReadinessList.map((data, index) => (
@@ -86,17 +94,22 @@ export default function HealthAndReadinessComponent({
                   <div className="flex-1">
                     {data.injuryHistory && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Injury History (Past 12 Months):</span> {data.injuryHistory}
+                        <span className="font-medium">
+                          Injury History (Past 12 Months):
+                        </span>{' '}
+                        {data.injuryHistory}
                       </p>
                     )}
                     {data.restingHeartRate && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Resting Heart Rate:</span> {data.restingHeartRate} BPM
+                        <span className="font-medium">Resting Heart Rate:</span>{' '}
+                        {data.restingHeartRate} BPM
                       </p>
                     )}
                     {data.enduranceMetric && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Endurance Metric:</span> {data.enduranceMetric}
+                        <span className="font-medium">Endurance Metric:</span>{' '}
+                        {data.enduranceMetric}
                       </p>
                     )}
                   </div>
@@ -125,9 +138,12 @@ export default function HealthAndReadinessComponent({
         open={showPopup}
         onClose={handleClose}
         onSave={handleAdd}
-        existingData={editingIndex !== null ? healthAndReadinessList[editingIndex] : undefined}
+        existingData={
+          editingIndex !== null
+            ? healthAndReadinessList[editingIndex]
+            : undefined
+        }
       />
     </>
   );
 }
-

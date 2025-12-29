@@ -17,7 +17,7 @@ interface VideoAndMediaPopupProps {
 }
 
 const videoStatusOptions = ['Viewable', 'Broken', 'Pending'];
-const verifiedMediaProfileOptions = ['HUDL', 'AAU', 'MaxPreps','None'];
+const verifiedMediaProfileOptions = ['HUDL', 'AAU', 'MaxPreps', 'None'];
 
 export default function VideoAndMediaPopup({
   open,
@@ -25,12 +25,21 @@ export default function VideoAndMediaPopup({
   onSave,
   existingData,
 }: VideoAndMediaPopupProps) {
-  const [highlightVideoLink, setHighlightVideoLink] = useState(existingData?.highlightVideoLink || '');
-  const [videoStatus, setVideoStatus] = useState(existingData?.videoStatus || '');
-  const [verifiedMediaProfile, setVerifiedMediaProfile] = useState(existingData?.verifiedMediaProfile || '');
+  const [highlightVideoLink, setHighlightVideoLink] = useState(
+    existingData?.highlightVideoLink || ''
+  );
+  const [videoStatus, setVideoStatus] = useState(
+    existingData?.videoStatus || ''
+  );
+  const [verifiedMediaProfile, setVerifiedMediaProfile] = useState(
+    existingData?.verifiedMediaProfile || ''
+  );
 
   const [showVideoStatusDropdown, setShowVideoStatusDropdown] = useState(false);
-  const [showVerifiedMediaProfileDropdown, setShowVerifiedMediaProfileDropdown] = useState(false);
+  const [
+    showVerifiedMediaProfileDropdown,
+    setShowVerifiedMediaProfileDropdown,
+  ] = useState(false);
 
   const videoStatusRef = useRef<HTMLDivElement>(null);
   const verifiedMediaProfileRef = useRef<HTMLDivElement>(null);
@@ -52,10 +61,16 @@ export default function VideoAndMediaPopup({
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (videoStatusRef.current && !videoStatusRef.current.contains(event.target as Node)) {
+      if (
+        videoStatusRef.current &&
+        !videoStatusRef.current.contains(event.target as Node)
+      ) {
         setShowVideoStatusDropdown(false);
       }
-      if (verifiedMediaProfileRef.current && !verifiedMediaProfileRef.current.contains(event.target as Node)) {
+      if (
+        verifiedMediaProfileRef.current &&
+        !verifiedMediaProfileRef.current.contains(event.target as Node)
+      ) {
         setShowVerifiedMediaProfileDropdown(false);
       }
     };
@@ -85,18 +100,19 @@ export default function VideoAndMediaPopup({
   };
 
   // Check if all required fields are filled
-  const isFormValid = highlightVideoLink.trim() && videoStatus && verifiedMediaProfile;
+  const isFormValid =
+    highlightVideoLink.trim() && videoStatus && verifiedMediaProfile;
 
-  const DropdownField = ({ 
-    label, 
-    value, 
-    placeholder, 
-    options, 
-    showDropdown, 
-    setShowDropdown, 
-    onSelect, 
+  const DropdownField = ({
+    label,
+    value,
+    placeholder,
+    options,
+    showDropdown,
+    setShowDropdown,
+    onSelect,
     ref,
-    helperText
+    helperText,
   }: {
     label: string;
     value: string;
@@ -109,21 +125,27 @@ export default function VideoAndMediaPopup({
     helperText?: string;
   }) => (
     <div className="relative" ref={ref}>
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {label}
+      </label>
       <div
         onClick={() => setShowDropdown(!showDropdown)}
         className={`w-full px-4 py-2 border rounded-lg cursor-pointer flex items-center justify-between ${
-          showDropdown ? 'border-[#CB9729] ring-2 ring-[#CB9729]' : 'border-gray-300'
+          showDropdown
+            ? 'border-[#CB9729] ring-2 ring-[#CB9729]'
+            : 'border-gray-300'
         }`}
       >
         <span className={value ? 'text-gray-900' : 'text-gray-500'}>
           {value || placeholder}
         </span>
-        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showDropdown ? 'transform rotate-180' : ''}`} />
+        <ChevronDown
+          className={`w-5 h-5 text-gray-400 transition-transform ${showDropdown ? 'transform rotate-180' : ''}`}
+        />
       </div>
       {showDropdown && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-          {options.map((option) => (
+          {options.map(option => (
             <div
               key={option}
               onClick={() => {
@@ -139,9 +161,7 @@ export default function VideoAndMediaPopup({
           ))}
         </div>
       )}
-      {helperText && (
-        <p className="mt-1 text-xs text-gray-500">{helperText}</p>
-      )}
+      {helperText && <p className="mt-1 text-xs text-gray-500">{helperText}</p>}
     </div>
   );
 
@@ -166,15 +186,19 @@ export default function VideoAndMediaPopup({
         <div className="px-6 py-6 space-y-6">
           {/* Highlight Video or Game Film Link */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Highlight Video or Game Film Link</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Highlight Video or Game Film Link
+            </label>
             <input
               type="url"
               value={highlightVideoLink}
-              onChange={(e) => setHighlightVideoLink(e.target.value)}
+              onChange={e => setHighlightVideoLink(e.target.value)}
               placeholder="https://youtube.com/watch?v=..."
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
             />
-            <p className="mt-1 text-xs text-gray-500">Enter a YouTube, HUDL, or Vimeo link to your highlight video</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Enter a YouTube, HUDL, or Vimeo link to your highlight video
+            </p>
           </div>
 
           {/* Video Status */}
@@ -209,8 +233,8 @@ export default function VideoAndMediaPopup({
             onClick={handleSave}
             disabled={!isFormValid}
             className={`px-6 py-2 rounded-lg transition-colors font-semibold ${
-              isFormValid 
-                ? 'bg-[#CB9729] text-white hover:bg-[#b78322] cursor-pointer' 
+              isFormValid
+                ? 'bg-[#CB9729] text-white hover:bg-[#b78322] cursor-pointer'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
@@ -221,4 +245,3 @@ export default function VideoAndMediaPopup({
     </div>
   );
 }
-

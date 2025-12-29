@@ -39,7 +39,11 @@ export default function MentionSuggestions({
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-yellow-400 flex items-center justify-center flex-shrink-0">
             {follower.profile_url ? (
               <img
-                src={follower.profile_url.startsWith('http') ? follower.profile_url : `http://localhost:3001${follower.profile_url}`}
+                src={
+                  follower.profile_url.startsWith('http')
+                    ? follower.profile_url
+                    : `http://localhost:3001${follower.profile_url}`
+                }
                 alt={follower.full_name}
                 className="w-full h-full rounded-full object-cover"
               />
@@ -64,4 +68,3 @@ export default function MentionSuggestions({
     </>
   );
 }
-

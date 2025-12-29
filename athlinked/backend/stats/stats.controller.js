@@ -24,7 +24,7 @@ async function getAllSports(req, res) {
 async function getPositionsBySport(req, res) {
   try {
     const { sportId } = req.params;
-    
+
     if (!sportId) {
       return res.status(400).json({
         success: false,
@@ -50,7 +50,7 @@ async function getPositionsBySport(req, res) {
 async function getFieldsByPosition(req, res) {
   try {
     const { positionId } = req.params;
-    
+
     if (!positionId) {
       return res.status(400).json({
         success: false,
@@ -76,7 +76,7 @@ async function getFieldsByPosition(req, res) {
 async function createOrUpdateUserSportProfile(req, res) {
   try {
     const userId = req.body.user_id || req.user?.id;
-    
+
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -100,7 +100,10 @@ async function createOrUpdateUserSportProfile(req, res) {
     );
     return res.status(200).json(result);
   } catch (error) {
-    console.error('Create or update user sport profile controller error:', error);
+    console.error(
+      'Create or update user sport profile controller error:',
+      error
+    );
     if (error.message.includes('Invalid')) {
       return res.status(400).json({
         success: false,
@@ -121,7 +124,7 @@ async function createOrUpdateUserSportProfile(req, res) {
 async function saveUserPositionStats(req, res) {
   try {
     const userId = req.body.user_id || req.user?.id;
-    
+
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -162,7 +165,10 @@ async function saveUserPositionStats(req, res) {
     return res.status(200).json(result);
   } catch (error) {
     console.error('Save user position stats controller error:', error);
-    if (error.message.includes('invalid') || error.message.includes('Invalid')) {
+    if (
+      error.message.includes('invalid') ||
+      error.message.includes('Invalid')
+    ) {
       return res.status(400).json({
         success: false,
         message: error.message,
@@ -182,7 +188,7 @@ async function saveUserPositionStats(req, res) {
 async function getUserStatsByProfile(req, res) {
   try {
     const userId = req.query.user_id || req.body.user_id || req.user?.id;
-    
+
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -199,7 +205,8 @@ async function getUserStatsByProfile(req, res) {
       });
     }
 
-    const result = await statsService.getUserStatsByProfileService(userSportProfileId);
+    const result =
+      await statsService.getUserStatsByProfileService(userSportProfileId);
     return res.status(200).json(result);
   } catch (error) {
     console.error('Get user stats by profile controller error:', error);
@@ -218,16 +225,16 @@ async function getUserStatsByProfile(req, res) {
 
 /**
  * 7. Get All User Sport Profiles with Stats
- * GET /user/sport-profiles
+ * GET /user/:userId/sport-profiles
  */
 async function getAllUserSportProfiles(req, res) {
   try {
-    const userId = req.query.user_id || req.body.user_id || req.user?.id;
-    
+    const userId = req.params.userId || req.query.user_id || req.body.user_id || req.user?.id;
+
     if (!userId) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
-        message: 'User authentication required',
+        message: 'User ID is required',
       });
     }
 
@@ -251,4 +258,3 @@ module.exports = {
   getUserStatsByProfile,
   getAllUserSportProfiles,
 };
-

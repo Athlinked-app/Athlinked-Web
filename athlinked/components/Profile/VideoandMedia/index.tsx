@@ -11,11 +11,12 @@ interface VideoAndMediaProps {
   onVideoAndMediaChange?: (data: VideoAndMedia[]) => void;
 }
 
-export default function VideoAndMediaComponent({ 
-  videoAndMedia = [], 
-  onVideoAndMediaChange 
+export default function VideoAndMediaComponent({
+  videoAndMedia = [],
+  onVideoAndMediaChange,
 }: VideoAndMediaProps) {
-  const [videoAndMediaList, setVideoAndMediaList] = useState<VideoAndMedia[]>(videoAndMedia);
+  const [videoAndMediaList, setVideoAndMediaList] =
+    useState<VideoAndMedia[]>(videoAndMedia);
   const [showPopup, setShowPopup] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
@@ -74,7 +75,9 @@ export default function VideoAndMediaComponent({
         </div>
 
         {videoAndMediaList.length === 0 ? (
-          <p className="text-gray-500 italic">No video and media added yet. Click the + button to add one.</p>
+          <p className="text-gray-500 italic">
+            No video and media added yet. Click the + button to add one.
+          </p>
         ) : (
           <div className="space-y-4">
             {videoAndMediaList.map((data, index) => (
@@ -86,7 +89,9 @@ export default function VideoAndMediaComponent({
                   <div className="flex-1">
                     {data.highlightVideoLink && (
                       <div className="mb-2">
-                        <p className="text-sm font-medium text-gray-700 mb-1">Highlight Video Link:</p>
+                        <p className="text-sm font-medium text-gray-700 mb-1">
+                          Highlight Video Link:
+                        </p>
                         <a
                           href={data.highlightVideoLink}
                           target="_blank"
@@ -100,12 +105,16 @@ export default function VideoAndMediaComponent({
                     )}
                     {data.videoStatus && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Video Status:</span> {data.videoStatus}
+                        <span className="font-medium">Video Status:</span>{' '}
+                        {data.videoStatus}
                       </p>
                     )}
                     {data.verifiedMediaProfile && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Verified Media Profile:</span> {data.verifiedMediaProfile}
+                        <span className="font-medium">
+                          Verified Media Profile:
+                        </span>{' '}
+                        {data.verifiedMediaProfile}
                       </p>
                     )}
                   </div>
@@ -134,9 +143,10 @@ export default function VideoAndMediaComponent({
         open={showPopup}
         onClose={handleClose}
         onSave={handleAdd}
-        existingData={editingIndex !== null ? videoAndMediaList[editingIndex] : undefined}
+        existingData={
+          editingIndex !== null ? videoAndMediaList[editingIndex] : undefined
+        }
       />
     </>
   );
 }
-
