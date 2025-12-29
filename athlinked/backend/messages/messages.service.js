@@ -1,7 +1,14 @@
 const messagesModel = require('./messages.model');
 const pool = require('../config/db');
 
-async function sendMessage(senderId, receiverId, message, mediaUrl = null, messageType = 'text', postData = null) {
+async function sendMessage(
+  senderId,
+  receiverId,
+  message,
+  mediaUrl = null,
+  messageType = 'text',
+  postData = null
+) {
   const client = await pool.connect();
 
   try {
@@ -23,7 +30,8 @@ async function sendMessage(senderId, receiverId, message, mediaUrl = null, messa
       postData
     );
 
-    const lastMessageText = message || (mediaUrl ? (messageType === 'gif' ? 'GIF' : 'Media') : '');
+    const lastMessageText =
+      message || (mediaUrl ? (messageType === 'gif' ? 'GIF' : 'Media') : '');
     await messagesModel.updateConversationLastMessage(
       conversation.id,
       lastMessageText,
@@ -104,26 +112,27 @@ async function getOrCreateConversation(userId, otherUserId) {
       userId,
       otherUserId
     );
-    
+
     const conversations = await messagesModel.getConversationsForUser(userId);
     const foundConv = conversations.find(
-      (conv) => conv.conversation_id === conversation.id
+      conv => conv.conversation_id === conversation.id
     );
-    
+
     if (foundConv) {
       return foundConv;
     }
-    
+
     const pool = require('../config/db');
-    const userQuery = 'SELECT id, username, full_name, profile_url FROM users WHERE id = $1';
+    const userQuery =
+      'SELECT id, username, full_name, profile_url FROM users WHERE id = $1';
     const userResult = await pool.query(userQuery, [otherUserId]);
-    
+
     if (userResult.rows.length === 0) {
       throw new Error('User not found');
     }
-    
+
     const otherUser = userResult.rows[0];
-    
+
     return {
       conversation_id: conversation.id,
       other_user_id: otherUser.id,
@@ -147,4 +156,3 @@ module.exports = {
   searchNetworkUsers,
   getOrCreateConversation,
 };
-

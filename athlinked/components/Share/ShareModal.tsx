@@ -1,7 +1,16 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { X, ArrowLeft, Search, Send, MessageCircle, Link, Copy, Check } from 'lucide-react';
+import {
+  X,
+  ArrowLeft,
+  Search,
+  Send,
+  MessageCircle,
+  Link,
+  Copy,
+  Check,
+} from 'lucide-react';
 import io, { Socket } from 'socket.io-client';
 import type { PostData } from '../Post';
 
@@ -41,13 +50,16 @@ export default function ShareModal({
     if (open && currentUserId) {
       loadFollowingUsers();
       // Initialize socket with error handling - don't block modal if it fails
-      initializeSocket().catch((error) => {
-        console.warn('Socket connection failed (this is okay for WhatsApp/Copy Link):', error);
+      initializeSocket().catch(error => {
+        console.warn(
+          'Socket connection failed (this is okay for WhatsApp/Copy Link):',
+          error
+        );
         // Socket is only needed for sharing to users, not for WhatsApp or copy link
         // So we continue without it
       });
     }
-    
+
     return () => {
       if (socketRef.current) {
         socketRef.current.disconnect();
@@ -62,60 +74,62 @@ export default function ShareModal({
         reject(new Error('No user ID'));
         return;
       }
-      
+
       if (socketRef.current && socketRef.current.connected) {
         socketRef.current.emit('userId', { userId: currentUserId });
         setTimeout(() => resolve(), 100);
         return;
       }
-      
+
       if (socketRef.current) {
         socketRef.current.disconnect();
       }
-      
+
       const socket = io('http://localhost:3001', {
         transports: ['websocket'],
       });
-      
+
       const timeout = setTimeout(() => {
         reject(new Error('Connection timeout'));
       }, 5000);
-      
+
       socket.on('connect', () => {
         socket.emit('userId', { userId: currentUserId });
         socketRef.current = socket;
         clearTimeout(timeout);
         setTimeout(() => resolve(), 200);
       });
-      
-      socket.on('connect_error', (error) => {
+
+      socket.on('connect_error', error => {
         clearTimeout(timeout);
         reject(error);
       });
-      
+
       socketRef.current = socket;
     });
   };
 
   const loadFollowingUsers = async () => {
     if (!currentUserId) return;
-    
+
     setLoading(true);
     try {
       const response = await fetch(
         `http://localhost:3001/api/network/following/${currentUserId}`
       );
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.following) {
-          const followingUsers: UserData[] = data.following.map((user: any) => ({
-            id: user.id,
-            name: user.full_name || user.username || 'User',
-            profile_url: user.profile_url || null,
-            username: user.username,
-            full_name: user.full_name,
-          }));
+          const followingUsers: UserData[] = data.following.map(
+            (user: any) => ({
+              id: user.id,
+              name: user.full_name || user.username || 'User',
+              profile_url: user.profile_url || null,
+              username: user.username,
+              full_name: user.full_name,
+            })
+          );
           setUsers(followingUsers);
         } else {
           setUsers([]);
@@ -149,7 +163,7 @@ export default function ShareModal({
 
   const handleShareToWhatsApp = () => {
     const postUrl = `${window.location.origin}/post/${post.id}`;
-    const text = message.trim() 
+    const text = message.trim()
       ? `${message.trim()}\n\n${postUrl}`
       : `Check out this post: ${postUrl}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
@@ -171,7 +185,7 @@ export default function ShareModal({
     if (selectedUsers.size === 0 || !currentUserId) return;
 
     const selectedUserIds = Array.from(selectedUsers);
-    
+
     try {
       // Try to initialize socket, but handle errors gracefully
       try {
@@ -183,17 +197,19 @@ export default function ShareModal({
         try {
           await initializeSocket();
         } catch (retryError) {
-          throw new Error('Unable to connect to server. Please check your connection and try again.');
+          throw new Error(
+            'Unable to connect to server. Please check your connection and try again.'
+          );
         }
       }
-      
+
       if (!socketRef.current || !socketRef.current.connected) {
         throw new Error('Socket connection failed. Please try again.');
       }
-      
+
       const shareMessage = message.trim() || `Check out this post!`;
       const postUrl = `${window.location.origin}/post/${post.id}`;
-      
+
       const postData = {
         id: post.id,
         username: post.username,
@@ -210,35 +226,39 @@ export default function ShareModal({
         created_at: post.created_at,
         post_url: postUrl,
       };
-      
+
       const fullMessage = shareMessage;
-      
+
       let successCount = 0;
       const errors: string[] = [];
-      
+
       for (const userId of selectedUserIds) {
         try {
-          const response = await fetch('http://localhost:3001/api/messages/conversations/create', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              user_id: currentUserId,
-              otherUserId: userId,
-            }),
-          });
+          const response = await fetch(
+            'http://localhost:3001/api/messages/conversations/create',
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                user_id: currentUserId,
+                otherUserId: userId,
+              }),
+            }
+          );
 
           if (response.ok) {
             const data = await response.json();
             if (data.success && data.conversation) {
-              const conversationId = data.conversation.conversation_id || data.conversation.id;
-              
+              const conversationId =
+                data.conversation.conversation_id || data.conversation.id;
+
               if (!conversationId) {
                 errors.push(`No conversation ID for user ${userId}`);
                 continue;
               }
-              
+
               if (socketRef.current && socketRef.current.connected) {
                 socketRef.current.emit('send_message', {
                   conversationId: conversationId,
@@ -247,7 +267,7 @@ export default function ShareModal({
                   post_data: JSON.stringify(postData),
                   message_type: 'post',
                 });
-                
+
                 await new Promise(resolve => setTimeout(resolve, 500));
                 successCount++;
               } else {
@@ -258,15 +278,18 @@ export default function ShareModal({
             }
           } else {
             const errorData = await response.json().catch(() => ({}));
-            errors.push(`API error for user ${userId}: ${errorData.message || 'Unknown error'}`);
+            errors.push(
+              `API error for user ${userId}: ${errorData.message || 'Unknown error'}`
+            );
           }
         } catch (error) {
-          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          const errorMsg =
+            error instanceof Error ? error.message : 'Unknown error';
           errors.push(`Error sharing with user ${userId}: ${errorMsg}`);
           console.error(`Error sharing with user ${userId}:`, error);
         }
       }
-      
+
       if (errors.length > 0) {
         console.error('Share errors:', errors);
       }
@@ -285,7 +308,10 @@ export default function ShareModal({
       }
     } catch (error) {
       console.error('Error sharing post:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to connect. Please try again.';
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Failed to connect. Please try again.';
       alert(errorMessage);
     }
   };
@@ -420,7 +446,9 @@ export default function ShareModal({
         {/* Users List */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">Share with following</h3>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">
+              Share with following
+            </h3>
             {loading ? (
               <div className="text-center py-8 text-gray-500">
                 <p>Loading...</p>
@@ -453,9 +481,13 @@ export default function ShareModal({
                         )}
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {user.name}
+                        </p>
                         {user.username && (
-                          <p className="text-xs text-gray-500">@{user.username}</p>
+                          <p className="text-xs text-gray-500">
+                            @{user.username}
+                          </p>
                         )}
                       </div>
                       <div
@@ -503,7 +535,8 @@ export default function ShareModal({
               className="w-full px-6 py-2 bg-[#CB9729] text-white font-semibold rounded-md hover:bg-[#b78322] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <Send className="w-4 h-4" />
-              Send to {selectedUsers.size} {selectedUsers.size === 1 ? 'user' : 'users'}
+              Send to {selectedUsers.size}{' '}
+              {selectedUsers.size === 1 ? 'user' : 'users'}
             </button>
           </div>
         )}

@@ -1,7 +1,7 @@
 /**
  * Test script for Profile API
  * Run with: node profile/test-profile-api.js
- * 
+ *
  * This will test the profile API endpoints to verify they work correctly
  */
 
@@ -23,7 +23,7 @@ async function testProfileAPI() {
     `);
     const tableExists = tableCheck.rows[0].exists;
     console.log(`   Table exists: ${tableExists}`);
-    
+
     if (!tableExists) {
       console.log('\n❌ ERROR: user_profiles table does not exist!');
       console.log('   Please create it using the SQL in verify-table.sql\n');
@@ -45,7 +45,9 @@ async function testProfileAPI() {
     `);
     console.log('   Columns:');
     columns.rows.forEach(col => {
-      console.log(`     - ${col.column_name} (${col.data_type}, nullable: ${col.is_nullable})`);
+      console.log(
+        `     - ${col.column_name} (${col.data_type}, nullable: ${col.is_nullable})`
+      );
     });
   } catch (error) {
     console.error('   Error checking structure:', error.message);
@@ -61,11 +63,14 @@ async function testProfileAPI() {
     `);
     console.log('   Constraints:');
     constraints.rows.forEach(constraint => {
-      console.log(`     - ${constraint.constraint_name} (${constraint.constraint_type})`);
+      console.log(
+        `     - ${constraint.constraint_name} (${constraint.constraint_type})`
+      );
     });
-    
-    const hasUniqueUserId = constraints.rows.some(c => 
-      c.constraint_type === 'UNIQUE' && c.constraint_name.includes('user_id')
+
+    const hasUniqueUserId = constraints.rows.some(
+      c =>
+        c.constraint_type === 'UNIQUE' && c.constraint_name.includes('user_id')
     );
     if (!hasUniqueUserId) {
       console.log('   ⚠️  WARNING: No UNIQUE constraint on user_id found!');
@@ -114,7 +119,7 @@ async function testProfileAPI() {
       testUserId,
       'Test bio',
       'Test University',
-      'Basketball'
+      'Basketball',
     ]);
     console.log('   ✅ INSERT successful');
     console.log('   Inserted row:', result.rows[0]);
@@ -131,7 +136,9 @@ async function testProfileAPI() {
       'SELECT * FROM user_profiles WHERE user_id = $1',
       [testUserId]
     );
-    console.log(`   ✅ SELECT successful (found ${selectResult.rows.length} rows)`);
+    console.log(
+      `   ✅ SELECT successful (found ${selectResult.rows.length} rows)`
+    );
     if (selectResult.rows.length > 0) {
       console.log('   Sample row:', selectResult.rows[0]);
     }
@@ -142,7 +149,9 @@ async function testProfileAPI() {
   // Test 7: Count all rows
   console.log('\n7. Counting all rows in user_profiles...');
   try {
-    const countResult = await pool.query('SELECT COUNT(*) as count FROM user_profiles');
+    const countResult = await pool.query(
+      'SELECT COUNT(*) as count FROM user_profiles'
+    );
     console.log(`   Total rows in table: ${countResult.rows[0].count}`);
   } catch (error) {
     console.error('   Error counting rows:', error.message);
@@ -156,4 +165,3 @@ testProfileAPI().catch(error => {
   console.error('Fatal error:', error);
   process.exit(1);
 });
-

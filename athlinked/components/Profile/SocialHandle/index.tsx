@@ -49,7 +49,10 @@ const getPlatformIcon = (platform: string) => {
   }
 };
 
-export default function SocialHandles({ handles = [], onHandlesChange }: SocialHandleProps) {
+export default function SocialHandles({
+  handles = [],
+  onHandlesChange,
+}: SocialHandleProps) {
   const [socialHandles, setSocialHandles] = useState<SocialHandle[]>(handles);
   const [showPopup, setShowPopup] = useState(false);
 
@@ -83,7 +86,9 @@ export default function SocialHandles({ handles = [], onHandlesChange }: SocialH
         </div>
 
         {socialHandles.length === 0 ? (
-          <p className="text-gray-500 italic">No social handles added yet. Click the + button to add one.</p>
+          <p className="text-gray-500 italic">
+            No social handles added yet. Click the + button to add one.
+          </p>
         ) : (
           <div className="space-y-3">
             {socialHandles.map((handle, index) => (
@@ -93,7 +98,9 @@ export default function SocialHandles({ handles = [], onHandlesChange }: SocialH
               >
                 {getPlatformIcon(handle.platform)}
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900">{handle.platform}</div>
+                  <div className="font-medium text-gray-900">
+                    {handle.platform}
+                  </div>
                   <a
                     href={handle.url}
                     target="_blank"
@@ -123,4 +130,3 @@ export default function SocialHandles({ handles = [], onHandlesChange }: SocialH
     </>
   );
 }
-

@@ -24,7 +24,9 @@ export default function Landing() {
     try {
       setLoading(true);
       const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts?page=1&limit=50'
+
+        'http://localhost:3001/api/posts?page=1&limit=50'
+
       );
 
       if (!response.ok) {
@@ -192,7 +194,9 @@ export default function Landing() {
                   <Post
                     key={post.id}
                     post={post}
-                    currentUserProfileUrl={getProfileUrl(currentUser?.profile_url)}
+                    currentUserProfileUrl={getProfileUrl(
+                      currentUser?.profile_url
+                    )}
                     currentUsername={currentUser?.full_name || 'User'}
                     currentUserId={currentUserId || undefined}
                     onCommentCountUpdate={fetchPosts}

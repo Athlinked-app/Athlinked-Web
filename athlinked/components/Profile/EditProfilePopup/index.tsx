@@ -42,7 +42,9 @@ export default function EditProfilePopup({
   const [coverImagePreview, setCoverImagePreview] = useState<string | null>(
     userData?.background_image_url || null
   );
-  const [sportsPlayed, setSportsPlayed] = useState(userData?.sports_played || '');
+  const [sportsPlayed, setSportsPlayed] = useState(
+    userData?.sports_played || ''
+  );
   const [education, setEducation] = useState(userData?.education || '');
   const [bio, setBio] = useState(userData?.bio || '');
   const [showSportsDropdown, setShowSportsDropdown] = useState(false);
@@ -50,7 +52,10 @@ export default function EditProfilePopup({
     if (userData?.sports_played) {
       // Remove curly brackets and quotes if present
       const cleaned = userData.sports_played.replace(/[{}"']/g, '');
-      return cleaned.split(',').map(s => s.trim()).filter(Boolean);
+      return cleaned
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
     }
     return [];
   });
@@ -70,12 +75,21 @@ export default function EditProfilePopup({
 
   // Update selectedSports when userData changes
   useEffect(() => {
-    if (userData?.sports_played) {
-      // Remove curly brackets and quotes if present
-      const cleaned = userData.sports_played.replace(/[{}"']/g, '');
-      const sportsArray = cleaned.split(',').map(s => s.trim()).filter(Boolean);
-      setSelectedSports(sportsArray);
-      setSportsPlayed(sportsArray.join(', '));
+    if (userData?.sports_played !== undefined) {
+      // Handle empty string - clear sports
+      if (!userData.sports_played || userData.sports_played.trim() === '') {
+        setSelectedSports([]);
+        setSportsPlayed('');
+      } else {
+        // Remove curly brackets and quotes if present
+        const cleaned = userData.sports_played.replace(/[{}"']/g, '');
+        const sportsArray = cleaned
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+        setSelectedSports(sportsArray);
+        setSportsPlayed(sportsArray.join(', '));
+      }
     }
   }, [userData?.sports_played]);
 
@@ -99,7 +113,10 @@ export default function EditProfilePopup({
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (sportsDropdownRef.current && !sportsDropdownRef.current.contains(event.target as Node)) {
+      if (
+        sportsDropdownRef.current &&
+        !sportsDropdownRef.current.contains(event.target as Node)
+      ) {
         setShowSportsDropdown(false);
       }
     };
@@ -182,7 +199,9 @@ export default function EditProfilePopup({
       <div className="relative z-10 w-full max-w-2xl bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">Edit Your Profile</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Edit Your Profile
+          </h2>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -252,7 +271,9 @@ export default function EditProfilePopup({
               ) : (
                 <div className="text-center">
                   <Camera className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500 text-sm">Click to upload cover image</p>
+                  <p className="text-gray-500 text-sm">
+                    Click to upload cover image
+                  </p>
                 </div>
               )}
               <input
@@ -279,12 +300,22 @@ export default function EditProfilePopup({
                 placeholder="Football, Basketball, Baseball"
                 className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900 cursor-pointer"
               />
-              <div 
+              <div
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
                 onClick={() => setShowSportsDropdown(!showSportsDropdown)}
               >
-                <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </div>
             </div>
@@ -302,7 +333,7 @@ export default function EditProfilePopup({
                   </div>
                 ) : (
                   <div className="p-2 space-y-1">
-                    {allSports.map((sport) => (
+                    {allSports.map(sport => (
                       <label
                         key={sport.id}
                         className="flex items-center px-3 py-2 hover:bg-gray-50 cursor-pointer rounded"
@@ -313,7 +344,9 @@ export default function EditProfilePopup({
                           onChange={() => handleSportToggle(sport.name)}
                           className="w-4 h-4 text-[#CB9729] border-gray-300 rounded focus:ring-[#CB9729] focus:ring-2"
                         />
-                        <span className="ml-3 text-sm text-gray-700">{sport.name}</span>
+                        <span className="ml-3 text-sm text-gray-700">
+                          {sport.name}
+                        </span>
                       </label>
                     ))}
                   </div>
@@ -327,7 +360,9 @@ export default function EditProfilePopup({
             )}
           </div>
           <div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Tell us about you</h3>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Tell us about you
+            </h3>
             <p className="text-sm text-gray-600 mb-4">
               Please add your photo and biography to tell us about yourself.
             </p>
@@ -387,4 +422,3 @@ export default function EditProfilePopup({
     </div>
   );
 }
-

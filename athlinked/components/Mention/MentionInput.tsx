@@ -21,7 +21,7 @@ interface MentionInputProps {
 export default function MentionInput({
   value,
   onChange,
-  placeholder = 'What\'s on your mind?',
+  placeholder = "What's on your mind?",
   currentUserId,
   className = '',
   disabled = false,
@@ -48,12 +48,14 @@ export default function MentionInput({
         if (response.ok) {
           const data = await response.json();
           if (data.success && data.following) {
-            setFollowers(data.following.map((user: any) => ({
-              id: user.id,
-              full_name: user.full_name || 'User',
-              username: user.username,
-              profile_url: user.profile_url,
-            })));
+            setFollowers(
+              data.following.map((user: any) => ({
+                id: user.id,
+                full_name: user.full_name || 'User',
+                username: user.username,
+                profile_url: user.profile_url,
+              }))
+            );
           }
         }
       } catch (error) {
@@ -80,13 +82,15 @@ export default function MentionInput({
         const query = textAfterAt.split(/\s/)[0];
         setMentionStart(lastAtIndex);
         setMentionQuery(query.toLowerCase());
-        
+
         // Filter followers based on query
-        const filtered = followers.filter(follower =>
-          follower.full_name.toLowerCase().includes(query.toLowerCase()) ||
-          (follower.username && follower.username.toLowerCase().includes(query.toLowerCase()))
+        const filtered = followers.filter(
+          follower =>
+            follower.full_name.toLowerCase().includes(query.toLowerCase()) ||
+            (follower.username &&
+              follower.username.toLowerCase().includes(query.toLowerCase()))
         );
-        
+
         setSuggestions(filtered);
         setShowSuggestions(filtered.length > 0);
         setSelectedIndex(0);
@@ -103,8 +107,10 @@ export default function MentionInput({
 
     const textBefore = value.substring(0, mentionStart);
     const textAfter = value.substring(mentionStart);
-    const textAfterMention = textAfter.substring(textAfter.indexOf(' ') !== -1 ? textAfter.indexOf(' ') : textAfter.length);
-    
+    const textAfterMention = textAfter.substring(
+      textAfter.indexOf(' ') !== -1 ? textAfter.indexOf(' ') : textAfter.length
+    );
+
     const newValue = `${textBefore}@${follower.full_name}${textAfterMention}`;
     onChange(newValue);
     setShowSuggestions(false);
@@ -123,7 +129,9 @@ export default function MentionInput({
     if (showSuggestions && suggestions.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setSelectedIndex(prev => (prev < suggestions.length - 1 ? prev + 1 : prev));
+        setSelectedIndex(prev =>
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        );
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectedIndex(prev => (prev > 0 ? prev - 1 : 0));
@@ -146,7 +154,9 @@ export default function MentionInput({
   };
 
   // Get mention positions for highlighting
-  const getMentions = (text: string): Array<{ start: number; end: number; name: string }> => {
+  const getMentions = (
+    text: string
+  ): Array<{ start: number; end: number; name: string }> => {
     const mentions: Array<{ start: number; end: number; name: string }> = [];
     const regex = /@([^\s@]+)/g;
     let match;
@@ -176,7 +186,7 @@ export default function MentionInput({
         className={`w-full resize-none border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#CB9729] ${className}`}
         rows={3}
       />
-      
+
       {showSuggestions && suggestions.length > 0 && (
         <div
           ref={suggestionsRef}
@@ -193,7 +203,11 @@ export default function MentionInput({
               <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-yellow-400 flex items-center justify-center flex-shrink-0">
                 {follower.profile_url ? (
                   <img
-                    src={follower.profile_url.startsWith('http') ? follower.profile_url : `http://localhost:3001${follower.profile_url}`}
+                    src={
+                      follower.profile_url.startsWith('http')
+                        ? follower.profile_url
+                        : `http://localhost:3001${follower.profile_url}`
+                    }
                     alt={follower.full_name}
                     className="w-full h-full rounded-full object-cover"
                   />

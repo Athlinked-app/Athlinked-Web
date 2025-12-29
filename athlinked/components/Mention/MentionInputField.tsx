@@ -14,7 +14,9 @@ interface MentionInputFieldProps {
   disabled?: boolean;
   type?: 'input' | 'textarea';
   rows?: number;
-  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onKeyDown?: (
+    e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => void;
 }
 
 export default function MentionInputField({
@@ -30,7 +32,11 @@ export default function MentionInputField({
 }: MentionInputFieldProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
-  const [suggestionPosition, setSuggestionPosition] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [suggestionPosition, setSuggestionPosition] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
 
   const {
     showSuggestions,
@@ -73,19 +79,24 @@ export default function MentionInputField({
     }
   }, [showSuggestions, suggestions.length]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     mentionHandleKeyDown(e);
     if (onKeyDown) {
       onKeyDown(e);
     }
   };
 
-  const handleMentionSelect = (follower: typeof suggestions[0]) => {
+  const handleMentionSelect = (follower: (typeof suggestions)[0]) => {
     const newCursorPos = insertMention(follower);
     if (inputRef.current && newCursorPos !== undefined) {
       setTimeout(() => {
         inputRef.current?.focus();
-        if (inputRef.current instanceof HTMLInputElement || inputRef.current instanceof HTMLTextAreaElement) {
+        if (
+          inputRef.current instanceof HTMLInputElement ||
+          inputRef.current instanceof HTMLTextAreaElement
+        ) {
           try {
             inputRef.current.setSelectionRange(newCursorPos, newCursorPos);
           } catch (e) {
@@ -96,7 +107,7 @@ export default function MentionInputField({
     }
   };
 
-  const baseClassName = className.includes('rounded-full') 
+  const baseClassName = className.includes('rounded-full')
     ? `w-full border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 ${className}`
     : `w-full border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#CB9729] ${className}`;
 
@@ -111,7 +122,8 @@ export default function MentionInputField({
   };
 
   const renderSuggestions = () => {
-    if (!showSuggestions || suggestions.length === 0 || !suggestionPosition) return null;
+    if (!showSuggestions || suggestions.length === 0 || !suggestionPosition)
+      return null;
 
     const suggestionsElement = (
       <div
@@ -150,4 +162,3 @@ export default function MentionInputField({
     </>
   );
 }
-

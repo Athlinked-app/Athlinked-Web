@@ -23,13 +23,16 @@ export default function FileUpload({ onFileSelect }: FileUploadProps) {
     }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video' | 'file') => {
+  const handleFileChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    type: 'image' | 'video' | 'file'
+  ) => {
     const file = event.target.files?.[0];
-      if (file) {
-        onFileSelect(file, type);
-        setIsOpen(false);
-        event.target.value = '';
-      }
+    if (file) {
+      onFileSelect(file, type);
+      setIsOpen(false);
+      event.target.value = '';
+    }
   };
 
   return (
@@ -78,22 +81,21 @@ export default function FileUpload({ onFileSelect }: FileUploadProps) {
         type="file"
         accept="image/*"
         className="hidden"
-        onChange={(e) => handleFileChange(e, 'image')}
+        onChange={e => handleFileChange(e, 'image')}
       />
       <input
         ref={videoInputRef}
         type="file"
         accept="video/*"
         className="hidden"
-        onChange={(e) => handleFileChange(e, 'video')}
+        onChange={e => handleFileChange(e, 'video')}
       />
       <input
         ref={fileInputRef}
         type="file"
         className="hidden"
-        onChange={(e) => handleFileChange(e, 'file')}
+        onChange={e => handleFileChange(e, 'file')}
       />
     </div>
   );
 }
-

@@ -7,7 +7,11 @@ const notificationModel = require('./notifications.model');
  * @param {number} offset - Number of notifications to skip
  * @returns {Promise<object>} Service result with notifications
  */
-async function getNotificationsService(recipientUserId, limit = 20, offset = 0) {
+async function getNotificationsService(
+  recipientUserId,
+  limit = 20,
+  offset = 0
+) {
   try {
     if (!recipientUserId) {
       throw new Error('Recipient user ID is required');
@@ -85,12 +89,16 @@ async function markAsReadService(notificationId, recipientUserId) {
       throw new Error('Recipient user ID is required');
     }
 
-    const notification = await notificationModel.markAsRead(notificationId, recipientUserId);
+    const notification = await notificationModel.markAsRead(
+      notificationId,
+      recipientUserId
+    );
 
     if (!notification) {
       return {
         success: false,
-        message: 'Notification not found or you do not have permission to mark it as read',
+        message:
+          'Notification not found or you do not have permission to mark it as read',
       };
     }
 
@@ -127,7 +135,10 @@ async function markAllAsReadService(recipientUserId) {
       updatedCount,
     };
   } catch (error) {
-    console.error('Mark all notifications as read service error:', error.message);
+    console.error(
+      'Mark all notifications as read service error:',
+      error.message
+    );
     throw error;
   }
 }
@@ -138,4 +149,3 @@ module.exports = {
   markAsReadService,
   markAllAsReadService,
 };
-

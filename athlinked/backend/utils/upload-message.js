@@ -31,8 +31,13 @@ const storage = multer.diskStorage({
 const fileFilter = (req, file, cb) => {
   const allowedImageTypes = /^image\/(png|jpeg|jpg|gif|webp)$/i;
   const allowedVideoTypes = /^video\/(mp4|quicktime|webm|ogg)$/i;
-  
-  if (allowedImageTypes.test(file.mimetype) || allowedVideoTypes.test(file.mimetype) || file.mimetype.startsWith('application/') || file.mimetype.startsWith('text/')) {
+
+  if (
+    allowedImageTypes.test(file.mimetype) ||
+    allowedVideoTypes.test(file.mimetype) ||
+    file.mimetype.startsWith('application/') ||
+    file.mimetype.startsWith('text/')
+  ) {
     return cb(null, true);
   } else {
     cb(new Error('File type not allowed'));
@@ -48,4 +53,3 @@ const upload = multer({
 });
 
 module.exports = upload;
-

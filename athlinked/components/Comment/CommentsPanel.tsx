@@ -65,7 +65,7 @@ export default function CommentsPanel({
   const loadComments = async () => {
     try {
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}/comments`
+        `http://localhost:3001/api/posts/${post.id}/comments`
       );
       if (response.ok) {
         const data = await response.json();
@@ -126,7 +126,7 @@ export default function CommentsPanel({
       }
 
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}/comments`,
+        `http://localhost:3001/api/posts/${post.id}/comments`,
         {
           method: 'POST',
           headers: {
@@ -199,7 +199,7 @@ export default function CommentsPanel({
       }
 
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/comments/${parentCommentId}/reply`,
+        `http://localhost:3001/api/posts/comments/${parentCommentId}/reply`,
         {
           method: 'POST',
           headers: {
@@ -301,7 +301,7 @@ export default function CommentsPanel({
                           src={
                             comment.user_profile_url.startsWith('http')
                               ? comment.user_profile_url
-                              : `https://qd9ngjg1-3001.inc1.devtunnels.ms${comment.user_profile_url}`
+                              : `http://localhost:3001${comment.user_profile_url}`
                           }
                           alt={comment.username}
                           className="w-full h-full object-cover"
@@ -356,7 +356,7 @@ export default function CommentsPanel({
                                   src={
                                     reply.user_profile_url.startsWith('http')
                                       ? reply.user_profile_url
-                                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${reply.user_profile_url}`
+                                      : `http://localhost:3001${reply.user_profile_url}`
                                   }
                                   alt={reply.username}
                                   className="w-full h-full object-cover"
@@ -407,7 +407,7 @@ export default function CommentsPanel({
                             placeholder={`Reply to ${comment.username}...`}
                             className="flex-1 px-3 py-1.5 rounded-full text-xs"
                             type="input"
-                            onKeyDown={(e) => {
+                            onKeyDown={e => {
                               if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
                                 handleAddReply(comment.id);
@@ -479,7 +479,7 @@ export default function CommentsPanel({
               placeholder="Add comment"
               className="flex-1 px-4 py-2 rounded-full text-sm"
               type="input"
-              onKeyDown={(e) => {
+              onKeyDown={e => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   e.stopPropagation();
@@ -495,7 +495,7 @@ export default function CommentsPanel({
               type="text"
               value={commentText}
               onChange={e => setCommentText(e.target.value)}
-              onKeyDown={(e) => {
+              onKeyDown={e => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   e.stopPropagation();

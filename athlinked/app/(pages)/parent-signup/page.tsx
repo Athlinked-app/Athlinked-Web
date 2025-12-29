@@ -94,7 +94,9 @@ function ParentSignupContent() {
 
     try {
       const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/parent-complete',
+
+        'http://localhost:3001/api/signup/parent-complete',
+
         {
           method: 'POST',
           headers: {

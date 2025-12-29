@@ -6,7 +6,9 @@ import RightSideBar from '@/components/RightSideBar';
 import Post, { type PostData } from '@/components/Post';
 import EditProfileModal from '@/components/Profile/EditProfileModel';
 import AboutMe from '@/components/Profile/AboutMe';
-import SocialHandles, { type SocialHandle } from '@/components/Profile/SocialHandle';
+import SocialHandles, {
+  type SocialHandle,
+} from '@/components/Profile/SocialHandle';
 import AcademicBackgrounds from '@/components/Profile/AcademicBackground';
 import type { AcademicBackground } from '@/components/Profile/AcademicBackground';
 import Achievements from '@/components/Profile/Achievements';
@@ -21,7 +23,6 @@ import HealthAndReadinessComponent from '@/components/Profile/HealthandReadiness
 import type { HealthAndReadiness } from '@/components/Profile/HealthandReadiness';
 import VideoAndMediaComponent from '@/components/Profile/VideoandMedia';
 import type { VideoAndMedia } from '@/components/Profile/VideoandMedia';
-
 
 interface CurrentUser {
   id: string;
@@ -48,25 +49,43 @@ export default function Profile() {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'activity' | 'mysave'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'activity' | 'mysave'>(
+    'profile'
+  );
   const [userBio, setUserBio] = useState<string>('');
   const [socialHandles, setSocialHandles] = useState<SocialHandle[]>([]);
-  const [academicBackgrounds, setAcademicBackgrounds] = useState<AcademicBackground[]>([]);
+  const [academicBackgrounds, setAcademicBackgrounds] = useState<
+    AcademicBackground[]
+  >([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [athleticAndPerformance, setAthleticAndPerformance] = useState<AthleticAndPerformance[]>([]);
-  const [competitionAndClubs, setCompetitionAndClubs] = useState<CompetitionAndClub[]>([]);
+  const [athleticAndPerformance, setAthleticAndPerformance] = useState<
+    AthleticAndPerformance[]
+  >([]);
+  const [competitionAndClubs, setCompetitionAndClubs] = useState<
+    CompetitionAndClub[]
+  >([]);
   const [sportsPlayed, setSportsPlayed] = useState<string>('');
-  const [characterAndLeadership, setCharacterAndLeadership] = useState<CharacterAndLeadership[]>([]);
-  const [healthAndReadiness, setHealthAndReadiness] = useState<HealthAndReadiness[]>([]);
+  const [characterAndLeadership, setCharacterAndLeadership] = useState<
+    CharacterAndLeadership[]
+  >([]);
+  const [healthAndReadiness, setHealthAndReadiness] = useState<
+    HealthAndReadiness[]
+  >([]);
   const [videoAndMedia, setVideoAndMedia] = useState<VideoAndMedia[]>([]);
 
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3001/api/posts?page=1&limit=50');
-      
+      const response = await fetch(
+        'http://localhost:3001/api/posts?page=1&limit=50'
+      );
+
       if (!response.ok) {
-        console.error('Failed to fetch posts:', response.status, response.statusText);
+        console.error(
+          'Failed to fetch posts:',
+          response.status,
+          response.statusText
+        );
         const text = await response.text();
         console.error('Response text:', text.substring(0, 200));
         setPosts([]);
@@ -84,12 +103,15 @@ export default function Profile() {
 
       const data = await response.json();
       console.log('Posts API response:', data);
-      
+
       if (data.success && data.posts) {
         const transformedPosts: PostData[] = data.posts.map((post: any) => ({
           id: post.id,
           username: post.username || 'User',
-          user_profile_url: (post.user_profile_url && post.user_profile_url.trim() !== '') ? post.user_profile_url : null,
+          user_profile_url:
+            post.user_profile_url && post.user_profile_url.trim() !== ''
+              ? post.user_profile_url
+              : null,
           user_id: post.user_id,
           post_type: post.post_type,
           caption: post.caption,
@@ -131,10 +153,12 @@ export default function Profile() {
 
   const fetchProfileData = async () => {
     if (!currentUserId) return;
-    
+
     try {
       console.log('Fetching profile data for userId:', currentUserId);
-      const response = await fetch(`http://localhost:3001/api/profile/${currentUserId}`);
+      const response = await fetch(
+        `http://localhost:3001/api/profile/${currentUserId}`
+      );
       if (response.ok) {
         const data = await response.json();
         console.log('Profile data fetched:', data);
@@ -184,8 +208,24 @@ export default function Profile() {
         if (data.user.bio) {
           setUserBio(data.user.bio);
         }
-        if (data.user.sports_played) {
-          setSportsPlayed(data.user.sports_played);
+        // Always update sports_played, even if empty (to clear it)
+        if (
+          data.user.sports_played !== undefined &&
+          data.user.sports_played !== null
+        ) {
+          // Parse PostgreSQL array format if needed
+          let sportsString = data.user.sports_played;
+          if (
+            typeof sportsString === 'string' &&
+            sportsString.startsWith('{') &&
+            sportsString.endsWith('}')
+          ) {
+            sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
+          }
+          setSportsPlayed(sportsString);
+        } else {
+          // Clear sports if null/undefined
+          setSportsPlayed('');
         }
       }
     } catch (error) {
@@ -206,7 +246,7 @@ export default function Profile() {
     }
     return profileUrl;
   };
-  
+
   // Get initials for placeholder
   const getInitials = (name?: string) => {
     if (!name) return 'U';
@@ -235,29 +275,33 @@ export default function Profile() {
             userData={{
               full_name: currentUser?.full_name,
               username: currentUser?.username,
-              profile_url: profileData?.profileImage 
-                ? (profileData.profileImage.startsWith('http') 
-                    ? profileData.profileImage 
-                    : `http://localhost:3001${profileData.profileImage}`)
+              profile_url: profileData?.profileImage
+                ? profileData.profileImage.startsWith('http')
+                  ? profileData.profileImage
+                  : `http://localhost:3001${profileData.profileImage}`
                 : currentUser?.profile_url,
               background_image_url: profileData?.coverImage
-                ? (profileData.coverImage.startsWith('http')
-                    ? profileData.coverImage
-                    : `http://localhost:3001${profileData.coverImage}`)
+                ? profileData.coverImage.startsWith('http')
+                  ? profileData.coverImage
+                  : `http://localhost:3001${profileData.coverImage}`
                 : null,
               user_type: 'coach',
               location: 'Rochester, NY', // You can fetch this from user data
               age: 35, // You can fetch this from user data
               followers_count: 10000,
-              sports_played: profileData?.sportsPlayed 
-                ? profileData.sportsPlayed.replace(/[{}"']/g, '') // Remove curly brackets and quotes
-                : '',
+              sports_played:
+                profileData?.sportsPlayed !== undefined &&
+                profileData?.sportsPlayed !== null
+                  ? typeof profileData.sportsPlayed === 'string'
+                    ? profileData.sportsPlayed.replace(/[{}"']/g, '')
+                    : ''
+                  : '',
               primary_sport: profileData?.primarySport || '',
               profile_completion: 60,
               bio: profileData?.bio || '',
               education: profileData?.education || '',
             }}
-            onSave={async (data) => {
+            onSave={async data => {
               console.log('Profile saved:', data);
 
               try {
@@ -272,6 +316,7 @@ export default function Profile() {
                   bio?: string;
                   education?: string;
                   primarySport?: string;
+                  sportsPlayed?: string;
                   profileImageUrl?: string;
                   coverImageUrl?: string;
                 } = {
@@ -285,33 +330,49 @@ export default function Profile() {
                   bioUndefined: data.bio === undefined,
                   educationUndefined: data.education === undefined,
                 });
-                
+
                 if (data.bio !== undefined) {
                   profileData.bio = data.bio || undefined; // Convert empty string to undefined
                 }
                 if (data.education !== undefined) {
                   profileData.education = data.education || undefined; // Convert empty string to undefined
                 }
-                
-                console.log('Profile data being sent to API:', profileData);
-                
-                // Handle sports - parse from sports_played string (take first sport as primary)
-                if (data.sports_played) {
-                  const sports = data.sports_played.split(',').map(s => s.trim()).filter(Boolean);
-                  if (sports.length > 0) profileData.primarySport = sports[0];
+
+                // Handle sports - update both sports_played and primary_sport
+                if (data.sports_played !== undefined) {
+                  // Send the full sports_played string to update the users table
+                  // If empty string, send empty string (not undefined) so backend can clear it
+                  profileData.sportsPlayed =
+                    data.sports_played.trim() === '' ? '' : data.sports_played;
+
+                  // Also set primary sport (first sport in the list)
+                  const sports = data.sports_played
+                    .split(',')
+                    .map(s => s.trim())
+                    .filter(Boolean);
+                  if (sports.length > 0) {
+                    profileData.primarySport = sports[0];
+                  } else {
+                    profileData.primarySport = undefined; // Clear if no sports
+                  }
                 }
+
+                console.log('Profile data being sent to API:', profileData);
 
                 // Handle image files - upload them first
                 if (data.profile_url instanceof File) {
                   const formData = new FormData();
                   formData.append('file', data.profile_url);
-                  
+
                   // Upload profile image
-                  const uploadResponse = await fetch('http://localhost:3001/api/profile/upload', {
-                    method: 'POST',
-                    body: formData,
-                  });
-                  
+                  const uploadResponse = await fetch(
+                    'http://localhost:3001/api/profile/upload',
+                    {
+                      method: 'POST',
+                      body: formData,
+                    }
+                  );
+
                   if (uploadResponse.ok) {
                     const uploadData = await uploadResponse.json();
                     if (uploadData.success && uploadData.fileUrl) {
@@ -325,13 +386,16 @@ export default function Profile() {
                 if (data.background_image_url instanceof File) {
                   const formData = new FormData();
                   formData.append('file', data.background_image_url);
-                  
+
                   // Upload cover image
-                  const uploadResponse = await fetch('http://localhost:3001/api/profile/upload', {
-                    method: 'POST',
-                    body: formData,
-                  });
-                  
+                  const uploadResponse = await fetch(
+                    'http://localhost:3001/api/profile/upload',
+                    {
+                      method: 'POST',
+                      body: formData,
+                    }
+                  );
+
                   if (uploadResponse.ok) {
                     const uploadData = await uploadResponse.json();
                     if (uploadData.success && uploadData.fileUrl) {
@@ -343,31 +407,36 @@ export default function Profile() {
                 }
 
                 // Call profile API
-                const response = await fetch('http://localhost:3001/api/profile', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(profileData),
-                });
+                const response = await fetch(
+                  'http://localhost:3001/api/profile',
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(profileData),
+                  }
+                );
 
                 if (!response.ok) {
                   const errorData = await response.json();
                   console.error('Failed to save profile:', errorData);
-                  alert('Failed to save profile: ' + (errorData.message || 'Unknown error'));
+                  alert(
+                    'Failed to save profile: ' +
+                      (errorData.message || 'Unknown error')
+                  );
                   return;
                 }
 
                 const result = await response.json();
                 console.log('Profile saved successfully:', result);
-                
+
                 // Refresh user data and profile data
                 fetchCurrentUser();
                 fetchProfileData();
               } catch (error) {
                 console.error('Error saving profile:', error);
                 alert('Error saving profile. Please try again.');
-
               }
             }}
           />
@@ -459,14 +528,22 @@ export default function Profile() {
               )}
               {activeTab === 'activity' && (
                 <div className="w-full bg-white rounded-lg p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Activity</h2>
-                  <p className="text-gray-700">Activity content will be displayed here.</p>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                    Activity
+                  </h2>
+                  <p className="text-gray-700">
+                    Activity content will be displayed here.
+                  </p>
                 </div>
               )}
               {activeTab === 'mysave' && (
                 <div className="w-full bg-white rounded-lg p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">My Save</h2>
-                  <p className="text-gray-700">Saved content will be displayed here.</p>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                    My Save
+                  </h2>
+                  <p className="text-gray-700">
+                    Saved content will be displayed here.
+                  </p>
                 </div>
               )}
             </div>
