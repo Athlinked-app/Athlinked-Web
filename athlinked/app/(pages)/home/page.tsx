@@ -23,10 +23,16 @@ export default function Landing() {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3001/api/posts?page=1&limit=50');
-      
+      const response = await fetch(
+        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts?page=1&limit=50'
+      );
+
       if (!response.ok) {
-        console.error('Failed to fetch posts:', response.status, response.statusText);
+        console.error(
+          'Failed to fetch posts:',
+          response.status,
+          response.statusText
+        );
         const text = await response.text();
         console.error('Response text:', text.substring(0, 200));
         setPosts([]);
@@ -44,12 +50,15 @@ export default function Landing() {
 
       const data = await response.json();
       console.log('Posts API response:', data);
-      
+
       if (data.success && data.posts) {
         const transformedPosts: PostData[] = data.posts.map((post: any) => ({
           id: post.id,
           username: post.username || 'User',
-          user_profile_url: (post.user_profile_url && post.user_profile_url.trim() !== '') ? post.user_profile_url : null,
+          user_profile_url:
+            post.user_profile_url && post.user_profile_url.trim() !== ''
+              ? post.user_profile_url
+              : null,
           user_id: post.user_id,
           post_type: post.post_type,
           caption: post.caption,
@@ -94,11 +103,11 @@ export default function Landing() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         response = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -130,11 +139,11 @@ export default function Landing() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };
-  
+
   // Get initials for placeholder
   const getInitials = (name?: string) => {
     if (!name) return 'U';
@@ -162,7 +171,9 @@ export default function Landing() {
           <div className="flex-shrink-0">
             <HomeHerosection
               userProfileUrl={getProfileUrl(currentUser?.profile_url)}
-              username={currentUser?.full_name || currentUser?.username || 'User'}
+              username={
+                currentUser?.full_name || currentUser?.username || 'User'
+              }
               onPostCreated={handlePostCreated}
             />
           </div>
@@ -182,8 +193,12 @@ export default function Landing() {
                   <Post
                     key={post.id}
                     post={post}
-                    currentUserProfileUrl={getProfileUrl(currentUser?.profile_url)}
-                    currentUsername={currentUser?.full_name || currentUser?.username || 'User'}
+                    currentUserProfileUrl={getProfileUrl(
+                      currentUser?.profile_url
+                    )}
+                    currentUsername={
+                      currentUser?.full_name || currentUser?.username || 'User'
+                    }
                     currentUserId={currentUserId || undefined}
                     onCommentCountUpdate={fetchPosts}
                     onPostDeleted={fetchPosts}

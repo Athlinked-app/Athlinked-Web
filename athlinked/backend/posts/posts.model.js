@@ -100,13 +100,16 @@ async function getPostById(postId) {
 }
 
 async function likePost(postId, userId, client = null) {
-  const checkQuery = 'SELECT * FROM post_likes WHERE post_id = $1 AND user_id = $2';
-  const insertLikeQuery = 'INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2)';
-  const updateCountQuery = 'UPDATE posts SET like_count = like_count + 1 WHERE id = $1 RETURNING like_count';
+  const checkQuery =
+    'SELECT * FROM post_likes WHERE post_id = $1 AND user_id = $2';
+  const insertLikeQuery =
+    'INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2)';
+  const updateCountQuery =
+    'UPDATE posts SET like_count = like_count + 1 WHERE id = $1 RETURNING like_count';
 
   try {
     const dbClient = client || pool;
-    
+
     const checkResult = await dbClient.query(checkQuery, [postId, userId]);
     if (checkResult.rows.length > 0) {
       throw new Error('Post already liked by this user');
@@ -114,7 +117,7 @@ async function likePost(postId, userId, client = null) {
 
     await dbClient.query(insertLikeQuery, [postId, userId]);
     const updateResult = await dbClient.query(updateCountQuery, [postId]);
-    
+
     return { like_count: updateResult.rows[0].like_count };
   } catch (error) {
     console.error('Error liking post:', error);
@@ -129,14 +132,20 @@ async function addComment(postId, userId, comment, client = null) {
     VALUES ($1, $2, $3, $4, NOW())
     RETURNING *
   `;
-  const updateCountQuery = 'UPDATE posts SET comment_count = comment_count + 1 WHERE id = $1 RETURNING comment_count';
+  const updateCountQuery =
+    'UPDATE posts SET comment_count = comment_count + 1 WHERE id = $1 RETURNING comment_count';
 
   try {
     const dbClient = client || pool;
-    
-    const commentResult = await dbClient.query(insertCommentQuery, [id, postId, userId, comment]);
+
+    const commentResult = await dbClient.query(insertCommentQuery, [
+      id,
+      postId,
+      userId,
+      comment,
+    ]);
     const updateResult = await dbClient.query(updateCountQuery, [postId]);
-    
+
     return {
       comment: commentResult.rows[0],
       comment_count: updateResult.rows[0].comment_count,
@@ -155,20 +164,27 @@ async function replyToComment(commentId, userId, comment, client = null) {
     VALUES ($1, $2, $3, $4, $5, NOW())
     RETURNING *
   `;
-  const updateCountQuery = 'UPDATE posts SET comment_count = comment_count + 1 WHERE id = $1 RETURNING comment_count';
+  const updateCountQuery =
+    'UPDATE posts SET comment_count = comment_count + 1 WHERE id = $1 RETURNING comment_count';
 
   try {
     const dbClient = client || pool;
-    
+
     const parentResult = await dbClient.query(getParentQuery, [commentId]);
     if (parentResult.rows.length === 0) {
       throw new Error('Parent comment not found');
     }
-    
+
     const postId = parentResult.rows[0].post_id;
-    const replyResult = await dbClient.query(insertReplyQuery, [id, postId, userId, comment, commentId]);
+    const replyResult = await dbClient.query(insertReplyQuery, [
+      id,
+      postId,
+      userId,
+      comment,
+      commentId,
+    ]);
     const updateResult = await dbClient.query(updateCountQuery, [postId]);
-    
+
     return {
       comment: replyResult.rows[0],
       comment_count: updateResult.rows[0].comment_count,
@@ -180,13 +196,16 @@ async function replyToComment(commentId, userId, comment, client = null) {
 }
 
 async function savePost(postId, userId, client = null) {
-  const checkQuery = 'SELECT * FROM post_saves WHERE post_id = $1 AND user_id = $2';
-  const insertSaveQuery = 'INSERT INTO post_saves (post_id, user_id) VALUES ($1, $2)';
-  const updateCountQuery = 'UPDATE posts SET save_count = save_count + 1 WHERE id = $1 RETURNING save_count';
+  const checkQuery =
+    'SELECT * FROM post_saves WHERE post_id = $1 AND user_id = $2';
+  const insertSaveQuery =
+    'INSERT INTO post_saves (post_id, user_id) VALUES ($1, $2)';
+  const updateCountQuery =
+    'UPDATE posts SET save_count = save_count + 1 WHERE id = $1 RETURNING save_count';
 
   try {
     const dbClient = client || pool;
-    
+
     const checkResult = await dbClient.query(checkQuery, [postId, userId]);
     if (checkResult.rows.length > 0) {
       throw new Error('Post already saved by this user');
@@ -194,7 +213,7 @@ async function savePost(postId, userId, client = null) {
 
     await dbClient.query(insertSaveQuery, [postId, userId]);
     const updateResult = await dbClient.query(updateCountQuery, [postId]);
-    
+
     return { save_count: updateResult.rows[0].save_count };
   } catch (error) {
     console.error('Error saving post:', error);
@@ -230,7 +249,10 @@ async function getCommentsByPostId(postId) {
     const comments = commentsResult.rows;
 
     for (const comment of comments) {
-      const repliesResult = await pool.query(repliesQuery, [postId, comment.id]);
+      const repliesResult = await pool.query(repliesQuery, [
+        postId,
+        comment.id,
+      ]);
       comment.replies = repliesResult.rows;
     }
 
@@ -247,12 +269,15 @@ async function deletePost(postId, userId) {
     await dbClient.query('BEGIN');
 
     await dbClient.query('DELETE FROM post_likes WHERE post_id = $1', [postId]);
-    await dbClient.query('DELETE FROM post_comments WHERE post_id = $1', [postId]);
+    await dbClient.query('DELETE FROM post_comments WHERE post_id = $1', [
+      postId,
+    ]);
     await dbClient.query('DELETE FROM post_saves WHERE post_id = $1', [postId]);
-    
-    const deleteQuery = 'DELETE FROM posts WHERE id = $1 AND user_id = $2 RETURNING id';
+
+    const deleteQuery =
+      'DELETE FROM posts WHERE id = $1 AND user_id = $2 RETURNING id';
     const result = await dbClient.query(deleteQuery, [postId, userId]);
-    
+
     await dbClient.query('COMMIT');
     return result.rows.length > 0;
   } catch (error) {
@@ -275,4 +300,3 @@ module.exports = {
   getCommentsByPostId,
   deletePost,
 };
-

@@ -17,7 +17,7 @@ async function followUserService(followerId, followingId) {
     }
 
     const success = await networkModel.followUser(followerId, followingId);
-    
+
     if (!success) {
       return {
         success: false,
@@ -48,7 +48,7 @@ async function unfollowUserService(followerId, followingId) {
     }
 
     const success = await networkModel.unfollowUser(followerId, followingId);
-    
+
     if (!success) {
       return {
         success: false,
@@ -167,4 +167,3 @@ module.exports = {
   getFollowCountsService,
   isFollowingService,
 };
-

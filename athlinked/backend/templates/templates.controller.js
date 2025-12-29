@@ -16,13 +16,7 @@ async function createTemplate(req, res) {
       });
     }
 
-    const {
-      title,
-      description,
-      file_url,
-      file_type,
-      file_size,
-    } = req.body;
+    const { title, description, file_url, file_type, file_size } = req.body;
 
     // Handle file upload
     let finalFileUrl = file_url;
@@ -89,14 +83,14 @@ async function deleteTemplate(req, res) {
   try {
     // Try to get user_id from body first, then from query, then from req.user
     const userId = req.body?.user_id || req.query?.user_id || req.user?.id;
-    
+
     console.log('Delete template request:', {
       id: req.params.id,
       userId: userId ? userId.substring(0, 8) + '...' : null,
       body: req.body,
       query: req.query,
     });
-    
+
     if (!userId) {
       return res.status(401).json({
         success: false,
@@ -144,4 +138,3 @@ module.exports = {
   getAllTemplates,
   deleteTemplate,
 };
-

@@ -13,4 +13,3 @@ router.delete('/:postId', postsController.deletePost);
 router.post('/comments/:commentId/reply', postsController.replyToComment);
 
 module.exports = router;
-

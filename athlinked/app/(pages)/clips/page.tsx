@@ -59,7 +59,9 @@ export default function ClipsPage() {
   const [commentTexts, setCommentTexts] = useState<{ [key: string]: string }>(
     {}
   );
-  const [showDeleteMenu, setShowDeleteMenu] = useState<{ [key: string]: boolean }>({});
+  const [showDeleteMenu, setShowDeleteMenu] = useState<{
+    [key: string]: boolean;
+  }>({});
   const [isDeleting, setIsDeleting] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
@@ -124,11 +126,11 @@ export default function ClipsPage() {
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -194,10 +196,10 @@ export default function ClipsPage() {
     await fetchComments(reelId);
   };
 
-      const fetchComments = async (clipId: string) => {
+  const fetchComments = async (clipId: string) => {
     try {
       const response = await fetch(
-        `http://localhost:3001/api/clips/${clipId}/comments`
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/clips/${clipId}/comments`
       );
 
       const contentType = response.headers.get('content-type');
@@ -215,7 +217,10 @@ export default function ClipsPage() {
             id: comment.id,
             author:
               comment.username || userData?.full_name?.split(' ')[0] || 'User',
-            authorAvatar: (comment.user_profile_url && comment.user_profile_url.trim() !== '') ? comment.user_profile_url : null,
+            authorAvatar:
+              comment.user_profile_url && comment.user_profile_url.trim() !== ''
+                ? comment.user_profile_url
+                : null,
             text: comment.comment,
             hasReplies: comment.replies && comment.replies.length > 0,
           })
@@ -265,11 +270,11 @@ export default function ClipsPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
       const userDataResponse = await userResponse.json();
@@ -279,7 +284,7 @@ export default function ClipsPage() {
       }
 
       const response = await fetch(
-        `http://localhost:3001/api/clips/${reelId}/comments`,
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/clips/${reelId}/comments`,
         {
           method: 'POST',
           headers: {
@@ -317,7 +322,7 @@ export default function ClipsPage() {
   const fetchClips = async () => {
     try {
       const response = await fetch(
-        'http://localhost:3001/api/clips?page=1&limit=50'
+        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/clips?page=1&limit=50'
       );
 
       const contentType = response.headers.get('content-type');
@@ -337,9 +342,12 @@ export default function ClipsPage() {
           id: clip.id,
           videoUrl: clip.video_url?.startsWith('http')
             ? clip.video_url
-            : `http://localhost:3001${clip.video_url}`,
+            : `https://qd9ngjg1-3001.inc1.devtunnels.ms${clip.video_url}`,
           author: clip.username || fallbackName,
-          authorAvatar: (clip.user_profile_url && clip.user_profile_url.trim() !== '') ? clip.user_profile_url : null,
+          authorAvatar:
+            clip.user_profile_url && clip.user_profile_url.trim() !== ''
+              ? clip.user_profile_url
+              : null,
           caption: clip.description || '',
           timestamp: formatTimestamp(clip.created_at),
           likes: clip.like_count || 0,
@@ -387,11 +395,11 @@ export default function ClipsPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
       const userData = await userResponse.json();
@@ -407,7 +415,7 @@ export default function ClipsPage() {
 
       // Upload clip via API (multipart/form-data)
       const response = await fetch(
-        'http://localhost:3001/api/clips',
+        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/clips',
         {
           method: 'POST',
           body: formData, // Don't set Content-Type, browser will set it with boundary
@@ -452,7 +460,11 @@ export default function ClipsPage() {
       return;
     }
 
-    if (!confirm('Are you sure you want to delete this clip? This action cannot be undone.')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete this clip? This action cannot be undone.'
+      )
+    ) {
       return;
     }
 
@@ -468,11 +480,11 @@ export default function ClipsPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -483,7 +495,7 @@ export default function ClipsPage() {
       // Check if user response is JSON
       const userContentType = userResponse.headers.get('content-type');
       let userDataResponse;
-      
+
       if (userContentType && userContentType.includes('application/json')) {
         try {
           userDataResponse = await userResponse.json();
@@ -495,7 +507,12 @@ export default function ClipsPage() {
         }
       } else {
         const text = await userResponse.text();
-        console.error('Non-JSON user response (status:', userResponse.status, '):', text.substring(0, 200));
+        console.error(
+          'Non-JSON user response (status:',
+          userResponse.status,
+          '):',
+          text.substring(0, 200)
+        );
         throw new Error('Server returned non-JSON response for user data');
       }
 
@@ -503,20 +520,23 @@ export default function ClipsPage() {
         throw new Error('User not found');
       }
 
-      const response = await fetch(`http://localhost:3001/api/clips/${clipId}`, {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userDataResponse.user.id,
-        }),
-      });
+      const response = await fetch(
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/clips/${clipId}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: userDataResponse.user.id,
+          }),
+        }
+      );
 
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
       let result;
-      
+
       if (contentType && contentType.includes('application/json')) {
         try {
           result = await response.json();
@@ -524,13 +544,22 @@ export default function ClipsPage() {
           console.error('JSON parse error:', jsonError);
           const text = await response.text();
           console.error('Response text:', text);
-          throw new Error(`Failed to parse response: ${text.substring(0, 100)}`);
+          throw new Error(
+            `Failed to parse response: ${text.substring(0, 100)}`
+          );
         }
       } else {
         // If not JSON, read as text to see what we got
         const text = await response.text();
-        console.error('Non-JSON response (status:', response.status, '):', text.substring(0, 200));
-        throw new Error(`Server returned non-JSON response (status: ${response.status}). Check backend logs.`);
+        console.error(
+          'Non-JSON response (status:',
+          response.status,
+          '):',
+          text.substring(0, 200)
+        );
+        throw new Error(
+          `Server returned non-JSON response (status: ${response.status}). Check backend logs.`
+        );
       }
 
       if (result.success) {
@@ -646,10 +675,12 @@ export default function ClipsPage() {
                         <div className="absolute top-4 right-4 z-20">
                           <div className="relative">
                             <button
-                              onClick={() => setShowDeleteMenu(prev => ({
-                                ...prev,
-                                [reel.id]: !prev[reel.id],
-                              }))}
+                              onClick={() =>
+                                setShowDeleteMenu(prev => ({
+                                  ...prev,
+                                  [reel.id]: !prev[reel.id],
+                                }))
+                              }
                               className="p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors backdrop-blur-sm"
                             >
                               <MoreVertical size={20} />
@@ -884,7 +915,9 @@ export default function ClipsPage() {
                           .slice(0, 2)}
                       </span>
                     ) : (
-                      <span className="text-gray-600 font-semibold text-xs">U</span>
+                      <span className="text-gray-600 font-semibold text-xs">
+                        U
+                      </span>
                     )}
                   </div>
                   <input

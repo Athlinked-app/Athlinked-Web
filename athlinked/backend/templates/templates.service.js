@@ -7,14 +7,8 @@ const templatesModel = require('./templates.model');
  */
 async function createTemplateService(templateData) {
   try {
-    const {
-      user_id,
-      title,
-      description,
-      file_url,
-      file_type,
-      file_size,
-    } = templateData;
+    const { user_id, title, description, file_url, file_type, file_size } =
+      templateData;
 
     if (!file_url) {
       throw new Error('file_url is required');
@@ -105,10 +99,15 @@ async function softDeleteTemplateService(templateId, userId) {
       throw new Error('User ID is required');
     }
 
-    const template = await templatesModel.softDeleteTemplate(templateId, userId);
+    const template = await templatesModel.softDeleteTemplate(
+      templateId,
+      userId
+    );
 
     if (!template) {
-      throw new Error('Template not found or you do not have permission to delete it');
+      throw new Error(
+        'Template not found or you do not have permission to delete it'
+      );
     }
 
     return {
@@ -127,4 +126,3 @@ module.exports = {
   deleteTemplateService,
   softDeleteTemplateService,
 };
-

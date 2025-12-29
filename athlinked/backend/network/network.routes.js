@@ -41,4 +41,3 @@ router.get('/counts/:userId', networkController.getFollowCounts);
 router.get('/is-following/:userId', networkController.isFollowing);
 
 module.exports = router;
-

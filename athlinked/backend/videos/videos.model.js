@@ -8,13 +8,7 @@ const { v4: uuidv4 } = require('uuid');
  * @returns {Promise<object>} Created video data
  */
 async function createVideo(videoData, client = null) {
-  const {
-    user_id,
-    title,
-    description,
-    video_url,
-    video_duration,
-  } = videoData;
+  const { user_id, title, description, video_url, video_duration } = videoData;
 
   const id = uuidv4();
   const query = `
@@ -95,9 +89,10 @@ async function deleteVideo(videoId, userId) {
   try {
     await dbClient.query('BEGIN');
 
-    const deleteQuery = 'DELETE FROM videos WHERE id = $1 AND user_id = $2 RETURNING id';
+    const deleteQuery =
+      'DELETE FROM videos WHERE id = $1 AND user_id = $2 RETURNING id';
     const result = await dbClient.query(deleteQuery, [videoId, userId]);
-    
+
     await dbClient.query('COMMIT');
     return result.rows.length > 0;
   } catch (error) {
@@ -140,4 +135,3 @@ module.exports = {
   deleteVideo,
   softDeleteVideo,
 };
-

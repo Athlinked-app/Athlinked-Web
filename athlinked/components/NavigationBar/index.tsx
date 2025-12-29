@@ -17,7 +17,7 @@ import {
   LogOut,
   X,
 } from 'lucide-react';
- 
+
 interface NavigationBarProps {
   activeItem?: string;
   userName?: string;
@@ -59,11 +59,11 @@ export default function NavigationBar({
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -111,22 +111,34 @@ export default function NavigationBar({
     { id: 'help', icon: HelpCircle, label: 'Help & Faq' },
     { id: 'logout', icon: LogOut, label: 'Logout' },
   ];
- 
+
   const userName = propUserName || userData?.full_name || 'User';
-  
-  const rawProfileUrl = propUserProfileUrl || (userData?.profile_url && typeof userData.profile_url === 'string' && userData.profile_url.trim() !== '' ? userData.profile_url : null);
-  
-  const userProfileUrl = rawProfileUrl && rawProfileUrl.trim() !== ''
-    ? (rawProfileUrl.startsWith('http') 
-        ? rawProfileUrl 
+
+  const rawProfileUrl =
+    propUserProfileUrl ||
+    (userData?.profile_url &&
+    typeof userData.profile_url === 'string' &&
+    userData.profile_url.trim() !== ''
+      ? userData.profile_url
+      : null);
+
+  const userProfileUrl =
+    rawProfileUrl && rawProfileUrl.trim() !== ''
+      ? rawProfileUrl.startsWith('http')
+        ? rawProfileUrl
         : rawProfileUrl.startsWith('/') && !rawProfileUrl.startsWith('/assets')
-          ? `http://localhost:3001${rawProfileUrl}`
-          : rawProfileUrl)
-    : null;
-    
-  const userRole = propUserRole || (userData?.user_type ? userData.user_type.charAt(0).toUpperCase() + userData.user_type.slice(1).toLowerCase() : 'Athlete');
+          ? `https://qd9ngjg1-3001.inc1.devtunnels.ms${rawProfileUrl}`
+          : rawProfileUrl
+      : null;
+
+  const userRole =
+    propUserRole ||
+    (userData?.user_type
+      ? userData.user_type.charAt(0).toUpperCase() +
+        userData.user_type.slice(1).toLowerCase()
+      : 'Athlete');
   const displayName = userName?.split(' ')[0] || 'User';
-  
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -162,14 +174,14 @@ export default function NavigationBar({
           </div>
         </div>
       </div>
- 
+
       {/* Navigation Menu */}
       <nav className="flex-1 p-4 overflow-y-auto">
         <ul className="space-y-1">
           {menuItems.map(item => {
             const Icon = item.icon;
             const isActive = activeItem === item.id;
- 
+
             if (item.id === 'logout') {
               return (
                 <li key={item.id}>
@@ -187,7 +199,7 @@ export default function NavigationBar({
                 </li>
               );
             }
- 
+
             const getHref = () => {
               switch (item.id) {
                 case 'home':
@@ -239,7 +251,7 @@ export default function NavigationBar({
           })}
         </ul>
       </nav>
- 
+
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <>
@@ -248,7 +260,7 @@ export default function NavigationBar({
             className="fixed inset-0 backdrop-blur-sm z-50"
             onClick={() => setShowLogoutConfirm(false)}
           ></div>
- 
+
           {/* Modal */}
           <div className="fixed inset-0 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
@@ -263,12 +275,12 @@ export default function NavigationBar({
                   <X size={20} />
                 </button>
               </div>
- 
+
               <p className="text-gray-600 mb-6">
                 Are you sure you want to logout? You will need to login again to
                 access your account.
               </p>
- 
+
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => setShowLogoutConfirm(false)}

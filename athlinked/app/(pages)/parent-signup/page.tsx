@@ -32,11 +32,11 @@ function ParentSignupContent() {
         let response;
         if (username) {
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else if (email) {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(email)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(email)}`
           );
         }
 
@@ -93,17 +93,20 @@ function ParentSignupContent() {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/signup/parent-complete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: username || null,
-          email: email || null,
-          password: password,
-        }),
-      });
+      const response = await fetch(
+        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/parent-complete',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username: username || null,
+            email: email || null,
+            password: password,
+          }),
+        }
+      );
 
       const data = await response.json();
 

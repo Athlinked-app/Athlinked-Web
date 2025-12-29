@@ -85,7 +85,7 @@ export default function ShareModal({
       },
     ];
   };
-  
+
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -115,7 +115,7 @@ export default function ShareModal({
     if (selectedUsers.size === 0) return;
 
     const selectedUserIds = Array.from(selectedUsers);
-    
+
     const shareData = {
       post_id: post.id,
       shared_with: selectedUserIds,
@@ -196,7 +196,9 @@ export default function ShareModal({
         {/* Users List */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">All groups</h3>
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">
+              All groups
+            </h3>
             <div className="space-y-2">
               {filteredUsers.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
@@ -225,7 +227,9 @@ export default function ShareModal({
                         )}
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                        <p className="text-sm font-medium text-gray-900">
+                          {user.name}
+                        </p>
                         {user.isGroup && (
                           <p className="text-xs text-gray-500">Group</p>
                         )}
@@ -281,4 +285,3 @@ export default function ShareModal({
     </div>
   );
 }
-

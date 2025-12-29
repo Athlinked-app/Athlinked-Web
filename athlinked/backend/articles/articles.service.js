@@ -7,12 +7,7 @@ const articlesModel = require('./articles.model');
  */
 async function createArticleService(articleData) {
   try {
-    const {
-      user_id,
-      title,
-      description,
-      article_link,
-    } = articleData;
+    const { user_id, title, description, article_link } = articleData;
 
     if (!article_link) {
       throw new Error('article_link is required');
@@ -104,7 +99,9 @@ async function softDeleteArticleService(articleId, userId) {
     const article = await articlesModel.softDeleteArticle(articleId, userId);
 
     if (!article) {
-      throw new Error('Article not found or you do not have permission to delete it');
+      throw new Error(
+        'Article not found or you do not have permission to delete it'
+      );
     }
 
     return {
@@ -123,4 +120,3 @@ module.exports = {
   deleteArticleService,
   softDeleteArticleService,
 };
-

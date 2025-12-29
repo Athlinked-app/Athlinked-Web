@@ -23,7 +23,12 @@ const storage = multer.diskStorage({
       }
     }
     if (req.body && req.body.post_type) {
-      prefix = req.body.post_type === 'video' ? 'post-video-' : req.body.post_type === 'photo' ? 'post-photo-' : prefix;
+      prefix =
+        req.body.post_type === 'video'
+          ? 'post-video-'
+          : req.body.post_type === 'photo'
+            ? 'post-photo-'
+            : prefix;
     }
     cb(null, prefix + uniqueSuffix + ext);
   },

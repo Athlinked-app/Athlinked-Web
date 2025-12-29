@@ -69,11 +69,11 @@ export default function ManageResourcesPage() {
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -96,7 +96,8 @@ export default function ManageResourcesPage() {
     return {
       id: article.id,
       title: article.title || 'Untitled',
-      image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=500&h=300&fit=crop',
+      image:
+        'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=500&h=300&fit=crop',
       link: article.article_link,
       type: 'article',
     };
@@ -104,13 +105,16 @@ export default function ManageResourcesPage() {
 
   const mapVideoToResource = (video: Video): Resource => {
     const videoUrl = video.video_url
-      ? (video.video_url.startsWith('http') ? video.video_url : `http://localhost:3001${video.video_url}`)
+      ? video.video_url.startsWith('http')
+        ? video.video_url
+        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${video.video_url}`
       : undefined;
-    
+
     return {
       id: video.id,
       title: video.title || 'Untitled',
-      image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=500&h=300&fit=crop',
+      image:
+        'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=500&h=300&fit=crop',
       link: videoUrl,
       type: 'video',
     };
@@ -118,13 +122,16 @@ export default function ManageResourcesPage() {
 
   const mapTemplateToResource = (template: Template): Resource => {
     const fileUrl = template.file_url
-      ? (template.file_url.startsWith('http') ? template.file_url : `http://localhost:3001${template.file_url}`)
+      ? template.file_url.startsWith('http')
+        ? template.file_url
+        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${template.file_url}`
       : undefined;
-    
+
     return {
       id: template.id,
       title: template.title || 'Untitled',
-      image: 'https://images.unsplash.com/photo-1568667256549-094345857637?w=500&h=300&fit=crop',
+      image:
+        'https://images.unsplash.com/photo-1568667256549-094345857637?w=500&h=300&fit=crop',
       link: fileUrl,
       type: 'pdf',
     };
@@ -135,13 +142,13 @@ export default function ManageResourcesPage() {
     try {
       setLoading(true);
       let endpoint = '';
-      
+
       if (activeTab === 'guides') {
-        endpoint = 'http://localhost:3001/api/articles';
+        endpoint = 'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/articles';
       } else if (activeTab === 'videos') {
-        endpoint = 'http://localhost:3001/api/videos';
+        endpoint = 'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/videos';
       } else {
-        endpoint = 'http://localhost:3001/api/templates';
+        endpoint = 'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/templates';
       }
 
       const response = await fetch(endpoint);
@@ -155,7 +162,7 @@ export default function ManageResourcesPage() {
       const data = await response.json();
       if (data.success) {
         let mappedResources: Resource[] = [];
-        
+
         if (activeTab === 'guides' && data.articles) {
           mappedResources = data.articles.map(mapArticleToResource);
         } else if (activeTab === 'videos' && data.videos) {
@@ -163,7 +170,7 @@ export default function ManageResourcesPage() {
         } else if (activeTab === 'templates' && data.templates) {
           mappedResources = data.templates.map(mapTemplateToResource);
         }
-        
+
         setResources(mappedResources);
       } else {
         setResources([]);
@@ -209,11 +216,11 @@ export default function ManageResourcesPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -229,11 +236,11 @@ export default function ManageResourcesPage() {
       // Determine endpoint based on active tab
       let endpoint = '';
       if (activeTab === 'guides') {
-        endpoint = `http://localhost:3001/api/articles/${resourceToDelete}`;
+        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/articles/${resourceToDelete}`;
       } else if (activeTab === 'videos') {
-        endpoint = `http://localhost:3001/api/videos/${resourceToDelete}`;
+        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/videos/${resourceToDelete}`;
       } else {
-        endpoint = `http://localhost:3001/api/templates/${resourceToDelete}`;
+        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/templates/${resourceToDelete}`;
       }
 
       // Send DELETE request with user_id in body (same pattern as Post component)
@@ -312,22 +319,25 @@ export default function ManageResourcesPage() {
     try {
       const { title } = await scrapeArticleMetadata(articleUrl);
 
-      const response = await fetch('http://localhost:3001/api/articles', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: currentUserId,
-          title: title,
-          article_link: articleUrl,
-        }),
-      });
+      const response = await fetch(
+        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/articles',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: currentUserId,
+            title: title,
+            article_link: articleUrl,
+          }),
+        }
+      );
 
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
       let data;
-      
+
       if (contentType && contentType.includes('application/json')) {
         try {
           data = await response.json();
@@ -335,13 +345,22 @@ export default function ManageResourcesPage() {
           console.error('JSON parse error:', jsonError);
           const text = await response.text();
           console.error('Response text:', text);
-          throw new Error(`Failed to parse response: ${text.substring(0, 100)}`);
+          throw new Error(
+            `Failed to parse response: ${text.substring(0, 100)}`
+          );
         }
       } else {
         // If not JSON, read as text to see what we got
         const text = await response.text();
-        console.error('Non-JSON response (status:', response.status, '):', text.substring(0, 200));
-        throw new Error(`Server returned non-JSON response (status: ${response.status}). Check backend logs.`);
+        console.error(
+          'Non-JSON response (status:',
+          response.status,
+          '):',
+          text.substring(0, 200)
+        );
+        throw new Error(
+          `Server returned non-JSON response (status: ${response.status}). Check backend logs.`
+        );
       }
 
       if (response.ok) {
@@ -415,15 +434,18 @@ export default function ManageResourcesPage() {
 
                 formData.append('video_duration', duration.toString());
 
-                const response = await fetch('http://localhost:3001/api/videos', {
-                  method: 'POST',
-                  body: formData,
-                });
+                const response = await fetch(
+                  'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/videos',
+                  {
+                    method: 'POST',
+                    body: formData,
+                  }
+                );
 
                 // Check if response is JSON
                 const contentType = response.headers.get('content-type');
                 let data;
-                
+
                 if (contentType && contentType.includes('application/json')) {
                   try {
                     data = await response.json();
@@ -431,12 +453,21 @@ export default function ManageResourcesPage() {
                     console.error('JSON parse error:', jsonError);
                     const text = await response.text();
                     console.error('Response text:', text);
-                    throw new Error(`Failed to parse response: ${text.substring(0, 100)}`);
+                    throw new Error(
+                      `Failed to parse response: ${text.substring(0, 100)}`
+                    );
                   }
                 } else {
                   const text = await response.text();
-                  console.error('Non-JSON response (status:', response.status, '):', text.substring(0, 200));
-                  throw new Error(`Server returned non-JSON response (status: ${response.status}). Check backend logs.`);
+                  console.error(
+                    'Non-JSON response (status:',
+                    response.status,
+                    '):',
+                    text.substring(0, 200)
+                  );
+                  throw new Error(
+                    `Server returned non-JSON response (status: ${response.status}). Check backend logs.`
+                  );
                 }
 
                 if (response.ok) {
@@ -463,15 +494,18 @@ export default function ManageResourcesPage() {
               formData.append('file_type', file.type);
               formData.append('file_size', file.size.toString());
 
-              const response = await fetch('http://localhost:3001/api/templates', {
-                method: 'POST',
-                body: formData,
-              });
+              const response = await fetch(
+                'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/templates',
+                {
+                  method: 'POST',
+                  body: formData,
+                }
+              );
 
               // Check if response is JSON
               const contentType = response.headers.get('content-type');
               let data;
-              
+
               if (contentType && contentType.includes('application/json')) {
                 try {
                   data = await response.json();
@@ -479,12 +513,21 @@ export default function ManageResourcesPage() {
                   console.error('JSON parse error:', jsonError);
                   const text = await response.text();
                   console.error('Response text:', text);
-                  throw new Error(`Failed to parse response: ${text.substring(0, 100)}`);
+                  throw new Error(
+                    `Failed to parse response: ${text.substring(0, 100)}`
+                  );
                 }
               } else {
                 const text = await response.text();
-                console.error('Non-JSON response (status:', response.status, '):', text.substring(0, 200));
-                throw new Error(`Server returned non-JSON response (status: ${response.status}). Check backend logs.`);
+                console.error(
+                  'Non-JSON response (status:',
+                  response.status,
+                  '):',
+                  text.substring(0, 200)
+                );
+                throw new Error(
+                  `Server returned non-JSON response (status: ${response.status}). Check backend logs.`
+                );
               }
 
               if (response.ok) {
@@ -606,7 +649,9 @@ export default function ManageResourcesPage() {
               {/* Resource Grid */}
               {loading ? (
                 <div className="text-center py-16">
-                  <p className="text-gray-500 text-base">Loading resources...</p>
+                  <p className="text-gray-500 text-base">
+                    Loading resources...
+                  </p>
                 </div>
               ) : (
                 <>
@@ -677,7 +722,8 @@ export default function ManageResourcesPage() {
                 Confirm Delete
               </h3>
               <p className="text-gray-600 mb-6">
-                Are you sure you want to delete this resource? This action cannot be undone.
+                Are you sure you want to delete this resource? This action
+                cannot be undone.
               </p>
               <div className="flex gap-3">
                 <button

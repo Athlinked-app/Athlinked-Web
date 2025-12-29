@@ -256,11 +256,14 @@ async function deleteClip(clipId, userId) {
   try {
     await dbClient.query('BEGIN');
 
-    await dbClient.query('DELETE FROM clip_comments WHERE clip_id = $1', [clipId]);
-    
-    const deleteQuery = 'DELETE FROM clips WHERE id = $1 AND user_id = $2 RETURNING id';
+    await dbClient.query('DELETE FROM clip_comments WHERE clip_id = $1', [
+      clipId,
+    ]);
+
+    const deleteQuery =
+      'DELETE FROM clips WHERE id = $1 AND user_id = $2 RETURNING id';
     const result = await dbClient.query(deleteQuery, [clipId, userId]);
-    
+
     await dbClient.query('COMMIT');
     return result.rows.length > 0;
   } catch (error) {

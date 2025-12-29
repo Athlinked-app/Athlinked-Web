@@ -66,12 +66,12 @@ export function useSaveStatus(postId: string) {
     };
 
     checkSavedStatus();
-    
+
     // Listen for storage changes
     const handleStorageChange = () => {
       checkSavedStatus();
     };
-    
+
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, [postId]);
@@ -88,13 +88,18 @@ export function toggleSave(postId: string): boolean {
   if (savedPosts.includes(postId)) {
     // Unsave
     const updatedSavedPosts = savedPosts.filter((id: string) => id !== postId);
-    localStorage.setItem('athlinked_saved_posts', JSON.stringify(updatedSavedPosts));
+    localStorage.setItem(
+      'athlinked_saved_posts',
+      JSON.stringify(updatedSavedPosts)
+    );
     return false;
   } else {
     // Save
     const updatedSavedPosts = [...savedPosts, postId];
-    localStorage.setItem('athlinked_saved_posts', JSON.stringify(updatedSavedPosts));
+    localStorage.setItem(
+      'athlinked_saved_posts',
+      JSON.stringify(updatedSavedPosts)
+    );
     return true;
   }
 }
-

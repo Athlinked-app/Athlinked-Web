@@ -11,12 +11,16 @@ interface User {
 }
 
 export default function NetworkPage() {
-  const [activeTab, setActiveTab] = useState<'followers' | 'following'>('followers');
+  const [activeTab, setActiveTab] = useState<'followers' | 'following'>(
+    'followers'
+  );
   const [followers, setFollowers] = useState<User[]>([]);
   const [following, setFollowing] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [followStatuses, setFollowStatuses] = useState<{ [key: string]: boolean }>({});
+  const [followStatuses, setFollowStatuses] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   // Fetch current user ID
   useEffect(() => {
@@ -31,11 +35,11 @@ export default function NetworkPage() {
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -62,7 +66,7 @@ export default function NetworkPage() {
 
       // Fetch followers
       const followersResponse = await fetch(
-        `http://localhost:3001/api/network/followers/${currentUserId}`
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/followers/${currentUserId}`
       );
       let followersList: User[] = [];
       if (followersResponse.ok) {
@@ -75,7 +79,7 @@ export default function NetworkPage() {
 
       // Fetch following
       const followingResponse = await fetch(
-        `http://localhost:3001/api/network/following/${currentUserId}`
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/following/${currentUserId}`
       );
       let followingList: User[] = [];
       if (followingResponse.ok) {
@@ -92,13 +96,13 @@ export default function NetworkPage() {
       followingList.forEach((user: User) => {
         statuses[user.id] = true;
       });
-      
+
       // Check follow status for followers who are not in following list
       for (const user of followersList) {
         if (user.id !== currentUserId && !statuses[user.id]) {
           try {
             const isFollowingResponse = await fetch(
-              `http://localhost:3001/api/network/is-following/${user.id}?follower_id=${currentUserId}`
+              `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/is-following/${user.id}?follower_id=${currentUserId}`
             );
             if (isFollowingResponse.ok) {
               const isFollowingData = await isFollowingResponse.json();
@@ -107,7 +111,10 @@ export default function NetworkPage() {
               }
             }
           } catch (error) {
-            console.error(`Error checking follow status for ${user.id}:`, error);
+            console.error(
+              `Error checking follow status for ${user.id}:`,
+              error
+            );
           }
         }
       }
@@ -158,17 +165,22 @@ export default function NetworkPage() {
   };
 
   // Get profile URL helper
-  const getProfileUrl = (profileUrl: string | null | undefined): string | null => {
+  const getProfileUrl = (
+    profileUrl: string | null | undefined
+  ): string | null => {
     if (!profileUrl || profileUrl.trim() === '') return null;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };
 
   // Handle follow/unfollow
-  const handleFollowToggle = async (userId: string, isCurrentlyFollowing: boolean) => {
+  const handleFollowToggle = async (
+    userId: string,
+    isCurrentlyFollowing: boolean
+  ) => {
     if (!currentUserId) {
       alert('You must be logged in to follow users');
       return;
@@ -176,8 +188,8 @@ export default function NetworkPage() {
 
     try {
       const endpoint = isCurrentlyFollowing
-        ? `http://localhost:3001/api/network/unfollow/${userId}`
-        : `http://localhost:3001/api/network/follow/${userId}`;
+        ? `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/unfollow/${userId}`
+        : `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/follow/${userId}`;
 
       const userIdentifier = localStorage.getItem('userEmail');
       if (!userIdentifier) {
@@ -190,11 +202,11 @@ export default function NetworkPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -220,7 +232,7 @@ export default function NetworkPage() {
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
       let result;
-      
+
       if (contentType && contentType.includes('application/json')) {
         try {
           result = await response.json();
@@ -228,12 +240,21 @@ export default function NetworkPage() {
           console.error('JSON parse error:', jsonError);
           const text = await response.text();
           console.error('Response text:', text);
-          throw new Error(`Failed to parse response: ${text.substring(0, 100)}`);
+          throw new Error(
+            `Failed to parse response: ${text.substring(0, 100)}`
+          );
         }
       } else {
         const text = await response.text();
-        console.error('Non-JSON response (status:', response.status, '):', text.substring(0, 200));
-        throw new Error(`Server returned non-JSON response (status: ${response.status}). Check backend logs.`);
+        console.error(
+          'Non-JSON response (status:',
+          response.status,
+          '):',
+          text.substring(0, 200)
+        );
+        throw new Error(
+          `Server returned non-JSON response (status: ${response.status}). Check backend logs.`
+        );
       }
 
       if (result.success) {
@@ -246,7 +267,7 @@ export default function NetworkPage() {
         // Refresh the lists
         if (activeTab === 'followers') {
           const followersResponse = await fetch(
-            `http://localhost:3001/api/network/followers/${currentUserId}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/followers/${currentUserId}`
           );
           if (followersResponse.ok) {
             const followersData = await followersResponse.json();
@@ -256,7 +277,7 @@ export default function NetworkPage() {
           }
         } else {
           const followingResponse = await fetch(
-            `http://localhost:3001/api/network/following/${currentUserId}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/following/${currentUserId}`
           );
           if (followingResponse.ok) {
             const followingData = await followingResponse.json();
@@ -265,13 +286,20 @@ export default function NetworkPage() {
             }
           }
         }
-
       } else {
-        alert(result.message || `Failed to ${isCurrentlyFollowing ? 'unfollow' : 'follow'} user`);
+        alert(
+          result.message ||
+            `Failed to ${isCurrentlyFollowing ? 'unfollow' : 'follow'} user`
+        );
       }
     } catch (error) {
-      console.error(`Error ${isCurrentlyFollowing ? 'unfollowing' : 'following'} user:`, error);
-      alert(`Failed to ${isCurrentlyFollowing ? 'unfollow' : 'follow'} user. Please try again.`);
+      console.error(
+        `Error ${isCurrentlyFollowing ? 'unfollowing' : 'following'} user:`,
+        error
+      );
+      alert(
+        `Failed to ${isCurrentlyFollowing ? 'unfollow' : 'follow'} user. Please try again.`
+      );
     }
   };
 
@@ -280,7 +308,7 @@ export default function NetworkPage() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <NavigationBar activeItem="network" />
-      
+
       <div className="flex-1 flex p-5 gap-5">
         {/* Main Content */}
         <div className="flex-1 bg-white rounded-xl p-6">
@@ -326,7 +354,7 @@ export default function NetworkPage() {
                 {currentList.map(user => {
                   const isFollowing = followStatuses[user.id] || false;
                   const profileUrl = getProfileUrl(user.profile_url);
-                  
+
                   return (
                     <div
                       key={user.id}
@@ -347,7 +375,9 @@ export default function NetworkPage() {
                           )}
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900">{user.username || 'User'}</div>
+                          <div className="font-medium text-gray-900">
+                            {user.username || 'User'}
+                          </div>
                           <div className="text-sm text-gray-500">Athlete</div>
                         </div>
                       </div>
@@ -367,7 +397,6 @@ export default function NetworkPage() {
               </div>
             )}
           </div>
-
         </div>
 
         {/* Right Sidebar */}
@@ -378,4 +407,3 @@ export default function NetworkPage() {
     </div>
   );
 }
-

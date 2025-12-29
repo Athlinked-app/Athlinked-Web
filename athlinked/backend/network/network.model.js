@@ -12,9 +12,13 @@ async function followUser(followerId, followingId) {
   try {
     await dbClient.query('BEGIN');
 
-    const checkQuery = 'SELECT id FROM user_follows WHERE follower_id = $1 AND following_id = $2';
-    const checkResult = await dbClient.query(checkQuery, [followerId, followingId]);
-    
+    const checkQuery =
+      'SELECT id FROM user_follows WHERE follower_id = $1 AND following_id = $2';
+    const checkResult = await dbClient.query(checkQuery, [
+      followerId,
+      followingId,
+    ]);
+
     if (checkResult.rows.length > 0) {
       await dbClient.query('ROLLBACK');
       return false;
@@ -26,8 +30,9 @@ async function followUser(followerId, followingId) {
     }
 
     const followerQuery = 'SELECT username, full_name FROM users WHERE id = $1';
-    const followingQuery = 'SELECT username, full_name FROM users WHERE id = $1';
-    
+    const followingQuery =
+      'SELECT username, full_name FROM users WHERE id = $1';
+
     const [followerResult, followingResult] = await Promise.all([
       dbClient.query(followerQuery, [followerId]),
       dbClient.query(followingQuery, [followingId]),
@@ -38,15 +43,27 @@ async function followUser(followerId, followingId) {
       throw new Error('User not found');
     }
 
-    const followerUsername = followerResult.rows[0].username || followerResult.rows[0].full_name || 'User';
-    const followingUsername = followingResult.rows[0].username || followingResult.rows[0].full_name || 'User';
+    const followerUsername =
+      followerResult.rows[0].username ||
+      followerResult.rows[0].full_name ||
+      'User';
+    const followingUsername =
+      followingResult.rows[0].username ||
+      followingResult.rows[0].full_name ||
+      'User';
 
     const id = uuidv4();
     const insertQuery = `
       INSERT INTO user_follows (id, follower_id, following_id, follower_username, following_username, created_at)
       VALUES ($1, $2, $3, $4, $5, NOW())
     `;
-    await dbClient.query(insertQuery, [id, followerId, followingId, followerUsername, followingUsername]);
+    await dbClient.query(insertQuery, [
+      id,
+      followerId,
+      followingId,
+      followerUsername,
+      followingUsername,
+    ]);
 
     await dbClient.query(
       'UPDATE users SET following = following + 1 WHERE id = $1',
@@ -80,9 +97,13 @@ async function unfollowUser(followerId, followingId) {
   try {
     await dbClient.query('BEGIN');
 
-    const checkQuery = 'SELECT id FROM user_follows WHERE follower_id = $1 AND following_id = $2';
-    const checkResult = await dbClient.query(checkQuery, [followerId, followingId]);
-    
+    const checkQuery =
+      'SELECT id FROM user_follows WHERE follower_id = $1 AND following_id = $2';
+    const checkResult = await dbClient.query(checkQuery, [
+      followerId,
+      followingId,
+    ]);
+
     if (checkResult.rows.length === 0) {
       await dbClient.query('ROLLBACK');
       return false;
@@ -130,7 +151,7 @@ async function getFollowers(userId) {
     WHERE uf.following_id = $1
     ORDER BY uf.created_at DESC
   `;
-  
+
   try {
     const result = await pool.query(query, [userId]);
     return result.rows;
@@ -156,7 +177,7 @@ async function getFollowing(userId) {
     WHERE uf.follower_id = $1
     ORDER BY uf.created_at DESC
   `;
-  
+
   try {
     const result = await pool.query(query, [userId]);
     return result.rows;
@@ -173,7 +194,7 @@ async function getFollowing(userId) {
  */
 async function getFollowCounts(userId) {
   const query = 'SELECT followers, following FROM users WHERE id = $1';
-  
+
   try {
     const result = await pool.query(query, [userId]);
     if (result.rows.length === 0) {
@@ -196,8 +217,9 @@ async function getFollowCounts(userId) {
  * @returns {Promise<boolean>} True if following, false otherwise
  */
 async function isFollowing(followerId, followingId) {
-  const query = 'SELECT id FROM user_follows WHERE follower_id = $1 AND following_id = $2';
-  
+  const query =
+    'SELECT id FROM user_follows WHERE follower_id = $1 AND following_id = $2';
+
   try {
     const result = await pool.query(query, [followerId, followingId]);
     return result.rows.length > 0;
@@ -215,4 +237,3 @@ module.exports = {
   getFollowCounts,
   isFollowing,
 };
-

@@ -24,7 +24,10 @@ async function followUser(req, res) {
       });
     }
 
-    const result = await networkService.followUserService(followerId, followingId);
+    const result = await networkService.followUserService(
+      followerId,
+      followingId
+    );
     return res.status(200).json(result);
   } catch (error) {
     console.error('Follow user controller error:', error);
@@ -65,7 +68,10 @@ async function unfollowUser(req, res) {
       });
     }
 
-    const result = await networkService.unfollowUserService(followerId, followingId);
+    const result = await networkService.unfollowUserService(
+      followerId,
+      followingId
+    );
     return res.status(200).json(result);
   } catch (error) {
     console.error('Unfollow user controller error:', error);
@@ -174,7 +180,10 @@ async function isFollowing(req, res) {
       });
     }
 
-    const result = await networkService.isFollowingService(followerId, followingId);
+    const result = await networkService.isFollowingService(
+      followerId,
+      followingId
+    );
     return res.status(200).json(result);
   } catch (error) {
     console.error('Is following controller error:', error);
@@ -193,4 +202,3 @@ module.exports = {
   getFollowCounts,
   isFollowing,
 };
-

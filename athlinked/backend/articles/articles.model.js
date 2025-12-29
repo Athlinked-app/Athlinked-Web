@@ -8,12 +8,7 @@ const { v4: uuidv4 } = require('uuid');
  * @returns {Promise<object>} Created article data
  */
 async function createArticle(articleData, client = null) {
-  const {
-    user_id,
-    title,
-    description,
-    article_link,
-  } = articleData;
+  const { user_id, title, description, article_link } = articleData;
 
   const id = uuidv4();
   const query = `
@@ -92,9 +87,10 @@ async function deleteArticle(articleId, userId) {
   try {
     await dbClient.query('BEGIN');
 
-    const deleteQuery = 'DELETE FROM articles WHERE id = $1 AND user_id = $2 RETURNING id';
+    const deleteQuery =
+      'DELETE FROM articles WHERE id = $1 AND user_id = $2 RETURNING id';
     const result = await dbClient.query(deleteQuery, [articleId, userId]);
-    
+
     await dbClient.query('COMMIT');
     return result.rows.length > 0;
   } catch (error) {
@@ -137,4 +133,3 @@ module.exports = {
   deleteArticle,
   softDeleteArticle,
 };
-

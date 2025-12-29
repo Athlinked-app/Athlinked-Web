@@ -1,7 +1,7 @@
 'use client';
- 
+
 import { useState, useEffect } from 'react';
- 
+
 interface Person {
   id: string;
   name: string;
@@ -9,7 +9,7 @@ interface Person {
   avatar: string | null;
   isFollowing: boolean;
 }
- 
+
 export default function RightSideBar() {
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,7 +29,7 @@ export default function RightSideBar() {
     if (!profileUrl || profileUrl.trim() === '') return null;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };
@@ -38,7 +38,7 @@ export default function RightSideBar() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         let userId: string | null = null;
         const userIdentifier = localStorage.getItem('userEmail');
         if (userIdentifier) {
@@ -47,11 +47,11 @@ export default function RightSideBar() {
             if (userIdentifier.startsWith('username:')) {
               const username = userIdentifier.replace('username:', '');
               response = await fetch(
-                `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+                `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
               );
             } else {
               response = await fetch(
-                `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+                `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
               );
             }
 
@@ -69,7 +69,7 @@ export default function RightSideBar() {
 
         const excludeParam = userId ? `&excludeUserId=${userId}` : '';
         const response = await fetch(
-          `http://localhost:3001/api/signup/users?limit=10${excludeParam}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/users?limit=10${excludeParam}`
         );
 
         if (!response.ok) {
@@ -86,7 +86,7 @@ export default function RightSideBar() {
               if (userId) {
                 try {
                   const isFollowingResponse = await fetch(
-                    `http://localhost:3001/api/network/is-following/${user.id}?follower_id=${userId}`
+                    `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/is-following/${user.id}?follower_id=${userId}`
                   );
                   if (isFollowingResponse.ok) {
                     const isFollowingData = await isFollowingResponse.json();
@@ -95,14 +95,20 @@ export default function RightSideBar() {
                     }
                   }
                 } catch (error) {
-                  console.error(`Error checking follow status for ${user.id}:`, error);
+                  console.error(
+                    `Error checking follow status for ${user.id}:`,
+                    error
+                  );
                 }
               }
-              
+
               return {
                 id: user.id,
                 name: user.full_name || user.username || 'User',
-                role: user.user_type ? user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1).toLowerCase() : 'User',
+                role: user.user_type
+                  ? user.user_type.charAt(0).toUpperCase() +
+                    user.user_type.slice(1).toLowerCase()
+                  : 'User',
                 avatar: getProfileUrl(user.profile_url),
                 isFollowing,
               };
@@ -122,7 +128,7 @@ export default function RightSideBar() {
 
     fetchData();
   }, []);
- 
+
   const handleFollow = async (id: string, isCurrentlyFollowing: boolean) => {
     if (!currentUserId) {
       alert('You must be logged in to follow users');
@@ -131,8 +137,8 @@ export default function RightSideBar() {
 
     try {
       const endpoint = isCurrentlyFollowing
-        ? `http://localhost:3001/api/network/unfollow/${id}`
-        : `http://localhost:3001/api/network/follow/${id}`;
+        ? `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/unfollow/${id}`
+        : `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/follow/${id}`;
 
       const userIdentifier = localStorage.getItem('userEmail');
       if (!userIdentifier) {
@@ -144,11 +150,11 @@ export default function RightSideBar() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -173,7 +179,7 @@ export default function RightSideBar() {
 
       const contentType = response.headers.get('content-type');
       let result;
-      
+
       if (contentType && contentType.includes('application/json')) {
         try {
           result = await response.json();
@@ -181,12 +187,21 @@ export default function RightSideBar() {
           console.error('JSON parse error:', jsonError);
           const text = await response.text();
           console.error('Response text:', text);
-          throw new Error(`Failed to parse response: ${text.substring(0, 100)}`);
+          throw new Error(
+            `Failed to parse response: ${text.substring(0, 100)}`
+          );
         }
       } else {
         const text = await response.text();
-        console.error('Non-JSON response (status:', response.status, '):', text.substring(0, 200));
-        throw new Error(`Server returned non-JSON response (status: ${response.status}). Check backend logs.`);
+        console.error(
+          'Non-JSON response (status:',
+          response.status,
+          '):',
+          text.substring(0, 200)
+        );
+        throw new Error(
+          `Server returned non-JSON response (status: ${response.status}). Check backend logs.`
+        );
       }
 
       if (result.success) {
@@ -198,14 +213,22 @@ export default function RightSideBar() {
           )
         );
       } else {
-        alert(result.message || `Failed to ${isCurrentlyFollowing ? 'unfollow' : 'follow'} user`);
+        alert(
+          result.message ||
+            `Failed to ${isCurrentlyFollowing ? 'unfollow' : 'follow'} user`
+        );
       }
     } catch (error) {
-      console.error(`Error ${isCurrentlyFollowing ? 'unfollowing' : 'following'} user:`, error);
-      alert(`Failed to ${isCurrentlyFollowing ? 'unfollow' : 'follow'} user. Please try again.`);
+      console.error(
+        `Error ${isCurrentlyFollowing ? 'unfollowing' : 'following'} user:`,
+        error
+      );
+      alert(
+        `Failed to ${isCurrentlyFollowing ? 'unfollow' : 'follow'} user. Please try again.`
+      );
     }
   };
- 
+
   return (
     <div className="w-96 bg-white border-l border-gray-200 overflow-y-auto mr-10 rounded-lg">
       {/* Header */}
@@ -214,7 +237,7 @@ export default function RightSideBar() {
           People you may know
         </h2>
       </div>
- 
+
       {/* People List */}
       <div className="divide-y divide-gray-200">
         {loading ? (
@@ -246,7 +269,7 @@ export default function RightSideBar() {
                     </span>
                   )}
                 </div>
- 
+
                 {/* Info */}
                 <div className="flex-1 min-w-0">
                   <p className="text-xs text-gray-500 mb-0.5">{person.role}</p>
@@ -254,7 +277,7 @@ export default function RightSideBar() {
                     {person.name}
                   </p>
                 </div>
- 
+
                 {/* Follow Button */}
                 <button
                   onClick={() => handleFollow(person.id, person.isFollowing)}
