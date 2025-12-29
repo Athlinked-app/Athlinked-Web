@@ -81,9 +81,7 @@ export default function LoginPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">
             Welcome Back
           </h1>
-          <p className="text-black mb-8">
-            Sign in to your account to continue
-          </p>
+          <p className="text-black mb-8">Sign in to your account to continue</p>
 
           {/* Error Message */}
           {error && (

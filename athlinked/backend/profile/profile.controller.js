@@ -60,19 +60,25 @@ async function upsertUserProfile(req, res) {
       bio,
       education,
       primarySport,
+      sportsPlayed,
     } = req.body;
 
     const profileData = {};
     if (fullName !== undefined) profileData.fullName = fullName;
-    if (profileImageUrl !== undefined) profileData.profileImageUrl = profileImageUrl;
+    if (profileImageUrl !== undefined)
+      profileData.profileImageUrl = profileImageUrl;
     if (coverImageUrl !== undefined) profileData.coverImageUrl = coverImageUrl;
     if (bio !== undefined) profileData.bio = bio;
     if (education !== undefined) profileData.education = education;
     if (primarySport !== undefined) profileData.primarySport = primarySport;
+    if (sportsPlayed !== undefined) profileData.sportsPlayed = sportsPlayed;
 
     console.log('Profile data to save:', profileData);
 
-    const result = await profileService.upsertUserProfileService(userId, profileData);
+    const result = await profileService.upsertUserProfileService(
+      userId,
+      profileData
+    );
     console.log('Profile saved successfully:', result);
     return res.status(200).json(result);
   } catch (error) {
@@ -103,10 +109,14 @@ async function updateProfileImages(req, res) {
     const { profileImageUrl, coverImageUrl } = req.body;
 
     const imageData = {};
-    if (profileImageUrl !== undefined) imageData.profileImageUrl = profileImageUrl;
+    if (profileImageUrl !== undefined)
+      imageData.profileImageUrl = profileImageUrl;
     if (coverImageUrl !== undefined) imageData.coverImageUrl = coverImageUrl;
 
-    const result = await profileService.updateProfileImagesService(userId, imageData);
+    const result = await profileService.updateProfileImagesService(
+      userId,
+      imageData
+    );
     return res.status(200).json(result);
   } catch (error) {
     console.error('Update profile images controller error:', error);
@@ -122,4 +132,3 @@ module.exports = {
   upsertUserProfile,
   updateProfileImages,
 };
-

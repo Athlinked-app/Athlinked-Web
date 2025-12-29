@@ -56,7 +56,7 @@ async function upsertUserProfile(userId, profileData) {
     console.log('=== UPSERT PROFILE START ===');
     console.log('UserId:', userId);
     console.log('ProfileData:', JSON.stringify(profileData, null, 2));
-    
+
     await dbClient.query('BEGIN');
 
     const id = uuidv4();
@@ -73,7 +73,9 @@ async function upsertUserProfile(userId, profileData) {
     if (profileData.profileImageUrl !== undefined) {
       insertFields.push('profile_image_url');
       insertValues.push(profileData.profileImageUrl || null);
-      conflictUpdateFields.push('profile_image_url = EXCLUDED.profile_image_url');
+      conflictUpdateFields.push(
+        'profile_image_url = EXCLUDED.profile_image_url'
+      );
     }
     if (profileData.coverImageUrl !== undefined) {
       insertFields.push('cover_image_url');
@@ -103,19 +105,24 @@ async function upsertUserProfile(userId, profileData) {
 
     // If no fields provided, at least update the updated_at timestamp
     if (conflictUpdateFields.length === 0) {
-      console.log('WARNING: No profile fields provided, only updating timestamp');
+      console.log(
+        'WARNING: No profile fields provided, only updating timestamp'
+      );
     }
 
     // Build placeholders for INSERT
-    const insertPlaceholders = insertValues.map((_, idx) => `$${idx + 1}`).join(', ');
+    const insertPlaceholders = insertValues
+      .map((_, idx) => `$${idx + 1}`)
+      .join(', ');
 
     // Use INSERT ... ON CONFLICT DO UPDATE for UPSERT
     // For created_at, we preserve existing value on update, or use NOW() on insert
-    let updateClause = 'created_at = user_profiles.created_at, updated_at = NOW()';
+    let updateClause =
+      'created_at = user_profiles.created_at, updated_at = NOW()';
     if (conflictUpdateFields.length > 0) {
       updateClause = conflictUpdateFields.join(', ') + ', ' + updateClause;
     }
-    
+
     const upsertQuery = `
       INSERT INTO user_profiles (${insertFields.join(', ')}, created_at, updated_at)
       VALUES (${insertPlaceholders}, NOW(), NOW())
@@ -123,23 +130,54 @@ async function upsertUserProfile(userId, profileData) {
         ${updateClause}
       RETURNING *
     `;
-    
+
     console.log('SQL Query:', upsertQuery);
     console.log('Query Values:', insertValues);
     console.log('Insert Fields:', insertFields);
     console.log('Conflict Update Fields:', conflictUpdateFields);
-    
+
     const result = await dbClient.query(upsertQuery, insertValues);
-    
+
     console.log('Query executed successfully');
     console.log('Rows affected:', result.rowCount);
     console.log('Returned data:', result.rows[0]);
-    
+
+    // Update sports_played in users table if provided
+    if (profileData.sportsPlayed !== undefined) {
+      // Convert comma-separated string to PostgreSQL array format
+      let sportsArray = [];
+      if (profileData.sportsPlayed && profileData.sportsPlayed.trim() !== '') {
+        sportsArray = profileData.sportsPlayed
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+      }
+
+      // Update users table with sports_played array
+      // PostgreSQL accepts JavaScript arrays directly for array columns
+      const updateUsersQuery = `
+        UPDATE users
+        SET sports_played = $1, updated_at = NOW()
+        WHERE id = $2
+      `;
+
+      // Pass the array directly - PostgreSQL will handle the conversion
+      await dbClient.query(updateUsersQuery, [
+        sportsArray.length > 0 ? sportsArray : null,
+        userId,
+      ]);
+
+      console.log('Updated sports_played in users table:', sportsArray);
+    }
+
     await dbClient.query('COMMIT');
     console.log('Transaction committed');
-    
+
+    // Fetch the updated profile with sports_played from users table
+    const finalProfile = await getUserProfile(userId);
+
     console.log('=== UPSERT PROFILE SUCCESS ===');
-    return result.rows[0];
+    return finalProfile || result.rows[0];
   } catch (error) {
     await dbClient.query('ROLLBACK');
     console.error('=== UPSERT PROFILE ERROR ===');
@@ -233,4 +271,3 @@ module.exports = {
   upsertUserProfile,
   updateProfileImages,
 };
-

@@ -36,7 +36,7 @@ async function getMentionedUsers(actorUserId, mentionedNames) {
       WHERE n.follower_id = $1
         AND u.full_name = ANY($2::text[])
     `;
-    
+
     const result = await pool.query(query, [actorUserId, mentionedNames]);
     return result.rows;
   } catch (error) {
@@ -68,10 +68,10 @@ async function createPostService(postData, userId) {
     // Handle mentions in caption
     const textToCheck = postData.caption || postData.article_body || '';
     const mentionedNames = extractMentions(textToCheck);
-    
+
     if (mentionedNames.length > 0) {
       const mentionedUsers = await getMentionedUsers(userId, mentionedNames);
-      
+
       // Create notifications for each mentioned user
       for (const mentionedUser of mentionedUsers) {
         try {
@@ -85,7 +85,10 @@ async function createPostService(postData, userId) {
             message: `${user.full_name || 'User'} mentioned you in a post`,
           });
         } catch (error) {
-          console.error(`Error creating mention notification for ${mentionedUser.id}:`, error);
+          console.error(
+            `Error creating mention notification for ${mentionedUser.id}:`,
+            error
+          );
           // Continue with other notifications even if one fails
         }
       }
@@ -157,7 +160,7 @@ async function likePostService(postId, userId) {
             actorFullName: actorFullName,
             postId: postId,
           });
-          
+
           const notification = await createNotification({
             recipientUserId: post.user_id,
             actorUserId: userId,
@@ -167,8 +170,11 @@ async function likePostService(postId, userId) {
             entityId: postId,
             message: `${actorFullName} liked your post`,
           });
-          
-          console.log('Like notification created successfully:', notification?.id);
+
+          console.log(
+            'Like notification created successfully:',
+            notification?.id
+          );
         } catch (error) {
           console.error('Error creating like notification:', error);
           console.error('Error stack:', error.stack);
@@ -250,10 +256,10 @@ async function addCommentService(postId, userId, comment) {
 
       // Handle mentions in comment
       const mentionedNames = extractMentions(comment);
-      
+
       if (mentionedNames.length > 0) {
         const mentionedUsers = await getMentionedUsers(userId, mentionedNames);
-        
+
         // Create notifications for each mentioned user
         for (const mentionedUser of mentionedUsers) {
           try {
@@ -267,7 +273,10 @@ async function addCommentService(postId, userId, comment) {
               message: `${actorFullName} mentioned you in a comment`,
             });
           } catch (error) {
-            console.error(`Error creating mention notification for ${mentionedUser.id}:`, error);
+            console.error(
+              `Error creating mention notification for ${mentionedUser.id}:`,
+              error
+            );
           }
         }
       }

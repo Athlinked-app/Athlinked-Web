@@ -68,16 +68,21 @@ export default function SignupPage() {
         // Prepare signup data for OTP request
         // Parse sports_played string into array
         const sportsArray = formData.sportsPlayed
-          ? formData.sportsPlayed.split(',').map(s => s.trim()).filter(Boolean)
+          ? formData.sportsPlayed
+              .split(',')
+              .map(s => s.trim())
+              .filter(Boolean)
           : [];
-        
+
         const signupData = {
           email: formData.email,
           user_type: selectedUserType,
           full_name: formData.fullName,
           dob: formData.dateOfBirth,
           sports_played: sportsArray,
-          primary_sport: formData.primarySport || (sportsArray.length > 0 ? sportsArray[0] : null),
+          primary_sport:
+            formData.primarySport ||
+            (sportsArray.length > 0 ? sportsArray[0] : null),
           password: formData.password,
           parent_name: formData.parentName || null,
           parent_email: formData.parentEmail || null,
@@ -85,16 +90,13 @@ export default function SignupPage() {
         };
 
         // Call backend to send OTP via email
-        const response = await fetch(
-          'http://localhost:3001/api/signup/start',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(signupData),
-          }
-        );
+        const response = await fetch('http://localhost:3001/api/signup/start', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(signupData),
+        });
 
         const data = await response.json();
 

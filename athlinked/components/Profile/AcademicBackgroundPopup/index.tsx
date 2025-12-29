@@ -28,15 +28,36 @@ interface AcademicBackgroundPopupProps {
   existingData?: AcademicBackground;
 }
 
-const qualifications = ['10th', '12th', 'Graduate', 'Post-Graduate', 'Diploma', 'Certificate', 'Other'];
+const qualifications = [
+  '10th',
+  '12th',
+  'Graduate',
+  'Post-Graduate',
+  'Diploma',
+  'Certificate',
+  'Other',
+];
 const academicHonorsOptions = ['Yes', 'No'];
-const collegeEligibilityOptions = ['Eligible', 'Not Yet Registered', 'Registered with NCAA'];
-const preferredRegions = ['Northeast', 'Midwest', 'South', 'West', 'National', 'International'];
+const collegeEligibilityOptions = [
+  'Eligible',
+  'Not Yet Registered',
+  'Registered with NCAA',
+];
+const preferredRegions = [
+  'Northeast',
+  'Midwest',
+  'South',
+  'West',
+  'National',
+  'International',
+];
 const willingnessOptions = ['Yes', 'No'];
 const genderOptions = ['All', 'Male', 'Female', 'Other', 'Prefer not to say'];
 
 // Generate years from 2000 to 2030
-const graduationYears = Array.from({ length: 31 }, (_, i) => (2030 - i).toString());
+const graduationYears = Array.from({ length: 31 }, (_, i) =>
+  (2030 - i).toString()
+);
 
 export default function AcademicBackgroundPopup({
   open,
@@ -46,33 +67,62 @@ export default function AcademicBackgroundPopup({
 }: AcademicBackgroundPopupProps) {
   const [school, setSchool] = useState(existingData?.school || '');
   const [degree, setDegree] = useState(existingData?.degree || '');
-  const [qualification, setQualification] = useState(existingData?.qualification || '');
+  const [qualification, setQualification] = useState(
+    existingData?.qualification || ''
+  );
   const [startDate, setStartDate] = useState(existingData?.startDate || '');
   const [endDate, setEndDate] = useState(existingData?.endDate || '');
   const [degreePdf, setDegreePdf] = useState<File | null>(null);
-  const [degreePdfName, setDegreePdfName] = useState(existingData?.degreePdf ? (typeof existingData.degreePdf === 'string' ? existingData.degreePdf : existingData.degreePdf.name) : '');
-  
+  const [degreePdfName, setDegreePdfName] = useState(
+    existingData?.degreePdf
+      ? typeof existingData.degreePdf === 'string'
+        ? existingData.degreePdf
+        : existingData.degreePdf.name
+      : ''
+  );
+
   // Academic Information
-  const [academicGpa, setAcademicGpa] = useState(existingData?.academicGpa || '');
-  const [satActScore, setSatActScore] = useState(existingData?.satActScore || '');
-  const [academicHonors, setAcademicHonors] = useState(existingData?.academicHonors || '');
-  const [collegeEligibilityStatus, setCollegeEligibilityStatus] = useState(existingData?.collegeEligibilityStatus || '');
-  
+  const [academicGpa, setAcademicGpa] = useState(
+    existingData?.academicGpa || ''
+  );
+  const [satActScore, setSatActScore] = useState(
+    existingData?.satActScore || ''
+  );
+  const [academicHonors, setAcademicHonors] = useState(
+    existingData?.academicHonors || ''
+  );
+  const [collegeEligibilityStatus, setCollegeEligibilityStatus] = useState(
+    existingData?.collegeEligibilityStatus || ''
+  );
+
   // Graduation & Availability
-  const [graduationYear, setGraduationYear] = useState(existingData?.graduationYear || '');
-  const [primaryStateRegion, setPrimaryStateRegion] = useState(existingData?.primaryStateRegion || '');
-  const [preferredCollegeRegions, setPreferredCollegeRegions] = useState(existingData?.preferredCollegeRegions || '');
-  const [willingnessToRelocate, setWillingnessToRelocate] = useState(existingData?.willingnessToRelocate || '');
+  const [graduationYear, setGraduationYear] = useState(
+    existingData?.graduationYear || ''
+  );
+  const [primaryStateRegion, setPrimaryStateRegion] = useState(
+    existingData?.primaryStateRegion || ''
+  );
+  const [preferredCollegeRegions, setPreferredCollegeRegions] = useState(
+    existingData?.preferredCollegeRegions || ''
+  );
+  const [willingnessToRelocate, setWillingnessToRelocate] = useState(
+    existingData?.willingnessToRelocate || ''
+  );
   const [gender, setGender] = useState(existingData?.gender || '');
 
-  const [showQualificationDropdown, setShowQualificationDropdown] = useState(false);
-  const [showAcademicHonorsDropdown, setShowAcademicHonorsDropdown] = useState(false);
-  const [showCollegeEligibilityDropdown, setShowCollegeEligibilityDropdown] = useState(false);
-  const [showGraduationYearDropdown, setShowGraduationYearDropdown] = useState(false);
-  const [showPreferredRegionsDropdown, setShowPreferredRegionsDropdown] = useState(false);
+  const [showQualificationDropdown, setShowQualificationDropdown] =
+    useState(false);
+  const [showAcademicHonorsDropdown, setShowAcademicHonorsDropdown] =
+    useState(false);
+  const [showCollegeEligibilityDropdown, setShowCollegeEligibilityDropdown] =
+    useState(false);
+  const [showGraduationYearDropdown, setShowGraduationYearDropdown] =
+    useState(false);
+  const [showPreferredRegionsDropdown, setShowPreferredRegionsDropdown] =
+    useState(false);
   const [showWillingnessDropdown, setShowWillingnessDropdown] = useState(false);
   const [showGenderDropdown, setShowGenderDropdown] = useState(false);
-  
+
   const [showBasicEducation, setShowBasicEducation] = useState(true);
   const [showAcademicInfo, setShowAcademicInfo] = useState(false);
   const [showGraduationInfo, setShowGraduationInfo] = useState(false);
@@ -94,7 +144,13 @@ export default function AcademicBackgroundPopup({
       setQualification(existingData.qualification || '');
       setStartDate(existingData.startDate || '');
       setEndDate(existingData.endDate || '');
-      setDegreePdfName(existingData.degreePdf ? (typeof existingData.degreePdf === 'string' ? existingData.degreePdf : existingData.degreePdf.name) : '');
+      setDegreePdfName(
+        existingData.degreePdf
+          ? typeof existingData.degreePdf === 'string'
+            ? existingData.degreePdf
+            : existingData.degreePdf.name
+          : ''
+      );
       setAcademicGpa(existingData.academicGpa || '');
       setSatActScore(existingData.satActScore || '');
       setAcademicHonors(existingData.academicHonors || '');
@@ -128,25 +184,46 @@ export default function AcademicBackgroundPopup({
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (qualificationRef.current && !qualificationRef.current.contains(event.target as Node)) {
+      if (
+        qualificationRef.current &&
+        !qualificationRef.current.contains(event.target as Node)
+      ) {
         setShowQualificationDropdown(false);
       }
-      if (academicHonorsRef.current && !academicHonorsRef.current.contains(event.target as Node)) {
+      if (
+        academicHonorsRef.current &&
+        !academicHonorsRef.current.contains(event.target as Node)
+      ) {
         setShowAcademicHonorsDropdown(false);
       }
-      if (collegeEligibilityRef.current && !collegeEligibilityRef.current.contains(event.target as Node)) {
+      if (
+        collegeEligibilityRef.current &&
+        !collegeEligibilityRef.current.contains(event.target as Node)
+      ) {
         setShowCollegeEligibilityDropdown(false);
       }
-      if (graduationYearRef.current && !graduationYearRef.current.contains(event.target as Node)) {
+      if (
+        graduationYearRef.current &&
+        !graduationYearRef.current.contains(event.target as Node)
+      ) {
         setShowGraduationYearDropdown(false);
       }
-      if (preferredRegionsRef.current && !preferredRegionsRef.current.contains(event.target as Node)) {
+      if (
+        preferredRegionsRef.current &&
+        !preferredRegionsRef.current.contains(event.target as Node)
+      ) {
         setShowPreferredRegionsDropdown(false);
       }
-      if (willingnessRef.current && !willingnessRef.current.contains(event.target as Node)) {
+      if (
+        willingnessRef.current &&
+        !willingnessRef.current.contains(event.target as Node)
+      ) {
         setShowWillingnessDropdown(false);
       }
-      if (genderRef.current && !genderRef.current.contains(event.target as Node)) {
+      if (
+        genderRef.current &&
+        !genderRef.current.contains(event.target as Node)
+      ) {
         setShowGenderDropdown(false);
       }
     };
@@ -172,7 +249,7 @@ export default function AcademicBackgroundPopup({
       qualification,
       startDate,
       endDate,
-      degreePdf: degreePdf || (existingData?.degreePdf) || undefined,
+      degreePdf: degreePdf || existingData?.degreePdf || undefined,
       academicGpa,
       satActScore,
       academicHonors,
@@ -203,15 +280,15 @@ export default function AcademicBackgroundPopup({
     onClose();
   };
 
-  const DropdownField = ({ 
-    label, 
-    value, 
-    placeholder, 
-    options, 
-    showDropdown, 
-    setShowDropdown, 
-    onSelect, 
-    ref 
+  const DropdownField = ({
+    label,
+    value,
+    placeholder,
+    options,
+    showDropdown,
+    setShowDropdown,
+    onSelect,
+    ref,
   }: {
     label: string;
     value: string;
@@ -223,21 +300,27 @@ export default function AcademicBackgroundPopup({
     ref: React.RefObject<HTMLDivElement | null>;
   }) => (
     <div className="relative" ref={ref}>
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {label}
+      </label>
       <div
         onClick={() => setShowDropdown(!showDropdown)}
         className={`w-full px-4 py-2 border rounded-lg cursor-pointer flex items-center justify-between ${
-          showDropdown ? 'border-[#CB9729] ring-2 ring-[#CB9729]' : 'border-gray-300'
+          showDropdown
+            ? 'border-[#CB9729] ring-2 ring-[#CB9729]'
+            : 'border-gray-300'
         }`}
       >
         <span className={value ? 'text-gray-900' : 'text-gray-500'}>
           {value || placeholder}
         </span>
-        <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showDropdown ? 'transform rotate-180' : ''}`} />
+        <ChevronDown
+          className={`w-5 h-5 text-gray-400 transition-transform ${showDropdown ? 'transform rotate-180' : ''}`}
+        />
       </div>
       {showDropdown && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-          {options.map((option) => (
+          {options.map(option => (
             <div
               key={option}
               onClick={() => {
@@ -263,7 +346,9 @@ export default function AcademicBackgroundPopup({
       <div className="relative z-10 w-full max-w-2xl bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">{existingData ? 'Edit education' : 'Add education'}</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {existingData ? 'Edit education' : 'Add education'}
+          </h2>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -288,77 +373,87 @@ export default function AcademicBackgroundPopup({
             </button>
             {showBasicEducation && (
               <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">School</label>
-                <input
-                  type="text"
-                  value={school}
-                  onChange={(e) => setSchool(e.target.value)}
-                  placeholder="Ex: Stanford University"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Degree</label>
-                <input
-                  type="text"
-                  value={degree}
-                  onChange={(e) => setDegree(e.target.value)}
-                  placeholder="Degree"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
-                />
-              </div>
-
-              <DropdownField
-                label="Qualification"
-                value={qualification}
-                placeholder="Choose qualification..."
-                options={qualifications}
-                showDropdown={showQualificationDropdown}
-                setShowDropdown={setShowQualificationDropdown}
-                onSelect={setQualification}
-                ref={qualificationRef}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    School
+                  </label>
                   <input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    type="text"
+                    value={school}
+                    onChange={e => setSchool(e.target.value)}
+                    placeholder="Ex: Stanford University"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Degree
+                  </label>
                   <input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
+                    type="text"
+                    value={degree}
+                    onChange={e => setDegree(e.target.value)}
+                    placeholder="Degree"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Degree PDF</label>
-                <button
-                  onClick={() => pdfInputRef.current?.click()}
-                  className="w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#CB9729] transition-colors flex items-center justify-center gap-2 text-gray-600"
-                >
-                  <Upload className="w-5 h-5" />
-                  <span>{degreePdfName || 'Upload Degree'}</span>
-                </button>
-                <input
-                  ref={pdfInputRef}
-                  type="file"
-                  accept=".pdf"
-                  onChange={handlePdfUpload}
-                  className="hidden"
+                <DropdownField
+                  label="Qualification"
+                  value={qualification}
+                  placeholder="Choose qualification..."
+                  options={qualifications}
+                  showDropdown={showQualificationDropdown}
+                  setShowDropdown={setShowQualificationDropdown}
+                  onSelect={setQualification}
+                  ref={qualificationRef}
                 />
-              </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Start Date
+                    </label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={e => setStartDate(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      End Date
+                    </label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={e => setEndDate(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Degree PDF
+                  </label>
+                  <button
+                    onClick={() => pdfInputRef.current?.click()}
+                    className="w-full px-4 py-2 border-2 border-dashed border-gray-300 rounded-lg hover:border-[#CB9729] transition-colors flex items-center justify-center gap-2 text-gray-600"
+                  >
+                    <Upload className="w-5 h-5" />
+                    <span>{degreePdfName || 'Upload Degree'}</span>
+                  </button>
+                  <input
+                    ref={pdfInputRef}
+                    type="file"
+                    accept=".pdf"
+                    onChange={handlePdfUpload}
+                    className="hidden"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -379,22 +474,26 @@ export default function AcademicBackgroundPopup({
             {showAcademicInfo && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Academic GPA (0.0-4.0)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Academic GPA (0.0-4.0)
+                  </label>
                   <input
                     type="text"
                     value={academicGpa}
-                    onChange={(e) => setAcademicGpa(e.target.value)}
+                    onChange={e => setAcademicGpa(e.target.value)}
                     placeholder="Type here..."
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">SAT/ACT Score</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    SAT/ACT Score
+                  </label>
                   <input
                     type="text"
                     value={satActScore}
-                    onChange={(e) => setSatActScore(e.target.value)}
+                    onChange={e => setSatActScore(e.target.value)}
                     placeholder="Type here..."
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
                   />
@@ -452,11 +551,13 @@ export default function AcademicBackgroundPopup({
                 />
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Primary State/Region</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Primary State/Region
+                  </label>
                   <input
                     type="text"
                     value={primaryStateRegion}
-                    onChange={(e) => setPrimaryStateRegion(e.target.value)}
+                    onChange={e => setPrimaryStateRegion(e.target.value)}
                     placeholder="Primary State or Region"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
                   />
@@ -512,4 +613,3 @@ export default function AcademicBackgroundPopup({
     </div>
   );
 }
-

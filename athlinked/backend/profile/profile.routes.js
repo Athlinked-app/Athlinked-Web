@@ -31,4 +31,3 @@ router.post('/', profileController.upsertUserProfile);
 router.get('/:userId', profileController.getUserProfile);
 
 module.exports = router;
-

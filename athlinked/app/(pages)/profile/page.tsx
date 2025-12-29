@@ -6,7 +6,9 @@ import RightSideBar from '@/components/RightSideBar';
 import { type PostData } from '@/components/Post';
 import EditProfileModal from '@/components/Profile/EditProfileModel';
 import AboutMe from '@/components/Profile/AboutMe';
-import SocialHandles, { type SocialHandle } from '@/components/Profile/SocialHandle';
+import SocialHandles, {
+  type SocialHandle,
+} from '@/components/Profile/SocialHandle';
 import AcademicBackgrounds from '@/components/Profile/AcademicBackground';
 import type { AcademicBackground } from '@/components/Profile/AcademicBackground';
 import Achievements from '@/components/Profile/Achievements';
@@ -63,13 +65,23 @@ export default function Profile() {
   const [activeSaveFilter, setActiveSaveFilter] = useState<'posts' | 'clips' | 'article' | 'opportunities'>('posts');
   const [userBio, setUserBio] = useState<string>('');
   const [socialHandles, setSocialHandles] = useState<SocialHandle[]>([]);
-  const [academicBackgrounds, setAcademicBackgrounds] = useState<AcademicBackground[]>([]);
+  const [academicBackgrounds, setAcademicBackgrounds] = useState<
+    AcademicBackground[]
+  >([]);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
-  const [athleticAndPerformance, setAthleticAndPerformance] = useState<AthleticAndPerformance[]>([]);
-  const [competitionAndClubs, setCompetitionAndClubs] = useState<CompetitionAndClub[]>([]);
+  const [athleticAndPerformance, setAthleticAndPerformance] = useState<
+    AthleticAndPerformance[]
+  >([]);
+  const [competitionAndClubs, setCompetitionAndClubs] = useState<
+    CompetitionAndClub[]
+  >([]);
   const [sportsPlayed, setSportsPlayed] = useState<string>('');
-  const [characterAndLeadership, setCharacterAndLeadership] = useState<CharacterAndLeadership[]>([]);
-  const [healthAndReadiness, setHealthAndReadiness] = useState<HealthAndReadiness[]>([]);
+  const [characterAndLeadership, setCharacterAndLeadership] = useState<
+    CharacterAndLeadership[]
+  >([]);
+  const [healthAndReadiness, setHealthAndReadiness] = useState<
+    HealthAndReadiness[]
+  >([]);
   const [videoAndMedia, setVideoAndMedia] = useState<VideoAndMedia[]>([]);
   
   // Determine which user ID to use for fetching data
@@ -78,10 +90,16 @@ export default function Profile() {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3001/api/posts?page=1&limit=50');
-      
+      const response = await fetch(
+        'http://localhost:3001/api/posts?page=1&limit=50'
+      );
+
       if (!response.ok) {
-        console.error('Failed to fetch posts:', response.status, response.statusText);
+        console.error(
+          'Failed to fetch posts:',
+          response.status,
+          response.statusText
+        );
         const text = await response.text();
         console.error('Response text:', text.substring(0, 200));
         setPosts([]);
@@ -99,12 +117,15 @@ export default function Profile() {
 
       const data = await response.json();
       console.log('Posts API response:', data);
-      
+
       if (data.success && data.posts) {
         let transformedPosts: PostData[] = data.posts.map((post: any) => ({
           id: post.id,
           username: post.username || 'User',
-          user_profile_url: (post.user_profile_url && post.user_profile_url.trim() !== '') ? post.user_profile_url : null,
+          user_profile_url:
+            post.user_profile_url && post.user_profile_url.trim() !== ''
+              ? post.user_profile_url
+              : null,
           user_id: post.user_id,
           post_type: post.post_type,
           caption: post.caption,
@@ -255,8 +276,24 @@ export default function Profile() {
         if (data.user.bio) {
           setUserBio(data.user.bio);
         }
-        if (data.user.sports_played) {
-          setSportsPlayed(data.user.sports_played);
+        // Always update sports_played, even if empty (to clear it)
+        if (
+          data.user.sports_played !== undefined &&
+          data.user.sports_played !== null
+        ) {
+          // Parse PostgreSQL array format if needed
+          let sportsString = data.user.sports_played;
+          if (
+            typeof sportsString === 'string' &&
+            sportsString.startsWith('{') &&
+            sportsString.endsWith('}')
+          ) {
+            sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
+          }
+          setSportsPlayed(sportsString);
+        } else {
+          // Clear sports if null/undefined
+          setSportsPlayed('');
         }
       }
     } catch (error) {
@@ -309,23 +346,27 @@ export default function Profile() {
                     : `http://localhost:3001${profileData.profileImage}`)
                 : viewUser?.profile_url || currentUser?.profile_url,
               background_image_url: profileData?.coverImage
-                ? (profileData.coverImage.startsWith('http')
-                    ? profileData.coverImage
-                    : `http://localhost:3001${profileData.coverImage}`)
+                ? profileData.coverImage.startsWith('http')
+                  ? profileData.coverImage
+                  : `http://localhost:3001${profileData.coverImage}`
                 : null,
               user_type: 'coach',
               location: 'Rochester, NY', 
               age: 35, 
               followers_count: 10000,
-              sports_played: profileData?.sportsPlayed 
-                ? profileData.sportsPlayed.replace(/[{}"']/g, '') // Remove curly brackets and quotes
-                : '',
+              sports_played:
+                profileData?.sportsPlayed !== undefined &&
+                profileData?.sportsPlayed !== null
+                  ? typeof profileData.sportsPlayed === 'string'
+                    ? profileData.sportsPlayed.replace(/[{}"']/g, '')
+                    : ''
+                  : '',
               primary_sport: profileData?.primarySport || '',
               profile_completion: 60,
               bio: profileData?.bio || '',
               education: profileData?.education || '',
             }}
-            onSave={async (data) => {
+            onSave={async data => {
               console.log('Profile saved:', data);
 
               try {
@@ -339,6 +380,7 @@ export default function Profile() {
                   education?: string;
                   city?: string;
                   primarySport?: string;
+                  sportsPlayed?: string;
                   profileImageUrl?: string;
                   coverImageUrl?: string;
                 } = {
@@ -351,7 +393,7 @@ export default function Profile() {
                   bioUndefined: data.bio === undefined,
                   educationUndefined: data.education === undefined,
                 });
-                
+
                 if (data.bio !== undefined) {
                   profileData.bio = data.bio || undefined; 
                 }
@@ -413,7 +455,10 @@ export default function Profile() {
                 if (!response.ok) {
                   const errorData = await response.json();
                   console.error('Failed to save profile:', errorData);
-                  alert('Failed to save profile: ' + (errorData.message || 'Unknown error'));
+                  alert(
+                    'Failed to save profile: ' +
+                      (errorData.message || 'Unknown error')
+                  );
                   return;
                 }
 
@@ -455,7 +500,6 @@ export default function Profile() {
               } catch (error) {
                 console.error('Error saving profile:', error);
                 alert('Error saving profile. Please try again.');
-
               }
             }}
           />

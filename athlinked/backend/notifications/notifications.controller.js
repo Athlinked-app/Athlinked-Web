@@ -53,7 +53,8 @@ async function getUnreadCount(req, res) {
       });
     }
 
-    const result = await notificationService.getUnreadCountService(recipientUserId);
+    const result =
+      await notificationService.getUnreadCountService(recipientUserId);
 
     return res.status(200).json(result);
   } catch (error) {
@@ -90,7 +91,10 @@ async function markAsRead(req, res) {
       });
     }
 
-    const result = await notificationService.markAsReadService(notificationId, recipientUserId);
+    const result = await notificationService.markAsReadService(
+      notificationId,
+      recipientUserId
+    );
 
     if (!result.success) {
       return res.status(404).json(result);
@@ -122,7 +126,8 @@ async function markAllAsRead(req, res) {
       });
     }
 
-    const result = await notificationService.markAllAsReadService(recipientUserId);
+    const result =
+      await notificationService.markAllAsReadService(recipientUserId);
 
     return res.status(200).json(result);
   } catch (error) {
@@ -140,4 +145,3 @@ module.exports = {
   markAsRead,
   markAllAsRead,
 };
-

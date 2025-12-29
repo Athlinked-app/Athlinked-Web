@@ -407,7 +407,7 @@ export default function CommentsPanel({
                             placeholder={`Reply to ${comment.username}...`}
                             className="flex-1 px-3 py-1.5 rounded-full text-xs"
                             type="input"
-                            onKeyDown={(e) => {
+                            onKeyDown={e => {
                               if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
                                 handleAddReply(comment.id);
@@ -479,7 +479,7 @@ export default function CommentsPanel({
               placeholder="Add comment"
               className="flex-1 px-4 py-2 rounded-full text-sm"
               type="input"
-              onKeyDown={(e) => {
+              onKeyDown={e => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   e.stopPropagation();
@@ -495,7 +495,7 @@ export default function CommentsPanel({
               type="text"
               value={commentText}
               onChange={e => setCommentText(e.target.value)}
-              onKeyDown={(e) => {
+              onKeyDown={e => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   e.stopPropagation();

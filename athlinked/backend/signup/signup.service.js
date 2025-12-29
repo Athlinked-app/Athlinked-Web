@@ -154,10 +154,12 @@ async function verifyOtpService(email, otp) {
         : signupData.sports_played
           ? [signupData.sports_played]
           : [];
-      
+
       // Remove duplicates from sports array
       const uniqueSportsArray = [...new Set(sportsArray)];
-      const primarySport = signupData.primary_sport || (uniqueSportsArray.length > 0 ? uniqueSportsArray[0] : null);
+      const primarySport =
+        signupData.primary_sport ||
+        (uniqueSportsArray.length > 0 ? uniqueSportsArray[0] : null);
 
       await profileModel.upsertUserProfile(createdUser.id, {
         fullName: signupData.full_name,
@@ -165,9 +167,14 @@ async function verifyOtpService(email, otp) {
       });
 
       const sportsString = uniqueSportsArray.join(', ');
-      console.log(`✅ Profile created for user ${createdUser.id} with sports: ${sportsString}`);
+      console.log(
+        `✅ Profile created for user ${createdUser.id} with sports: ${sportsString}`
+      );
     } catch (profileError) {
-      console.error('⚠️ Error creating profile during signup:', profileError.message);
+      console.error(
+        '⚠️ Error creating profile during signup:',
+        profileError.message
+      );
       // Don't fail signup if profile creation fails
     }
 

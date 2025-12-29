@@ -11,11 +11,12 @@ interface AchievementsProps {
   onAchievementsChange?: (achievements: Achievement[]) => void;
 }
 
-export default function Achievements({ 
-  achievements = [], 
-  onAchievementsChange 
+export default function Achievements({
+  achievements = [],
+  onAchievementsChange,
 }: AchievementsProps) {
-  const [achievementsList, setAchievementsList] = useState<Achievement[]>(achievements);
+  const [achievementsList, setAchievementsList] =
+    useState<Achievement[]>(achievements);
   const [showPopup, setShowPopup] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
@@ -74,7 +75,9 @@ export default function Achievements({
         </div>
 
         {achievementsList.length === 0 ? (
-          <p className="text-gray-500 italic">No achievements added yet. Click the + button to add one.</p>
+          <p className="text-gray-500 italic">
+            No achievements added yet. Click the + button to add one.
+          </p>
         ) : (
           <div className="space-y-4">
             {achievementsList.map((achievement, index) => (
@@ -85,46 +88,58 @@ export default function Achievements({
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">{achievement.title}</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {achievement.title}
+                      </h3>
                       {achievement.organization && (
-                        <span className="text-sm text-gray-600">- {achievement.organization}</span>
+                        <span className="text-sm text-gray-600">
+                          - {achievement.organization}
+                        </span>
                       )}
                     </div>
                     {achievement.sport && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Sport:</span> {achievement.sport}
+                        <span className="font-medium">Sport:</span>{' '}
+                        {achievement.sport}
                       </p>
                     )}
                     {achievement.achievementType && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Type:</span> {achievement.achievementType}
+                        <span className="font-medium">Type:</span>{' '}
+                        {achievement.achievementType}
                       </p>
                     )}
                     {achievement.level && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Level:</span> {achievement.level}
+                        <span className="font-medium">Level:</span>{' '}
+                        {achievement.level}
                       </p>
                     )}
                     {achievement.dateAwarded && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Date Awarded:</span> {achievement.dateAwarded}
+                        <span className="font-medium">Date Awarded:</span>{' '}
+                        {achievement.dateAwarded}
                       </p>
                     )}
                     {achievement.location && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Location:</span> {achievement.location}
+                        <span className="font-medium">Location:</span>{' '}
+                        {achievement.location}
                       </p>
                     )}
                     {achievement.description && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Description:</span> {achievement.description}
+                        <span className="font-medium">Description:</span>{' '}
+                        {achievement.description}
                       </p>
                     )}
                     {achievement.mediaPdf && (
                       <div className="flex items-center gap-2 mt-2">
                         <FileText className="w-4 h-4 text-gray-600" />
                         <span className="text-sm text-gray-600">
-                          {typeof achievement.mediaPdf === 'string' ? achievement.mediaPdf : achievement.mediaPdf.name}
+                          {typeof achievement.mediaPdf === 'string'
+                            ? achievement.mediaPdf
+                            : achievement.mediaPdf.name}
                         </span>
                       </div>
                     )}
@@ -154,9 +169,10 @@ export default function Achievements({
         open={showPopup}
         onClose={handleClose}
         onSave={handleAdd}
-        existingData={editingIndex !== null ? achievementsList[editingIndex] : undefined}
+        existingData={
+          editingIndex !== null ? achievementsList[editingIndex] : undefined
+        }
       />
     </>
   );
 }
-

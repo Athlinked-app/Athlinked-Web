@@ -20,15 +20,18 @@ The `notifications` table has the following structure:
 ## API Endpoints
 
 ### 1. Get Notifications
+
 **GET** `/api/notifications`
 
 Get notifications for the logged-in user.
 
 **Query Parameters:**
+
 - `limit` (optional, default: 20, max: 100) - Number of notifications to return
 - `offset` (optional, default: 0) - Number of notifications to skip
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -49,11 +52,13 @@ Get notifications for the logged-in user.
 ```
 
 ### 2. Get Unread Notification Count
+
 **GET** `/api/notifications/unread-count`
 
 Get the count of unread notifications for the logged-in user.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -62,11 +67,13 @@ Get the count of unread notifications for the logged-in user.
 ```
 
 ### 3. Mark Notification as Read
+
 **POST** `/api/notifications/:id/read`
 
 Mark a specific notification as read. Only the recipient can mark their own notifications as read.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -79,11 +86,13 @@ Mark a specific notification as read. Only the recipient can mark their own noti
 ```
 
 ### 4. Mark All Notifications as Read
+
 **POST** `/api/notifications/read-all`
 
 Mark all notifications as read for the logged-in user.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -97,6 +106,7 @@ Mark all notifications as read for the logged-in user.
 Use the `createNotification` helper function to create notifications from other parts of the codebase (e.g., when a user likes a post, comments, etc.).
 
 ### Import
+
 ```javascript
 const { createNotification } = require('./notifications/notifications.helper');
 ```
@@ -104,6 +114,7 @@ const { createNotification } = require('./notifications/notifications.helper');
 ### Usage Examples
 
 #### Like Notification
+
 ```javascript
 await createNotification({
   recipientUserId: postOwnerId,
@@ -112,11 +123,12 @@ await createNotification({
   type: 'like',
   entityType: 'post',
   entityId: postId,
-  message: `${currentUserFullName} liked your post`
+  message: `${currentUserFullName} liked your post`,
 });
 ```
 
 #### Comment Notification
+
 ```javascript
 await createNotification({
   recipientUserId: postOwnerId,
@@ -125,11 +137,12 @@ await createNotification({
   type: 'comment',
   entityType: 'post',
   entityId: postId,
-  message: `${currentUserFullName} commented on your post`
+  message: `${currentUserFullName} commented on your post`,
 });
 ```
 
 #### Mention Notification
+
 ```javascript
 await createNotification({
   recipientUserId: mentionedUserId,
@@ -138,11 +151,12 @@ await createNotification({
   type: 'mention',
   entityType: 'post',
   entityId: postId,
-  message: `${currentUserFullName} mentioned you in a post`
+  message: `${currentUserFullName} mentioned you in a post`,
 });
 ```
 
 #### Follow Request Notification
+
 ```javascript
 await createNotification({
   recipientUserId: userToFollowId,
@@ -151,11 +165,12 @@ await createNotification({
   type: 'follow_request',
   entityType: 'profile',
   entityId: currentUserId,
-  message: `${currentUserFullName} sent you a follow request`
+  message: `${currentUserFullName} sent you a follow request`,
 });
 ```
 
 #### Follow Accepted Notification
+
 ```javascript
 await createNotification({
   recipientUserId: followerId,
@@ -164,7 +179,7 @@ await createNotification({
   type: 'follow_accepted',
   entityType: 'profile',
   entityId: currentUserId,
-  message: `${currentUserFullName} accepted your follow request`
+  message: `${currentUserFullName} accepted your follow request`,
 });
 ```
 
@@ -195,4 +210,3 @@ Or manually run the SQL commands from `create-notifications-table.sql`.
 All endpoints require authentication. The system expects `req.user.id` to contain the authenticated user's UUID.
 
 If authentication middleware is not set up, you may need to add it to the routes or modify the controllers to handle authentication differently.
-

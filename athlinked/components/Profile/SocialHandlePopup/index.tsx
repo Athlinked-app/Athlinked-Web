@@ -13,7 +13,13 @@ interface SocialHandlePopupProps {
   onSave: (handle: SocialHandle) => void;
 }
 
-const socialPlatforms = ['Facebook', 'Instagram', 'Twitter', 'Tiktok', 'Others'];
+const socialPlatforms = [
+  'Facebook',
+  'Instagram',
+  'Twitter',
+  'Tiktok',
+  'Others',
+];
 
 export default function SocialHandlePopup({
   open,
@@ -27,7 +33,10 @@ export default function SocialHandlePopup({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setShowDropdown(false);
       }
     };
@@ -68,7 +77,9 @@ export default function SocialHandlePopup({
       />
       <div className="relative z-10 w-full max-w-md bg-white rounded-xl shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Add Social Handles</h2>
+          <h2 className="text-xl font-bold text-gray-900">
+            Add Social Handles
+          </h2>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -87,10 +98,14 @@ export default function SocialHandlePopup({
             <div
               onClick={() => setShowDropdown(!showDropdown)}
               className={`w-full px-4 py-2 border rounded-lg cursor-pointer flex items-center justify-between ${
-                showDropdown ? 'border-[#CB9729] ring-2 ring-[#CB9729]' : 'border-gray-300'
+                showDropdown
+                  ? 'border-[#CB9729] ring-2 ring-[#CB9729]'
+                  : 'border-gray-300'
               }`}
             >
-              <span className={selectedPlatform ? 'text-gray-900' : 'text-gray-500'}>
+              <span
+                className={selectedPlatform ? 'text-gray-900' : 'text-gray-500'}
+              >
                 {selectedPlatform || 'Select Social Handles'}
               </span>
               <svg
@@ -113,7 +128,7 @@ export default function SocialHandlePopup({
             {/* Dropdown Menu */}
             {showDropdown && (
               <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {socialPlatforms.map((platform) => (
+                {socialPlatforms.map(platform => (
                   <div
                     key={platform}
                     onClick={() => handlePlatformSelect(platform)}
@@ -132,7 +147,7 @@ export default function SocialHandlePopup({
             <input
               type="text"
               value={url}
-              onChange={(e) => setUrl(e.target.value)}
+              onChange={e => setUrl(e.target.value)}
               placeholder="Social Handle URL"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
             />
@@ -153,4 +168,3 @@ export default function SocialHandlePopup({
     </div>
   );
 }
-

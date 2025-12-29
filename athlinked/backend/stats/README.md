@@ -5,6 +5,7 @@ Dynamic sports profile system for Athlinked.
 ## Database Schema
 
 The system uses the following tables:
+
 - `sports` - Master list of sports
 - `sport_positions` - Positions for each sport
 - `position_fields` - Fields/attributes for each position
@@ -22,6 +23,7 @@ All endpoints are prefixed with `/api` when mounted in the Express app.
 Returns all available sports.
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -43,9 +45,11 @@ Returns all available sports.
 Returns all positions for a specific sport.
 
 **Parameters:**
+
 - `sportId` (UUID) - The sport ID
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -68,9 +72,11 @@ Returns all positions for a specific sport.
 Returns all fields for a position, ordered by `sort_order`. Used for dynamic form generation.
 
 **Parameters:**
+
 - `positionId` (UUID) - The position ID
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -88,6 +94,7 @@ Returns all fields for a position, ordered by `sort_order`. Used for dynamic for
 ```
 
 **Field Types:**
+
 - `number` - Numeric values
 - `percentage` - Percentage values
 - `time` - Time measurements
@@ -103,9 +110,11 @@ Returns all fields for a position, ordered by `sort_order`. Used for dynamic for
 Creates or retrieves a user sport profile. If a profile already exists for the user + sport + position combination, returns the existing profile ID.
 
 **Headers:**
+
 - Authentication required (req.user.id must be set)
 
 **Request Body:**
+
 ```json
 {
   "sportId": "uuid",
@@ -114,6 +123,7 @@ Creates or retrieves a user sport profile. If a profile already exists for the u
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -131,9 +141,11 @@ Creates or retrieves a user sport profile. If a profile already exists for the u
 Saves or updates user position stats. Uses UPSERT logic - deletes existing stats and inserts new ones.
 
 **Headers:**
+
 - Authentication required (req.user.id must be set)
 
 **Request Body:**
+
 ```json
 {
   "userSportProfileId": "uuid",
@@ -151,6 +163,7 @@ Saves or updates user position stats. Uses UPSERT logic - deletes existing stats
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -169,12 +182,15 @@ Saves or updates user position stats. Uses UPSERT logic - deletes existing stats
 Retrieves all saved stats for a user's sport profile.
 
 **Headers:**
+
 - Authentication required (req.user.id must be set)
 
 **Parameters:**
+
 - `id` (UUID) - The user_sport_profile_id
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -209,6 +225,7 @@ All endpoints return errors in the following format:
 ```
 
 **Common Status Codes:**
+
 - `400` - Bad Request (missing/invalid parameters)
 - `401` - Unauthorized (authentication required)
 - `404` - Not Found (resource doesn't exist)
@@ -236,4 +253,3 @@ Ensure the following tables exist with the exact schema:
 3. **position_fields** - id (UUID PK), sport_id (UUID), sport_name (TEXT), position_id (UUID), position_name (TEXT), field_key (TEXT), field_label (TEXT), field_type (TEXT), unit (TEXT), is_required (BOOLEAN), sort_order (INT)
 4. **user_sport_profiles** - id (UUID PK), user_id (UUID), sport_id (UUID), sport_name (TEXT), position_id (UUID), position_name (TEXT), created_at (TIMESTAMP)
 5. **user_position_stats** - id (UUID PK), user_sport_profile_id (UUID), field_id (UUID), field_key (TEXT), field_label (TEXT), unit (TEXT), value (TEXT), created_at (TIMESTAMP), updated_at (TIMESTAMP)
-

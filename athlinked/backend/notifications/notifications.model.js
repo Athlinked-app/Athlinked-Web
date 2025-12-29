@@ -129,12 +129,25 @@ async function createNotification(notificationData) {
   } = notificationData;
 
   // Validate required fields
-  if (!recipientUserId || !actorFullName || !type || !entityType || !entityId || !message) {
+  if (
+    !recipientUserId ||
+    !actorFullName ||
+    !type ||
+    !entityType ||
+    !entityId ||
+    !message
+  ) {
     throw new Error('Missing required notification fields');
   }
 
   // Validate notification type
-  const validTypes = ['like', 'comment', 'mention', 'follow_request', 'follow_accepted'];
+  const validTypes = [
+    'like',
+    'comment',
+    'mention',
+    'follow_request',
+    'follow_accepted',
+  ];
   if (!validTypes.includes(type)) {
     throw new Error(`Invalid notification type: ${type}`);
   }
@@ -196,4 +209,3 @@ module.exports = {
   markAllAsRead,
   createNotification,
 };
-

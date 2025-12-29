@@ -184,8 +184,8 @@ async function getOrCreateConversation(req, res) {
 async function uploadMessageFile(req, res) {
   try {
     const uploadSingle = upload.single('file');
-    
-    uploadSingle(req, res, async (err) => {
+
+    uploadSingle(req, res, async err => {
       if (err) {
         return res.status(400).json({
           success: false,
@@ -225,4 +225,3 @@ module.exports = {
   getOrCreateConversation,
   uploadMessageFile,
 };
-

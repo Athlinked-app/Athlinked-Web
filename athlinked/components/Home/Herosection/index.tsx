@@ -227,7 +227,7 @@ export default function HomeHerosection({
         });
 
         const result = await response.json();
-        
+
         if (result.success) {
           setShowArticleEvent(false);
           if (onPostCreated) {
@@ -273,7 +273,7 @@ export default function HomeHerosection({
         }
 
         const result = await response.json();
-        
+
         if (result.success) {
           setShowArticleEvent(false);
           if (onPostCreated) {
@@ -414,31 +414,33 @@ export default function HomeHerosection({
         />
       )}
 
-      {selectedPostType && (selectedPostType === 'photo' || selectedPostType === 'video') && (
-        <PostDetailsModal
-          open={showDetails}
-          postType={selectedPostType}
-          filePreview={filePreview}
-          fileName={selectedFile?.name || 'No file selected'}
-          fileSizeLabel={selectedFile ? formatSize(selectedFile.size) : ''}
-          caption={caption}
-          onCaptionChange={setCaption}
-          onClose={resetFileState}
-          onPost={handleMediaPost}
-          onRemoveFile={resetFileState}
-          currentUserId={currentUserId}
-        />
-      )}
+      {selectedPostType &&
+        (selectedPostType === 'photo' || selectedPostType === 'video') && (
+          <PostDetailsModal
+            open={showDetails}
+            postType={selectedPostType}
+            filePreview={filePreview}
+            fileName={selectedFile?.name || 'No file selected'}
+            fileSizeLabel={selectedFile ? formatSize(selectedFile.size) : ''}
+            caption={caption}
+            onCaptionChange={setCaption}
+            onClose={resetFileState}
+            onPost={handleMediaPost}
+            onRemoveFile={resetFileState}
+            currentUserId={currentUserId}
+          />
+        )}
 
-      {selectedPostType && (selectedPostType === 'article' || selectedPostType === 'event') && (
-        <ArticleEventModal
-          open={showArticleEvent}
-          postType={selectedPostType}
-          currentUserId={currentUserId}
-          onClose={() => setShowArticleEvent(false)}
-          onSubmit={handleArticleEventSubmit}
-        />
-      )}
+      {selectedPostType &&
+        (selectedPostType === 'article' || selectedPostType === 'event') && (
+          <ArticleEventModal
+            open={showArticleEvent}
+            postType={selectedPostType}
+            currentUserId={currentUserId}
+            onClose={() => setShowArticleEvent(false)}
+            onSubmit={handleArticleEventSubmit}
+          />
+        )}
     </div>
   );
 }

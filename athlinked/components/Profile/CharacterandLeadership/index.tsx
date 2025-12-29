@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { Plus, Trash2, Pencil } from 'lucide-react';
-import CharacterAndLeadershipPopup, { type CharacterAndLeadership } from '../CharacterandLeadershipPopup';
+import CharacterAndLeadershipPopup, {
+  type CharacterAndLeadership,
+} from '../CharacterandLeadershipPopup';
 
 export type { CharacterAndLeadership };
 
@@ -11,11 +13,13 @@ interface CharacterAndLeadershipProps {
   onCharacterAndLeadershipChange?: (data: CharacterAndLeadership[]) => void;
 }
 
-export default function CharacterAndLeadershipComponent({ 
-  characterAndLeadership = [], 
-  onCharacterAndLeadershipChange 
+export default function CharacterAndLeadershipComponent({
+  characterAndLeadership = [],
+  onCharacterAndLeadershipChange,
 }: CharacterAndLeadershipProps) {
-  const [characterAndLeadershipList, setCharacterAndLeadershipList] = useState<CharacterAndLeadership[]>(characterAndLeadership);
+  const [characterAndLeadershipList, setCharacterAndLeadershipList] = useState<
+    CharacterAndLeadership[]
+  >(characterAndLeadership);
   const [showPopup, setShowPopup] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
@@ -50,7 +54,9 @@ export default function CharacterAndLeadershipComponent({
   };
 
   const handleDelete = (index: number) => {
-    const updatedList = characterAndLeadershipList.filter((_, i) => i !== index);
+    const updatedList = characterAndLeadershipList.filter(
+      (_, i) => i !== index
+    );
     setCharacterAndLeadershipList(updatedList);
     if (onCharacterAndLeadershipChange) {
       onCharacterAndLeadershipChange(updatedList);
@@ -61,7 +67,9 @@ export default function CharacterAndLeadershipComponent({
     <>
       <div className="w-full bg-white rounded-lg p-6 mt-4">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">Character and Leadership</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Character and Leadership
+          </h2>
           <button
             onClick={() => {
               setEditingIndex(null);
@@ -74,7 +82,10 @@ export default function CharacterAndLeadershipComponent({
         </div>
 
         {characterAndLeadershipList.length === 0 ? (
-          <p className="text-gray-500 italic">No character and leadership information added yet. Click the + button to add one.</p>
+          <p className="text-gray-500 italic">
+            No character and leadership information added yet. Click the +
+            button to add one.
+          </p>
         ) : (
           <div className="space-y-4">
             {characterAndLeadershipList.map((data, index) => (
@@ -86,22 +97,27 @@ export default function CharacterAndLeadershipComponent({
                   <div className="flex-1">
                     {data.teamCaptain && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Team Captain:</span> {data.teamCaptain}
+                        <span className="font-medium">Team Captain:</span>{' '}
+                        {data.teamCaptain}
                       </p>
                     )}
                     {data.leadershipRoles && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Leadership Roles:</span> {data.leadershipRoles}
+                        <span className="font-medium">Leadership Roles:</span>{' '}
+                        {data.leadershipRoles}
                       </p>
                     )}
-                    {data.languagesSpoken && data.languagesSpoken.length > 0 && (
-                      <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Languages Spoken:</span> {data.languagesSpoken.join(', ')}
-                      </p>
-                    )}
+                    {data.languagesSpoken &&
+                      data.languagesSpoken.length > 0 && (
+                        <p className="text-sm text-gray-600 mb-1">
+                          <span className="font-medium">Languages Spoken:</span>{' '}
+                          {data.languagesSpoken.join(', ')}
+                        </p>
+                      )}
                     {data.communityService && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Community Service:</span> {data.communityService}
+                        <span className="font-medium">Community Service:</span>{' '}
+                        {data.communityService}
                       </p>
                     )}
                   </div>
@@ -130,9 +146,12 @@ export default function CharacterAndLeadershipComponent({
         open={showPopup}
         onClose={handleClose}
         onSave={handleAdd}
-        existingData={editingIndex !== null ? characterAndLeadershipList[editingIndex] : undefined}
+        existingData={
+          editingIndex !== null
+            ? characterAndLeadershipList[editingIndex]
+            : undefined
+        }
       />
     </>
   );
 }
-

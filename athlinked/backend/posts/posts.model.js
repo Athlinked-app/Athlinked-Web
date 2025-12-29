@@ -140,15 +140,17 @@ async function likePost(postId, userId, client = null) {
 }
 
 async function unlikePost(postId, userId, client = null) {
-  const deleteLikeQuery = 'DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2';
-  const updateCountQuery = 'UPDATE posts SET like_count = GREATEST(like_count - 1, 0) WHERE id = $1 RETURNING like_count';
+  const deleteLikeQuery =
+    'DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2';
+  const updateCountQuery =
+    'UPDATE posts SET like_count = GREATEST(like_count - 1, 0) WHERE id = $1 RETURNING like_count';
 
   try {
     const dbClient = client || pool;
-    
+
     await dbClient.query(deleteLikeQuery, [postId, userId]);
     const updateResult = await dbClient.query(updateCountQuery, [postId]);
-    
+
     return { like_count: updateResult.rows[0].like_count };
   } catch (error) {
     console.error('Error unliking post:', error);

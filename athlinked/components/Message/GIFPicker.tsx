@@ -33,7 +33,10 @@ export default function GIFPicker({ onGIFSelect }: GIFPickerProps) {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+      if (
+        pickerRef.current &&
+        !pickerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -103,7 +106,9 @@ export default function GIFPicker({ onGIFSelect }: GIFPickerProps) {
       {isOpen && (
         <div className="absolute bottom-full right-0 left-10 mb-2 bg-white border border-gray-200 rounded-lg shadow-xl z-[9999] w-96 h-96 flex flex-col">
           <div className="flex items-center justify-between p-2 border-b border-gray-200">
-            <span className="text-sm font-semibold text-gray-700">Search GIFs</span>
+            <span className="text-sm font-semibold text-gray-700">
+              Search GIFs
+            </span>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
@@ -115,12 +120,15 @@ export default function GIFPicker({ onGIFSelect }: GIFPickerProps) {
 
           <div className="p-2 border-b border-gray-200">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={16}
+              />
               <input
                 type="text"
                 placeholder="Search GIFs..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={e => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-sm"
               />
             </div>
@@ -135,12 +143,14 @@ export default function GIFPicker({ onGIFSelect }: GIFPickerProps) {
               <div className="flex items-center justify-center h-full">
                 <div className="text-center text-gray-500">
                   <p className="mb-2">No GIFs found</p>
-                  <p className="text-xs">Add your Giphy API key to enable GIF search</p>
+                  <p className="text-xs">
+                    Add your Giphy API key to enable GIF search
+                  </p>
                 </div>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-2">
-                {displayGIFs.map((gif) => (
+                {displayGIFs.map(gif => (
                   <button
                     key={gif.id}
                     type="button"
@@ -162,4 +172,3 @@ export default function GIFPicker({ onGIFSelect }: GIFPickerProps) {
     </div>
   );
 }
-

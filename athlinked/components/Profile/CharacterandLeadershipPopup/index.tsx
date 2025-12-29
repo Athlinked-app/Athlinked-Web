@@ -18,7 +18,14 @@ interface CharacterAndLeadershipPopupProps {
 }
 
 const leadershipRolesOptions = ['Team lead', 'Mentorship', 'Peer coaching'];
-const languages = ['English', 'Spanish', 'French', 'Mandarin', 'Arabic', 'Other'];
+const languages = [
+  'English',
+  'Spanish',
+  'French',
+  'Mandarin',
+  'Arabic',
+  'Other',
+];
 
 export default function CharacterAndLeadershipPopup({
   open,
@@ -26,12 +33,21 @@ export default function CharacterAndLeadershipPopup({
   onSave,
   existingData,
 }: CharacterAndLeadershipPopupProps) {
-  const [teamCaptain, setTeamCaptain] = useState(existingData?.teamCaptain || '');
-  const [leadershipRoles, setLeadershipRoles] = useState(existingData?.leadershipRoles || '');
-  const [languagesSpoken, setLanguagesSpoken] = useState<string[]>(existingData?.languagesSpoken || []);
-  const [communityService, setCommunityService] = useState(existingData?.communityService || '');
+  const [teamCaptain, setTeamCaptain] = useState(
+    existingData?.teamCaptain || ''
+  );
+  const [leadershipRoles, setLeadershipRoles] = useState(
+    existingData?.leadershipRoles || ''
+  );
+  const [languagesSpoken, setLanguagesSpoken] = useState<string[]>(
+    existingData?.languagesSpoken || []
+  );
+  const [communityService, setCommunityService] = useState(
+    existingData?.communityService || ''
+  );
 
-  const [showLeadershipRolesDropdown, setShowLeadershipRolesDropdown] = useState(false);
+  const [showLeadershipRolesDropdown, setShowLeadershipRolesDropdown] =
+    useState(false);
 
   const leadershipRolesRef = useRef<HTMLDivElement>(null);
 
@@ -54,7 +70,10 @@ export default function CharacterAndLeadershipPopup({
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (leadershipRolesRef.current && !leadershipRolesRef.current.contains(event.target as Node)) {
+      if (
+        leadershipRolesRef.current &&
+        !leadershipRolesRef.current.contains(event.target as Node)
+      ) {
         setShowLeadershipRolesDropdown(false);
       }
     };
@@ -107,7 +126,9 @@ export default function CharacterAndLeadershipPopup({
       <div className="relative z-10 w-full max-w-2xl bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-2xl font-bold text-gray-900">Character and Leadership</h2>
+          <h2 className="text-2xl font-bold text-gray-900">
+            Character and Leadership
+          </h2>
           <button
             onClick={onClose}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -119,7 +140,9 @@ export default function CharacterAndLeadershipPopup({
         <div className="px-6 py-6 space-y-6">
           {/* Team Captain */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Team Captain</label>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Team Captain
+            </label>
             <div className="flex gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -127,7 +150,7 @@ export default function CharacterAndLeadershipPopup({
                   name="teamCaptain"
                   value="Yes"
                   checked={teamCaptain === 'Yes'}
-                  onChange={(e) => setTeamCaptain(e.target.value)}
+                  onChange={e => setTeamCaptain(e.target.value)}
                   className="w-4 h-4 text-[#CB9729] focus:ring-[#CB9729]"
                 />
                 <span className="text-gray-700">Yes</span>
@@ -138,7 +161,7 @@ export default function CharacterAndLeadershipPopup({
                   name="teamCaptain"
                   value="No"
                   checked={teamCaptain === 'No'}
-                  onChange={(e) => setTeamCaptain(e.target.value)}
+                  onChange={e => setTeamCaptain(e.target.value)}
                   className="w-4 h-4 text-[#CB9729] focus:ring-[#CB9729]"
                 />
                 <span className="text-gray-700">No</span>
@@ -148,21 +171,31 @@ export default function CharacterAndLeadershipPopup({
 
           {/* Leadership Roles or Mentorship */}
           <div className="relative" ref={leadershipRolesRef}>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Leadership Roles or Mentorship</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Leadership Roles or Mentorship
+            </label>
             <div
-              onClick={() => setShowLeadershipRolesDropdown(!showLeadershipRolesDropdown)}
+              onClick={() =>
+                setShowLeadershipRolesDropdown(!showLeadershipRolesDropdown)
+              }
               className={`w-full px-4 py-2 border rounded-lg cursor-pointer flex items-center justify-between ${
-                showLeadershipRolesDropdown ? 'border-[#CB9729] ring-2 ring-[#CB9729]' : 'border-gray-300'
+                showLeadershipRolesDropdown
+                  ? 'border-[#CB9729] ring-2 ring-[#CB9729]'
+                  : 'border-gray-300'
               }`}
             >
-              <span className={leadershipRoles ? 'text-gray-900' : 'text-gray-500'}>
+              <span
+                className={leadershipRoles ? 'text-gray-900' : 'text-gray-500'}
+              >
                 {leadershipRoles || 'Select mentorship'}
               </span>
-              <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${showLeadershipRolesDropdown ? 'transform rotate-180' : ''}`} />
+              <ChevronDown
+                className={`w-5 h-5 text-gray-400 transition-transform ${showLeadershipRolesDropdown ? 'transform rotate-180' : ''}`}
+              />
             </div>
             {showLeadershipRolesDropdown && (
               <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {leadershipRolesOptions.map((role) => (
+                {leadershipRolesOptions.map(role => (
                   <div
                     key={role}
                     onClick={() => {
@@ -182,10 +215,15 @@ export default function CharacterAndLeadershipPopup({
 
           {/* Languages Spoken */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">Languages Spoken</label>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Languages Spoken
+            </label>
             <div className="space-y-2">
-              {languages.map((language) => (
-                <label key={language} className="flex items-center gap-2 cursor-pointer">
+              {languages.map(language => (
+                <label
+                  key={language}
+                  className="flex items-center gap-2 cursor-pointer"
+                >
                   <input
                     type="checkbox"
                     checked={languagesSpoken.includes(language)}
@@ -200,10 +238,12 @@ export default function CharacterAndLeadershipPopup({
 
           {/* Community Service or Off-Field Contributions */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Community Service or Off-Field Contributions</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Community Service or Off-Field Contributions
+            </label>
             <textarea
               value={communityService}
-              onChange={(e) => setCommunityService(e.target.value)}
+              onChange={e => setCommunityService(e.target.value)}
               placeholder="Describe your community service or volunteer work"
               rows={4}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900 resize-none"
@@ -217,8 +257,8 @@ export default function CharacterAndLeadershipPopup({
             onClick={handleSave}
             disabled={!isFormValid}
             className={`px-6 py-2 rounded-lg transition-colors font-semibold ${
-              isFormValid 
-                ? 'bg-[#CB9729] text-white hover:bg-[#b78322] cursor-pointer' 
+              isFormValid
+                ? 'bg-[#CB9729] text-white hover:bg-[#b78322] cursor-pointer'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
@@ -229,4 +269,3 @@ export default function CharacterAndLeadershipPopup({
     </div>
   );
 }
-

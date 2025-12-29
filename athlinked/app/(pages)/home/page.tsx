@@ -191,7 +191,9 @@ export default function Landing() {
                   <Post
                     key={post.id}
                     post={post}
-                    currentUserProfileUrl={getProfileUrl(currentUser?.profile_url)}
+                    currentUserProfileUrl={getProfileUrl(
+                      currentUser?.profile_url
+                    )}
                     currentUsername={currentUser?.full_name || 'User'}
                     currentUserId={currentUserId || undefined}
                     onCommentCountUpdate={fetchPosts}
