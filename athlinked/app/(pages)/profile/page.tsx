@@ -252,11 +252,11 @@ export default function Profile() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         response = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -308,7 +308,7 @@ export default function Profile() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };
@@ -403,10 +403,13 @@ export default function Profile() {
                 if (data.city !== undefined) {
                   profileData.city = data.city || undefined; 
                 }
-                
+
                 console.log('Profile data being sent to API:', profileData);
                 if (data.sports_played) {
-                  const sports = data.sports_played.split(',').map(s => s.trim()).filter(Boolean);
+                  const sports = data.sports_played
+                    .split(',')
+                    .map(s => s.trim())
+                    .filter(Boolean);
                   if (sports.length > 0) profileData.primarySport = sports[0];
                 }
                 if (data.profile_url instanceof File) {

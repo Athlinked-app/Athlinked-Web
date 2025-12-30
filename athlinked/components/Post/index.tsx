@@ -145,7 +145,7 @@ export default function Post({
 
       try {
         const response = await fetch(
-          `http://localhost:3001/api/posts/${post.id}/like-status?user_id=${currentUserId}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}/like-status?user_id=${currentUserId}`
         );
 
         if (response.ok) {
@@ -188,11 +188,11 @@ export default function Post({
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 

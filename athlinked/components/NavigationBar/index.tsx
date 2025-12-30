@@ -203,6 +203,8 @@ export default function NavigationBar({
 
             const getHref = () => {
               switch (item.id) {
+                case 'search':
+                  return '/search';
                 case 'home':
                   return '/home';
                 case 'stats':

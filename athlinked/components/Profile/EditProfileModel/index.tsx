@@ -130,11 +130,11 @@ export default function EditProfileModal({
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -163,7 +163,7 @@ export default function EditProfileModal({
           if (data.user.background_image_url) {
             const bgUrl = data.user.background_image_url.startsWith('http')
               ? data.user.background_image_url
-              : `http://localhost:3001${data.user.background_image_url}`;
+              : `https://qd9ngjg1-3001.inc1.devtunnels.ms${data.user.background_image_url}`;
             setBackgroundImagePreview(bgUrl);
           }
           if (data.user.sports_played) {
@@ -223,7 +223,7 @@ export default function EditProfileModal({
               if (profileData.coverImage) {
                 const bgUrl = profileData.coverImage.startsWith('http')
                   ? profileData.coverImage
-                  : `http://localhost:3001${profileData.coverImage}`;
+                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.coverImage}`;
                 setBackgroundImagePreview(bgUrl);
               }
               if (profileData.primarySport) {
@@ -274,7 +274,7 @@ export default function EditProfileModal({
       if (userData.background_image_url) {
         const bgUrl = userData.background_image_url.startsWith('http')
           ? userData.background_image_url
-          : `http://localhost:3001${userData.background_image_url}`;
+          : `https://qd9ngjg1-3001.inc1.devtunnels.ms${userData.background_image_url}`;
         setBackgroundImagePreview(bgUrl);
       }
     }
