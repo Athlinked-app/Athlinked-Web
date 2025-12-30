@@ -115,7 +115,7 @@ export default function ShareModal({
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:3001/api/network/following/${currentUserId}`
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/following/${currentUserId}`
       );
 
       if (response.ok) {
@@ -158,7 +158,7 @@ export default function ShareModal({
   const getProfileUrl = (url: string | null | undefined) => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
-    return `http://localhost:3001${url}`;
+    return `https://qd9ngjg1-3001.inc1.devtunnels.ms${url}`;
   };
 
   const handleShareToWhatsApp = () => {

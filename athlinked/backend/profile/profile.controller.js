@@ -1,10 +1,5 @@
 const profileService = require('./profile.service');
 
-/**
- * Controller to get user profile
- * @param {object} req - Express request object
- * @param {object} res - Express response object
- */
 async function getUserProfile(req, res) {
   try {
     const userId = req.params.userId;
@@ -27,14 +22,8 @@ async function getUserProfile(req, res) {
   }
 }
 
-/**
- * Controller to create or update user profile (UPSERT)
- * @param {object} req - Express request object
- * @param {object} res - Express response object
- */
 async function upsertUserProfile(req, res) {
   try {
-    // Try multiple ways to get userId (for flexibility with different auth setups)
     const userId = req.user?.id || req.body.userId || req.headers['x-user-id'];
 
     console.log('Upsert profile request:', {
@@ -59,6 +48,7 @@ async function upsertUserProfile(req, res) {
       coverImageUrl,
       bio,
       education,
+      city,
       primarySport,
       sportsPlayed,
     } = req.body;
@@ -70,6 +60,7 @@ async function upsertUserProfile(req, res) {
     if (coverImageUrl !== undefined) profileData.coverImageUrl = coverImageUrl;
     if (bio !== undefined) profileData.bio = bio;
     if (education !== undefined) profileData.education = education;
+    if (city !== undefined) profileData.city = city;
     if (primarySport !== undefined) profileData.primarySport = primarySport;
     if (sportsPlayed !== undefined) profileData.sportsPlayed = sportsPlayed;
 
@@ -90,11 +81,6 @@ async function upsertUserProfile(req, res) {
   }
 }
 
-/**
- * Controller to update profile images only
- * @param {object} req - Express request object
- * @param {object} res - Express response object
- */
 async function updateProfileImages(req, res) {
   try {
     const userId = req.user?.id;

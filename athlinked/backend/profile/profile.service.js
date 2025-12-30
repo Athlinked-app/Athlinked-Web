@@ -1,10 +1,5 @@
 const profileModel = require('./profile.model');
 
-/**
- * Get user profile service
- * @param {string} userId - User ID
- * @returns {Promise<object>} Profile data formatted for API response
- */
 async function getUserProfileService(userId) {
   try {
     if (!userId) {
@@ -13,7 +8,6 @@ async function getUserProfileService(userId) {
 
     const profile = await profileModel.getUserProfile(userId);
 
-    // If profile doesn't exist, return default/empty values
     if (!profile) {
       return {
         userId,
@@ -24,22 +18,19 @@ async function getUserProfileService(userId) {
         education: null,
         primarySport: null,
         sportsPlayed: null,
+        dob: null,
       };
     }
 
-    // Format sports_played array from users table
     let sportsPlayed = null;
     if (profile.sports_played) {
       if (Array.isArray(profile.sports_played)) {
         sportsPlayed = profile.sports_played.join(', ');
       } else if (typeof profile.sports_played === 'string') {
-        // Handle PostgreSQL array format: "{Basketball, Football}" or '{"Basketball", "Football"}' -> "Basketball, Football"
         let sportsString = profile.sports_played;
-        // Remove curly brackets if present
         if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
           sportsString = sportsString.slice(1, -1);
         }
-        // Remove quotes (both single and double) from each sport
         sportsString = sportsString.replace(/["']/g, '');
         sportsPlayed = sportsString;
       }
@@ -54,6 +45,7 @@ async function getUserProfileService(userId) {
       education: profile.education || null,
       primarySport: profile.primary_sport || null,
       sportsPlayed: sportsPlayed,
+      dob: profile.dob || null,
     };
   } catch (error) {
     console.error('Get user profile service error:', error.message);
@@ -61,12 +53,6 @@ async function getUserProfileService(userId) {
   }
 }
 
-/**
- * Create or update user profile service
- * @param {string} userId - User ID
- * @param {object} profileData - Profile data
- * @returns {Promise<object>} Service result
- */
 async function upsertUserProfileService(userId, profileData) {
   try {
     console.log('=== SERVICE: upsertUserProfileService ===');
@@ -86,7 +72,6 @@ async function upsertUserProfileService(userId, profileData) {
       profileData
     );
 
-    // Format sports_played for response
     let sportsPlayed = null;
     if (updatedProfile.sports_played) {
       if (Array.isArray(updatedProfile.sports_played)) {
@@ -111,6 +96,7 @@ async function upsertUserProfileService(userId, profileData) {
         coverImage: updatedProfile.cover_image_url,
         bio: updatedProfile.bio,
         education: updatedProfile.education,
+        city: updatedProfile.city,
         primarySport: updatedProfile.primary_sport,
         sportsPlayed: sportsPlayed,
       },
@@ -123,12 +109,6 @@ async function upsertUserProfileService(userId, profileData) {
   }
 }
 
-/**
- * Update profile images only service
- * @param {string} userId - User ID
- * @param {object} imageData - Image URLs
- * @returns {Promise<object>} Service result
- */
 async function updateProfileImagesService(userId, imageData) {
   try {
     if (!userId) {

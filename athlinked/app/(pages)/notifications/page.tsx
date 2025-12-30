@@ -43,11 +43,11 @@ export default function NotificationsPage() {
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -82,7 +82,7 @@ export default function NotificationsPage() {
       // TODO: Replace with proper authentication
       // For now, pass userId as query param
       const response = await fetch(
-        `http://localhost:3001/api/notifications?limit=50&offset=0&userId=${currentUserId}`
+        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/notifications?limit=50&offset=0&userId=${currentUserId}`
       );
 
       if (!response.ok) {
@@ -208,7 +208,7 @@ export default function NotificationsPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };

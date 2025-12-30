@@ -35,6 +35,7 @@ interface EditProfileModalProps {
     background_image_url?: string | null;
     bio?: string;
     education?: string;
+    city?: string;
   };
   onSave?: (data: {
     full_name?: string;
@@ -89,6 +90,9 @@ export default function EditProfileModal({
   );
   const [bio, setBio] = useState(userData?.bio || '');
   const [education, setEducation] = useState(userData?.education || '');
+  const [city, setCity] = useState(userData?.city || '');
+  const [followersCount, setFollowersCount] = useState<number>(0);
+  const [calculatedAge, setCalculatedAge] = useState<string>('');
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(
     userData?.profile_url || null
@@ -105,6 +109,23 @@ export default function EditProfileModal({
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const backgroundImageInputRef = useRef<HTMLInputElement>(null);
 
+  // Fetch followers count
+  const fetchFollowersCount = async (userId: string) => {
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/network/counts/${userId}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setFollowersCount(data.followers || 0);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching followers count:', error);
+    }
+  };
+
   // Fetch user data from API
   useEffect(() => {
     const fetchUserData = async () => {
@@ -116,18 +137,25 @@ export default function EditProfileModal({
         }
 
         let response;
-        if (userIdentifier.startsWith('username:')) {
-          const username = userIdentifier.replace('username:', '');
-          response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-          );
-        } else {
-          response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-          );
-        }
+        try {
+          if (userIdentifier.startsWith('username:')) {
+            const username = userIdentifier.replace('username:', '');
+            response = await fetch(
+              `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            );
+          } else {
+            response = await fetch(
+              `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            );
+          }
 
-        if (!response.ok) {
+          if (!response.ok) {
+            console.error('Failed to fetch user data:', response.status, response.statusText);
+            setLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
           setLoading(false);
           return;
         }
@@ -152,7 +180,18 @@ export default function EditProfileModal({
             setBackgroundImagePreview(bgUrl);
           }
           if (data.user.sports_played) {
-            setSportsPlayed(data.user.sports_played);
+            // Parse PostgreSQL array format if needed
+            let sportsString = data.user.sports_played;
+            if (typeof sportsString === 'string') {
+              if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+                sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
+              }
+              setSportsPlayed(sportsString);
+            } else if (Array.isArray(sportsString)) {
+              setSportsPlayed(sportsString.join(', '));
+            } else {
+              setSportsPlayed('');
+            }
           }
           if (data.user.primary_sport) {
             setPrimarySport(data.user.primary_sport);
@@ -166,42 +205,59 @@ export default function EditProfileModal({
           // Note: bio and education are fetched from profile API, not user API
         }
 
-        // Also fetch profile data if we have user ID
+        // Also fetch profile data if we have user ID and userData prop doesn't have the data
         if (data.success && data.user && data.user.id) {
-          try {
-            const profileResponse = await fetch(
-              `http://localhost:3001/api/profile/${data.user.id}`
-            );
-            if (profileResponse.ok) {
-              const profileData = await profileResponse.json();
-              console.log(
-                'Fetched profile data in EditProfileModal:',
-                profileData
+          // Only fetch if userData prop doesn't already have the data
+          const needsProfileData = !userData?.bio && !userData?.education && !userData?.city;
+          
+          if (needsProfileData) {
+            try {
+              const profileResponse = await fetch(
+                `http://localhost:3001/api/profile/${data.user.id}`
               );
-              if (profileData.bio) setBio(profileData.bio);
-              if (profileData.education) setEducation(profileData.education);
-              if (profileData.profileImage) {
-                const profileUrl = profileData.profileImage.startsWith('http')
-                  ? profileData.profileImage
-                  : `http://localhost:3001${profileData.profileImage}`;
-                setProfileImagePreview(profileUrl);
+              if (profileResponse.ok) {
+                const profileData = await profileResponse.json();
+                console.log(
+                  'Fetched profile data in EditProfileModal:',
+                  profileData
+                );
+                // Only set if not already provided via props
+                if (!userData?.bio && profileData.bio) setBio(profileData.bio);
+                if (!userData?.education && profileData.education) setEducation(profileData.education);
+                if (!userData?.city && profileData.city) setCity(profileData.city);
+                if (!userData?.profile_url && profileData.profileImage) {
+                  const profileUrl = profileData.profileImage.startsWith('http')
+                    ? profileData.profileImage
+                    : `http://localhost:3001${profileData.profileImage}`;
+                  setProfileImagePreview(profileUrl);
+                }
+                if (!userData?.background_image_url && profileData.coverImage) {
+                  const bgUrl = profileData.coverImage.startsWith('http')
+                    ? profileData.coverImage
+                    : `http://localhost:3001${profileData.coverImage}`;
+                  setBackgroundImagePreview(bgUrl);
+                }
+                if (!userData?.primary_sport && profileData.primarySport) {
+                  setPrimarySport(profileData.primarySport);
+                }
+                if (!userData?.sports_played && profileData.sportsPlayed) {
+                  let sportsString = profileData.sportsPlayed;
+                  if (typeof sportsString === 'string') {
+                    if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+                      sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
+                    }
+                    setSportsPlayed(sportsString);
+                  } else if (Array.isArray(sportsString)) {
+                    setSportsPlayed(sportsString.join(', '));
+                  }
+                }
               }
-              if (profileData.coverImage) {
-                const bgUrl = profileData.coverImage.startsWith('http')
-                  ? profileData.coverImage
-                  : `http://localhost:3001${profileData.coverImage}`;
-                setBackgroundImagePreview(bgUrl);
-              }
-              if (profileData.primarySport) {
-                setPrimarySport(profileData.primarySport);
-                setSportsPlayed(profileData.primarySport);
-              }
+            } catch (error) {
+              console.error(
+                'Error fetching profile data in EditProfileModal:',
+                error
+              );
             }
-          } catch (error) {
-            console.error(
-              'Error fetching profile data in EditProfileModal:',
-              error
-            );
           }
         }
       } catch (error) {
@@ -211,37 +267,56 @@ export default function EditProfileModal({
       }
     };
 
-    if (open) {
+    // Only fetch if userData prop is not provided or incomplete
+    if (open && (!userData || !userData.full_name)) {
       fetchUserData();
+    } else if (open) {
+      // If userData is provided, just set loading to false
+      setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, userData]);
 
-  // Update state when userData props change (from parent)
+  // Update state when userData props change (from parent) - this should take priority
+  // This runs after the fetch, so it will override any fetched data
   useEffect(() => {
     if (userData) {
-      if (userData.full_name) setFullName(userData.full_name);
-      if (userData.username) setUsername(userData.username);
-      if (userData.location) setLocation(userData.location);
-      if (userData.age) setAge(userData.age.toString());
+      console.log('EditProfileModal: userData prop changed', userData);
+      // Always update these fields when userData changes
+      if (userData.full_name !== undefined) setFullName(userData.full_name || '');
+      if (userData.username !== undefined) setUsername(userData.username || '');
+      if (userData.location !== undefined) setLocation(userData.location || '');
+      if (userData.age !== undefined) setAge(userData.age ? userData.age.toString() : '');
       // Always update sports_played, even if empty (to clear it)
       if (userData.sports_played !== undefined) {
         setSportsPlayed(userData.sports_played || '');
       }
-      if (userData.primary_sport) setPrimarySport(userData.primary_sport);
-      if (userData.bio !== undefined) setBio(userData.bio);
-      if (userData.education !== undefined) setEducation(userData.education);
-      if (userData.profile_url) {
-        const profileUrl = userData.profile_url.startsWith('http')
-          ? userData.profile_url
-          : `http://localhost:3001${userData.profile_url}`;
-        setProfileImagePreview(profileUrl);
+      if (userData.primary_sport !== undefined) setPrimarySport(userData.primary_sport || '');
+      if (userData.bio !== undefined) setBio(userData.bio || '');
+      if (userData.education !== undefined) setEducation(userData.education || '');
+      if (userData.city !== undefined) setCity(userData.city || '');
+      if (userData.followers_count !== undefined) {
+        setFollowersCount(userData.followers_count || 0);
       }
-      if (userData.background_image_url) {
-        const bgUrl = userData.background_image_url.startsWith('http')
-          ? userData.background_image_url
-          : `http://localhost:3001${userData.background_image_url}`;
-        setBackgroundImagePreview(bgUrl);
+      if (userData.profile_url !== undefined) {
+        if (userData.profile_url) {
+          const profileUrl = userData.profile_url.startsWith('http')
+            ? userData.profile_url
+            : `http://localhost:3001${userData.profile_url}`;
+          setProfileImagePreview(profileUrl);
+        } else {
+          setProfileImagePreview(null);
+        }
+      }
+      if (userData.background_image_url !== undefined) {
+        if (userData.background_image_url) {
+          const bgUrl = userData.background_image_url.startsWith('http')
+            ? userData.background_image_url
+            : `http://localhost:3001${userData.background_image_url}`;
+          setBackgroundImagePreview(bgUrl);
+        } else {
+          setBackgroundImagePreview(null);
+        }
       }
     }
   }, [userData]);

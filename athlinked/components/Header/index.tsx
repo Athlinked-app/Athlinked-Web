@@ -33,11 +33,14 @@ export default function Header({
     let isMounted = true;
 
     const fetchUserData = async () => {
+      // If we have both userName and userProfileUrl props (and userProfileUrl is not undefined), use them and don't fetch
       if (
         propUserName &&
         propUserName !== 'User' &&
-        propUserProfileUrl &&
-        propUserProfileUrl !== '/assets/Header/profiledummy.jpeg'
+        propUserProfileUrl !== undefined &&
+        propUserProfileUrl !== null &&
+        propUserProfileUrl !== '/assets/Header/profiledummy.jpeg' &&
+        propUserProfileUrl.trim() !== ''
       ) {
         if (isMounted) {
           setLoading(false);

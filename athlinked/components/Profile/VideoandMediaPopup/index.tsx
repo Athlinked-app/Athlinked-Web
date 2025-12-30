@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 
 export interface VideoAndMedia {
+  id?: string;
   highlightVideoLink: string;
   videoStatus: string;
   verifiedMediaProfile: string;

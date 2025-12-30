@@ -48,6 +48,7 @@ interface ProfileData {
   education: string | null;
   primarySport: string | null;
   sportsPlayed: string | null;
+  dob: string | null;
 }
 
 function ProfileContent() {
@@ -181,8 +182,11 @@ function ProfileContent() {
   }, [targetUserId]);
 
   useEffect(() => {
+    setUserBio('');
+    
     if (targetUserId) {
       fetchProfileData();
+      fetchFollowCounts();
       if (viewUserId) {
         fetchViewUser();
       }
@@ -215,11 +219,18 @@ function ProfileContent() {
               username: user.username,
               user_type: user.user_type,
             });
-            if (user.bio) {
-              setUserBio(user.bio);
-            }
             if (user.sports_played) {
-              setSportsPlayed(user.sports_played);
+              let sportsString = user.sports_played;
+              if (typeof sportsString === 'string') {
+                if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+                  sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
+                }
+                setSportsPlayed(sportsString);
+              } else if (Array.isArray(sportsString)) {
+                setSportsPlayed(sportsString.join(', '));
+              } else {
+                setSportsPlayed('');
+              }
             }
           }
         }
@@ -247,10 +258,37 @@ function ProfileContent() {
       } else {
         console.log('No profile data found, will use defaults');
         setProfileData(null);
+        setUserBio('');
       }
     } catch (error) {
       console.error('Error fetching profile data:', error);
       setProfileData(null);
+      setUserBio('');
+    }
+  };
+
+  const fetchFollowCounts = async () => {
+    if (!targetUserId) return;
+    
+    try {
+      console.log('Fetching follow counts for userId:', targetUserId);
+      const response = await fetch(`http://localhost:3001/api/network/counts/${targetUserId}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Follow counts fetched:', data);
+        if (data.success) {
+          setFollowersCount(data.followers || 0);
+          setFollowingCount(data.following || 0);
+        }
+      } else {
+        console.log('Failed to fetch follow counts');
+        setFollowersCount(0);
+        setFollowingCount(0);
+      }
+    } catch (error) {
+      console.error('Error fetching follow counts:', error);
+      setFollowersCount(0);
+      setFollowingCount(0);
     }
   };
 
@@ -269,11 +307,11 @@ function ProfileContent() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         response = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -413,7 +451,7 @@ function ProfileContent() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };
@@ -439,6 +477,7 @@ function ProfileContent() {
       <main className="flex flex-1 w-full mt-5 overflow-hidden">
         <div className="hidden lg:block flex-[3] flex-shrink-0 border-r border-gray-200 overflow-hidden px-6 flex flex-col">
           <EditProfileModal
+            key={`${viewUserId || currentUserId}-${profileData?.profileImage}-${profileData?.bio}-${profileData?.education}-${profileData?.city}`}
             open={true}
             asSidebar={true}
             onClose={() => setShowEditProfile(false)}
@@ -476,10 +515,16 @@ function ProfileContent() {
                   : '',
               primary_sport: profileData?.primarySport || '',
               profile_completion: 60,
-              bio: profileData?.bio || '',
+              bio: userBio || profileData?.bio || '',
               education: profileData?.education || '',
+              city: profileData?.city || '',
             }}
             onSave={async data => {
+              if (viewUserId && viewUserId !== currentUserId) {
+                console.log('Cannot save another user\'s profile');
+                return;
+              }
+
               console.log('Profile saved:', data);
 
               try {
@@ -608,6 +653,7 @@ function ProfileContent() {
                             : null,
                         primarySport: null,
                         sportsPlayed: null,
+                        dob: null,
                       };
                     }
                     return {
@@ -699,35 +745,43 @@ function ProfileContent() {
                   <SocialHandles
                     handles={socialHandles}
                     onHandlesChange={setSocialHandles}
+                    userId={targetUserId}
                   />
                   <AcademicBackgrounds
                     backgrounds={academicBackgrounds}
                     onBackgroundsChange={setAcademicBackgrounds}
+                    userId={targetUserId}
                   />
                   <Achievements
                     achievements={achievements}
                     onAchievementsChange={setAchievements}
+                    userId={targetUserId}
                   />
                   <AthleticAndPerformanceComponent
                     athleticAndPerformance={athleticAndPerformance}
                     onAthleticAndPerformanceChange={setAthleticAndPerformance}
                     sportsPlayed={sportsPlayed}
+                    userId={targetUserId}
                   />
                   <CompetitionAndClubComponent
                     clubs={competitionAndClubs}
                     onClubsChange={setCompetitionAndClubs}
+                    userId={targetUserId}
                   />
                   <CharacterAndLeadershipComponent
                     characterAndLeadership={characterAndLeadership}
                     onCharacterAndLeadershipChange={setCharacterAndLeadership}
+                    userId={targetUserId}
                   />
                   <HealthAndReadinessComponent
                     healthAndReadiness={healthAndReadiness}
                     onHealthAndReadinessChange={setHealthAndReadiness}
+                    userId={targetUserId}
                   />
                   <VideoAndMediaComponent
                     videoAndMedia={videoAndMedia}
                     onVideoAndMediaChange={setVideoAndMedia}
+                    userId={targetUserId}
                   />
                 </>
               )}

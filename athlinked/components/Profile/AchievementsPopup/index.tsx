@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { X, ChevronDown, Upload } from 'lucide-react';
 
 export interface Achievement {
+  id?: string;
   title: string;
   organization: string;
   dateAwarded: string;
