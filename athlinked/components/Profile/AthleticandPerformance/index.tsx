@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Trash2, Pencil } from 'lucide-react';
 import AthleticAndPerformancePopup, {
   type AthleticAndPerformance,
@@ -12,35 +12,139 @@ interface AthleticAndPerformanceProps {
   athleticAndPerformance?: AthleticAndPerformance[];
   onAthleticAndPerformanceChange?: (data: AthleticAndPerformance[]) => void;
   sportsPlayed?: string; // Comma-separated string of sports
+  userId?: string | null;
 }
 
 export default function AthleticAndPerformanceComponent({
   athleticAndPerformance = [],
   onAthleticAndPerformanceChange,
   sportsPlayed = '',
+  userId,
 }: AthleticAndPerformanceProps) {
   const [athleticAndPerformanceList, setAthleticAndPerformanceList] = useState<
     AthleticAndPerformance[]
   >(athleticAndPerformance);
   const [showPopup, setShowPopup] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleAdd = (newData: AthleticAndPerformance) => {
+  // Sync with props when athleticAndPerformance changes
+  useEffect(() => {
+    if (athleticAndPerformance && athleticAndPerformance.length > 0) {
+      setAthleticAndPerformanceList(athleticAndPerformance);
+    }
+  }, [athleticAndPerformance]);
+
+  // Fetch athletic performance data when component mounts or userId changes
+  useEffect(() => {
+    if (userId) {
+      fetchAthleticPerformance();
+    }
+  }, [userId]);
+
+  const fetchAthleticPerformance = async () => {
+    if (!userId) return;
+    
+    try {
+      setLoading(true);
+      const response = await fetch(`http://localhost:3001/api/profile/${userId}/athletic-performance`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.data) {
+          setAthleticAndPerformanceList(data.data);
+          if (onAthleticAndPerformanceChange) {
+            onAthleticAndPerformanceChange(data.data);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching athletic performance:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdd = async (newData: AthleticAndPerformance) => {
     if (editingIndex !== null) {
       // Update existing entry
-      const updatedList = [...athleticAndPerformanceList];
-      updatedList[editingIndex] = newData;
-      setAthleticAndPerformanceList(updatedList);
-      if (onAthleticAndPerformanceChange) {
-        onAthleticAndPerformanceChange(updatedList);
+      const existingData = athleticAndPerformanceList[editingIndex];
+      if (!userId || !existingData.id) {
+        // If no userId or ID, just update local state
+        const updatedList = [...athleticAndPerformanceList];
+        updatedList[editingIndex] = newData;
+        setAthleticAndPerformanceList(updatedList);
+        if (onAthleticAndPerformanceChange) {
+          onAthleticAndPerformanceChange(updatedList);
+        }
+        setEditingIndex(null);
+        return;
       }
-      setEditingIndex(null);
+
+      try {
+        const response = await fetch(`http://localhost:3001/api/profile/athletic-performance/${existingData.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newData),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            const updatedList = [...athleticAndPerformanceList];
+            updatedList[editingIndex] = result.data;
+            setAthleticAndPerformanceList(updatedList);
+            if (onAthleticAndPerformanceChange) {
+              onAthleticAndPerformanceChange(updatedList);
+            }
+            setEditingIndex(null);
+          }
+        } else {
+          const errorData = await response.json();
+          alert(`Failed to update athletic performance: ${errorData.message || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Error updating athletic performance:', error);
+        alert('Error updating athletic performance. Please try again.');
+      }
     } else {
       // Add new entry
-      const updatedList = [...athleticAndPerformanceList, newData];
-      setAthleticAndPerformanceList(updatedList);
-      if (onAthleticAndPerformanceChange) {
-        onAthleticAndPerformanceChange(updatedList);
+      if (!userId) {
+        // If no userId, just update local state
+        const updatedList = [...athleticAndPerformanceList, newData];
+        setAthleticAndPerformanceList(updatedList);
+        if (onAthleticAndPerformanceChange) {
+          onAthleticAndPerformanceChange(updatedList);
+        }
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:3001/api/profile/${userId}/athletic-performance`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(newData),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success && result.data) {
+            const updatedList = [...athleticAndPerformanceList, result.data];
+            setAthleticAndPerformanceList(updatedList);
+            if (onAthleticAndPerformanceChange) {
+              onAthleticAndPerformanceChange(updatedList);
+            }
+          }
+        } else {
+          const errorData = await response.json();
+          alert(`Failed to save athletic performance: ${errorData.message || 'Unknown error'}`);
+        }
+      } catch (error) {
+        console.error('Error saving athletic performance:', error);
+        alert('Error saving athletic performance. Please try again.');
       }
     }
   };
@@ -55,13 +159,39 @@ export default function AthleticAndPerformanceComponent({
     setEditingIndex(null);
   };
 
-  const handleDelete = (index: number) => {
-    const updatedList = athleticAndPerformanceList.filter(
-      (_, i) => i !== index
-    );
-    setAthleticAndPerformanceList(updatedList);
-    if (onAthleticAndPerformanceChange) {
-      onAthleticAndPerformanceChange(updatedList);
+  const handleDelete = async (id: string | undefined, index: number) => {
+    if (!id) {
+      // If no ID, just update local state
+      const updatedList = athleticAndPerformanceList.filter(
+        (_, i) => i !== index
+      );
+      setAthleticAndPerformanceList(updatedList);
+      if (onAthleticAndPerformanceChange) {
+        onAthleticAndPerformanceChange(updatedList);
+      }
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:3001/api/profile/athletic-performance/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        const updatedList = athleticAndPerformanceList.filter(
+          (_, i) => i !== index
+        );
+        setAthleticAndPerformanceList(updatedList);
+        if (onAthleticAndPerformanceChange) {
+          onAthleticAndPerformanceChange(updatedList);
+        }
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to delete athletic performance: ${errorData.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting athletic performance:', error);
+      alert('Error deleting athletic performance. Please try again.');
     }
   };
 
@@ -83,7 +213,9 @@ export default function AthleticAndPerformanceComponent({
           </button>
         </div>
 
-        {athleticAndPerformanceList.length === 0 ? (
+        {loading ? (
+          <p className="text-gray-500 italic">Loading...</p>
+        ) : athleticAndPerformanceList.length === 0 ? (
           <p className="text-gray-500 italic">
             No athletic and performance data added yet. Click the + button to
             add one.
@@ -92,7 +224,7 @@ export default function AthleticAndPerformanceComponent({
           <div className="space-y-4">
             {athleticAndPerformanceList.map((data, index) => (
               <div
-                key={index}
+                key={data.id || index}
                 className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
               >
                 <div className="flex items-start justify-between">
@@ -143,7 +275,7 @@ export default function AthleticAndPerformanceComponent({
                       <Pencil className="w-4 h-4 text-blue-600" />
                     </button>
                     <button
-                      onClick={() => handleDelete(index)}
+                      onClick={() => handleDelete(data.id, index)}
                       className="p-2 rounded-full hover:bg-red-50 transition-colors"
                     >
                       <Trash2 className="w-4 h-4 text-red-600" />

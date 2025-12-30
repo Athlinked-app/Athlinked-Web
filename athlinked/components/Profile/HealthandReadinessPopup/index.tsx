@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 
 export interface HealthAndReadiness {
+  id?: string;
   injuryHistory: string; // 'Yes' or 'No'
   restingHeartRate: string;
   enduranceMetric: string;

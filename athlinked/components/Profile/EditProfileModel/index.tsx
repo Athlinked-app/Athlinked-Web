@@ -128,18 +128,25 @@ export default function EditProfileModal({
         }
 
         let response;
-        if (userIdentifier.startsWith('username:')) {
-          const username = userIdentifier.replace('username:', '');
-          response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
-          );
-        } else {
-          response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
-          );
-        }
+        try {
+          if (userIdentifier.startsWith('username:')) {
+            const username = userIdentifier.replace('username:', '');
+            response = await fetch(
+              `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            );
+          } else {
+            response = await fetch(
+              `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            );
+          }
 
-        if (!response.ok) {
+          if (!response.ok) {
+            console.error('Failed to fetch user data:', response.status, response.statusText);
+            setLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
           setLoading(false);
           return;
         }
@@ -164,7 +171,7 @@ export default function EditProfileModal({
           if (data.user.background_image_url) {
             const bgUrl = data.user.background_image_url.startsWith('http')
               ? data.user.background_image_url
-              : `https://qd9ngjg1-3001.inc1.devtunnels.ms${data.user.background_image_url}`;
+              : `http://localhost:3001${data.user.background_image_url}`;
             setBackgroundImagePreview(bgUrl);
           }
           if (data.user.sports_played) {
@@ -240,7 +247,7 @@ export default function EditProfileModal({
                 if (!userData?.background_image_url && profileData.coverImage) {
                   const bgUrl = profileData.coverImage.startsWith('http')
                     ? profileData.coverImage
-                    : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.coverImage}`;
+                    : `http://localhost:3001${profileData.coverImage}`;
                   setBackgroundImagePreview(bgUrl);
                 }
                 if (!userData?.primary_sport && profileData.primarySport) {
@@ -318,7 +325,7 @@ export default function EditProfileModal({
         if (userData.background_image_url) {
           const bgUrl = userData.background_image_url.startsWith('http')
             ? userData.background_image_url
-            : `https://qd9ngjg1-3001.inc1.devtunnels.ms${userData.background_image_url}`;
+            : `http://localhost:3001${userData.background_image_url}`;
           setBackgroundImagePreview(bgUrl);
         } else {
           setBackgroundImagePreview(null);

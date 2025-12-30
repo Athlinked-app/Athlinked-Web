@@ -48,6 +48,7 @@ interface ProfileData {
   city: string | null;
   primarySport: string | null;
   sportsPlayed: string | null;
+  dob: string | null;
 }
 
 export default function Profile() {
@@ -87,7 +88,6 @@ export default function Profile() {
   const [followersCount, setFollowersCount] = useState<number>(0);
   const [followingCount, setFollowingCount] = useState<number>(0);
   
-  // Determine which user ID to use for fetching data
   const targetUserId = viewUserId || currentUserId;
 
   const fetchPosts = async () => {
@@ -144,7 +144,6 @@ export default function Profile() {
           created_at: post.created_at,
         }));
         
-        // Filter posts by targetUserId if viewing another user's profile
         if (targetUserId && viewUserId) {
           transformedPosts = transformedPosts.filter(post => post.user_id === targetUserId);
         }
@@ -177,6 +176,8 @@ export default function Profile() {
   }, [targetUserId]);
 
   useEffect(() => {
+    setUserBio('');
+    
     if (targetUserId) {
       fetchProfileData();
       fetchFollowCounts();
@@ -184,14 +185,12 @@ export default function Profile() {
         fetchViewUser();
       }
     }
-  }, [targetUserId, viewUserId]);
+  }, [targetUserId, viewUserId, currentUserId]);
   
-  // Fetch the user being viewed
   const fetchViewUser = async () => {
     if (!viewUserId) return;
     
     try {
-      // Fetch from users endpoint and find the user
       const response = await fetch(
         `http://localhost:3001/api/signup/users?limit=1000`
       );
@@ -206,12 +205,9 @@ export default function Profile() {
               full_name: user.full_name || user.username || 'User',
               profile_url: user.profile_url,
               username: user.username,
+              user_type: user.user_type,
             });
-            if (user.bio) {
-              setUserBio(user.bio);
-            }
             if (user.sports_played) {
-              // Parse PostgreSQL array format if needed
               let sportsString = user.sports_played;
               if (typeof sportsString === 'string') {
                 if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
@@ -242,16 +238,10 @@ export default function Profile() {
         const data = await response.json();
         console.log('Profile data fetched:', data);
         setProfileData(data);
-        // Update userBio if bio is in profile data
-        if (data.bio) {
-          setUserBio(data.bio);
-        }
-        // Update sportsPlayed if it's in profile data
+        setUserBio(data.bio || '');
         if (data.sportsPlayed !== undefined && data.sportsPlayed !== null) {
-          // Handle string format (comma-separated or PostgreSQL array format)
           let sportsString = data.sportsPlayed;
           if (typeof sportsString === 'string') {
-            // Remove PostgreSQL array format if present
             if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
               sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
             }
@@ -263,10 +253,12 @@ export default function Profile() {
       } else {
         console.log('No profile data found, will use defaults');
         setProfileData(null);
+        setUserBio('');
       }
     } catch (error) {
       console.error('Error fetching profile data:', error);
       setProfileData(null);
+      setUserBio('');
     }
   };
 
@@ -328,28 +320,6 @@ export default function Profile() {
           username: data.user.username,
           user_type: data.user.user_type,
         });
-        if (data.user.bio) {
-          setUserBio(data.user.bio);
-        }
-        // Always update sports_played, even if empty (to clear it)
-        if (
-          data.user.sports_played !== undefined &&
-          data.user.sports_played !== null
-        ) {
-          // Parse PostgreSQL array format if needed
-          let sportsString = data.user.sports_played;
-          if (
-            typeof sportsString === 'string' &&
-            sportsString.startsWith('{') &&
-            sportsString.endsWith('}')
-          ) {
-            sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
-          }
-          setSportsPlayed(sportsString);
-        } else {
-          // Clear sports if null/undefined
-          setSportsPlayed('');
-        }
       }
     } catch (error) {
       console.error('Error fetching current user:', error);
@@ -359,6 +329,48 @@ export default function Profile() {
   const handlePostCreated = () => {
     fetchPosts();
   };
+
+  const calculateAge = (dob: string | null | undefined): number | null => {
+    if (!dob) return null;
+    
+    try {
+      let birthDate: Date;
+      
+      if (dob.includes('-')) {
+        birthDate = new Date(dob);
+      } else if (dob.includes('/')) {
+        const parts = dob.split('/');
+        if (parts.length === 3) {
+          const month = parseInt(parts[0], 10) - 1;
+          const day = parseInt(parts[1], 10);
+          const year = parseInt(parts[2], 10);
+          birthDate = new Date(year, month, day);
+        } else {
+          return null;
+        }
+      } else {
+        birthDate = new Date(dob);
+      }
+      
+      if (isNaN(birthDate.getTime())) {
+        return null;
+      }
+      
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      
+      return age;
+    } catch (error) {
+      console.error('Error calculating age:', error);
+      return null;
+    }
+  };
+
   const getProfileUrl = (profileUrl?: string | null): string | undefined => {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
@@ -387,28 +399,30 @@ export default function Profile() {
       <main className="flex flex-1 w-full mt-5 overflow-hidden">
         <div className="hidden lg:block flex-[3] flex-shrink-0 border-r border-gray-200 overflow-hidden px-6 flex flex-col">
           <EditProfileModal
-            key={`${currentUserId}-${profileData?.profileImage}-${profileData?.bio}-${profileData?.education}-${profileData?.city}`}
+            key={`${viewUserId || currentUserId}-${profileData?.profileImage}-${profileData?.bio}-${profileData?.education}-${profileData?.city}`}
             open={true}
             asSidebar={true}
             onClose={() => setShowEditProfile(false)}
             currentUserId={currentUserId}
             viewedUserId={viewUserId || currentUserId}
             userData={{
-              full_name: viewUser?.full_name || currentUser?.full_name,
-              username: viewUser?.username || currentUser?.username,
+              full_name: viewUserId ? (viewUser?.full_name || '') : (currentUser?.full_name || ''),
+              username: viewUserId ? (viewUser?.username || '') : (currentUser?.username || ''),
               profile_url: profileData?.profileImage 
                 ? (profileData.profileImage.startsWith('http') 
                     ? profileData.profileImage 
                     : `http://localhost:3001${profileData.profileImage}`)
-                : viewUser?.profile_url || currentUser?.profile_url,
+                : viewUserId 
+                  ? (viewUser?.profile_url || null)
+                  : (currentUser?.profile_url || null),
               background_image_url: profileData?.coverImage
                 ? profileData.coverImage.startsWith('http')
                   ? profileData.coverImage
                   : `http://localhost:3001${profileData.coverImage}`
                 : null,
-              user_type: currentUser?.user_type || 'athlete',
-              location: profileData?.city || 'Rochester, NY', 
-              age: 35, 
+              user_type: viewUserId ? (viewUser?.user_type || 'athlete') : (currentUser?.user_type || 'athlete'),
+              location: profileData?.city || (viewUserId ? '' : 'Rochester, NY'), 
+              age: calculateAge(profileData?.dob) || undefined, 
               followers_count: followersCount,
               sports_played: (() => {
                 if (sportsPlayed) return sportsPlayed;
@@ -430,6 +444,11 @@ export default function Profile() {
               city: profileData?.city || '',
             }}
             onSave={async data => {
+              if (viewUserId && viewUserId !== currentUserId) {
+                console.log('Cannot save another user\'s profile');
+                return;
+              }
+
               console.log('Profile saved:', data);
 
               try {
@@ -534,12 +553,10 @@ export default function Profile() {
                 const result = await response.json();
                 console.log('Profile saved successfully:', result);
                 
-                // Update bio state immediately
                 if (data.bio !== undefined) {
                   setUserBio(data.bio || '');
                 }
                 
-                // Update profileData state immediately
                 if (profileData.bio !== undefined || profileData.education !== undefined || profileData.city !== undefined || profileData.profileImageUrl !== undefined || profileData.coverImageUrl !== undefined) {
                   setProfileData(prev => {
                     if (!prev) {
@@ -553,6 +570,7 @@ export default function Profile() {
                         city: profileData.city !== undefined ? profileData.city : null,
                         primarySport: null,
                         sportsPlayed: null,
+                        dob: null,
                       };
                     }
                     return {
@@ -566,7 +584,6 @@ export default function Profile() {
                   });
                 }
                 
-                // Update currentUser state with new profile_url if profile image was updated
                 if (profileData.profileImageUrl !== undefined && currentUser) {
                   setCurrentUser(prev => prev ? {
                     ...prev,
@@ -574,10 +591,8 @@ export default function Profile() {
                   } : prev);
                 }
                 
-                // Refresh user data to get updated profile picture
                 await fetchCurrentUser();
                 await fetchProfileData();
-                // Also refresh viewUser if viewing another user's profile
                 if (viewUserId) {
                   await fetchViewUser();
                 }
@@ -639,35 +654,43 @@ export default function Profile() {
                   <SocialHandles
                     handles={socialHandles}
                     onHandlesChange={setSocialHandles}
+                    userId={targetUserId}
                   />
                   <AcademicBackgrounds
                     backgrounds={academicBackgrounds}
                     onBackgroundsChange={setAcademicBackgrounds}
+                    userId={targetUserId}
                   />
                   <Achievements
                     achievements={achievements}
                     onAchievementsChange={setAchievements}
+                    userId={targetUserId}
                   />
                   <AthleticAndPerformanceComponent
                     athleticAndPerformance={athleticAndPerformance}
                     onAthleticAndPerformanceChange={setAthleticAndPerformance}
                     sportsPlayed={sportsPlayed}
+                    userId={targetUserId}
                   />
                   <CompetitionAndClubComponent
                     clubs={competitionAndClubs}
                     onClubsChange={setCompetitionAndClubs}
+                    userId={targetUserId}
                   />
                   <CharacterAndLeadershipComponent
                     characterAndLeadership={characterAndLeadership}
                     onCharacterAndLeadershipChange={setCharacterAndLeadership}
+                    userId={targetUserId}
                   />
                   <HealthAndReadinessComponent
                     healthAndReadiness={healthAndReadiness}
                     onHealthAndReadinessChange={setHealthAndReadiness}
+                    userId={targetUserId}
                   />
                   <VideoAndMediaComponent
                     videoAndMedia={videoAndMedia}
                     onVideoAndMediaChange={setVideoAndMedia}
+                    userId={targetUserId}
                   />
                 </>
               )}
@@ -724,8 +747,8 @@ export default function Profile() {
                     <Posts
                       posts={posts}
                       currentUserId={currentUserId || undefined}
-                      currentUserProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
-                      currentUsername={viewUser?.full_name || currentUser?.full_name || 'User'}
+                      currentUserProfileUrl={getProfileUrl(viewUserId ? (viewUser?.profile_url || null) : (currentUser?.profile_url || null))}
+                      currentUsername={viewUserId ? (viewUser?.full_name || 'User') : (currentUser?.full_name || 'User')}
                       loading={loading}
                       onCommentCountUpdate={fetchPosts}
                       onPostDeleted={fetchPosts}
@@ -734,10 +757,9 @@ export default function Profile() {
                   {activeFilter === 'clips' && (
                     <Clips
                       currentUserId={targetUserId || undefined}
-                      currentUserProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
-                      currentUsername={viewUser?.full_name || currentUser?.full_name || 'User'}
+                      currentUserProfileUrl={getProfileUrl(viewUserId ? (viewUser?.profile_url || null) : (currentUser?.profile_url || null))}
+                      currentUsername={viewUserId ? (viewUser?.full_name || 'User') : (currentUser?.full_name || 'User')}
                       onClipDeleted={() => {
-                        // Refresh clips if needed
                         window.location.reload();
                       }}
                     />
@@ -746,8 +768,8 @@ export default function Profile() {
                     <Article
                       posts={posts}
                       currentUserId={currentUserId || undefined}
-                      currentUserProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
-                      currentUsername={viewUser?.full_name || currentUser?.full_name || 'User'}
+                      currentUserProfileUrl={getProfileUrl(viewUserId ? (viewUser?.profile_url || null) : (currentUser?.profile_url || null))}
+                      currentUsername={viewUserId ? (viewUser?.full_name || 'User') : (currentUser?.full_name || 'User')}
                       loading={loading}
                       onCommentCountUpdate={fetchPosts}
                       onPostDeleted={fetchPosts}
@@ -757,8 +779,8 @@ export default function Profile() {
                     <Event
                       posts={posts}
                       currentUserId={currentUserId || undefined}
-                      currentUserProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
-                      currentUsername={viewUser?.full_name || currentUser?.full_name || 'User'}
+                      currentUserProfileUrl={getProfileUrl(viewUserId ? (viewUser?.profile_url || null) : (currentUser?.profile_url || null))}
+                      currentUsername={viewUserId ? (viewUser?.full_name || 'User') : (currentUser?.full_name || 'User')}
                       loading={loading}
                       onCommentCountUpdate={fetchPosts}
                       onPostDeleted={fetchPosts}
@@ -819,8 +841,8 @@ export default function Profile() {
                     <MySavePost
                       posts={posts}
                       currentUserId={currentUserId || undefined}
-                      currentUserProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
-                      currentUsername={viewUser?.full_name || currentUser?.full_name || 'User'}
+                      currentUserProfileUrl={getProfileUrl(viewUserId ? (viewUser?.profile_url || null) : (currentUser?.profile_url || null))}
+                      currentUsername={viewUserId ? (viewUser?.full_name || 'User') : (currentUser?.full_name || 'User')}
                       viewedUserId={viewUserId}
                       loading={loading}
                       onCommentCountUpdate={fetchPosts}
@@ -830,8 +852,8 @@ export default function Profile() {
                   {activeSaveFilter === 'clips' && (
                     <MySaveClips
                       currentUserId={currentUserId || undefined}
-                      currentUserProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
-                      currentUsername={viewUser?.full_name || currentUser?.full_name || 'User'}
+                      currentUserProfileUrl={getProfileUrl(viewUserId ? (viewUser?.profile_url || null) : (currentUser?.profile_url || null))}
+                      currentUsername={viewUserId ? (viewUser?.full_name || 'User') : (currentUser?.full_name || 'User')}
                       viewedUserId={viewUserId}
                       onClipDeleted={() => {
                         window.location.reload();
@@ -842,8 +864,8 @@ export default function Profile() {
                     <MySaveArticle
                       posts={posts}
                       currentUserId={currentUserId || undefined}
-                      currentUserProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
-                      currentUsername={viewUser?.full_name || currentUser?.full_name || 'User'}
+                      currentUserProfileUrl={getProfileUrl(viewUserId ? (viewUser?.profile_url || null) : (currentUser?.profile_url || null))}
+                      currentUsername={viewUserId ? (viewUser?.full_name || 'User') : (currentUser?.full_name || 'User')}
                       viewedUserId={viewUserId}
                       loading={loading}
                       onCommentCountUpdate={fetchPosts}

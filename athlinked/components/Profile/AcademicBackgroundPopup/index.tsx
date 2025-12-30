@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { X, ChevronDown, ChevronUp, Upload } from 'lucide-react';
 
 export interface AcademicBackground {
+  id?: string;
   school: string;
   degree: string;
   qualification: string;

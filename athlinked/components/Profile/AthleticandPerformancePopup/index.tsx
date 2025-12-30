@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 
 export interface AthleticAndPerformance {
+  id?: string;
   height: string;
   weight: string;
   sport: string;
