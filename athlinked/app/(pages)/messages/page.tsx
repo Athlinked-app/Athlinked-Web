@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import NavigationBar from '@/components/NavigationBar';
 import { Search, CheckCheck, Check, X } from 'lucide-react';
@@ -47,7 +48,9 @@ interface SearchUser {
   relationship: 'following' | 'follower';
 }
 
-export default function MessagesPage() {
+function MessagesPageContent() {
+  const searchParams = useSearchParams();
+  const userIdFromUrl = searchParams.get('userId');
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
@@ -77,11 +80,11 @@ export default function MessagesPage() {
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -109,7 +112,7 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!currentUser?.id) return;
 
-    const newSocket = io('https://qd9ngjg1-3001.inc1.devtunnels.ms', {
+    const newSocket = io('http://localhost:3001', {
       transports: ['websocket'],
     });
 
@@ -258,7 +261,7 @@ export default function MessagesPage() {
 
     try {
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/conversations?user_id=${currentUser.id}`
+        `http://localhost:3001/api/messages/conversations?user_id=${currentUser.id}`
       );
 
       if (!response.ok) {
@@ -280,7 +283,7 @@ export default function MessagesPage() {
 
     try {
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/${conversationId}?user_id=${currentUser.id}`
+        `http://localhost:3001/api/messages/${conversationId}?user_id=${currentUser.id}`
       );
 
       if (!response.ok) {
@@ -352,7 +355,7 @@ export default function MessagesPage() {
 
     try {
       await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/${conversationId}/read`,
+        `http://localhost:3001/api/messages/${conversationId}/read`,
         {
           method: 'POST',
           headers: {
@@ -378,7 +381,7 @@ export default function MessagesPage() {
 
     try {
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/search/users?q=${encodeURIComponent(query)}&user_id=${currentUser.id}`
+        `http://localhost:3001/api/messages/search/users?q=${encodeURIComponent(query)}&user_id=${currentUser.id}`
       );
 
       if (!response.ok) {
@@ -435,7 +438,7 @@ export default function MessagesPage() {
         return;
       }
       const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/conversations/create',
+        'http://localhost:3001/api/messages/conversations/create',
         {
           method: 'POST',
           headers: {
@@ -486,6 +489,59 @@ export default function MessagesPage() {
       fetchConversations();
     }
   }, [currentUser?.id]);
+
+  // Handle userId from URL parameter - auto-select or create conversation
+  useEffect(() => {
+    const handleUserIdFromUrl = async () => {
+      if (!userIdFromUrl || !currentUser?.id) {
+        return;
+      }
+
+      // Wait for conversations to be loaded
+      if (conversations.length === 0) {
+        return;
+      }
+
+      // Check if conversation already exists
+      const existingConv = conversations.find(
+        conv => conv.other_user_id === userIdFromUrl
+      );
+
+      if (existingConv) {
+        setSelectedConversation(existingConv);
+        return;
+      }
+
+      // If no conversation exists, try to create one or find the user
+      try {
+        // First, try to search for the user to get their info
+        const searchResponse = await fetch(
+          `http://localhost:3001/api/messages/search/users?q=&user_id=${currentUser.id}`
+        );
+
+        if (searchResponse.ok) {
+          const searchData = await searchResponse.json();
+          if (searchData.success && searchData.users) {
+            const targetUser = searchData.users.find(
+              (u: SearchUser) => u.id === userIdFromUrl
+            );
+
+            if (targetUser) {
+              // Create conversation with this user
+              await handleSelectUser(targetUser);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error handling userId from URL:', error);
+      }
+    };
+
+    if (userIdFromUrl && currentUser?.id && conversations.length > 0) {
+      handleUserIdFromUrl();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userIdFromUrl, currentUser?.id, conversations.length]);
 
   useEffect(() => {
     if (selectedConversation) {
@@ -624,7 +680,7 @@ export default function MessagesPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
+      return `http://localhost:3001${profileUrl}`;
     }
     return profileUrl;
   };
@@ -1270,5 +1326,19 @@ export default function MessagesPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-[#D4D4D4]">
+          <p className="text-gray-600">Loading messages...</p>
+        </div>
+      }
+    >
+      <MessagesPageContent />
+    </Suspense>
   );
 }
