@@ -77,12 +77,12 @@ export default function HomeHerosection({
     if (userIdentifier.startsWith('username:')) {
       const username = userIdentifier.replace('username:', '');
       userResponse = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`,
+        `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`,
         { headers }
       );
     } else {
       userResponse = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`,
+        `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`,
         { headers }
       );
     }
@@ -107,7 +107,7 @@ export default function HomeHerosection({
       const userData = await getUserData();
 
       const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts',
+        'http://localhost:3001/api/posts',
         {
           method: 'POST',
           headers: {
@@ -153,7 +153,7 @@ export default function HomeHerosection({
       formData.append('caption', caption);
 
       const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts',
+        'http://localhost:3001/api/posts',
         {
           method: 'POST',
           headers: {
@@ -225,7 +225,7 @@ export default function HomeHerosection({
         }
 
         const response = await fetch(
-          'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts',
+          'http://localhost:3001/api/posts',
           {
             method: 'POST',
             headers: {
@@ -265,7 +265,7 @@ export default function HomeHerosection({
         }
 
         const response = await fetch(
-          'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts',
+          'http://localhost:3001/api/posts',
           {
             method: 'POST',
             headers: {

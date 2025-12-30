@@ -113,7 +113,7 @@ export default function EditProfilePopup({
     setLoadingSports(true);
     try {
       const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/sports'
+        'http://localhost:3001/api/sports'
       );
       if (response.ok) {
         const data = await response.json();

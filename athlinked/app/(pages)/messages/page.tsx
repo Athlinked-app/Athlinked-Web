@@ -80,11 +80,11 @@ function MessagesPageContent() {
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -112,7 +112,7 @@ function MessagesPageContent() {
   useEffect(() => {
     if (!currentUser?.id) return;
 
-    const newSocket = io('https://qd9ngjg1-3001.inc1.devtunnels.ms', {
+    const newSocket = io('http://localhost:3001', {
       transports: ['websocket'],
     });
 
@@ -261,7 +261,7 @@ function MessagesPageContent() {
 
     try {
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/conversations?user_id=${currentUser.id}`
+        `http://localhost:3001/api/messages/conversations?user_id=${currentUser.id}`
       );
 
       if (!response.ok) {
@@ -283,7 +283,7 @@ function MessagesPageContent() {
 
     try {
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/${conversationId}?user_id=${currentUser.id}`
+        `http://localhost:3001/api/messages/${conversationId}?user_id=${currentUser.id}`
       );
 
       if (!response.ok) {
@@ -355,7 +355,7 @@ function MessagesPageContent() {
 
     try {
       await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/${conversationId}/read`,
+        `http://localhost:3001/api/messages/${conversationId}/read`,
         {
           method: 'POST',
           headers: {
@@ -381,7 +381,7 @@ function MessagesPageContent() {
 
     try {
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/search/users?q=${encodeURIComponent(query)}&user_id=${currentUser.id}`
+        `http://localhost:3001/api/messages/search/users?q=${encodeURIComponent(query)}&user_id=${currentUser.id}`
       );
 
       if (!response.ok) {
@@ -438,7 +438,7 @@ function MessagesPageContent() {
         return;
       }
       const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/conversations/create',
+        'http://localhost:3001/api/messages/conversations/create',
         {
           method: 'POST',
           headers: {
@@ -680,7 +680,7 @@ function MessagesPageContent() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
+      return `http://localhost:3001${profileUrl}`;
     }
     return profileUrl;
   };

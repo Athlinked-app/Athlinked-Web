@@ -49,6 +49,7 @@ interface ProfileData {
   primarySport: string | null;
   sportsPlayed: string | null;
   dob: string | null;
+  city?: string | null;
 }
 
 function ProfileContent() {
@@ -93,6 +94,8 @@ function ProfileContent() {
   const [videoAndMedia, setVideoAndMedia] = useState<VideoAndMedia[]>([]);
   const [favouritedUsers, setFavouritedUsers] = useState<CurrentUser[]>([]);
   const [loadingFavourites, setLoadingFavourites] = useState(false);
+  const [followersCount, setFollowersCount] = useState<number>(0);
+  const [followingCount, setFollowingCount] = useState<number>(0);
   const targetUserId = viewUserId || currentUserId;
 
   const fetchPosts = async () => {
@@ -307,11 +310,11 @@ function ProfileContent() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         response = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -451,7 +454,7 @@ function ProfileContent() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
+      return `http://localhost:3001${profileUrl}`;
     }
     return profileUrl;
   };
