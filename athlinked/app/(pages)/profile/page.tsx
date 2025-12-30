@@ -36,6 +36,7 @@ interface CurrentUser {
   full_name: string;
   profile_url?: string;
   username?: string;
+  user_type?: string;
 }
 interface ProfileData {
   userId: string;
@@ -83,6 +84,8 @@ export default function Profile() {
     HealthAndReadiness[]
   >([]);
   const [videoAndMedia, setVideoAndMedia] = useState<VideoAndMedia[]>([]);
+  const [followersCount, setFollowersCount] = useState<number>(0);
+  const [followingCount, setFollowingCount] = useState<number>(0);
   
   // Determine which user ID to use for fetching data
   const targetUserId = viewUserId || currentUserId;
@@ -176,6 +179,7 @@ export default function Profile() {
   useEffect(() => {
     if (targetUserId) {
       fetchProfileData();
+      fetchFollowCounts();
       if (viewUserId) {
         fetchViewUser();
       }
@@ -207,7 +211,18 @@ export default function Profile() {
               setUserBio(user.bio);
             }
             if (user.sports_played) {
-              setSportsPlayed(user.sports_played);
+              // Parse PostgreSQL array format if needed
+              let sportsString = user.sports_played;
+              if (typeof sportsString === 'string') {
+                if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+                  sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
+                }
+                setSportsPlayed(sportsString);
+              } else if (Array.isArray(sportsString)) {
+                setSportsPlayed(sportsString.join(', '));
+              } else {
+                setSportsPlayed('');
+              }
             }
           }
         }
@@ -231,6 +246,20 @@ export default function Profile() {
         if (data.bio) {
           setUserBio(data.bio);
         }
+        // Update sportsPlayed if it's in profile data
+        if (data.sportsPlayed !== undefined && data.sportsPlayed !== null) {
+          // Handle string format (comma-separated or PostgreSQL array format)
+          let sportsString = data.sportsPlayed;
+          if (typeof sportsString === 'string') {
+            // Remove PostgreSQL array format if present
+            if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+              sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
+            }
+            setSportsPlayed(sportsString);
+          } else if (Array.isArray(sportsString)) {
+            setSportsPlayed(sportsString.join(', '));
+          }
+        }
       } else {
         console.log('No profile data found, will use defaults');
         setProfileData(null);
@@ -238,6 +267,31 @@ export default function Profile() {
     } catch (error) {
       console.error('Error fetching profile data:', error);
       setProfileData(null);
+    }
+  };
+
+  const fetchFollowCounts = async () => {
+    if (!targetUserId) return;
+    
+    try {
+      console.log('Fetching follow counts for userId:', targetUserId);
+      const response = await fetch(`http://localhost:3001/api/network/counts/${targetUserId}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Follow counts fetched:', data);
+        if (data.success) {
+          setFollowersCount(data.followers || 0);
+          setFollowingCount(data.following || 0);
+        }
+      } else {
+        console.log('Failed to fetch follow counts');
+        setFollowersCount(0);
+        setFollowingCount(0);
+      }
+    } catch (error) {
+      console.error('Error fetching follow counts:', error);
+      setFollowersCount(0);
+      setFollowingCount(0);
     }
   };
 
@@ -272,6 +326,7 @@ export default function Profile() {
           full_name: data.user.full_name || data.user.username || 'User',
           profile_url: data.user.profile_url,
           username: data.user.username,
+          user_type: data.user.user_type,
         });
         if (data.user.bio) {
           setUserBio(data.user.bio);
@@ -325,13 +380,14 @@ export default function Profile() {
   return (
     <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
       <Header
-        userName={viewUser?.full_name || currentUser?.full_name}
-        userProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
+        userName={currentUser?.full_name}
+        userProfileUrl={getProfileUrl(currentUser?.profile_url)}
       />
 
       <main className="flex flex-1 w-full mt-5 overflow-hidden">
         <div className="hidden lg:block flex-[3] flex-shrink-0 border-r border-gray-200 overflow-hidden px-6 flex flex-col">
           <EditProfileModal
+            key={`${currentUserId}-${profileData?.profileImage}-${profileData?.bio}-${profileData?.education}-${profileData?.city}`}
             open={true}
             asSidebar={true}
             onClose={() => setShowEditProfile(false)}
@@ -350,21 +406,28 @@ export default function Profile() {
                   ? profileData.coverImage
                   : `http://localhost:3001${profileData.coverImage}`
                 : null,
-              user_type: 'coach',
-              location: 'Rochester, NY', 
+              user_type: currentUser?.user_type || 'athlete',
+              location: profileData?.city || 'Rochester, NY', 
               age: 35, 
-              followers_count: 10000,
-              sports_played:
-                profileData?.sportsPlayed !== undefined &&
-                profileData?.sportsPlayed !== null
-                  ? typeof profileData.sportsPlayed === 'string'
-                    ? profileData.sportsPlayed.replace(/[{}"']/g, '')
-                    : ''
-                  : '',
+              followers_count: followersCount,
+              sports_played: (() => {
+                if (sportsPlayed) return sportsPlayed;
+                if (profileData?.sportsPlayed !== undefined && profileData?.sportsPlayed !== null) {
+                  const sports = profileData.sportsPlayed;
+                  if (typeof sports === 'string') {
+                    return sports.replace(/[{}"']/g, '');
+                  }
+                  if (Array.isArray(sports)) {
+                    return (sports as string[]).join(', ');
+                  }
+                }
+                return '';
+              })(),
               primary_sport: profileData?.primarySport || '',
               profile_completion: 60,
-              bio: profileData?.bio || '',
+              bio: userBio || profileData?.bio || '',
               education: profileData?.education || '',
+              city: profileData?.city || '',
             }}
             onSave={async data => {
               console.log('Profile saved:', data);
@@ -405,12 +468,15 @@ export default function Profile() {
                 }
 
                 console.log('Profile data being sent to API:', profileData);
-                if (data.sports_played) {
-                  const sports = data.sports_played
-                    .split(',')
-                    .map(s => s.trim())
-                    .filter(Boolean);
-                  if (sports.length > 0) profileData.primarySport = sports[0];
+                if (data.sports_played !== undefined) {
+                  profileData.sportsPlayed = data.sports_played || undefined;
+                  if (data.sports_played) {
+                    const sports = data.sports_played
+                      .split(',')
+                      .map(s => s.trim())
+                      .filter(Boolean);
+                    if (sports.length > 0) profileData.primarySport = sports[0];
+                  }
                 }
                 if (data.profile_url instanceof File) {
                   const formData = new FormData();
@@ -474,14 +540,14 @@ export default function Profile() {
                 }
                 
                 // Update profileData state immediately
-                if (profileData.bio !== undefined || profileData.education !== undefined || profileData.city !== undefined) {
+                if (profileData.bio !== undefined || profileData.education !== undefined || profileData.city !== undefined || profileData.profileImageUrl !== undefined || profileData.coverImageUrl !== undefined) {
                   setProfileData(prev => {
                     if (!prev) {
                       return {
                         userId: currentUserId,
                         fullName: null,
-                        profileImage: null,
-                        coverImage: null,
+                        profileImage: profileData.profileImageUrl || null,
+                        coverImage: profileData.coverImageUrl || null,
                         bio: profileData.bio !== undefined ? profileData.bio : null,
                         education: profileData.education !== undefined ? profileData.education : null,
                         city: profileData.city !== undefined ? profileData.city : null,
@@ -491,6 +557,8 @@ export default function Profile() {
                     }
                     return {
                       ...prev,
+                      profileImage: profileData.profileImageUrl !== undefined ? profileData.profileImageUrl : prev.profileImage,
+                      coverImage: profileData.coverImageUrl !== undefined ? profileData.coverImageUrl : prev.coverImage,
                       bio: profileData.bio !== undefined ? profileData.bio : prev.bio,
                       education: profileData.education !== undefined ? profileData.education : prev.education,
                       city: profileData.city !== undefined ? profileData.city : prev.city,
@@ -498,8 +566,21 @@ export default function Profile() {
                   });
                 }
                 
-                fetchCurrentUser();
-                fetchProfileData();
+                // Update currentUser state with new profile_url if profile image was updated
+                if (profileData.profileImageUrl !== undefined && currentUser) {
+                  setCurrentUser(prev => prev ? {
+                    ...prev,
+                    profile_url: profileData.profileImageUrl || prev.profile_url,
+                  } : prev);
+                }
+                
+                // Refresh user data to get updated profile picture
+                await fetchCurrentUser();
+                await fetchProfileData();
+                // Also refresh viewUser if viewing another user's profile
+                if (viewUserId) {
+                  await fetchViewUser();
+                }
               } catch (error) {
                 console.error('Error saving profile:', error);
                 alert('Error saving profile. Please try again.');

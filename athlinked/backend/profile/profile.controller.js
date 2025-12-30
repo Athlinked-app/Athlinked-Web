@@ -59,6 +59,7 @@ async function upsertUserProfile(req, res) {
       coverImageUrl,
       bio,
       education,
+      city,
       primarySport,
       sportsPlayed,
     } = req.body;
@@ -70,6 +71,7 @@ async function upsertUserProfile(req, res) {
     if (coverImageUrl !== undefined) profileData.coverImageUrl = coverImageUrl;
     if (bio !== undefined) profileData.bio = bio;
     if (education !== undefined) profileData.education = education;
+    if (city !== undefined) profileData.city = city;
     if (primarySport !== undefined) profileData.primarySport = primarySport;
     if (sportsPlayed !== undefined) profileData.sportsPlayed = sportsPlayed;
 
