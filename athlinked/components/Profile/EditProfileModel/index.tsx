@@ -11,6 +11,11 @@ interface EditProfileModalProps {
   asSidebar?: boolean;
   currentUserId?: string | null;
   viewedUserId?: string | null;
+  connectionRequestStatus?: {
+    exists: boolean;
+    status: string | null;
+  } | null;
+  onSendConnectionRequest?: () => void;
   userData?: {
     full_name?: string;
     username?: string;
@@ -61,6 +66,8 @@ export default function EditProfileModal({
   asSidebar = false,
   currentUserId,
   viewedUserId,
+  connectionRequestStatus,
+  onSendConnectionRequest,
   userData,
   onSave,
 }: EditProfileModalProps) {
@@ -650,16 +657,35 @@ export default function EditProfileModal({
                   </button>
                 ) : (
                   <>
-                    {/* Show Connect and Message buttons for other users' profiles */}
                     <button
                       onClick={() => {
-                        // TODO: Implement connect functionality
-                        console.log('Connect clicked for user:', viewedUserId);
+                        if (onSendConnectionRequest && connectionRequestStatus?.status !== 'connected') {
+                          onSendConnectionRequest();
+                        }
                       }}
-                      className="px-6 py-4 bg-[#CB9729] text-white rounded-lg hover:bg-[#b78322] transition-colors flex items-center gap-2"
+                      disabled={
+                        (connectionRequestStatus?.exists &&
+                        connectionRequestStatus?.status === 'pending') ||
+                        connectionRequestStatus?.status === 'connected'
+                      }
+                      className={`px-6 py-4 rounded-lg transition-colors flex items-center gap-2 ${
+                        connectionRequestStatus?.status === 'connected'
+                          ? 'bg-green-600 text-white cursor-default'
+                          : connectionRequestStatus?.exists &&
+                            connectionRequestStatus?.status === 'pending'
+                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                          : 'bg-[#CB9729] text-white hover:bg-[#b78322]'
+                      }`}
                     >
                       <UserPlus className="w-4 h-4" />
-                      <span>Connect</span>
+                      <span>
+                        {connectionRequestStatus?.status === 'connected'
+                          ? 'Connected'
+                          : connectionRequestStatus?.exists &&
+                            connectionRequestStatus?.status === 'pending'
+                          ? 'Pending'
+                          : 'Connect'}
+                      </span>
                     </button>
                     <button
                       onClick={() => {

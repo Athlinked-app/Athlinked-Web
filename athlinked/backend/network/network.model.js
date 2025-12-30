@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
+const { createNotification } = require('../notifications/notifications.helper');
 
 /**
  * Follow a user
@@ -233,6 +234,309 @@ async function isFollowing(followerId, followingId) {
   }
 }
 
+async function sendConnectionRequest(requesterId, receiverId) {
+  const dbClient = await pool.connect();
+  try {
+    await dbClient.query('BEGIN');
+
+    if (requesterId === receiverId) {
+      await dbClient.query('ROLLBACK');
+      throw new Error('Cannot send connection request to yourself');
+    }
+
+    const checkExistingQuery = `
+      SELECT id, status FROM connection_requests 
+      WHERE (requester_id = $1 AND receiver_id = $2) 
+         OR (requester_id = $2 AND receiver_id = $1)
+    `;
+    const checkResult = await dbClient.query(checkExistingQuery, [
+      requesterId,
+      receiverId,
+    ]);
+
+    if (checkResult.rows.length > 0) {
+      const existing = checkResult.rows[0];
+      if (existing.status === 'pending') {
+        await dbClient.query('ROLLBACK');
+        return { success: false, message: 'Connection request already pending' };
+      }
+      if (existing.status === 'accepted') {
+        await dbClient.query('ROLLBACK');
+        return { success: false, message: 'Already connected' };
+      }
+    }
+
+    const checkFollowQuery =
+      'SELECT id FROM user_follows WHERE follower_id = $1 AND following_id = $2';
+    const followCheck = await dbClient.query(checkFollowQuery, [
+      requesterId,
+      receiverId,
+    ]);
+
+    if (followCheck.rows.length > 0) {
+      await dbClient.query('ROLLBACK');
+      return { success: false, message: 'Already following this user' };
+    }
+
+    const id = uuidv4();
+    const insertQuery = `
+      INSERT INTO connection_requests (id, requester_id, receiver_id, status, created_at)
+      VALUES ($1, $2, $3, 'pending', NOW())
+      ON CONFLICT (requester_id, receiver_id) DO UPDATE
+      SET status = 'pending', updated_at = NOW()
+      RETURNING *
+    `;
+    const result = await dbClient.query(insertQuery, [
+      id,
+      requesterId,
+      receiverId,
+    ]);
+
+    await dbClient.query('COMMIT');
+
+    const requesterQuery = 'SELECT full_name FROM users WHERE id = $1';
+    const requesterResult = await pool.query(requesterQuery, [requesterId]);
+    const requesterName =
+      requesterResult.rows[0]?.full_name || 'Someone';
+
+    try {
+      await createNotification({
+        recipientUserId: receiverId,
+        actorUserId: requesterId,
+        actorFullName: requesterName,
+        type: 'connection_request',
+        entityType: 'profile',
+        entityId: requesterId,
+        message: `${requesterName} sent you a connection request`,
+      });
+    } catch (notifError) {
+      console.error('Error creating notification:', notifError);
+    }
+
+    return { success: true, request: result.rows[0] };
+  } catch (error) {
+    await dbClient.query('ROLLBACK');
+    if (error.code === '23505') {
+      return { success: false, message: 'Connection request already exists' };
+    }
+    console.error('Error sending connection request:', error);
+    throw error;
+  } finally {
+    dbClient.release();
+  }
+}
+
+async function acceptConnectionRequest(requestId, receiverId) {
+  const dbClient = await pool.connect();
+  try {
+    await dbClient.query('BEGIN');
+
+    const getRequestQuery = `
+      SELECT * FROM connection_requests 
+      WHERE id = $1 AND receiver_id = $2 AND status = 'pending'
+    `;
+    const requestResult = await dbClient.query(getRequestQuery, [
+      requestId,
+      receiverId,
+    ]);
+
+    if (requestResult.rows.length === 0) {
+      await dbClient.query('ROLLBACK');
+      return { success: false, message: 'Connection request not found' };
+    }
+
+    const request = requestResult.rows[0];
+    const requesterId = request.requester_id;
+
+    const updateQuery = `
+      UPDATE connection_requests 
+      SET status = 'accepted', updated_at = NOW()
+      WHERE id = $1
+    `;
+    await dbClient.query(updateQuery, [requestId]);
+
+    const requesterQuery = 'SELECT username, full_name FROM users WHERE id = $1';
+    const receiverQuery = 'SELECT username, full_name FROM users WHERE id = $1';
+
+    const [requesterResult, receiverResult] = await Promise.all([
+      dbClient.query(requesterQuery, [requesterId]),
+      dbClient.query(receiverQuery, [receiverId]),
+    ]);
+
+    const requesterUsername =
+      requesterResult.rows[0].username ||
+      requesterResult.rows[0].full_name ||
+      'User';
+    const receiverUsername =
+      receiverResult.rows[0].username ||
+      receiverResult.rows[0].full_name ||
+      'User';
+
+    const followId1 = uuidv4();
+    const followId2 = uuidv4();
+
+    const insertFollow1 = `
+      INSERT INTO user_follows (id, follower_id, following_id, follower_username, following_username, created_at)
+      VALUES ($1, $2, $3, $4, $5, NOW())
+    `;
+    const insertFollow2 = `
+      INSERT INTO user_follows (id, follower_id, following_id, follower_username, following_username, created_at)
+      VALUES ($1, $2, $3, $4, $5, NOW())
+    `;
+
+    await dbClient.query(insertFollow1, [
+      followId1,
+      requesterId,
+      receiverId,
+      requesterUsername,
+      receiverUsername,
+    ]);
+    await dbClient.query(insertFollow2, [
+      followId2,
+      receiverId,
+      requesterId,
+      receiverUsername,
+      requesterUsername,
+    ]);
+
+    await dbClient.query(
+      'UPDATE users SET following = following + 1, followers = followers + 1 WHERE id = $1',
+      [requesterId]
+    );
+    await dbClient.query(
+      'UPDATE users SET following = following + 1, followers = followers + 1 WHERE id = $1',
+      [receiverId]
+    );
+
+    await dbClient.query('COMMIT');
+
+    const receiverName =
+      receiverResult.rows[0].full_name || receiverResult.rows[0].username || 'Someone';
+
+    try {
+      await createNotification({
+        recipientUserId: requesterId,
+        actorUserId: receiverId,
+        actorFullName: receiverName,
+        type: 'connection_accepted',
+        entityType: 'profile',
+        entityId: receiverId,
+        message: `${receiverName} accepted your connection request`,
+      });
+    } catch (notifError) {
+      console.error('Error creating notification:', notifError);
+    }
+
+    return { success: true };
+  } catch (error) {
+    await dbClient.query('ROLLBACK');
+    console.error('Error accepting connection request:', error);
+    throw error;
+  } finally {
+    dbClient.release();
+  }
+}
+
+async function rejectConnectionRequest(requestId, receiverId) {
+  const dbClient = await pool.connect();
+  try {
+    await dbClient.query('BEGIN');
+
+    const getRequestQuery = `
+      SELECT * FROM connection_requests 
+      WHERE id = $1 AND receiver_id = $2 AND status = 'pending'
+    `;
+    const requestResult = await dbClient.query(getRequestQuery, [
+      requestId,
+      receiverId,
+    ]);
+
+    if (requestResult.rows.length === 0) {
+      await dbClient.query('ROLLBACK');
+      return { success: false, message: 'Connection request not found' };
+    }
+
+    const deleteQuery = 'DELETE FROM connection_requests WHERE id = $1';
+    await dbClient.query(deleteQuery, [requestId]);
+
+    await dbClient.query('COMMIT');
+    return { success: true };
+  } catch (error) {
+    await dbClient.query('ROLLBACK');
+    console.error('Error rejecting connection request:', error);
+    throw error;
+  } finally {
+    dbClient.release();
+  }
+}
+
+async function getConnectionRequests(userId) {
+  const query = `
+    SELECT 
+      cr.id,
+      cr.requester_id,
+      cr.receiver_id,
+      cr.status,
+      cr.created_at,
+      u.id as user_id,
+      u.username,
+      u.full_name,
+      u.user_type,
+      u.profile_url
+    FROM connection_requests cr
+    INNER JOIN users u ON u.id = cr.requester_id
+    WHERE cr.receiver_id = $1 AND cr.status = 'pending'
+    ORDER BY cr.created_at DESC
+  `;
+
+  try {
+    const result = await pool.query(query, [userId]);
+    console.log(`Found ${result.rows.length} connection requests for user ${userId}`);
+    return result.rows;
+  } catch (error) {
+    console.error('Error fetching connection requests:', error);
+    throw error;
+  }
+}
+
+async function checkConnectionRequestStatus(requesterId, receiverId) {
+  try {
+    const connectionQuery = `
+      SELECT id, status 
+      FROM connection_requests 
+      WHERE requester_id = $1 AND receiver_id = $2
+    `;
+    const connectionResult = await pool.query(connectionQuery, [requesterId, receiverId]);
+    
+    if (connectionResult.rows.length > 0) {
+      const status = connectionResult.rows[0].status;
+      if (status === 'accepted') {
+        return { exists: true, status: 'connected' };
+      }
+      return { exists: true, status: status };
+    }
+
+    const mutualFollowQuery = `
+      SELECT 
+        (SELECT COUNT(*) FROM user_follows WHERE follower_id = $1 AND following_id = $2) as user1_follows_user2,
+        (SELECT COUNT(*) FROM user_follows WHERE follower_id = $2 AND following_id = $1) as user2_follows_user1
+    `;
+    const mutualResult = await pool.query(mutualFollowQuery, [requesterId, receiverId]);
+    
+    if (mutualResult.rows.length > 0) {
+      const row = mutualResult.rows[0];
+      if (row.user1_follows_user2 > 0 && row.user2_follows_user1 > 0) {
+        return { exists: true, status: 'connected' };
+      }
+    }
+
+    return { exists: false, status: null };
+  } catch (error) {
+    console.error('Error checking connection request status:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   followUser,
   unfollowUser,
@@ -240,4 +544,9 @@ module.exports = {
   getFollowing,
   getFollowCounts,
   isFollowing,
+  sendConnectionRequest,
+  acceptConnectionRequest,
+  rejectConnectionRequest,
+  getConnectionRequests,
+  checkConnectionRequestStatus,
 };

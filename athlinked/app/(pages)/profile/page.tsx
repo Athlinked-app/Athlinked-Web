@@ -87,6 +87,10 @@ export default function Profile() {
   const [videoAndMedia, setVideoAndMedia] = useState<VideoAndMedia[]>([]);
   const [followersCount, setFollowersCount] = useState<number>(0);
   const [followingCount, setFollowingCount] = useState<number>(0);
+  const [connectionRequestStatus, setConnectionRequestStatus] = useState<{
+    exists: boolean;
+    status: string | null;
+  } | null>(null);
   
   const targetUserId = viewUserId || currentUserId;
 
@@ -186,6 +190,14 @@ export default function Profile() {
       }
     }
   }, [targetUserId, viewUserId, currentUserId]);
+
+  useEffect(() => {
+    if (currentUserId && viewUserId && currentUserId !== viewUserId) {
+      checkConnectionRequestStatus();
+    } else {
+      setConnectionRequestStatus(null);
+    }
+  }, [currentUserId, viewUserId, followersCount]);
   
   const fetchViewUser = async () => {
     if (!viewUserId) return;
@@ -284,6 +296,96 @@ export default function Profile() {
       console.error('Error fetching follow counts:', error);
       setFollowersCount(0);
       setFollowingCount(0);
+    }
+  };
+
+  const checkConnectionRequestStatus = async () => {
+    if (!currentUserId || !viewUserId || currentUserId === viewUserId) {
+      setConnectionRequestStatus(null);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/network/connection-status/${viewUserId}?requester_id=${currentUserId}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setConnectionRequestStatus({
+            exists: data.exists,
+            status: data.status,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error checking connection request status:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUserId && viewUserId && currentUserId !== viewUserId) {
+      checkConnectionRequestStatus();
+    }
+  }, [currentUserId, viewUserId, followersCount]);
+
+  const handleSendConnectionRequest = async () => {
+    if (!currentUserId || !viewUserId) {
+      alert('Unable to send connection request');
+      return;
+    }
+
+    try {
+      const userIdentifier = localStorage.getItem('userEmail');
+      if (!userIdentifier) {
+        alert('User not logged in');
+        return;
+      }
+
+      let userResponse;
+      if (userIdentifier.startsWith('username:')) {
+        const username = userIdentifier.replace('username:', '');
+        userResponse = await fetch(
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+        );
+      } else {
+        userResponse = await fetch(
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+        );
+      }
+
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const userDataResponse = await userResponse.json();
+      if (!userDataResponse.success || !userDataResponse.user) {
+        throw new Error('User not found');
+      }
+
+      const response = await fetch(
+        `http://localhost:3001/api/network/connect/${viewUserId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: userDataResponse.user.id,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        setConnectionRequestStatus({ exists: true, status: 'pending' });
+        alert('Connection request sent!');
+      } else {
+        alert(result.message || 'Failed to send connection request');
+      }
+    } catch (error) {
+      console.error('Error sending connection request:', error);
+      alert('Failed to send connection request. Please try again.');
     }
   };
 
@@ -405,6 +507,8 @@ export default function Profile() {
             onClose={() => setShowEditProfile(false)}
             currentUserId={currentUserId}
             viewedUserId={viewUserId || currentUserId}
+            connectionRequestStatus={connectionRequestStatus}
+            onSendConnectionRequest={handleSendConnectionRequest}
             userData={{
               full_name: viewUserId ? (viewUser?.full_name || '') : (currentUser?.full_name || ''),
               username: viewUserId ? (viewUser?.username || '') : (currentUser?.username || ''),
