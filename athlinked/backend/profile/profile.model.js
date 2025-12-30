@@ -1,12 +1,6 @@
 const pool = require('../config/db');
 
-/**
- * Get user profile by user ID
- * @param {string} userId - User ID
- * @returns {Promise<object|null>} Profile data with user full_name
- */
 async function getUserProfile(userId) {
-    // Fetch all data from users table only
     const query = `
     SELECT 
       u.id as user_id,
@@ -18,6 +12,7 @@ async function getUserProfile(userId) {
       u.city,
       u.primary_sport,
       u.sports_played,
+      u.dob,
       u.created_at,
       u.updated_at
     FROM users u
@@ -36,18 +31,6 @@ async function getUserProfile(userId) {
   }
 }
 
-/**
- * Create or update user profile (UPSERT)
- * @param {string} userId - User ID
- * @param {object} profileData - Profile data to save
- * @param {string} [profileData.fullName] - Full name
- * @param {string} [profileData.profileImageUrl] - Profile image URL
- * @param {string} [profileData.coverImageUrl] - Cover image URL
- * @param {string} [profileData.bio] - Bio text
- * @param {string} [profileData.education] - Education text
- * @param {string} [profileData.primarySport] - Primary sport
- * @returns {Promise<object>} Created/updated profile
- */
 async function upsertUserProfile(userId, profileData) {
   const dbClient = await pool.connect();
   try {
@@ -57,7 +40,6 @@ async function upsertUserProfile(userId, profileData) {
 
     await dbClient.query('BEGIN');
 
-    // Update users table with all profile data (profile_url, cover_url, education, bio, city, sports_played, primary_sport, full_name)
     const usersUpdateFields = [];
     const usersUpdateValues = [];
     let usersParamIndex = 1;
@@ -91,7 +73,6 @@ async function upsertUserProfile(userId, profileData) {
       usersUpdateValues.push(profileData.primarySport || null);
     }
     if (profileData.sportsPlayed !== undefined) {
-      // Convert comma-separated string to PostgreSQL array format
       let sportsArray = [];
       if (profileData.sportsPlayed && profileData.sportsPlayed.trim() !== '') {
         sportsArray = profileData.sportsPlayed
@@ -103,7 +84,6 @@ async function upsertUserProfile(userId, profileData) {
       usersUpdateValues.push(sportsArray.length > 0 ? sportsArray : null);
     }
 
-    // Update users table if there are fields to update
     if (usersUpdateFields.length > 0) {
       usersUpdateFields.push(`updated_at = NOW()`);
       usersUpdateValues.push(userId);
@@ -136,7 +116,6 @@ async function upsertUserProfile(userId, profileData) {
     await dbClient.query('COMMIT');
     console.log('Transaction committed');
 
-    // Fetch the updated profile from users table
     const finalProfile = await getUserProfile(userId);
 
     console.log('=== UPSERT PROFILE SUCCESS ===');
@@ -156,20 +135,11 @@ async function upsertUserProfile(userId, profileData) {
   }
 }
 
-/**
- * Update only profile images
- * @param {string} userId - User ID
- * @param {object} imageData - Image URLs
- * @param {string} [imageData.profileImageUrl] - Profile image URL
- * @param {string} [imageData.coverImageUrl] - Cover image URL
- * @returns {Promise<object>} Updated profile
- */
 async function updateProfileImages(userId, imageData) {
   const dbClient = await pool.connect();
   try {
     await dbClient.query('BEGIN');
 
-    // Update users table with image URLs
     const updateFields = [];
     const updateValues = [];
     let paramIndex = 1;
@@ -183,7 +153,6 @@ async function updateProfileImages(userId, imageData) {
       updateValues.push(imageData.coverImageUrl || null);
     }
 
-    // Always update updated_at
     updateFields.push(`updated_at = NOW()`);
     updateValues.push(userId);
 
