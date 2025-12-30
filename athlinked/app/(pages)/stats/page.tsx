@@ -202,7 +202,7 @@ export default function StatsPage() {
       try {
         // Get all sports first
         const sportsResponse = await fetch(
-          'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/sports'
+          'http://localhost:3001/api/sports'
         );
         const sportsData = await sportsResponse.json();
 
@@ -229,7 +229,7 @@ export default function StatsPage() {
 
         // Get positions for this sport
         const positionsResponse = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/sports/${sport.id}/positions`
+          `http://localhost:3001/api/sports/${sport.id}/positions`
         );
         const positionsData = await positionsResponse.json();
 
@@ -893,7 +893,7 @@ export default function StatsPage() {
 
                     // Step 2: Get positions for the sport
                     const positionsResponse = await fetch(
-                      `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/sports/${sport.id}/positions`
+                      `http://localhost:3001/api/sports/${sport.id}/positions`
                     );
                     const positionsData = await positionsResponse.json();
 
@@ -914,7 +914,7 @@ export default function StatsPage() {
 
                     // Step 3: Get fields for the position
                     const fieldsResponse = await fetch(
-                      `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/positions/${position.id}/fields`
+                      `http://localhost:3001/api/positions/${position.id}/fields`
                     );
                     const fieldsData = await fieldsResponse.json();
 
@@ -990,7 +990,7 @@ export default function StatsPage() {
                     // Step 6: Save position stats
                     if (stats.length > 0) {
                       const statsResponse = await fetch(
-                        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/user/position-stats',
+                        'http://localhost:3001/api/user/position-stats',
                         {
                           method: 'POST',
                           headers: {

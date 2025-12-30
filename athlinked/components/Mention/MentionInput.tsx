@@ -42,7 +42,7 @@ export default function MentionInput({
 
       try {
         const response = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/following/${currentUserId}`
+          `http://localhost:3001/api/network/following/${currentUserId}`
         );
 
         if (response.ok) {

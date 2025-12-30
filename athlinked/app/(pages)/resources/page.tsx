@@ -159,11 +159,11 @@ export default function ManageResourcesPage() {
       let endpoint = '';
 
       if (activeTab === 'guides') {
-        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/articles?user_id=${encodeURIComponent(currentUserId)}`;
+        endpoint = `http://localhost:3001/api/articles?user_id=${encodeURIComponent(currentUserId)}`;
       } else if (activeTab === 'videos') {
-        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/videos?user_id=${encodeURIComponent(currentUserId)}`;
+        endpoint = `http://localhost:3001/api/videos?user_id=${encodeURIComponent(currentUserId)}`;
       } else {
-        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/templates?user_id=${encodeURIComponent(currentUserId)}`;
+        endpoint = `http://localhost:3001/api/templates?user_id=${encodeURIComponent(currentUserId)}`;
       }
 
       const response = await fetch(endpoint);
@@ -594,7 +594,7 @@ export default function ManageResourcesPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
+      return `http://localhost:3001${profileUrl}`;
     }
     return profileUrl;
   };
