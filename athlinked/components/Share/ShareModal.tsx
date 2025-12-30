@@ -85,7 +85,7 @@ export default function ShareModal({
         socketRef.current.disconnect();
       }
 
-      const socket = io('https://qd9ngjg1-3001.inc1.devtunnels.ms', {
+      const socket = io('http://localhost:3001', {
         transports: ['websocket'],
       });
 
@@ -235,7 +235,7 @@ export default function ShareModal({
       for (const userId of selectedUserIds) {
         try {
           const response = await fetch(
-            'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/conversations/create',
+            'http://localhost:3001/api/messages/conversations/create',
             {
               method: 'POST',
               headers: {

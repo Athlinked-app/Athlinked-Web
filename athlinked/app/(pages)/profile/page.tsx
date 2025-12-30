@@ -1,9 +1,9 @@
 'use client';
-
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import RightSideBar from '@/components/RightSideBar';
-import Post, { type PostData } from '@/components/Post';
+import { type PostData } from '@/components/Post';
 import EditProfileModal from '@/components/Profile/EditProfileModel';
 import AboutMe from '@/components/Profile/AboutMe';
 import SocialHandles, {
@@ -23,14 +23,20 @@ import HealthAndReadinessComponent from '@/components/Profile/HealthandReadiness
 import type { HealthAndReadiness } from '@/components/Profile/HealthandReadiness';
 import VideoAndMediaComponent from '@/components/Profile/VideoandMedia';
 import type { VideoAndMedia } from '@/components/Profile/VideoandMedia';
-
+import Posts from '@/components/Activity/Posts';
+import Clips from '@/components/Activity/Clips';
+import Article from '@/components/Activity/Article';
+import Event from '@/components/Activity/Event';
+import MySavePost from '@/components/MySave/Post';
+import MySaveClips from '@/components/MySave/Clips';
+import MySaveArticle from '@/components/MySave/Article';
+import MySaveOpportunity from '@/components/MySave/Opportunity';
 interface CurrentUser {
   id: string;
   full_name: string;
   profile_url?: string;
   username?: string;
 }
-
 interface ProfileData {
   userId: string;
   fullName: string | null;
@@ -38,20 +44,25 @@ interface ProfileData {
   coverImage: string | null;
   bio: string | null;
   education: string | null;
+  city: string | null;
   primarySport: string | null;
   sportsPlayed: string | null;
 }
 
 export default function Profile() {
+  const searchParams = useSearchParams();
+  const viewUserId = searchParams.get('userId'); // User ID from URL params
+  
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [viewUser, setViewUser] = useState<CurrentUser | null>(null); // User being viewed
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'activity' | 'mysave'>(
-    'profile'
-  );
+  const [activeTab, setActiveTab] = useState<'profile' | 'activity' | 'mysave'>('profile');
+  const [activeFilter, setActiveFilter] = useState<'posts' | 'clips' | 'article' | 'event'>('posts');
+  const [activeSaveFilter, setActiveSaveFilter] = useState<'posts' | 'clips' | 'article' | 'opportunities'>('posts');
   const [userBio, setUserBio] = useState<string>('');
   const [socialHandles, setSocialHandles] = useState<SocialHandle[]>([]);
   const [academicBackgrounds, setAcademicBackgrounds] = useState<
@@ -72,12 +83,15 @@ export default function Profile() {
     HealthAndReadiness[]
   >([]);
   const [videoAndMedia, setVideoAndMedia] = useState<VideoAndMedia[]>([]);
+  
+  // Determine which user ID to use for fetching data
+  const targetUserId = viewUserId || currentUserId;
 
   const fetchPosts = async () => {
     try {
       setLoading(true);
       const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts?page=1&limit=50'
+        'http://localhost:3001/api/posts?page=1&limit=50'
       );
 
       if (!response.ok) {
@@ -105,7 +119,7 @@ export default function Profile() {
       console.log('Posts API response:', data);
 
       if (data.success && data.posts) {
-        const transformedPosts: PostData[] = data.posts.map((post: any) => ({
+        let transformedPosts: PostData[] = data.posts.map((post: any) => ({
           id: post.id,
           username: post.username || 'User',
           user_profile_url:
@@ -126,6 +140,12 @@ export default function Profile() {
           save_count: post.save_count || 0,
           created_at: post.created_at,
         }));
+        
+        // Filter posts by targetUserId if viewing another user's profile
+        if (targetUserId && viewUserId) {
+          transformedPosts = transformedPosts.filter(post => post.user_id === targetUserId);
+        }
+        
         console.log('Transformed posts:', transformedPosts.length);
         setPosts(transformedPosts);
       } else {
@@ -141,28 +161,76 @@ export default function Profile() {
   };
 
   useEffect(() => {
-    fetchPosts();
     fetchCurrentUser();
-  }, []);
+    if (viewUserId) {
+      fetchViewUser();
+    }
+  }, [viewUserId]);
+  
+  useEffect(() => {
+    if (targetUserId) {
+      fetchPosts();
+    }
+  }, [targetUserId]);
 
   useEffect(() => {
-    if (currentUserId) {
+    if (targetUserId) {
       fetchProfileData();
+      if (viewUserId) {
+        fetchViewUser();
+      }
     }
-  }, [currentUserId]);
+  }, [targetUserId, viewUserId]);
+  
+  // Fetch the user being viewed
+  const fetchViewUser = async () => {
+    if (!viewUserId) return;
+    
+    try {
+      // Fetch from users endpoint and find the user
+      const response = await fetch(
+        `http://localhost:3001/api/signup/users?limit=1000`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.users) {
+          const user = data.users.find((u: any) => u.id === viewUserId);
+          if (user) {
+            setViewUser({
+              id: user.id,
+              full_name: user.full_name || user.username || 'User',
+              profile_url: user.profile_url,
+              username: user.username,
+            });
+            if (user.bio) {
+              setUserBio(user.bio);
+            }
+            if (user.sports_played) {
+              setSportsPlayed(user.sports_played);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching view user:', error);
+    }
+  };
 
   const fetchProfileData = async () => {
-    if (!currentUserId) return;
-
+    if (!targetUserId) return;
+    
     try {
-      console.log('Fetching profile data for userId:', currentUserId);
-      const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/profile/${currentUserId}`
-      );
+      console.log('Fetching profile data for userId:', targetUserId);
+      const response = await fetch(`http://localhost:3001/api/profile/${targetUserId}`);
       if (response.ok) {
         const data = await response.json();
         console.log('Profile data fetched:', data);
         setProfileData(data);
+        // Update userBio if bio is in profile data
+        if (data.bio) {
+          setUserBio(data.bio);
+        }
       } else {
         console.log('No profile data found, will use defaults');
         setProfileData(null);
@@ -208,8 +276,24 @@ export default function Profile() {
         if (data.user.bio) {
           setUserBio(data.user.bio);
         }
-        if (data.user.sports_played) {
-          setSportsPlayed(data.user.sports_played);
+        // Always update sports_played, even if empty (to clear it)
+        if (
+          data.user.sports_played !== undefined &&
+          data.user.sports_played !== null
+        ) {
+          // Parse PostgreSQL array format if needed
+          let sportsString = data.user.sports_played;
+          if (
+            typeof sportsString === 'string' &&
+            sportsString.startsWith('{') &&
+            sportsString.endsWith('}')
+          ) {
+            sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
+          }
+          setSportsPlayed(sportsString);
+        } else {
+          // Clear sports if null/undefined
+          setSportsPlayed('');
         }
       }
     } catch (error) {
@@ -220,8 +304,6 @@ export default function Profile() {
   const handlePostCreated = () => {
     fetchPosts();
   };
-
-  // Construct profile URL - return undefined if no profileUrl exists (don't use default)
   const getProfileUrl = (profileUrl?: string | null): string | undefined => {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
@@ -230,8 +312,6 @@ export default function Profile() {
     }
     return profileUrl;
   };
-
-  // Get initials for placeholder
   const getInitials = (name?: string) => {
     if (!name) return 'U';
     return name
@@ -245,37 +325,42 @@ export default function Profile() {
   return (
     <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
       <Header
-        userName={currentUser?.full_name}
-        userProfileUrl={getProfileUrl(currentUser?.profile_url)}
+        userName={viewUser?.full_name || currentUser?.full_name}
+        userProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
       />
 
       <main className="flex flex-1 w-full mt-5 overflow-hidden">
-        {/* Left Side - Edit Profile Modal and Tabs (3/4 width) */}
         <div className="hidden lg:block flex-[3] flex-shrink-0 border-r border-gray-200 overflow-hidden px-6 flex flex-col">
           <EditProfileModal
             open={true}
             asSidebar={true}
             onClose={() => setShowEditProfile(false)}
+            currentUserId={currentUserId}
+            viewedUserId={viewUserId || currentUserId}
             userData={{
-              full_name: currentUser?.full_name,
-              username: currentUser?.username,
-              profile_url: profileData?.profileImage
-                ? profileData.profileImage.startsWith('http')
-                  ? profileData.profileImage
-                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.profileImage}`
-                : currentUser?.profile_url,
+              full_name: viewUser?.full_name || currentUser?.full_name,
+              username: viewUser?.username || currentUser?.username,
+              profile_url: profileData?.profileImage 
+                ? (profileData.profileImage.startsWith('http') 
+                    ? profileData.profileImage 
+                    : `http://localhost:3001${profileData.profileImage}`)
+                : viewUser?.profile_url || currentUser?.profile_url,
               background_image_url: profileData?.coverImage
                 ? profileData.coverImage.startsWith('http')
                   ? profileData.coverImage
-                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.coverImage}`
+                  : `http://localhost:3001${profileData.coverImage}`
                 : null,
               user_type: 'coach',
-              location: 'Rochester, NY', // You can fetch this from user data
-              age: 35, // You can fetch this from user data
+              location: 'Rochester, NY', 
+              age: 35, 
               followers_count: 10000,
-              sports_played: profileData?.sportsPlayed
-                ? profileData.sportsPlayed.replace(/[{}"']/g, '') // Remove curly brackets and quotes
-                : '',
+              sports_played:
+                profileData?.sportsPlayed !== undefined &&
+                profileData?.sportsPlayed !== null
+                  ? typeof profileData.sportsPlayed === 'string'
+                    ? profileData.sportsPlayed.replace(/[{}"']/g, '')
+                    : ''
+                  : '',
               primary_sport: profileData?.primarySport || '',
               profile_completion: 60,
               bio: profileData?.bio || '',
@@ -289,37 +374,37 @@ export default function Profile() {
                   console.error('No user ID available');
                   return;
                 }
-
-                // Prepare data for API
                 const profileData: {
                   userId: string;
                   bio?: string;
                   education?: string;
+                  city?: string;
                   primarySport?: string;
+                  sportsPlayed?: string;
                   profileImageUrl?: string;
                   coverImageUrl?: string;
                 } = {
                   userId: currentUserId,
                 };
-
-                // Handle text fields - allow empty strings to clear the field
                 console.log('Received data from EditProfilePopup:', {
                   bio: data.bio,
                   education: data.education,
+                  city: data.city,
                   bioUndefined: data.bio === undefined,
                   educationUndefined: data.education === undefined,
                 });
 
                 if (data.bio !== undefined) {
-                  profileData.bio = data.bio || undefined; // Convert empty string to undefined
+                  profileData.bio = data.bio || undefined; 
                 }
                 if (data.education !== undefined) {
-                  profileData.education = data.education || undefined; // Convert empty string to undefined
+                  profileData.education = data.education || undefined; 
+                }
+                if (data.city !== undefined) {
+                  profileData.city = data.city || undefined; 
                 }
 
                 console.log('Profile data being sent to API:', profileData);
-
-                // Handle sports - parse from sports_played string (take first sport as primary)
                 if (data.sports_played) {
                   const sports = data.sports_played
                     .split(',')
@@ -327,21 +412,14 @@ export default function Profile() {
                     .filter(Boolean);
                   if (sports.length > 0) profileData.primarySport = sports[0];
                 }
-
-                // Handle image files - upload them first
                 if (data.profile_url instanceof File) {
                   const formData = new FormData();
                   formData.append('file', data.profile_url);
-
-                  // Upload profile image
-                  const uploadResponse = await fetch(
-                    'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/profile/upload',
-                    {
-                      method: 'POST',
-                      body: formData,
-                    }
-                  );
-
+                  const uploadResponse = await fetch('http://localhost:3001/api/profile/upload', {
+                    method: 'POST',
+                    body: formData,
+                  });
+                  
                   if (uploadResponse.ok) {
                     const uploadData = await uploadResponse.json();
                     if (uploadData.success && uploadData.fileUrl) {
@@ -355,16 +433,11 @@ export default function Profile() {
                 if (data.background_image_url instanceof File) {
                   const formData = new FormData();
                   formData.append('file', data.background_image_url);
-
-                  // Upload cover image
-                  const uploadResponse = await fetch(
-                    'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/profile/upload',
-                    {
-                      method: 'POST',
-                      body: formData,
-                    }
-                  );
-
+                  const uploadResponse = await fetch('http://localhost:3001/api/profile/upload', {
+                    method: 'POST',
+                    body: formData,
+                  });
+                  
                   if (uploadResponse.ok) {
                     const uploadData = await uploadResponse.json();
                     if (uploadData.success && uploadData.fileUrl) {
@@ -374,18 +447,13 @@ export default function Profile() {
                 } else if (typeof data.background_image_url === 'string') {
                   profileData.coverImageUrl = data.background_image_url;
                 }
-
-                // Call profile API
-                const response = await fetch(
-                  'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/profile',
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(profileData),
-                  }
-                );
+                const response = await fetch('http://localhost:3001/api/profile', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify(profileData),
+                });
 
                 if (!response.ok) {
                   const errorData = await response.json();
@@ -399,8 +467,37 @@ export default function Profile() {
 
                 const result = await response.json();
                 console.log('Profile saved successfully:', result);
-
-                // Refresh user data and profile data
+                
+                // Update bio state immediately
+                if (data.bio !== undefined) {
+                  setUserBio(data.bio || '');
+                }
+                
+                // Update profileData state immediately
+                if (profileData.bio !== undefined || profileData.education !== undefined || profileData.city !== undefined) {
+                  setProfileData(prev => {
+                    if (!prev) {
+                      return {
+                        userId: currentUserId,
+                        fullName: null,
+                        profileImage: null,
+                        coverImage: null,
+                        bio: profileData.bio !== undefined ? profileData.bio : null,
+                        education: profileData.education !== undefined ? profileData.education : null,
+                        city: profileData.city !== undefined ? profileData.city : null,
+                        primarySport: null,
+                        sportsPlayed: null,
+                      };
+                    }
+                    return {
+                      ...prev,
+                      bio: profileData.bio !== undefined ? profileData.bio : prev.bio,
+                      education: profileData.education !== undefined ? profileData.education : prev.education,
+                      city: profileData.city !== undefined ? profileData.city : prev.city,
+                    };
+                  });
+                }
+                
                 fetchCurrentUser();
                 fetchProfileData();
               } catch (error) {
@@ -409,8 +506,6 @@ export default function Profile() {
               }
             }}
           />
-
-          {/* Tab Navigation */}
           <div className="bg-white mt-4 rounded-lg flex flex-col flex-1 min-h-0">
             <div className="flex items-center border-b border-gray-200 flex-shrink-0">
               <button
@@ -456,10 +551,10 @@ export default function Profile() {
               </button>
             </div>
 
-            <div className="mt-4 space-y-4 overflow-y-auto flex-1 pb-4 px-1 max-h-[400px] lg:max-h-[450px]">
+            <div className="mt-4 space-y-4 overflow-y-auto flex-1 pb-4 px-1 max-h-[400px] lg:max-h-[450px] ">
               {activeTab === 'profile' && (
                 <>
-                  <AboutMe bio={userBio} />
+                  <AboutMe bio={userBio || profileData?.bio || ''} />
                   <SocialHandles
                     handles={socialHandles}
                     onHandlesChange={setSocialHandles}
@@ -497,29 +592,199 @@ export default function Profile() {
               )}
               {activeTab === 'activity' && (
                 <div className="w-full bg-white rounded-lg p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                    Activity
-                  </h2>
-                  <p className="text-gray-700">
-                    Activity content will be displayed here.
-                  </p>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Activity</h2>
+                  
+                  {/* Filter Buttons */}
+                  <div className="flex gap-3 mb-6">
+                    <button
+                      onClick={() => setActiveFilter('posts')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        activeFilter === 'posts'
+                          ? 'bg-gray-800 text-white'
+                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Posts
+                    </button>
+                    <button
+                      onClick={() => setActiveFilter('clips')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        activeFilter === 'clips'
+                          ? 'bg-gray-800 text-white'
+                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Clips
+                    </button>
+                    <button
+                      onClick={() => setActiveFilter('article')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        activeFilter === 'article'
+                          ? 'bg-gray-800 text-white'
+                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Article
+                    </button>
+                    <button
+                      onClick={() => setActiveFilter('event')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        activeFilter === 'event'
+                          ? 'bg-gray-800 text-white'
+                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Event
+                    </button>
+                  </div>
+
+                  {/* Filtered Content */}
+                  {activeFilter === 'posts' && (
+                    <Posts
+                      posts={posts}
+                      currentUserId={currentUserId || undefined}
+                      currentUserProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
+                      currentUsername={viewUser?.full_name || currentUser?.full_name || 'User'}
+                      loading={loading}
+                      onCommentCountUpdate={fetchPosts}
+                      onPostDeleted={fetchPosts}
+                    />
+                  )}
+                  {activeFilter === 'clips' && (
+                    <Clips
+                      currentUserId={targetUserId || undefined}
+                      currentUserProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
+                      currentUsername={viewUser?.full_name || currentUser?.full_name || 'User'}
+                      onClipDeleted={() => {
+                        // Refresh clips if needed
+                        window.location.reload();
+                      }}
+                    />
+                  )}
+                  {activeFilter === 'article' && (
+                    <Article
+                      posts={posts}
+                      currentUserId={currentUserId || undefined}
+                      currentUserProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
+                      currentUsername={viewUser?.full_name || currentUser?.full_name || 'User'}
+                      loading={loading}
+                      onCommentCountUpdate={fetchPosts}
+                      onPostDeleted={fetchPosts}
+                    />
+                  )}
+                  {activeFilter === 'event' && (
+                    <Event
+                      posts={posts}
+                      currentUserId={currentUserId || undefined}
+                      currentUserProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
+                      currentUsername={viewUser?.full_name || currentUser?.full_name || 'User'}
+                      loading={loading}
+                      onCommentCountUpdate={fetchPosts}
+                      onPostDeleted={fetchPosts}
+                    />
+                  )}
                 </div>
               )}
               {activeTab === 'mysave' && (
                 <div className="w-full bg-white rounded-lg p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                    My Save
-                  </h2>
-                  <p className="text-gray-700">
-                    Saved content will be displayed here.
-                  </p>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">My Save</h2>
+                  
+                  {/* Filter Buttons */}
+                  <div className="flex gap-3 mb-6">
+                    <button
+                      onClick={() => setActiveSaveFilter('posts')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        activeSaveFilter === 'posts'
+                          ? 'bg-gray-800 text-white'
+                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Posts
+                    </button>
+                    <button
+                      onClick={() => setActiveSaveFilter('clips')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        activeSaveFilter === 'clips'
+                          ? 'bg-gray-800 text-white'
+                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Clips
+                    </button>
+                    <button
+                      onClick={() => setActiveSaveFilter('article')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        activeSaveFilter === 'article'
+                          ? 'bg-gray-800 text-white'
+                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Article
+                    </button>
+                    <button
+                      onClick={() => setActiveSaveFilter('opportunities')}
+                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                        activeSaveFilter === 'opportunities'
+                          ? 'bg-gray-800 text-white'
+                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Opportunities
+                    </button>
+                  </div>
+
+                  {/* Filtered Content */}
+                  {activeSaveFilter === 'posts' && (
+                    <MySavePost
+                      posts={posts}
+                      currentUserId={currentUserId || undefined}
+                      currentUserProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
+                      currentUsername={viewUser?.full_name || currentUser?.full_name || 'User'}
+                      viewedUserId={viewUserId}
+                      loading={loading}
+                      onCommentCountUpdate={fetchPosts}
+                      onPostDeleted={fetchPosts}
+                    />
+                  )}
+                  {activeSaveFilter === 'clips' && (
+                    <MySaveClips
+                      currentUserId={currentUserId || undefined}
+                      currentUserProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
+                      currentUsername={viewUser?.full_name || currentUser?.full_name || 'User'}
+                      viewedUserId={viewUserId}
+                      onClipDeleted={() => {
+                        window.location.reload();
+                      }}
+                    />
+                  )}
+                  {activeSaveFilter === 'article' && (
+                    <MySaveArticle
+                      posts={posts}
+                      currentUserId={currentUserId || undefined}
+                      currentUserProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
+                      currentUsername={viewUser?.full_name || currentUser?.full_name || 'User'}
+                      viewedUserId={viewUserId}
+                      loading={loading}
+                      onCommentCountUpdate={fetchPosts}
+                      onPostDeleted={fetchPosts}
+                    />
+                  )}
+                  {activeSaveFilter === 'opportunities' && (
+                    <MySaveOpportunity
+                      currentUserId={currentUserId || undefined}
+                      currentUserProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
+                      currentUsername={viewUser?.full_name || currentUser?.full_name || 'User'}
+                      viewedUserId={viewUserId}
+                      loading={loading}
+                      onCommentCountUpdate={fetchPosts}
+                      onPostDeleted={fetchPosts}
+                    />
+                  )}
                 </div>
               )}
             </div>
           </div>
         </div>
-
-        {/* Right Side - Sidebar (1/4 width) */}
         <div className="hidden lg:flex flex-1 flex-shrink-0">
           <RightSideBar />
         </div>

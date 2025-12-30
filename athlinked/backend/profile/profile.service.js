@@ -22,6 +22,7 @@ async function getUserProfileService(userId) {
         coverImage: null,
         bio: null,
         education: null,
+        city: null,
         primarySport: null,
         sportsPlayed: null,
       };
@@ -52,6 +53,7 @@ async function getUserProfileService(userId) {
       coverImage: profile.cover_image_url || null,
       bio: profile.bio || null,
       education: profile.education || null,
+      city: profile.city || null,
       primarySport: profile.primary_sport || null,
       sportsPlayed: sportsPlayed,
     };
@@ -86,6 +88,21 @@ async function upsertUserProfileService(userId, profileData) {
       profileData
     );
 
+    // Format sports_played for response
+    let sportsPlayed = null;
+    if (updatedProfile.sports_played) {
+      if (Array.isArray(updatedProfile.sports_played)) {
+        sportsPlayed = updatedProfile.sports_played.join(', ');
+      } else if (typeof updatedProfile.sports_played === 'string') {
+        let sportsString = updatedProfile.sports_played;
+        if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+          sportsString = sportsString.slice(1, -1);
+        }
+        sportsString = sportsString.replace(/["']/g, '');
+        sportsPlayed = sportsString;
+      }
+    }
+
     console.log('Service: Profile updated successfully');
     return {
       success: true,
@@ -97,6 +114,7 @@ async function upsertUserProfileService(userId, profileData) {
         bio: updatedProfile.bio,
         education: updatedProfile.education,
         primarySport: updatedProfile.primary_sport,
+        sportsPlayed: sportsPlayed,
       },
     };
   } catch (error) {

@@ -65,7 +65,7 @@ export default function CommentsPanel({
   const loadComments = async () => {
     try {
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}/comments`
+        `http://localhost:3001/api/posts/${post.id}/comments`
       );
       if (response.ok) {
         const data = await response.json();
@@ -108,11 +108,11 @@ export default function CommentsPanel({
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -126,7 +126,7 @@ export default function CommentsPanel({
       }
 
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}/comments`,
+        `http://localhost:3001/api/posts/${post.id}/comments`,
         {
           method: 'POST',
           headers: {
@@ -181,11 +181,11 @@ export default function CommentsPanel({
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -199,7 +199,7 @@ export default function CommentsPanel({
       }
 
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/comments/${parentCommentId}/reply`,
+        `http://localhost:3001/api/posts/comments/${parentCommentId}/reply`,
         {
           method: 'POST',
           headers: {
@@ -301,7 +301,7 @@ export default function CommentsPanel({
                           src={
                             comment.user_profile_url.startsWith('http')
                               ? comment.user_profile_url
-                              : `https://qd9ngjg1-3001.inc1.devtunnels.ms${comment.user_profile_url}`
+                              : `http://localhost:3001${comment.user_profile_url}`
                           }
                           alt={comment.username}
                           className="w-full h-full object-cover"
@@ -356,7 +356,7 @@ export default function CommentsPanel({
                                   src={
                                     reply.user_profile_url.startsWith('http')
                                       ? reply.user_profile_url
-                                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${reply.user_profile_url}`
+                                      : `http://localhost:3001${reply.user_profile_url}`
                                   }
                                   alt={reply.username}
                                   className="w-full h-full object-cover"

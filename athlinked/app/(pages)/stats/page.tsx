@@ -16,6 +16,7 @@ import { getFieldsForPosition, getPositionOptions } from './sportsFields';
 interface UserData {
   full_name: string;
   primary_sport: string | null;
+  sports_played?: string | null;
   email: string;
   profile_url?: string | null;
 }
@@ -51,6 +52,9 @@ export default function StatsPage() {
   const [selectedPosition, setSelectedPosition] = useState<string>('');
   const [availablePositions, setAvailablePositions] = useState<Position[]>([]);
   const [loadingPositions, setLoadingPositions] = useState(false);
+  const [availableFields, setAvailableFields] = useState<any[]>([]);
+  const [loadingFields, setLoadingFields] = useState(false);
+  const [userSports, setUserSports] = useState<string[]>([]);
   const [formData, setFormData] = useState<Record<string, string>>({
     year: '',
     position: '',
@@ -72,7 +76,7 @@ export default function StatsPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
+      return `http://localhost:3001${profileUrl}`;
     }
     return profileUrl;
   };
@@ -95,11 +99,11 @@ export default function StatsPage() {
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -109,9 +113,62 @@ export default function StatsPage() {
           setUserData(data.user);
           setUserId(data.user.id);
 
-          // Set active sport to user's primary sport if available
+          // Parse sports_played from user data
+          let sportsList: string[] = [];
+          if (data.user.sports_played) {
+            // Handle PostgreSQL array format: "{Basketball, Football}" or '{"Basketball", "Football"}'
+            let sportsString = data.user.sports_played;
+            // Remove curly brackets if present
+            if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+              sportsString = sportsString.slice(1, -1);
+            }
+            // Remove quotes (both single and double) from each sport
+            sportsString = sportsString.replace(/["']/g, '');
+            // Split by comma and clean up
+            sportsList = sportsString
+              .split(',')
+              .map((s: string) => s.trim())
+              .filter(Boolean);
+          }
+
+          // If no sports_played, try to get from all available sports in database
+          if (sportsList.length === 0) {
+            try {
+              const sportsResponse = await fetch(
+                'http://localhost:3001/api/sports'
+              );
+              const sportsData = await sportsResponse.json();
+              if (sportsData.success && sportsData.sports) {
+                // Use all available sports as fallback
+                sportsList = sportsData.sports.map(
+                  (s: { name: string; id: string }) => s.name
+                );
+              }
+            } catch (error) {
+              console.error('Error fetching sports:', error);
+              // Fallback to default sports
+              sportsList = ['Football', 'Basketball', 'Golf'];
+            }
+          }
+
+          setUserSports(sportsList);
+
+          // Set active sport to user's primary sport if available, otherwise first sport
           if (data.user.primary_sport) {
-            setActiveSport(data.user.primary_sport.toLowerCase());
+            const primarySportLower = data.user.primary_sport.toLowerCase();
+            // Check if primary sport is in the user's sports list
+            const primaryInList = sportsList.some(
+              s => s.toLowerCase() === primarySportLower
+            );
+            if (primaryInList) {
+              setActiveSport(primarySportLower);
+            } else if (sportsList.length > 0) {
+              // If primary sport not in list, use first sport
+              setActiveSport(sportsList[0].toLowerCase());
+            }
+          } else if (sportsList.length > 0) {
+            // No primary sport, use first sport
+            setActiveSport(sportsList[0].toLowerCase());
           }
         }
       } catch (error) {
@@ -127,10 +184,15 @@ export default function StatsPage() {
   // Helper function to get sport display name
   const getSportDisplayName = (sportKey: string) => {
     const normalized = sportKey.toLowerCase().trim();
-    if (normalized === 'football') return 'Football';
+    // Special cases for display formatting
     if (normalized === 'basketball') return 'Basket Ball';
-    if (normalized === 'golf') return 'Golf';
-    return sportKey.charAt(0).toUpperCase() + sportKey.slice(1);
+    if (normalized === 'track & field' || normalized === 'track and field')
+      return 'Track & Field';
+    // Default: capitalize first letter of each word
+    return sportKey
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
   };
 
   // Fetch positions for the active sport
@@ -197,6 +259,51 @@ export default function StatsPage() {
     fetchPositions();
   }, [activeSport]);
 
+  // Fetch fields for selected position
+  useEffect(() => {
+    const fetchFields = async () => {
+      if (!formData.position) {
+        setAvailableFields([]);
+        return;
+      }
+
+      // Find the position ID from availablePositions
+      const selectedPosition = availablePositions.find(
+        p => p.name === formData.position
+      );
+
+      if (!selectedPosition) {
+        setAvailableFields([]);
+        return;
+      }
+
+      setLoadingFields(true);
+      try {
+        const fieldsResponse = await fetch(
+          `http://localhost:3001/api/positions/${selectedPosition.id}/fields`
+        );
+        const fieldsData = await fieldsResponse.json();
+
+        if (fieldsData.success && fieldsData.fields) {
+          setAvailableFields(fieldsData.fields);
+        } else {
+          console.error(
+            'Failed to fetch fields:',
+            fieldsData.message || 'Unknown error'
+          );
+          setAvailableFields([]);
+        }
+      } catch (error) {
+        console.error('Error fetching fields:', error);
+        setAvailableFields([]);
+      } finally {
+        setLoadingFields(false);
+      }
+    };
+
+    fetchFields();
+  }, [formData.position, availablePositions]);
+
   // Fetch user sport profiles and stats
   useEffect(() => {
     const fetchUserStats = async () => {
@@ -205,7 +312,7 @@ export default function StatsPage() {
       setLoadingStats(true);
       try {
         const response = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/user/sport-profiles?user_id=${userId}`
+          `http://localhost:3001/api/user/${userId}/sport-profiles`
         );
         const data = await response.json();
 
@@ -235,20 +342,39 @@ export default function StatsPage() {
   const primarySport = userData?.primary_sport
     ? userData.primary_sport.charAt(0).toUpperCase() +
       userData.primary_sport.slice(1).toLowerCase()
-    : 'Football';
+    : userSports.length > 0
+      ? userSports[0]
+      : 'Football';
 
-  // Sport options - primary sport first, then other common sports
-  const allSports = ['Football', 'Basketball', 'Golf'];
+  // Sport options - use user's sports_played, with primary sport first
   const primarySportValue = userData?.primary_sport;
-  const sports = primarySportValue
-    ? [
-        primarySportValue.charAt(0).toUpperCase() +
-          primarySportValue.slice(1).toLowerCase(),
-        ...allSports.filter(
-          s => s.toLowerCase() !== primarySportValue.toLowerCase()
-        ),
-      ]
-    : allSports;
+  let sports: string[] = [];
+
+  if (userSports.length > 0) {
+    // If user has a primary sport and it's in their sports list, put it first
+    if (primarySportValue) {
+      const primarySportLower = primarySportValue.toLowerCase();
+      const primaryInList = userSports.find(
+        s => s.toLowerCase() === primarySportLower
+      );
+      if (primaryInList) {
+        // Put primary sport first, then other sports
+        sports = [
+          primaryInList,
+          ...userSports.filter(s => s.toLowerCase() !== primarySportLower),
+        ];
+      } else {
+        // Primary sport not in list, use sports as-is
+        sports = [...userSports];
+      }
+    } else {
+      // No primary sport, use sports as-is
+      sports = [...userSports];
+    }
+  } else {
+    // Fallback if no sports data
+    sports = ['Football', 'Basketball', 'Golf'];
+  }
 
   // Get current sport's profiles, filtered by selected position if any
   const getCurrentSportProfiles = () => {
@@ -381,6 +507,7 @@ export default function StatsPage() {
             <div className="flex gap-2 mb-6">
               {sports.map(sport => {
                 const sportKey = sport.toLowerCase();
+                const displayName = getSportDisplayName(sport);
                 return (
                   <button
                     key={sportKey}
@@ -391,7 +518,7 @@ export default function StatsPage() {
                         : 'bg-white text-black hover:bg-gray-100 border border-gray-200'
                     }`}
                   >
-                    {sport === 'Basketball' ? 'Basket Ball' : sport}
+                    {displayName}
                   </button>
                 );
               })}
@@ -549,6 +676,7 @@ export default function StatsPage() {
                         year: '',
                         position: '',
                       });
+                      setAvailableFields([]);
                     }}
                     className="flex items-center gap-2 px-3 py-1.5 text-sm text-black hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
                   >
@@ -556,7 +684,14 @@ export default function StatsPage() {
                     <span>Clear all</span>
                   </button>
                   <button
-                    onClick={() => setShowAddStatsModal(false)}
+                    onClick={() => {
+                      setShowAddStatsModal(false);
+                      setFormData({
+                        year: '',
+                        position: '',
+                      });
+                      setAvailableFields([]);
+                    }}
                     className="p-2 rounded-full hover:bg-gray-100 transition-colors"
                   >
                     <X size={20} className="text-black" />
@@ -616,18 +751,29 @@ export default function StatsPage() {
                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black appearance-none bg-white"
                   >
                     <option value="" className="text-black">
-                      Select Position{' '}
-                      {activeSport === 'basketball'
-                        ? '(e.g., Point Guard)'
-                        : activeSport === 'golf'
-                          ? '(e.g., General)'
-                          : '(e.g., Quarterback)'}
+                      {loadingPositions
+                        ? 'Loading positions...'
+                        : 'Select Position'}
                     </option>
-                    {getPositionOptions(activeSport).map(pos => (
-                      <option key={pos} value={pos} className="text-black">
-                        {pos}
+                    {loadingPositions ? (
+                      <option disabled className="text-black">
+                        Loading...
                       </option>
-                    ))}
+                    ) : availablePositions.length === 0 ? (
+                      <option disabled className="text-black">
+                        No positions available
+                      </option>
+                    ) : (
+                      availablePositions.map(position => (
+                        <option
+                          key={position.id}
+                          value={position.name}
+                          className="text-black"
+                        >
+                          {position.name}
+                        </option>
+                      ))
+                    )}
                   </select>
                   <ChevronDown
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black pointer-events-none"
@@ -637,26 +783,49 @@ export default function StatsPage() {
               </div>
 
               {/* Dynamic Fields based on Position */}
-              {formData.position &&
-                getFieldsForPosition(activeSport, formData.position)
-                  .filter(field => field !== 'Year') // Year is already shown above
-                  .map((field, index) => {
-                    // Create a unique key for each field
-                    const fieldKey = `field_${index}_${field
-                      .toLowerCase()
-                      .replace(/\s+/g, '_')
-                      .replace(/[^a-z0-9_]/g, '')}`;
-                    const displayKey = field
-                      .toLowerCase()
-                      .replace(/\s+/g, '_')
-                      .replace(/[^a-z0-9_]/g, '');
+              {loadingFields && formData.position && (
+                <div className="text-center text-gray-500 text-sm py-4">
+                  Loading fields...
+                </div>
+              )}
+              {!loadingFields &&
+                formData.position &&
+                availableFields
+                  .filter((field: any) => field.field_label !== 'Year') // Year is already shown above
+                  .map((field: any) => {
+                    // Use field_key as the key, fallback to field_id
+                    const fieldKey = field.field_key || field.field_id;
+                    // Use field_key for form data, or create from field_label
+                    const displayKey =
+                      field.field_key ||
+                      field.field_label
+                        .toLowerCase()
+                        .replace(/\s+/g, '_')
+                        .replace(/[^a-z0-9_]/g, '');
                     return (
-                      <div key={fieldKey}>
+                      <div key={field.field_id}>
                         <label className="block text-sm font-medium text-black mb-2">
-                          {field}
+                          {field.field_label}
+                          {field.is_required && (
+                            <span className="text-red-500 ml-1">*</span>
+                          )}
+                          {field.unit && (
+                            <span className="text-gray-500 text-xs ml-1">
+                              ({field.unit})
+                            </span>
+                          )}
                         </label>
                         <input
-                          type="text"
+                          type={
+                            field.field_type === 'number' ||
+                            field.field_type === 'percentage'
+                              ? 'number'
+                              : field.field_type === 'time'
+                                ? 'text'
+                                : field.field_type === 'link'
+                                  ? 'url'
+                                  : 'text'
+                          }
                           value={formData[displayKey] || ''}
                           onChange={e =>
                             setFormData({
@@ -664,7 +833,7 @@ export default function StatsPage() {
                               [displayKey]: e.target.value,
                             })
                           }
-                          placeholder={`Enter ${field}${field.includes('%') ? '' : ' (e.g., 0)'}`}
+                          placeholder={`Enter ${field.field_label}${field.unit ? ` (${field.unit})` : ''}`}
                           className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black"
                         />
                       </div>
@@ -695,7 +864,7 @@ export default function StatsPage() {
                   try {
                     // Step 1: Get all sports to find sport ID
                     const sportsResponse = await fetch(
-                      'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/sports'
+                      'http://localhost:3001/api/sports'
                     );
                     const sportsData = await sportsResponse.json();
 
@@ -755,7 +924,7 @@ export default function StatsPage() {
 
                     // Step 4: Create or update user sport profile
                     const profileResponse = await fetch(
-                      'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/user/sport-profile',
+                      'http://localhost:3001/api/user-sport-profile',
                       {
                         method: 'POST',
                         headers: {
@@ -851,9 +1020,10 @@ export default function StatsPage() {
                       year: '',
                       position: '',
                     });
+                    setAvailableFields([]);
                     // Refresh stats data
                     const refreshResponse = await fetch(
-                      `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/user/sport-profiles?user_id=${userId}`
+                      `http://localhost:3001/api/user/${userId}/sport-profiles`
                     );
                     const refreshData = await refreshResponse.json();
                     if (refreshData.success) {

@@ -107,7 +107,7 @@ export default function Post({
     const fetchCommentCount = async () => {
       try {
         const response = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}/comments`
+          `http://localhost:3001/api/posts/${post.id}/comments`
         );
         if (response.ok) {
           const data = await response.json();
@@ -207,8 +207,8 @@ export default function Post({
 
       // Call like or unlike API based on current state
       const endpoint = wasLiked
-        ? `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}/unlike`
-        : `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}/like`;
+        ? `http://localhost:3001/api/posts/${post.id}/unlike`
+        : `http://localhost:3001/api/posts/${post.id}/like`;
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -249,7 +249,7 @@ export default function Post({
   const handleCommentAdded = async () => {
     try {
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}/comments`
+        `http://localhost:3001/api/posts/${post.id}/comments`
       );
       if (response.ok) {
         const data = await response.json();
@@ -316,11 +316,11 @@ export default function Post({
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -334,7 +334,7 @@ export default function Post({
       }
 
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/${post.id}`,
+        `http://localhost:3001/api/posts/${post.id}`,
         {
           method: 'DELETE',
           headers: {
@@ -480,12 +480,19 @@ export default function Post({
                 src={
                   post.media_url && post.media_url.startsWith('http')
                     ? post.media_url
-                    : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
+                    : `http://localhost:3001${post.media_url || post.image_url || ''}`
                 }
                 alt={post.article_title || 'Article image'}
                 className="w-full h-auto object-cover"
                 onError={e => {
-                  console.error('Error loading image:', post.media_url);
+                  // Only log in development, and log the full URL that was attempted
+                  if (process.env.NODE_ENV === 'development') {
+                    const attemptedUrl =
+                      post.media_url && post.media_url.startsWith('http')
+                        ? post.media_url
+                        : `http://localhost:3001${post.media_url || post.image_url || ''}`;
+                    console.warn('Image failed to load:', attemptedUrl);
+                  }
                   e.currentTarget.style.display = 'none';
                 }}
               />
@@ -556,7 +563,7 @@ export default function Post({
                   src={
                     post.media_url && post.media_url.startsWith('http')
                       ? post.media_url
-                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
+                      : `http://localhost:3001${post.media_url || post.image_url || ''}`
                   }
                   controls
                   className="w-full h-auto object-cover"
@@ -566,12 +573,19 @@ export default function Post({
                   src={
                     post.media_url && post.media_url.startsWith('http')
                       ? post.media_url
-                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
+                      : `http://localhost:3001${post.media_url || post.image_url || ''}`
                   }
                   alt={post.event_title || 'Event image'}
                   className="w-full h-auto object-cover"
                   onError={e => {
-                    console.error('Error loading image:', post.media_url);
+                    // Only log in development, and log the full URL that was attempted
+                    if (process.env.NODE_ENV === 'development') {
+                      const attemptedUrl =
+                        post.media_url && post.media_url.startsWith('http')
+                          ? post.media_url
+                          : `http://localhost:3001${post.media_url || post.image_url || ''}`;
+                      console.warn('Image failed to load:', attemptedUrl);
+                    }
                     e.currentTarget.style.display = 'none';
                   }}
                 />
@@ -650,7 +664,7 @@ export default function Post({
                   src={
                     post.media_url && post.media_url.startsWith('http')
                       ? post.media_url
-                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
+                      : `http://localhost:3001${post.media_url || post.image_url || ''}`
                   }
                   controls
                   className="w-full h-auto object-cover"
@@ -660,12 +674,19 @@ export default function Post({
                   src={
                     post.media_url && post.media_url.startsWith('http')
                       ? post.media_url
-                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
+                      : `http://localhost:3001${post.media_url || post.image_url || ''}`
                   }
                   alt={post.caption || post.description || 'Post media'}
                   className="w-full h-auto object-cover"
                   onError={e => {
-                    console.error('Error loading image:', post.media_url);
+                    // Only log in development, and log the full URL that was attempted
+                    if (process.env.NODE_ENV === 'development') {
+                      const attemptedUrl =
+                        post.media_url && post.media_url.startsWith('http')
+                          ? post.media_url
+                          : `http://localhost:3001${post.media_url || post.image_url || ''}`;
+                      console.warn('Image failed to load:', attemptedUrl);
+                    }
                     e.currentTarget.style.display = 'none';
                   }}
                 />
@@ -791,7 +812,7 @@ export default function Post({
                   src={
                     post.media_url && post.media_url.startsWith('http')
                       ? post.media_url
-                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
+                      : `http://localhost:3001${post.media_url || post.image_url || ''}`
                   }
                   alt={post.article_title || 'Article image'}
                   className="w-full h-auto object-cover"
@@ -836,7 +857,6 @@ export default function Post({
             onClick={() => setShowComments(false)}
           />
 
-          {/* Modal */}
           <div
             className="relative z-10 w-full max-w-5xl h-[80vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-row"
             onClick={e => e.stopPropagation()}
@@ -849,7 +869,7 @@ export default function Post({
                     src={
                       post.media_url && post.media_url.startsWith('http')
                         ? post.media_url
-                        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
+                        : `http://localhost:3001${post.media_url || post.image_url || ''}`
                     }
                     controls
                     className="w-full h-full object-contain"
@@ -859,7 +879,7 @@ export default function Post({
                     src={
                       post.media_url && post.media_url.startsWith('http')
                         ? post.media_url
-                        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
+                        : `http://localhost:3001${post.media_url || post.image_url || ''}`
                     }
                     alt={post.caption || post.description || 'Post media'}
                     className="w-full h-full object-contain"

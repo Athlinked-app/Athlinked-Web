@@ -225,16 +225,20 @@ async function getUserStatsByProfile(req, res) {
 
 /**
  * 7. Get All User Sport Profiles with Stats
- * GET /user/sport-profiles
+ * GET /user/:userId/sport-profiles
  */
 async function getAllUserSportProfiles(req, res) {
   try {
-    const userId = req.query.user_id || req.body.user_id || req.user?.id;
+    const userId =
+      req.params.userId ||
+      req.query.user_id ||
+      req.body.user_id ||
+      req.user?.id;
 
     if (!userId) {
-      return res.status(401).json({
+      return res.status(400).json({
         success: false,
-        message: 'User authentication required',
+        message: 'User ID is required',
       });
     }
 

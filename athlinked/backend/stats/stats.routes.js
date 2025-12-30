@@ -16,7 +16,7 @@ router.get(
 
 // 4. Create / Update User Sport Profile
 router.post(
-  '/user/sport-profile',
+  '/user-sport-profile',
   statsController.createOrUpdateUserSportProfile
 );
 
@@ -30,6 +30,9 @@ router.get(
 );
 
 // 7. Get All User Sport Profiles with Stats
-router.get('/user/sport-profiles', statsController.getAllUserSportProfiles);
+router.get(
+  '/user/:userId/sport-profiles',
+  statsController.getAllUserSportProfiles
+);
 
 module.exports = router;

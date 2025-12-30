@@ -7,7 +7,7 @@ const { v4: uuidv4 } = require('uuid');
  * @returns {Promise<object|null>} Profile data with user full_name
  */
 async function getUserProfile(userId) {
-  const query = `
+    const query = `
     SELECT 
       up.id,
       up.user_id,
@@ -16,6 +16,7 @@ async function getUserProfile(userId) {
       up.cover_image_url,
       up.bio,
       up.education,
+      up.city,
       up.primary_sport,
       up.created_at,
       up.updated_at,
@@ -91,6 +92,11 @@ async function upsertUserProfile(userId, profileData) {
       insertValues.push(profileData.education || null);
       conflictUpdateFields.push('education = EXCLUDED.education');
     }
+    if (profileData.city !== undefined) {
+      insertFields.push('city');
+      insertValues.push(profileData.city || null);
+      conflictUpdateFields.push('city = EXCLUDED.city');
+    }
     if (profileData.primarySport !== undefined) {
       insertFields.push('primary_sport');
       insertValues.push(profileData.primarySport || null);
@@ -136,11 +142,42 @@ async function upsertUserProfile(userId, profileData) {
     console.log('Rows affected:', result.rowCount);
     console.log('Returned data:', result.rows[0]);
 
+    // Update sports_played in users table if provided
+    if (profileData.sportsPlayed !== undefined) {
+      // Convert comma-separated string to PostgreSQL array format
+      let sportsArray = [];
+      if (profileData.sportsPlayed && profileData.sportsPlayed.trim() !== '') {
+        sportsArray = profileData.sportsPlayed
+          .split(',')
+          .map(s => s.trim())
+          .filter(Boolean);
+      }
+
+      // Update users table with sports_played array
+      // PostgreSQL accepts JavaScript arrays directly for array columns
+      const updateUsersQuery = `
+        UPDATE users
+        SET sports_played = $1, updated_at = NOW()
+        WHERE id = $2
+      `;
+
+      // Pass the array directly - PostgreSQL will handle the conversion
+      await dbClient.query(updateUsersQuery, [
+        sportsArray.length > 0 ? sportsArray : null,
+        userId,
+      ]);
+
+      console.log('Updated sports_played in users table:', sportsArray);
+    }
+
     await dbClient.query('COMMIT');
     console.log('Transaction committed');
 
+    // Fetch the updated profile with sports_played from users table
+    const finalProfile = await getUserProfile(userId);
+
     console.log('=== UPSERT PROFILE SUCCESS ===');
-    return result.rows[0];
+    return finalProfile || result.rows[0];
   } catch (error) {
     await dbClient.query('ROLLBACK');
     console.error('=== UPSERT PROFILE ERROR ===');

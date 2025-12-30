@@ -146,7 +146,7 @@ export default function NotificationsPage() {
   const handleDismiss = async (id: string) => {
     try {
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/notifications/${id}/read`,
+        `http://localhost:3001/api/notifications/${id}/read`,
         {
           method: 'POST',
           headers: {

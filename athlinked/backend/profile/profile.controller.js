@@ -60,6 +60,7 @@ async function upsertUserProfile(req, res) {
       bio,
       education,
       primarySport,
+      sportsPlayed,
     } = req.body;
 
     const profileData = {};
@@ -70,6 +71,7 @@ async function upsertUserProfile(req, res) {
     if (bio !== undefined) profileData.bio = bio;
     if (education !== undefined) profileData.education = education;
     if (primarySport !== undefined) profileData.primarySport = primarySport;
+    if (sportsPlayed !== undefined) profileData.sportsPlayed = sportsPlayed;
 
     console.log('Profile data to save:', profileData);
 
