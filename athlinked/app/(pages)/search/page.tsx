@@ -5,7 +5,7 @@ import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import Header from '@/components/Header';
 import Post, { type PostData } from '@/components/Post';
-import { Search as SearchIcon, X } from 'lucide-react';
+import { Search as SearchIcon, X, Play } from 'lucide-react';
 
 interface SearchResult {
   id: string;
@@ -15,9 +15,24 @@ interface SearchResult {
   isFollowing: boolean;
 }
 
+interface ClipResult {
+  id: string;
+  user_id?: string;
+  username: string;
+  user_profile_url: string | null;
+  video_url: string;
+  description: string | null;
+  like_count: number;
+  comment_count: number;
+  created_at: string;
+}
+
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchPosts, setSearchPosts] = useState<PostData[]>([]);
+  const [searchClips, setSearchClips] = useState<ClipResult[]>([]);
+  const [searchArticles, setSearchArticles] = useState<PostData[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -307,76 +322,195 @@ export default function SearchPage() {
 
     if (query.trim() === '') {
       setSearchResults([]);
+      setSearchPosts([]);
+      setSearchClips([]);
+      setSearchArticles([]);
       return;
     }
 
     setIsSearching(true);
+    const searchLower = query.toLowerCase();
+    const baseUrl = 'https://qd9ngjg1-3001.inc1.devtunnels.ms';
+
     try {
-      const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/users?limit=100`
-      );
+      // Fetch all content types in parallel
+      const [usersResponse, postsResponse, clipsResponse, articlesResponse] = await Promise.all([
+        fetch(`${baseUrl}/api/signup/users?limit=100`).catch(() => null),
+        fetch(`${baseUrl}/api/posts?page=1&limit=100`).catch(() => null),
+        fetch(`${baseUrl}/api/clips?page=1&limit=100`).catch(() => null),
+        fetch(`${baseUrl}/api/articles`).catch(() => null),
+      ]);
 
-      if (!response.ok) {
-        console.error('Failed to search users');
-        setSearchResults([]);
-        setIsSearching(false);
-        return;
-      }
+      // Process users
+      if (usersResponse && usersResponse.ok) {
+        const data = await usersResponse.json();
+        if (data.success && data.users) {
+          const filteredUsers = data.users.filter((user: any) => {
+            const fullName = (user.full_name || '').toLowerCase();
+            const username = (user.username || '').toLowerCase();
 
-      const data = await response.json();
-      if (data.success && data.users) {
-        const filteredUsers = data.users.filter((user: any) => {
-          const fullName = (user.full_name || '').toLowerCase();
-          const username = (user.username || '').toLowerCase();
-          const searchLower = query.toLowerCase();
+            return (
+              user.id !== currentUserId &&
+              (fullName.includes(searchLower) || username.includes(searchLower))
+            );
+          });
 
-          return (
-            user.id !== currentUserId &&
-            (fullName.includes(searchLower) || username.includes(searchLower))
-          );
-        });
-
-        const transformedResults: SearchResult[] = await Promise.all(
-          filteredUsers.map(async (user: any) => {
-            let isFollowing = false;
-            if (currentUserId) {
-              try {
-                const isFollowingResponse = await fetch(
-                  `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/is-following/${user.id}?follower_id=${currentUserId}`
-                );
-                if (isFollowingResponse.ok) {
-                  const isFollowingData = await isFollowingResponse.json();
-                  if (isFollowingData.success) {
-                    isFollowing = isFollowingData.isFollowing;
+          const transformedResults: SearchResult[] = await Promise.all(
+            filteredUsers.map(async (user: any) => {
+              let isFollowing = false;
+              if (currentUserId) {
+                try {
+                  const isFollowingResponse = await fetch(
+                    `${baseUrl}/api/network/is-following/${user.id}?follower_id=${currentUserId}`
+                  );
+                  if (isFollowingResponse.ok) {
+                    const isFollowingData = await isFollowingResponse.json();
+                    if (isFollowingData.success) {
+                      isFollowing = isFollowingData.isFollowing;
+                    }
                   }
+                } catch (error) {
+                  console.error(
+                    `Error checking follow status for ${user.id}:`,
+                    error
+                  );
                 }
-              } catch (error) {
-                console.error(
-                  `Error checking follow status for ${user.id}:`,
-                  error
-                );
               }
-            }
 
-            return {
-              id: user.id,
-              name: user.full_name || 'User',
-              role: user.user_type
-                ? user.user_type.charAt(0).toUpperCase() +
-                  user.user_type.slice(1).toLowerCase()
-                : 'User',
-              avatar: getProfileUrl(user.profile_url) || null,
-              isFollowing,
-            };
-          })
-        );
-        setSearchResults(transformedResults);
+              return {
+                id: user.id,
+                name: user.full_name || 'User',
+                role: user.user_type
+                  ? user.user_type.charAt(0).toUpperCase() +
+                    user.user_type.slice(1).toLowerCase()
+                  : 'User',
+                avatar: getProfileUrl(user.profile_url) || null,
+                isFollowing,
+              };
+            })
+          );
+          setSearchResults(transformedResults);
+        } else {
+          setSearchResults([]);
+        }
       } else {
         setSearchResults([]);
+      }
+
+      // Process posts
+      if (postsResponse && postsResponse.ok) {
+        const data = await postsResponse.json();
+        if (data.success && data.posts) {
+          const filteredPosts: PostData[] = data.posts
+            .filter((post: any) => {
+              const username = (post.username || '').toLowerCase();
+              const caption = (post.caption || '').toLowerCase();
+              return (
+                username.includes(searchLower) ||
+                caption.includes(searchLower)
+              );
+            })
+            .map((post: any) => ({
+              id: post.id,
+              username: post.username || 'User',
+              user_profile_url: post.user_profile_url || null,
+              user_id: post.user_id,
+              post_type: post.post_type,
+              caption: post.caption,
+              media_url: post.media_url,
+              article_title: post.article_title,
+              article_body: post.article_body,
+              event_title: post.event_title,
+              event_date: post.event_date,
+              event_location: post.event_location,
+              like_count: post.like_count || 0,
+              comment_count: post.comment_count || 0,
+              save_count: post.save_count || 0,
+              created_at: post.created_at,
+            }));
+          setSearchPosts(filteredPosts);
+        } else {
+          setSearchPosts([]);
+        }
+      } else {
+        setSearchPosts([]);
+      }
+
+      // Process clips
+      if (clipsResponse && clipsResponse.ok) {
+        const data = await clipsResponse.json();
+        if (data.success && data.clips) {
+          const filteredClips: ClipResult[] = data.clips
+            .filter((clip: any) => {
+              const username = (clip.username || '').toLowerCase();
+              const description = (clip.description || '').toLowerCase();
+              return (
+                username.includes(searchLower) ||
+                description.includes(searchLower)
+              );
+            })
+            .map((clip: any) => ({
+              id: clip.id,
+              user_id: clip.user_id,
+              username: clip.username || 'User',
+              user_profile_url: clip.user_profile_url || null,
+              video_url: clip.video_url,
+              description: clip.description,
+              like_count: clip.like_count || 0,
+              comment_count: clip.comment_count || 0,
+              created_at: clip.created_at,
+            }));
+          setSearchClips(filteredClips);
+        } else {
+          setSearchClips([]);
+        }
+      } else {
+        setSearchClips([]);
+      }
+
+      // Process articles
+      if (articlesResponse && articlesResponse.ok) {
+        const data = await articlesResponse.json();
+        if (data.success && data.articles) {
+          const filteredArticles: PostData[] = data.articles
+            .filter((article: any) => {
+              const username = (article.username || '').toLowerCase();
+              const title = (article.title || '').toLowerCase();
+              const body = (article.body || '').toLowerCase();
+              return (
+                username.includes(searchLower) ||
+                title.includes(searchLower) ||
+                body.includes(searchLower)
+              );
+            })
+            .map((article: any) => ({
+              id: article.id,
+              username: article.username || 'User',
+              user_profile_url: article.user_profile_url || null,
+              user_id: article.user_id,
+              post_type: 'article',
+              caption: article.body ? article.body.substring(0, 200) : null,
+              media_url: article.image_url || null,
+              article_title: article.title,
+              article_body: article.body,
+              like_count: article.like_count || 0,
+              comment_count: article.comment_count || 0,
+              save_count: article.save_count || 0,
+              created_at: article.created_at,
+            }));
+          setSearchArticles(filteredArticles);
+        } else {
+          setSearchArticles([]);
+        }
+      } else {
+        setSearchArticles([]);
       }
     } catch (error) {
       console.error('Search error:', error);
       setSearchResults([]);
+      setSearchPosts([]);
+      setSearchClips([]);
+      setSearchArticles([]);
     } finally {
       setIsSearching(false);
     }
@@ -445,10 +579,11 @@ export default function SearchPage() {
 
   // Filter posts based on active filter and search query
   const getFilteredPosts = () => {
-    let posts = allPosts;
+    // Use search results if we have a search query, otherwise use dummy data
+    let posts = searchQuery.trim() !== '' ? searchPosts : allPosts;
 
-    // Filter by search query (username, caption, or article title)
-    if (searchQuery.trim() !== '') {
+    // If using dummy data and there's a search query, filter it
+    if (searchQuery.trim() !== '' && posts === allPosts) {
       const searchLower = searchQuery.toLowerCase();
       posts = posts.filter(
         post =>
@@ -470,9 +605,14 @@ export default function SearchPage() {
           p.post_type === 'text' ||
           p.post_type === 'video'
       );
-    if (activeFilter === 'clips') return []; // Clips will be defined later
-    if (activeFilter === 'articles')
+    if (activeFilter === 'clips') return []; // Clips are handled separately
+    if (activeFilter === 'articles') {
+      // If we have search results, use searchArticles, otherwise filter from posts
+      if (searchQuery.trim() !== '' && searchArticles.length > 0) {
+        return searchArticles;
+      }
       return posts.filter(p => p.post_type === 'article');
+    }
     if (activeFilter === 'events')
       return posts.filter(p => p.post_type === 'event');
     if (activeFilter === 'opportunities') return []; // Opportunities will be defined later
@@ -562,11 +702,21 @@ export default function SearchPage() {
       );
     }
 
-    // For "All" tab - show both people and posts
+    // For "All" tab - show people, posts, clips, and articles
     if (activeFilter === 'all') {
       const filteredPosts = getFilteredPosts();
+      // Combine posts with articles, avoiding duplicates
+      const articleIdsInPosts = new Set(
+        filteredPosts.filter(p => p.post_type === 'article').map(p => p.id)
+      );
+      const uniqueArticles = searchArticles.filter(
+        article => !articleIdsInPosts.has(article.id)
+      );
+      const allPostsForDisplay = [...filteredPosts, ...uniqueArticles];
+      
       const hasPeople = searchQuery.trim() !== '' && searchResults.length > 0;
-      const hasPosts = filteredPosts.length > 0;
+      const hasPosts = allPostsForDisplay.length > 0;
+      const hasClips = searchClips.length > 0;
 
       if (isSearching) {
         return (
@@ -592,7 +742,7 @@ export default function SearchPage() {
         );
       }
 
-      if (!hasPeople && !hasPosts) {
+      if (!hasPeople && !hasPosts && !hasClips) {
         return (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <SearchIcon className="mx-auto text-gray-300 mb-4" size={48} />
@@ -600,7 +750,7 @@ export default function SearchPage() {
               No results found
             </h3>
             <p className="text-gray-500">
-              No people or posts found matching "{searchQuery}"
+              No results found matching "{searchQuery}"
             </p>
           </div>
         );
@@ -659,16 +809,82 @@ export default function SearchPage() {
             </div>
           )}
 
-          {/* Posts Section */}
+          {/* Clips Section */}
+          {hasClips && (
+            <div>
+              {(hasPeople || hasPosts) && (
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 px-2">
+                  Clips
+                </h3>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {searchClips.map(clip => {
+                  const videoUrl = clip.video_url?.startsWith('http')
+                    ? clip.video_url
+                    : `https://qd9ngjg1-3001.inc1.devtunnels.ms${clip.video_url}`;
+                  
+                  return (
+                    <div
+                      key={clip.id}
+                      className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                    >
+                      <div className="relative aspect-square bg-gray-100">
+                        <video
+                          src={videoUrl}
+                          className="w-full h-full object-cover"
+                          muted
+                          playsInline
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                          <Play className="w-12 h-12 text-white opacity-80" fill="white" />
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          {clip.user_profile_url ? (
+                            <img
+                              src={getProfileUrl(clip.user_profile_url) || ''}
+                              alt={clip.username}
+                              className="w-8 h-8 rounded-full"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                              <span className="text-gray-600 font-semibold text-xs">
+                                {getInitials(clip.username)}
+                              </span>
+                            </div>
+                          )}
+                          <span className="text-sm font-semibold text-gray-900">
+                            {clip.username}
+                          </span>
+                        </div>
+                        {clip.description && (
+                          <p className="text-sm text-gray-700 mb-2 line-clamp-2">
+                            {clip.description}
+                          </p>
+                        )}
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <span>{clip.like_count} likes</span>
+                          <span>{clip.comment_count} comments</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Posts Section (includes posts and articles) */}
           {hasPosts && (
             <div>
-              {hasPeople && (
+              {(hasPeople || hasClips) && (
                 <h3 className="text-lg font-semibold text-gray-900 mb-3 px-2">
-                  Posts
+                  Posts & Articles
                 </h3>
               )}
               <div className="flex flex-col gap-4">
-                {filteredPosts.map(post => (
+                {allPostsForDisplay.map(post => (
                   <Post
                     key={post.id}
                     post={post}
@@ -686,7 +902,94 @@ export default function SearchPage() {
       );
     }
 
-    // Show posts for other filters (Posts, Clips, Articles, Events, Opportunities)
+    // Show clips for Clips filter
+    if (activeFilter === 'clips') {
+      if (searchQuery.trim() === '') {
+        return (
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+            <SearchIcon className="mx-auto text-gray-300 mb-4" size={48} />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Start searching
+            </h3>
+            <p className="text-gray-500">Search for clips</p>
+          </div>
+        );
+      }
+
+      if (searchClips.length === 0) {
+        return (
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+            <SearchIcon className="mx-auto text-gray-300 mb-4" size={48} />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No clips found
+            </h3>
+            <p className="text-gray-500">
+              No clips found matching "{searchQuery}"
+            </p>
+          </div>
+        );
+      }
+
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {searchClips.map(clip => {
+            const videoUrl = clip.video_url?.startsWith('http')
+              ? clip.video_url
+              : `https://qd9ngjg1-3001.inc1.devtunnels.ms${clip.video_url}`;
+            
+            return (
+              <div
+                key={clip.id}
+                className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+              >
+                <div className="relative aspect-square bg-gray-100">
+                  <video
+                    src={videoUrl}
+                    className="w-full h-full object-cover"
+                    muted
+                    playsInline
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                    <Play className="w-12 h-12 text-white opacity-80" fill="white" />
+                  </div>
+                </div>
+                <div className="p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    {clip.user_profile_url ? (
+                      <img
+                        src={getProfileUrl(clip.user_profile_url) || ''}
+                        alt={clip.username}
+                        className="w-8 h-8 rounded-full"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-600 font-semibold text-xs">
+                          {getInitials(clip.username)}
+                        </span>
+                      </div>
+                    )}
+                    <span className="text-sm font-semibold text-gray-900">
+                      {clip.username}
+                    </span>
+                  </div>
+                  {clip.description && (
+                    <p className="text-sm text-gray-700 mb-2 line-clamp-2">
+                      {clip.description}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-4 text-xs text-gray-500">
+                    <span>{clip.like_count} likes</span>
+                    <span>{clip.comment_count} comments</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    // Show posts for other filters (Posts, Articles, Events, Opportunities)
     const filteredPosts = getFilteredPosts();
 
     if (searchQuery.trim() === '') {
@@ -732,7 +1035,10 @@ export default function SearchPage() {
 
   return (
     <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
-      <Header />
+      <Header
+        userName={currentUser?.full_name}
+        userProfileUrl={getProfileUrl(currentUser?.profile_url)}
+      />
 
       <main className="flex flex-1 w-full mt-5 overflow-hidden">
         <div className="hidden md:flex px-6">
@@ -763,10 +1069,13 @@ export default function SearchPage() {
                   />
                   {searchQuery && (
                     <button
-                      onClick={() => {
-                        setSearchQuery('');
-                        setSearchResults([]);
-                      }}
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSearchResults([]);
+                      setSearchPosts([]);
+                      setSearchClips([]);
+                      setSearchArticles([]);
+                    }}
                       className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
                       <X size={20} />

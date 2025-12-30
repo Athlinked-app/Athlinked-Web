@@ -49,8 +49,8 @@ async function getUserProfileService(userId) {
     return {
       userId: profile.user_id,
       fullName: profile.full_name || null,
-      profileImage: profile.profile_image_url || null,
-      coverImage: profile.cover_image_url || null,
+      profileImage: profile.profile_image_url || null, // This is now users.profile_url
+      coverImage: profile.cover_image_url || null, // This is now users.cover_url
       bio: profile.bio || null,
       education: profile.education || null,
       city: profile.city || null,
@@ -113,6 +113,7 @@ async function upsertUserProfileService(userId, profileData) {
         coverImage: updatedProfile.cover_image_url,
         bio: updatedProfile.bio,
         education: updatedProfile.education,
+        city: updatedProfile.city,
         primarySport: updatedProfile.primary_sport,
         sportsPlayed: sportsPlayed,
       },

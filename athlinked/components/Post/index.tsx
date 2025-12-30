@@ -74,6 +74,15 @@ export default function Post({
       .slice(0, 2);
   };
 
+  const getProfileUrl = (profileUrl?: string | null): string | null => {
+    if (!profileUrl || profileUrl.trim() === '') return null;
+    if (profileUrl.startsWith('http')) return profileUrl;
+    if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
+      return `http://localhost:3001${profileUrl}`;
+    }
+    return profileUrl;
+  };
+
   const getEventTypeIcon = (eventType: string | null | undefined) => {
     const iconMap: Record<
       string,
@@ -424,11 +433,21 @@ export default function Post({
     <div className="w-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
       <div className="flex items-center gap-3 p-4 border-b border-gray-200 mb-4">
         <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
-          {post.user_profile_url && post.user_profile_url.trim() !== '' ? (
+          {getProfileUrl(post.user_profile_url) ? (
             <img
-              src={post.user_profile_url}
+              src={getProfileUrl(post.user_profile_url) || ''}
               alt={post.username}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+                const parent = e.currentTarget.parentElement;
+                if (parent) {
+                  const fallback = document.createElement('span');
+                  fallback.className = 'text-gray-600 font-semibold text-xs';
+                  fallback.textContent = getInitials(post.username);
+                  parent.appendChild(fallback);
+                }
+              }}
             />
           ) : (
             <span className="text-gray-600 font-semibold text-xs">
@@ -787,12 +806,21 @@ export default function Post({
 
             <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-3">
               <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
-                {post.user_profile_url &&
-                post.user_profile_url.trim() !== '' ? (
+                {getProfileUrl(post.user_profile_url) ? (
                   <img
-                    src={post.user_profile_url}
+                    src={getProfileUrl(post.user_profile_url) || ''}
                     alt={post.username}
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const parent = e.currentTarget.parentElement;
+                      if (parent) {
+                        const fallback = document.createElement('span');
+                        fallback.className = 'text-gray-600 font-semibold text-sm';
+                        fallback.textContent = getInitials(post.username);
+                        parent.appendChild(fallback);
+                      }
+                    }}
                   />
                 ) : (
                   <span className="text-gray-600 font-semibold text-sm">
