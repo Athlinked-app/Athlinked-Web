@@ -16,7 +16,6 @@ async function getUserProfile(userId) {
       up.cover_image_url,
       up.bio,
       up.education,
-      up.city,
       up.primary_sport,
       up.created_at,
       up.updated_at,
@@ -91,11 +90,6 @@ async function upsertUserProfile(userId, profileData) {
       insertFields.push('education');
       insertValues.push(profileData.education || null);
       conflictUpdateFields.push('education = EXCLUDED.education');
-    }
-    if (profileData.city !== undefined) {
-      insertFields.push('city');
-      insertValues.push(profileData.city || null);
-      conflictUpdateFields.push('city = EXCLUDED.city');
     }
     if (profileData.primarySport !== undefined) {
       insertFields.push('primary_sport');

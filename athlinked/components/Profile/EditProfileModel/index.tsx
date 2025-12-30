@@ -2,7 +2,16 @@
 
 import { useState, useRef, useEffect, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, ChevronLeft, Camera, Megaphone, Pencil, MapPin, Users, Calendar, UserPlus, MessageCircle } from 'lucide-react';
+import {
+  X,
+  ChevronLeft,
+  Camera,
+  Megaphone,
+  Pencil,
+  MapPin,
+  Users,
+  Calendar,
+} from 'lucide-react';
 import EditProfilePopup from '../EditProfilePopup';
 
 interface EditProfileModalProps {
@@ -11,6 +20,7 @@ interface EditProfileModalProps {
   asSidebar?: boolean;
   currentUserId?: string | null;
   viewedUserId?: string | null;
+  onFavouriteChange?: () => void;
   userData?: {
     full_name?: string;
     username?: string;
@@ -37,7 +47,6 @@ interface EditProfileModalProps {
     background_image_url?: File;
     bio?: string;
     education?: string;
-    city?: string;
   }) => void;
 }
 
@@ -60,6 +69,7 @@ export default function EditProfileModal({
   asSidebar = false,
   currentUserId,
   viewedUserId,
+  onFavouriteChange,
   userData,
   onSave,
 }: EditProfileModalProps) {
@@ -67,7 +77,6 @@ export default function EditProfileModal({
   const [fetchedUserData, setFetchedUserData] =
     useState<FetchedUserData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentUserFromFetch, setCurrentUserFromFetch] = useState<string | null>(null);
   const [fullName, setFullName] = useState(userData?.full_name || '');
   const [username, setUsername] = useState(userData?.username || '');
   const [location, setLocation] = useState(userData?.location || '');
@@ -80,9 +89,6 @@ export default function EditProfileModal({
   );
   const [bio, setBio] = useState(userData?.bio || '');
   const [education, setEducation] = useState(userData?.education || '');
-  const [city, setCity] = useState('');
-  const [followersCount, setFollowersCount] = useState<number>(0);
-  const [calculatedAge, setCalculatedAge] = useState<string>('');
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(
     userData?.profile_url || null
@@ -98,23 +104,6 @@ export default function EditProfileModal({
 
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const backgroundImageInputRef = useRef<HTMLInputElement>(null);
-
-  // Fetch followers count
-  const fetchFollowersCount = async (userId: string) => {
-    try {
-      const response = await fetch(
-        `http://localhost:3001/api/network/counts/${userId}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.counts) {
-          setFollowersCount(data.counts.followers || 0);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching followers count:', error);
-    }
-  };
 
   // Fetch user data from API
   useEffect(() => {
@@ -146,10 +135,6 @@ export default function EditProfileModal({
         const data = await response.json();
         if (data.success && data.user) {
           setFetchedUserData(data.user);
-          // Store current user ID from fetched data
-          if (data.user.id) {
-            setCurrentUserFromFetch(data.user.id);
-          }
           // Update state with fetched data (prioritize fetched data over props)
           if (data.user.full_name) {
             setFullName(data.user.full_name);
@@ -175,26 +160,8 @@ export default function EditProfileModal({
           if (data.user.location) {
             setLocation(data.user.location);
           }
-          
-          // Calculate age from date of birth
-          if (data.user.dob) {
-            const dob = new Date(data.user.dob);
-            const today = new Date();
-            let age = today.getFullYear() - dob.getFullYear();
-            const monthDiff = today.getMonth() - dob.getMonth();
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
-              age--;
-            }
-            setCalculatedAge(age.toString());
-            setAge(age.toString());
-          } else if (data.user.age) {
+          if (data.user.age) {
             setAge(data.user.age.toString());
-            setCalculatedAge(data.user.age.toString());
-          }
-          
-          // Fetch followers count
-          if (data.user.id) {
-            fetchFollowersCount(data.user.id);
           }
           // Note: bio and education are fetched from profile API, not user API
         }
@@ -213,7 +180,6 @@ export default function EditProfileModal({
               );
               if (profileData.bio) setBio(profileData.bio);
               if (profileData.education) setEducation(profileData.education);
-              if (profileData.city) setCity(profileData.city);
               if (profileData.profileImage) {
                 const profileUrl = profileData.profileImage.startsWith('http')
                   ? profileData.profileImage
@@ -341,7 +307,6 @@ export default function EditProfileModal({
     background_image_url?: File;
     sports_played?: string;
     education?: string;
-    city?: string;
     bio?: string;
   }) => {
     // Update local state with the saved data
@@ -359,9 +324,6 @@ export default function EditProfileModal({
     if (data.bio) {
       setBio(data.bio);
     }
-    if (data.city) {
-      setCity(data.city);
-    }
     // Call parent onSave if provided
     if (onSave) {
       onSave({
@@ -370,7 +332,6 @@ export default function EditProfileModal({
         sports_played: data.sports_played,
         bio: data.bio !== undefined ? data.bio : undefined,
         education: data.education !== undefined ? data.education : undefined,
-        city: data.city !== undefined ? data.city : undefined,
       });
     }
   };
@@ -554,92 +515,87 @@ export default function EditProfileModal({
               <div className="flex flex-row gap-3 text-gray-600">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4" />
-                  <span className="text-gray-600">
-                    {city || location || 'Location'}
-                  </span>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={e => setLocation(e.target.value)}
+                    placeholder="Location"
+                    className="w-28 border-none focus:outline-none focus:ring-0 bg-transparent"
+                  />
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  <span>
-                    {followersCount >= 1000 
-                      ? `${(followersCount / 1000).toFixed(1)}k followers`
-                      : `${followersCount} followers`}
-                  </span>
+                  <span>10k followers</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
-                  <span className="text-gray-600">
-                    {calculatedAge || age || 'Age'}
-                  </span>
+                  <input
+                    type="number"
+                    value={age}
+                    onChange={e => setAge(e.target.value)}
+                    placeholder="Age"
+                    className="w-20 border-none focus:outline-none focus:ring-0 bg-transparent"
+                  />
                 </div>
               </div>
             </div>
 
             {/* Right Column - Action Buttons and Sports Information */}
-            <div className="flex flex-col items-center gap-2">
+            <div className="flex flex-col items-end gap-2">
               <div className="flex gap-3">
-                {/* Show Edit Profile button only if viewing own profile */}
-                {(() => {
-                  // Determine if viewing own profile
-                  const isOwnProfile = !viewedUserId || 
-                    (currentUserId && viewedUserId === currentUserId) ||
-                    (currentUserFromFetch && viewedUserId === currentUserFromFetch) ||
-                    (!viewedUserId && !currentUserId); // If no viewedUserId, assume own profile
-                  return isOwnProfile;
-                })() ? (
-                  <button
-                    onClick={handleEditProfileClick}
-                    className="px-12 py-4 bg-[#CB9729] text-white rounded-lg hover:bg-[#b78322] transition-colors flex items-center gap-2"
-                  >
-                    <Pencil className="w-4 h-4" />
-                    <span>Edit Profile</span>
-                  </button>
-                ) : (
-                  <>
-                    {/* Show Connect and Message buttons for other users' profiles */}
-                    <button
-                      onClick={() => {
-                        // TODO: Implement connect functionality
-                        console.log('Connect clicked for user:', viewedUserId);
-                      }}
-                      className="px-6 py-4 bg-[#CB9729] text-white rounded-lg hover:bg-[#b78322] transition-colors flex items-center gap-2"
-                    >
-                      <UserPlus className="w-4 h-4" />
-                      <span>Connect</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        // TODO: Implement message functionality
-                        console.log('Message clicked for user:', viewedUserId);
-                        router.push(`/messages?userId=${viewedUserId}`);
-                      }}
-                      className="px-6 py-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      <span>Message</span>
-                    </button>
-                  </>
-                )}
+                <button className="px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-[#b78322] transition-colors flex items-center gap-2">
+                  <Megaphone className="w-4 h-4" />
+                  <span>Boost Profile</span>
+                </button>
+                <button
+                  onClick={handleEditProfileClick}
+                  className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                >
+                  <Pencil className="w-4 h-4" />
+                  <span>Edit Profile</span>
+                </button>
               </div>
 
               {/* Sports Information */}
               <div className="space-y-1 mt-2">
-                <div className="text-md flex items-start">
-                  <span className="font-semibold text-gray-900 w-40 text-right flex-shrink-0">Sports Played</span>
-                  <span className="mx-3 flex-shrink-0">:</span>
-                  <span className="text-gray-700 break-words max-w-xs" style={{ 
-                    display: '-webkit-box',
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden'
-                  }}>{sportsPlayed || '—'}</span>
+                <div className="text-md flex">
+                  <span className="font-semibold text-gray-900 w-40 text-right">
+                    Sports Played
+                  </span>
+                  <span className="mx-3">:</span>
+                  <span className="text-gray-700">{sportsPlayed || '—'}</span>
                 </div>
-                <div className="text-md flex items-start">
-                  <span className="font-semibold text-gray-900 w-40 text-right flex-shrink-0">Primary Sports</span>
-                  <span className="mx-3 flex-shrink-0">:</span>
-                  <span className="text-gray-700 break-words max-w-xs">{primarySport || '—'}</span>
+                <div className="text-md flex">
+                  <span className="font-semibold text-gray-900 w-40 text-right">
+                    Primary Sports
+                  </span>
+                  <span className="mx-3">:</span>
+                  <span className="text-gray-700">{primarySport || '—'}</span>
                 </div>
-               
+                {(education || userData?.education) && (
+                  <div className="text-md flex">
+                    <span className="font-semibold text-gray-900 w-40 text-right">
+                      Education
+                    </span>
+                    <span className="mx-3">:</span>
+                    <span className="text-gray-700">
+                      {education || userData?.education || ''}
+                    </span>
+                  </div>
+                )}
+                {(bio || userData?.bio) && (
+                  <div className="text-md flex flex-col">
+                    <div className="flex">
+                      <span className="font-semibold text-gray-900 w-40 text-right">
+                        Bio
+                      </span>
+                      <span className="mx-3">:</span>
+                    </div>
+                    <span className="text-gray-700 ml-[11.5rem] mt-1">
+                      {bio || userData?.bio || ''}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -656,7 +612,6 @@ export default function EditProfileModal({
             sports_played: sportsPlayed,
             bio: bio,
             education: education,
-            city: city,
           }}
           onSave={handleEditPopupSave}
         />

@@ -85,30 +85,25 @@ export default function ClipsPage() {
   useEffect(() => {
     const initialMuted: { [key: string]: boolean } = {};
     reels.forEach(reel => {
-      // Start videos unmuted by default for audio
       initialMuted[reel.id] = false;
     });
     setMutedReels(initialMuted);
   }, [reels]);
 
-  // Update video muted property when mutedReels state changes
   useEffect(() => {
     Object.keys(mutedReels).forEach(reelId => {
       const video = videoRefs.current[reelId];
       if (video) {
         video.muted = mutedReels[reelId];
-        // Ensure volume is set to 1 when unmuted
         if (!mutedReels[reelId]) {
           video.volume = 1;
         }
-        // Only try to play with audio if user has interacted
         if (!video.paused && !mutedReels[reelId] && userHasInteracted) {
           const playPromise = video.play();
           if (playPromise !== undefined) {
             playPromisesRef.current[reelId] = playPromise;
             playPromise
               .catch(err => {
-                // Silently handle autoplay errors
                 if (err.name !== 'AbortError') {
                   console.error('Error playing video with audio:', err);
                 }
@@ -134,21 +129,16 @@ export default function ClipsPage() {
 
       if (reels[currentIndex]) {
         setSelectedReelId(reels[currentIndex].id);
-      }
-
-      // Play/pause videos based on current index and paused state
+      } // Play/pause videos based on current index and paused state
       reels.forEach((reel, index) => {
         const video = videoRefs.current[reel.id];
         if (video) {
           if (index === currentIndex && !pausedReels[reel.id]) {
-            // Try to play with audio by default
             const shouldBeMuted = mutedReels[reel.id] ?? false;
             video.muted = shouldBeMuted;
             if (!shouldBeMuted) {
               video.volume = 1;
             }
-
-            // Cancel any pending play promise
             if (playPromisesRef.current[reel.id]) {
               playPromisesRef.current[reel.id] = null;
             }

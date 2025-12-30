@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -175,8 +174,6 @@ export default function NavigationBar({
           </div>
         </div>
       </div>
-
-      {/* Navigation Menu */}
       <nav className="flex-1 p-4 overflow-y-auto">
         <ul className="space-y-1">
           {menuItems.map(item => {
@@ -258,17 +255,12 @@ export default function NavigationBar({
           })}
         </ul>
       </nav>
-
-      {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <>
-          {/* Backdrop */}
           <div
             className="fixed inset-0 backdrop-blur-sm z-50"
             onClick={() => setShowLogoutConfirm(false)}
           ></div>
-
-          {/* Modal */}
           <div className="fixed inset-0 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
               <div className="flex items-center justify-between mb-4">

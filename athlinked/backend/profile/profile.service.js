@@ -22,7 +22,6 @@ async function getUserProfileService(userId) {
         coverImage: null,
         bio: null,
         education: null,
-        city: null,
         primarySport: null,
         sportsPlayed: null,
       };
@@ -53,7 +52,6 @@ async function getUserProfileService(userId) {
       coverImage: profile.cover_image_url || null,
       bio: profile.bio || null,
       education: profile.education || null,
-      city: profile.city || null,
       primarySport: profile.primary_sport || null,
       sportsPlayed: sportsPlayed,
     };
