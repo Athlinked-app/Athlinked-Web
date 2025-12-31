@@ -713,7 +713,7 @@ export default function Profile() {
               }
             }}
           />
-          <div className="bg-white mt-4 rounded-lg flex flex-col flex-1 min-h-0">
+          <div className="bg-white mt-4 rounded-lg flex flex-col flex-1 ">
             <div className="flex items-center border-b border-gray-200 flex-shrink-0">
               <button
                 onClick={() => setActiveTab('profile')}
@@ -758,7 +758,7 @@ export default function Profile() {
               </button>
             </div>
 
-            <div className="mt-4 space-y-4 overflow-y-auto flex-1 pb-4 px-1 max-h-[400px] lg:max-h-[450px] ">
+            <div className="mt-4 space-y-4 overflow-y-auto flex-1 pb-44 px-1 max-h-[400px] lg:max-h-[450px] ">
               {activeTab === 'profile' && (
                 <>
                   <AboutMe bio={userBio || profileData?.bio || ''} />
@@ -803,6 +803,7 @@ export default function Profile() {
                     onVideoAndMediaChange={setVideoAndMedia}
                     userId={targetUserId}
                   />
+              
                 </>
               )}
               {activeTab === 'activity' && (
@@ -999,7 +1000,7 @@ export default function Profile() {
             </div>
           </div>
         </div>
-        <div className="hidden lg:flex flex-1 flex-shrink-0">
+        <div className="hidden lg:flex flex-1 flex-shrink-0 ">
           <RightSideBar />
         </div>
       </main>

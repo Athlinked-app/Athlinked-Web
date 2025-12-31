@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import NavigationBar from '@/components/NavigationBar';
 import Header from '@/components/Header';
 import FileUploadModal from '@/components/Clips/FileUploadModal';
