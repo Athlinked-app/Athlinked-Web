@@ -400,11 +400,11 @@ export default function Profile() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         response = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -477,7 +477,7 @@ export default function Profile() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
+      return `http://localhost:3001${profileUrl}`;
     }
     return profileUrl;
   };
@@ -525,7 +525,7 @@ export default function Profile() {
                   : `http://localhost:3001${profileData.coverImage}`
                 : null,
               user_type: viewUserId ? (viewUser?.user_type || 'athlete') : (currentUser?.user_type || 'athlete'),
-              location: profileData?.city || (viewUserId ? '' : 'Rochester, NY'), 
+              location: profileData?.city || '',
               age: calculateAge(profileData?.dob) || undefined, 
               followers_count: followersCount,
               sports_played: (() => {
@@ -547,7 +547,14 @@ export default function Profile() {
               education: profileData?.education || '',
               city: profileData?.city || '',
             }}
-            onSave={async data => {
+            onSave={async (data: {
+              profile_url?: File;
+              background_image_url?: File;
+              sports_played?: string;
+              education?: string;
+              city?: string;
+              bio?: string;
+            }) => {
               if (viewUserId && viewUserId !== currentUserId) {
                 console.log('Cannot save another user\'s profile');
                 return;
