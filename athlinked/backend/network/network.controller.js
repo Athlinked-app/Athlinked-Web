@@ -295,12 +295,12 @@ async function rejectConnectionRequest(req, res) {
 
 async function getConnectionRequests(req, res) {
   try {
-    const userId = req.params.userId;
+    const userId = req.user?.id;
 
     if (!userId) {
-      return res.status(400).json({
+      return res.status(401).json({
         success: false,
-        message: 'User ID is required',
+        message: 'User authentication required',
       });
     }
 

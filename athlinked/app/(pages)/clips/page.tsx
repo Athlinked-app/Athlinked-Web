@@ -86,6 +86,7 @@ export default function ClipsPage() {
   const [savedClips, setSavedClips] = useState<{ [key: string]: boolean }>({});
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
+  const audioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({});
   const playPromisesRef = useRef<{ [key: string]: Promise<void> | null }>({});
 
   const [reels, setReels] = useState<Reel[]>([]);
@@ -99,20 +100,20 @@ export default function ClipsPage() {
 
   useEffect(() => {
     Object.keys(mutedReels).forEach(reelId => {
-      const video = videoRefs.current[reelId];
-      if (video) {
-        video.muted = mutedReels[reelId];
+      const audio = audioRefs.current[reelId];
+      if (audio) {
+        audio.muted = mutedReels[reelId];
         if (!mutedReels[reelId]) {
-          video.volume = 1;
+          audio.volume = 1;
         }
-        if (!video.paused && !mutedReels[reelId] && userHasInteracted) {
-          const playPromise = video.play();
+        if (!audio.paused && !mutedReels[reelId] && userHasInteracted) {
+          const playPromise = audio.play();
           if (playPromise !== undefined) {
             playPromisesRef.current[reelId] = playPromise;
             playPromise
               .catch(err => {
                 if (err.name !== 'AbortError') {
-                  console.error('Error playing video with audio:', err);
+                  console.error('Error playing audio:', err);
                 }
               })
               .finally(() => {
@@ -136,66 +137,31 @@ export default function ClipsPage() {
 
       if (reels[currentIndex]) {
         setSelectedReelId(reels[currentIndex].id);
-      } // Play/pause videos based on current index and paused state
+      } // Play/pause audio based on current index and paused state
       reels.forEach((reel, index) => {
-        const video = videoRefs.current[reel.id];
-        if (video) {
-          if (index === currentIndex && !pausedReels[reel.id]) {
+        const audio = audioRefs.current[reel.id];
+        if (audio) {
+          if (
+            index === currentIndex &&
+            !pausedReels[reel.id] &&
+            userHasInteracted
+          ) {
             const shouldBeMuted = mutedReels[reel.id] ?? false;
-            video.muted = shouldBeMuted;
+            audio.muted = shouldBeMuted;
             if (!shouldBeMuted) {
-              video.volume = 1;
+              audio.volume = 1;
             }
             if (playPromisesRef.current[reel.id]) {
               playPromisesRef.current[reel.id] = null;
             }
 
-            const playPromise = video.play();
+            const playPromise = audio.play();
             if (playPromise !== undefined) {
               playPromisesRef.current[reel.id] = playPromise;
               playPromise
                 .catch(err => {
-                  // If autoplay with audio fails, try multiple strategies to enable audio
-                  if (err.name === 'NotAllowedError' && !shouldBeMuted) {
-                    video.muted = true;
-                    const mutedPlayPromise = video.play();
-                    if (mutedPlayPromise !== undefined) {
-                      mutedPlayPromise
-                        .then(() => {
-                          // Try multiple times with different delays to enable audio
-                          const tryEnableAudio = (attempt: number) => {
-                            if (attempt > 5) return; // Max 5 attempts
-
-                            setTimeout(() => {
-                              if (!video.paused && !mutedReels[reel.id]) {
-                                video.muted = false;
-                                video.volume = 1;
-                                video
-                                  .play()
-                                  .then(() => {
-                                    // Success! Audio is now enabled
-                                  })
-                                  .catch(() => {
-                                    // Try again with longer delay
-                                    tryEnableAudio(attempt + 1);
-                                  });
-                              }
-                            }, attempt * 50); // Increasing delay: 50ms, 100ms, 150ms, etc.
-                          };
-
-                          tryEnableAudio(1);
-                        })
-                        .catch(mutedErr => {
-                          if (mutedErr.name !== 'AbortError') {
-                            console.error(
-                              'Error playing muted video:',
-                              mutedErr
-                            );
-                          }
-                        });
-                    }
-                  } else if (err.name !== 'AbortError') {
-                    console.error('Error playing video:', err);
+                  if (err.name !== 'AbortError') {
+                    console.error('Error playing audio:', err);
                   }
                 })
                 .finally(() => {
@@ -207,7 +173,7 @@ export default function ClipsPage() {
             if (playPromisesRef.current[reel.id]) {
               playPromisesRef.current[reel.id] = null;
             }
-            video.pause();
+            audio.pause();
           }
         }
       });
@@ -219,57 +185,21 @@ export default function ClipsPage() {
       setSelectedReelId(reels[0].id);
     }
 
-    // Play the first video on initial load
-    if (reels.length > 0 && currentReelIndex === 0) {
-      const firstVideo = videoRefs.current[reels[0].id];
-      if (firstVideo && !pausedReels[reels[0].id]) {
-        firstVideo.muted = mutedReels[reels[0].id] ?? false;
+    // Play the first audio on initial load (only after user interaction)
+    if (reels.length > 0 && currentReelIndex === 0 && userHasInteracted) {
+      const firstAudio = audioRefs.current[reels[0].id];
+      if (firstAudio && !pausedReels[reels[0].id]) {
+        firstAudio.muted = mutedReels[reels[0].id] ?? false;
         if (!mutedReels[reels[0].id]) {
-          firstVideo.volume = 1;
+          firstAudio.volume = 1;
         }
-        const playPromise = firstVideo.play();
+        const playPromise = firstAudio.play();
         if (playPromise !== undefined) {
           playPromisesRef.current[reels[0].id] = playPromise;
           playPromise
-            .then(() => {
-              // If play succeeds, ensure audio is enabled if it should be
-              if (!mutedReels[reels[0].id] && firstVideo.muted) {
-                firstVideo.muted = false;
-                firstVideo.volume = 1;
-              }
-            })
             .catch(err => {
-              // If autoplay with audio fails, try multiple strategies to enable audio
-              if (err.name === 'NotAllowedError' && !firstVideo.muted) {
-                // Strategy 1: Play muted first, then try to unmute immediately
-                firstVideo.muted = true;
-                firstVideo
-                  .play()
-                  .then(() => {
-                    // Try multiple times with different delays to enable audio
-                    const tryEnableAudio = (attempt: number) => {
-                      if (attempt > 5) return; // Max 5 attempts
-
-                      setTimeout(() => {
-                        if (!firstVideo.paused && !mutedReels[reels[0].id]) {
-                          firstVideo.muted = false;
-                          firstVideo.volume = 1;
-                          firstVideo
-                            .play()
-                            .then(() => {
-                              // Success! Audio is now enabled
-                            })
-                            .catch(() => {
-                              // Try again with longer delay
-                              tryEnableAudio(attempt + 1);
-                            });
-                        }
-                      }, attempt * 50); // Increasing delay: 50ms, 100ms, 150ms, etc.
-                    };
-
-                    tryEnableAudio(1);
-                  })
-                  .catch(() => {});
+              if (err.name !== 'AbortError') {
+                console.error('Error playing audio:', err);
               }
             })
             .finally(() => {
@@ -294,20 +224,24 @@ export default function ClipsPage() {
     const enableAudioOnInteraction = () => {
       if (!userHasInteracted) {
         setUserHasInteracted(true);
-        // Enable audio for current video
+        // Start playing audio for current reel after user interaction
         if (
           reels.length > 0 &&
           currentReelIndex >= 0 &&
           currentReelIndex < reels.length
         ) {
           const currentReel = reels[currentReelIndex];
-          const video = videoRefs.current[currentReel.id];
-          if (video && !mutedReels[currentReel.id] && video.muted) {
-            video.muted = false;
-            video.volume = 1;
-            if (!video.paused) {
-              video.play().catch(() => {});
+          const audio = audioRefs.current[currentReel.id];
+          if (audio && !pausedReels[currentReel.id]) {
+            audio.muted = mutedReels[currentReel.id] ?? false;
+            if (!mutedReels[currentReel.id]) {
+              audio.volume = 1;
             }
+            audio.play().catch(err => {
+              if (err.name !== 'AbortError') {
+                console.error('Error playing audio after interaction:', err);
+              }
+            });
           }
         }
       }
@@ -329,21 +263,22 @@ export default function ClipsPage() {
       document.removeEventListener('touchstart', enableAudioOnInteraction);
       document.removeEventListener('keydown', enableAudioOnInteraction);
     };
-  }, [userHasInteracted, reels, currentReelIndex, mutedReels]);
+  }, [userHasInteracted, reels, currentReelIndex, mutedReels, pausedReels]);
 
-  // Ensure current video plays when reels are loaded or current index changes
+  // Ensure current audio plays when reels are loaded or current index changes
   useEffect(() => {
     if (
       reels.length > 0 &&
       currentReelIndex >= 0 &&
-      currentReelIndex < reels.length
+      currentReelIndex < reels.length &&
+      userHasInteracted
     ) {
       const currentReel = reels[currentReelIndex];
-      const video = videoRefs.current[currentReel.id];
-      if (video && !pausedReels[currentReel.id]) {
-        video.muted = mutedReels[currentReel.id] ?? false;
+      const audio = audioRefs.current[currentReel.id];
+      if (audio && !pausedReels[currentReel.id]) {
+        audio.muted = mutedReels[currentReel.id] ?? false;
         if (!mutedReels[currentReel.id]) {
-          video.volume = 1;
+          audio.volume = 1;
         }
 
         // Cancel any pending play promise
@@ -351,49 +286,13 @@ export default function ClipsPage() {
           playPromisesRef.current[currentReel.id] = null;
         }
 
-        const playPromise = video.play();
+        const playPromise = audio.play();
         if (playPromise !== undefined) {
           playPromisesRef.current[currentReel.id] = playPromise;
           playPromise
-            .then(() => {
-              // If play succeeds, ensure audio is enabled if it should be
-              if (!mutedReels[currentReel.id] && video.muted) {
-                video.muted = false;
-                video.volume = 1;
-              }
-            })
             .catch(err => {
-              // If autoplay with audio fails, try multiple strategies to enable audio
-              if (err.name === 'NotAllowedError' && !video.muted) {
-                // Strategy 1: Play muted first, then try to unmute immediately
-                video.muted = true;
-                video
-                  .play()
-                  .then(() => {
-                    // Try multiple times with different delays to enable audio
-                    const tryEnableAudio = (attempt: number) => {
-                      if (attempt > 5) return; // Max 5 attempts
-
-                      setTimeout(() => {
-                        if (!video.paused && !mutedReels[currentReel.id]) {
-                          video.muted = false;
-                          video.volume = 1;
-                          video
-                            .play()
-                            .then(() => {
-                              // Success! Audio is now enabled
-                            })
-                            .catch(() => {
-                              // Try again with longer delay
-                              tryEnableAudio(attempt + 1);
-                            });
-                        }
-                      }, attempt * 50); // Increasing delay: 50ms, 100ms, 150ms, etc.
-                    };
-
-                    tryEnableAudio(1);
-                  })
-                  .catch(() => {});
+              if (err.name !== 'AbortError') {
+                console.error('Error playing audio:', err);
               }
             })
             .finally(() => {
@@ -402,40 +301,48 @@ export default function ClipsPage() {
         }
       }
     }
-  }, [reels, currentReelIndex, pausedReels, mutedReels]);
+  }, [reels, currentReelIndex, pausedReels, mutedReels, userHasInteracted]);
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const userIdentifier = localStorage.getItem('userEmail');
+        const { getCurrentUserId, getCurrentUser } =
+          await import('@/utils/auth');
+        const userId = getCurrentUserId();
+        const user = getCurrentUser();
 
-        if (!userIdentifier) {
-          console.error('No user identifier found');
-          setLoading(false);
-          return;
-        }
-
-        let response;
-        if (userIdentifier.startsWith('username:')) {
-          const username = userIdentifier.replace('username:', '');
-          response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-          );
-        } else {
-          response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-          );
-        }
-
-        const data = await response.json();
-
-        if (data.success && data.user) {
-          setUserData(data.user);
-          setCurrentUserId(data.user.id);
-          setCurrentUser({
-            full_name: data.user.full_name,
-            profile_url: data.user.profile_url,
-          });
+        if (userId) {
+          // Fetch full user profile for display
+          const { apiGet } = await import('@/utils/api');
+          try {
+            const data = await apiGet<{ success: boolean; user?: any }>(
+              `/profile`
+            );
+            if (data.success && data.user) {
+              setUserData(data.user);
+              setCurrentUserId(userId);
+              setCurrentUser({
+                full_name: data.user.full_name,
+                profile_url: data.user.profile_url,
+              });
+            } else {
+              // Fallback to token data
+              setUserData({ full_name: user?.username || 'User', email: '' });
+              setCurrentUserId(userId);
+              setCurrentUser({
+                full_name: user?.username || 'User',
+                profile_url: undefined,
+              });
+            }
+          } catch (error) {
+            // Fallback to token data
+            setUserData({ full_name: user?.username || 'User', email: '' });
+            setCurrentUserId(userId);
+            setCurrentUser({
+              full_name: user?.username || 'User',
+              profile_url: undefined,
+            });
+          }
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -580,17 +487,14 @@ export default function ClipsPage() {
 
     setMutedReels(prev => {
       const newMuted = !prev[reelId];
-      // Update video muted state immediately - only affects audio, not playback
-      const video = videoRefs.current[reelId];
-      if (video) {
-        // Only toggle the muted property - video continues playing
-        video.muted = newMuted;
+      // Update audio muted state immediately
+      const audio = audioRefs.current[reelId];
+      if (audio) {
+        audio.muted = newMuted;
         // Set volume when unmuting
         if (!newMuted) {
-          video.volume = 1;
+          audio.volume = 1;
         }
-        // Don't call play() if video is already playing - just toggle mute
-        // The video will continue playing with or without audio based on muted state
       }
       return {
         ...prev,
@@ -600,20 +504,25 @@ export default function ClipsPage() {
   };
 
   const handleVideoClick = (
-    e: React.MouseEvent<HTMLVideoElement>,
+    e: React.MouseEvent<HTMLVideoElement | HTMLDivElement>,
     reelId: string
   ) => {
     e.preventDefault();
     e.stopPropagation();
 
-    const video = videoRefs.current[reelId];
-    if (video) {
-      if (video.paused) {
+    // Mark user as interacted when they click
+    if (!userHasInteracted) {
+      setUserHasInteracted(true);
+    }
+
+    const audio = audioRefs.current[reelId];
+    if (audio) {
+      if (audio.paused) {
         // Ensure muted state and volume are correct (default to unmuted)
         const shouldBeMuted = mutedReels[reelId] ?? false;
-        video.muted = shouldBeMuted;
+        audio.muted = shouldBeMuted;
         if (!shouldBeMuted) {
-          video.volume = 1;
+          audio.volume = 1;
         }
 
         // Cancel any pending play promise
@@ -621,13 +530,13 @@ export default function ClipsPage() {
           playPromisesRef.current[reelId] = null;
         }
 
-        const playPromise = video.play();
+        const playPromise = audio.play();
         if (playPromise !== undefined) {
           playPromisesRef.current[reelId] = playPromise;
           playPromise
             .catch(err => {
               if (err.name !== 'AbortError') {
-                console.error('Error playing video:', err);
+                console.error('Error playing audio:', err);
               }
             })
             .finally(() => {
@@ -640,7 +549,7 @@ export default function ClipsPage() {
         if (playPromisesRef.current[reelId]) {
           playPromisesRef.current[reelId] = null;
         }
-        video.pause();
+        audio.pause();
         setPausedReels(prev => ({ ...prev, [reelId]: true }));
       }
     }
@@ -654,18 +563,10 @@ export default function ClipsPage() {
 
   const fetchComments = async (clipId: string) => {
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/clips/${clipId}/comments`
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{ success: boolean; comments?: any[] }>(
+        `/clips/${clipId}/comments`
       );
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response:', text.substring(0, 200));
-        return;
-      }
-
-      const data = await response.json();
 
       if (data.success && data.comments) {
         const transformedComments: Comment[] = data.comments.map(
@@ -715,53 +616,13 @@ export default function ClipsPage() {
     }
 
     try {
-      const userIdentifier = localStorage.getItem('userEmail');
-      if (!userIdentifier) {
-        alert('User not logged in');
-        return;
-      }
-
-      // Get user data to get user_id
-      let userResponse;
-      if (userIdentifier.startsWith('username:')) {
-        const username = userIdentifier.replace('username:', '');
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-        );
-      } else {
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
-      }
-      const userDataResponse = await userResponse.json();
-
-      if (!userDataResponse.success || !userDataResponse.user) {
-        throw new Error('Failed to get user data');
-      }
-
-      const response = await fetch(
-        `http://localhost:3001/api/clips/${reelId}/comments`,
+      const { apiPost } = await import('@/utils/api');
+      const result = await apiPost<{ success: boolean; message?: string }>(
+        `/clips/${reelId}/comments`,
         {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            comment: text,
-            user_id: userDataResponse.user.id,
-          }),
+          comment: text.trim(),
         }
       );
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response:', text.substring(0, 200));
-        alert('Failed to add comment. Please try again.');
-        return;
-      }
-
-      const result = await response.json();
 
       if (!result.success) {
         throw new Error(result.message || 'Failed to add comment');
@@ -777,18 +638,10 @@ export default function ClipsPage() {
 
   const fetchClips = async () => {
     try {
-      const response = await fetch(
-        'http://localhost:3001/api/clips?page=1&limit=50'
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{ success: boolean; clips?: any[] }>(
+        '/clips?page=1&limit=50'
       );
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response:', text.substring(0, 200));
-        return;
-      }
-
-      const data = await response.json();
 
       if (data.success && data.clips) {
         const fallbackName = userData?.full_name?.split(' ')[0] || 'User';
@@ -841,54 +694,17 @@ export default function ClipsPage() {
   const handleFileUpload = async (file: File, description: string) => {
     setIsUploading(true);
     try {
-      const userIdentifier = localStorage.getItem('userEmail');
-      if (!userIdentifier) {
-        throw new Error('User not logged in');
-      }
-
-      // Get user data to get user_id
-      let userResponse;
-      if (userIdentifier.startsWith('username:')) {
-        const username = userIdentifier.replace('username:', '');
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-        );
-      } else {
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
-      }
-      const userData = await userResponse.json();
-
-      if (!userData.success || !userData.user) {
-        throw new Error('Failed to get user data');
-      }
-
       const formData = new FormData();
       formData.append('video', file);
       formData.append('description', description);
-      formData.append('user_id', userData.user.id);
 
-      // Upload clip via API (multipart/form-data)
-
-      const response = await fetch(
-        'http://localhost:3001/api/clips',
-        {
-          method: 'POST',
-          body: formData, // Don't set Content-Type, browser will set it with boundary
-        }
-      );
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        const text = await response.text();
-        console.error('Non-JSON response:', text.substring(0, 200));
-        throw new Error(
-          'Failed to upload clip. Server returned invalid response.'
-        );
-      }
-
-      const result = await response.json();
+      // Use apiUpload which handles token refresh automatically
+      const { apiUpload } = await import('@/utils/api');
+      const result = await apiUpload<{
+        success: boolean;
+        message?: string;
+        clip?: any;
+      }>('/clips', formData);
 
       if (!result.success) {
         throw new Error(result.message || 'Failed to create clip');
@@ -927,97 +743,10 @@ export default function ClipsPage() {
 
     setIsDeleting(true);
     try {
-      const userIdentifier = localStorage.getItem('userEmail');
-      if (!userIdentifier) {
-        alert('User not logged in');
-        return;
-      }
-
-      let userResponse;
-      if (userIdentifier.startsWith('username:')) {
-        const username = userIdentifier.replace('username:', '');
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-        );
-      } else {
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
-      }
-
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-
-      // Check if user response is JSON
-      const userContentType = userResponse.headers.get('content-type');
-      let userDataResponse;
-
-      if (userContentType && userContentType.includes('application/json')) {
-        try {
-          userDataResponse = await userResponse.json();
-        } catch (jsonError) {
-          console.error('JSON parse error for user data:', jsonError);
-          const text = await userResponse.text();
-          console.error('User response text:', text);
-          throw new Error('Failed to parse user data response');
-        }
-      } else {
-        const text = await userResponse.text();
-        console.error(
-          'Non-JSON user response (status:',
-          userResponse.status,
-          '):',
-          text.substring(0, 200)
-        );
-        throw new Error('Server returned non-JSON response for user data');
-      }
-
-      if (!userDataResponse.success || !userDataResponse.user) {
-        throw new Error('User not found');
-      }
-
-      const response = await fetch(
-        `http://localhost:3001/api/clips/${clipId}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: userDataResponse.user.id,
-          }),
-        }
+      const { apiDelete } = await import('@/utils/api');
+      const result = await apiDelete<{ success: boolean; message?: string }>(
+        `/clips/${clipId}`
       );
-
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      let result;
-
-      if (contentType && contentType.includes('application/json')) {
-        try {
-          result = await response.json();
-        } catch (jsonError) {
-          console.error('JSON parse error:', jsonError);
-          const text = await response.text();
-          console.error('Response text:', text);
-          throw new Error(
-            `Failed to parse response: ${text.substring(0, 100)}`
-          );
-        }
-      } else {
-        // If not JSON, read as text to see what we got
-        const text = await response.text();
-        console.error(
-          'Non-JSON response (status:',
-          response.status,
-          '):',
-          text.substring(0, 200)
-        );
-        throw new Error(
-          `Server returned non-JSON response (status: ${response.status}). Check backend logs.`
-        );
-      }
 
       if (result.success) {
         // Refresh clips list
@@ -1148,32 +877,26 @@ export default function ClipsPage() {
                     className="w-full h-full snap-start flex items-center justify-center relative"
                     style={{ minHeight: '100%' }}
                   >
-                    {/* Video Container - Larger Size */}
+                    {/* Audio Container - Larger Size */}
                     <div
-                      className="relative bg-black rounded-lg overflow-hidden shadow-2xl"
+                      className="relative bg-black rounded-lg overflow-hidden shadow-2xl cursor-pointer"
                       style={{ width: '500px', aspectRatio: '9/16' }}
+                      onClick={e => handleVideoClick(e, reel.id)}
                     >
-                      <video
+                      <audio
                         ref={el => {
                           if (el) {
-                            videoRefs.current[reel.id] = el;
-                            // Start unmuted by default for audio
+                            audioRefs.current[reel.id] = el;
                             el.muted = mutedReels[reel.id] ?? false;
                             el.volume = 1;
                           }
                         }}
-                        onClick={e => handleVideoClick(e, reel.id)}
-                        className="w-full h-full object-contain cursor-pointer"
-                        style={{ pointerEvents: 'auto' }}
-                        controls={false}
-                        muted={mutedReels[reel.id] ?? false}
                         loop
-                        playsInline
-                        autoPlay={true}
+                        preload="auto"
+                        style={{ display: 'none' }}
                       >
                         <source src={reel.videoUrl} type="video/mp4" />
-                        Your browser does not support the video tag.
-                      </video>
+                      </audio>
 
                       {/* Top Right - More Options Menu (Save for all, Delete only for owned clips) */}
                       <div className="absolute top-10 right-4 z-20">

@@ -39,10 +39,12 @@ export default function Achievements({
 
   const fetchAchievements = async () => {
     if (!userId) return;
-    
+
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/profile/${userId}/achievements`);
+      const response = await fetch(
+        `http://localhost:3001/api/profile/${userId}/achievements`
+      );
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
@@ -76,13 +78,16 @@ export default function Achievements({
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/api/profile/achievements/${existingAchievement.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newAchievement),
-        });
+        const response = await fetch(
+          `http://localhost:3001/api/profile/achievements/${existingAchievement.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newAchievement),
+          }
+        );
 
         if (response.ok) {
           const result = await response.json();
@@ -97,7 +102,9 @@ export default function Achievements({
           }
         } else {
           const errorData = await response.json();
-          alert(`Failed to update achievement: ${errorData.message || 'Unknown error'}`);
+          alert(
+            `Failed to update achievement: ${errorData.message || 'Unknown error'}`
+          );
         }
       } catch (error) {
         console.error('Error updating achievement:', error);
@@ -116,13 +123,16 @@ export default function Achievements({
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/api/profile/${userId}/achievements`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newAchievement),
-        });
+        const response = await fetch(
+          `http://localhost:3001/api/profile/${userId}/achievements`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newAchievement),
+          }
+        );
 
         if (response.ok) {
           const result = await response.json();
@@ -135,7 +145,9 @@ export default function Achievements({
           }
         } else {
           const errorData = await response.json();
-          alert(`Failed to save achievement: ${errorData.message || 'Unknown error'}`);
+          alert(
+            `Failed to save achievement: ${errorData.message || 'Unknown error'}`
+          );
         }
       } catch (error) {
         console.error('Error saving achievement:', error);
@@ -157,7 +169,9 @@ export default function Achievements({
   const handleDelete = async (id: string | undefined, index: number) => {
     if (!id) {
       // If no ID, just update local state
-      const updatedAchievements = achievementsList.filter((_, i) => i !== index);
+      const updatedAchievements = achievementsList.filter(
+        (_, i) => i !== index
+      );
       setAchievementsList(updatedAchievements);
       if (onAchievementsChange) {
         onAchievementsChange(updatedAchievements);
@@ -166,19 +180,26 @@ export default function Achievements({
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/profile/achievements/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/profile/achievements/${id}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (response.ok) {
-        const updatedAchievements = achievementsList.filter((_, i) => i !== index);
+        const updatedAchievements = achievementsList.filter(
+          (_, i) => i !== index
+        );
         setAchievementsList(updatedAchievements);
         if (onAchievementsChange) {
           onAchievementsChange(updatedAchievements);
         }
       } else {
         const errorData = await response.json();
-        alert(`Failed to delete achievement: ${errorData.message || 'Unknown error'}`);
+        alert(
+          `Failed to delete achievement: ${errorData.message || 'Unknown error'}`
+        );
       }
     } catch (error) {
       console.error('Error deleting achievement:', error);

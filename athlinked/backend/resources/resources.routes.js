@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { authenticateToken } = require('../middleware/auth');
 const resourcesController = require('./resources.controller');
 const upload = require('../utils/upload-resources');
 
@@ -8,7 +9,12 @@ const upload = require('../utils/upload-resources');
  * Create a new resource
  * Auth required - user_id in body or req.user.id
  */
-router.post('/', upload.single('file'), resourcesController.createResource);
+router.post(
+  '/',
+  authenticateToken,
+  upload.single('file'),
+  resourcesController.createResource
+);
 
 /**
  * GET /api/resources
@@ -22,6 +28,6 @@ router.get('/', resourcesController.getAllResources);
  * Soft delete a resource (set is_active = false)
  * Auth required - user_id in body or req.user.id
  */
-router.delete('/:id', resourcesController.deleteResource);
+router.delete('/:id', authenticateToken, resourcesController.deleteResource);
 
 module.exports = router;

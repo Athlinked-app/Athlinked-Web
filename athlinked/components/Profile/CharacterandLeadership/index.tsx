@@ -42,10 +42,12 @@ export default function CharacterAndLeadershipComponent({
 
   const fetchCharacterLeadership = async () => {
     if (!userId) return;
-    
+
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/profile/${userId}/character-leadership`);
+      const response = await fetch(
+        `http://localhost:3001/api/profile/${userId}/character-leadership`
+      );
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
@@ -79,13 +81,16 @@ export default function CharacterAndLeadershipComponent({
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/api/profile/character-leadership/${existingData.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newData),
-        });
+        const response = await fetch(
+          `http://localhost:3001/api/profile/character-leadership/${existingData.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newData),
+          }
+        );
 
         if (response.ok) {
           const result = await response.json();
@@ -100,7 +105,9 @@ export default function CharacterAndLeadershipComponent({
           }
         } else {
           const errorData = await response.json();
-          alert(`Failed to update character and leadership: ${errorData.message || 'Unknown error'}`);
+          alert(
+            `Failed to update character and leadership: ${errorData.message || 'Unknown error'}`
+          );
         }
       } catch (error) {
         console.error('Error updating character and leadership:', error);
@@ -119,13 +126,16 @@ export default function CharacterAndLeadershipComponent({
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/api/profile/${userId}/character-leadership`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newData),
-        });
+        const response = await fetch(
+          `http://localhost:3001/api/profile/${userId}/character-leadership`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newData),
+          }
+        );
 
         if (response.ok) {
           const result = await response.json();
@@ -138,7 +148,9 @@ export default function CharacterAndLeadershipComponent({
           }
         } else {
           const errorData = await response.json();
-          alert(`Failed to save character and leadership: ${errorData.message || 'Unknown error'}`);
+          alert(
+            `Failed to save character and leadership: ${errorData.message || 'Unknown error'}`
+          );
         }
       } catch (error) {
         console.error('Error saving character and leadership:', error);
@@ -171,9 +183,12 @@ export default function CharacterAndLeadershipComponent({
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/profile/character-leadership/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/profile/character-leadership/${id}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (response.ok) {
         const updatedList = characterAndLeadershipList.filter(
@@ -185,7 +200,9 @@ export default function CharacterAndLeadershipComponent({
         }
       } else {
         const errorData = await response.json();
-        alert(`Failed to delete character and leadership: ${errorData.message || 'Unknown error'}`);
+        alert(
+          `Failed to delete character and leadership: ${errorData.message || 'Unknown error'}`
+        );
       }
     } catch (error) {
       console.error('Error deleting character and leadership:', error);

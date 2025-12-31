@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { authenticateToken } = require('../middleware/auth');
 const videosController = require('./videos.controller');
 const upload = require('../utils/upload-resources');
 
@@ -8,7 +9,12 @@ const upload = require('../utils/upload-resources');
  * Create a new video
  * Auth required - user_id in body or req.user.id
  */
-router.post('/', upload.single('file'), videosController.createVideo);
+router.post(
+  '/',
+  authenticateToken,
+  upload.single('file'),
+  videosController.createVideo
+);
 
 /**
  * GET /api/videos
@@ -21,6 +27,6 @@ router.get('/', videosController.getAllVideos);
  * Soft delete a video (set is_active = false)
  * Auth required - user_id in body or req.user.id
  */
-router.delete('/:id', videosController.deleteVideo);
+router.delete('/:id', authenticateToken, videosController.deleteVideo);
 
 module.exports = router;

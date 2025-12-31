@@ -224,7 +224,9 @@ async function getConnectionRequestsService(userId) {
     }
 
     const requests = await networkModel.getConnectionRequests(userId);
-    console.log(`Service: Found ${requests.length} connection requests for user ${userId}`);
+    console.log(
+      `Service: Found ${requests.length} connection requests for user ${userId}`
+    );
 
     return {
       success: true,

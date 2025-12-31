@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { authenticateToken } = require('../middleware/auth');
 const clipsController = require('../clips/clips.controller');
 
 /**
@@ -7,6 +8,10 @@ const clipsController = require('../clips/clips.controller');
  * Reply to a comment
  * Auth required
  */
-router.post('/:commentId/reply', clipsController.replyToComment);
+router.post(
+  '/:commentId/reply',
+  authenticateToken,
+  clipsController.replyToComment
+);
 
 module.exports = router;

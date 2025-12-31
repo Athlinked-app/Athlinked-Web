@@ -201,9 +201,7 @@ export default function StatsPage() {
       setLoadingPositions(true);
       try {
         // Get all sports first
-        const sportsResponse = await fetch(
-          'http://localhost:3001/api/sports'
-        );
+        const sportsResponse = await fetch('http://localhost:3001/api/sports');
         const sportsData = await sportsResponse.json();
 
         if (!sportsData.success) {

@@ -111,6 +111,17 @@ async function createUser(userData) {
 }
 
 /**
+ * Find user by ID
+ * @param {string} userId - User ID
+ * @returns {Promise<object|null>} User data or null
+ */
+async function findById(userId) {
+  const query = 'SELECT * FROM users WHERE id = $1';
+  const result = await pool.query(query, [userId]);
+  return result.rows[0] || null;
+}
+
+/**
  * Get all users excluding the current user
  * @param {string} excludeUserId - User ID to exclude from results
  * @param {number} limit - Maximum number of users to return (default: 10)
@@ -146,6 +157,7 @@ async function getAllUsers(excludeUserId = null, limit = 10) {
 module.exports = {
   findByEmail,
   findByUsername,
+  findById,
   createUser,
   getAllUsers,
 };

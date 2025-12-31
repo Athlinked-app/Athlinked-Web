@@ -39,10 +39,12 @@ export default function VideoAndMediaComponent({
 
   const fetchVideoMedia = async () => {
     if (!userId) return;
-    
+
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/profile/${userId}/video-media`);
+      const response = await fetch(
+        `http://localhost:3001/api/profile/${userId}/video-media`
+      );
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
@@ -76,13 +78,16 @@ export default function VideoAndMediaComponent({
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/api/profile/video-media/${existingData.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newData),
-        });
+        const response = await fetch(
+          `http://localhost:3001/api/profile/video-media/${existingData.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newData),
+          }
+        );
 
         if (response.ok) {
           const result = await response.json();
@@ -97,7 +102,9 @@ export default function VideoAndMediaComponent({
           }
         } else {
           const errorData = await response.json();
-          alert(`Failed to update video and media: ${errorData.message || 'Unknown error'}`);
+          alert(
+            `Failed to update video and media: ${errorData.message || 'Unknown error'}`
+          );
         }
       } catch (error) {
         console.error('Error updating video and media:', error);
@@ -116,13 +123,16 @@ export default function VideoAndMediaComponent({
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/api/profile/${userId}/video-media`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newData),
-        });
+        const response = await fetch(
+          `http://localhost:3001/api/profile/${userId}/video-media`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newData),
+          }
+        );
 
         if (response.ok) {
           const result = await response.json();
@@ -135,7 +145,9 @@ export default function VideoAndMediaComponent({
           }
         } else {
           const errorData = await response.json();
-          alert(`Failed to save video and media: ${errorData.message || 'Unknown error'}`);
+          alert(
+            `Failed to save video and media: ${errorData.message || 'Unknown error'}`
+          );
         }
       } catch (error) {
         console.error('Error saving video and media:', error);
@@ -166,9 +178,12 @@ export default function VideoAndMediaComponent({
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/profile/video-media/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/profile/video-media/${id}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (response.ok) {
         const updatedList = videoAndMediaList.filter((_, i) => i !== index);
@@ -178,7 +193,9 @@ export default function VideoAndMediaComponent({
         }
       } else {
         const errorData = await response.json();
-        alert(`Failed to delete video and media: ${errorData.message || 'Unknown error'}`);
+        alert(
+          `Failed to delete video and media: ${errorData.message || 'Unknown error'}`
+        );
       }
     } catch (error) {
       console.error('Error deleting video and media:', error);

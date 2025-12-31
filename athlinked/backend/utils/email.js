@@ -19,12 +19,6 @@ function createTransporter() {
     },
   };
 
-  console.log('📧 Creating transporter with config:', {
-    host: config.host,
-    port: config.port,
-    user: config.auth.user,
-  });
-
   return nodemailer.createTransport(config);
 }
 
@@ -46,8 +40,6 @@ async function sendOTPEmail(to, otp) {
       throw new Error(errorMsg);
     }
 
-    console.log(`📤 Attempting to send OTP email to: ${to}`);
-
     const transporter = createTransporter();
 
     await new Promise((resolve, reject) => {
@@ -56,7 +48,6 @@ async function sendOTPEmail(to, otp) {
           console.error('❌ SMTP verification failed:', error.message);
           reject(new Error(`SMTP verification failed: ${error.message}`));
         } else {
-          console.log('✅ SMTP server is ready to send emails');
           resolve(success);
         }
       });
@@ -80,13 +71,7 @@ async function sendOTPEmail(to, otp) {
       text: `Your AthLinked Signup OTP is: ${otp}. This OTP will expire in 5 minutes.`,
     };
 
-    console.log(
-      `📧 Sending email from ${mailOptions.from} to ${mailOptions.to}`
-    );
     const info = await transporter.sendMail(mailOptions);
-    console.log(
-      `✅ OTP email sent successfully to ${to}, Message ID: ${info.messageId}`
-    );
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('❌ Failed to send OTP email:', error);
@@ -134,8 +119,6 @@ async function sendParentSignupLink(to, username, signupLink) {
       throw new Error(errorMsg);
     }
 
-    console.log(`📤 Attempting to send parent signup link to: ${to}`);
-
     const transporter = createTransporter();
 
     await new Promise((resolve, reject) => {
@@ -144,7 +127,6 @@ async function sendParentSignupLink(to, username, signupLink) {
           console.error('❌ SMTP verification failed:', error.message);
           reject(new Error(`SMTP verification failed: ${error.message}`));
         } else {
-          console.log('✅ SMTP server is ready to send emails');
           resolve(success);
         }
       });
@@ -163,13 +145,7 @@ async function sendParentSignupLink(to, username, signupLink) {
       text: `Please click the link below to create your parent account: ${signupLink}`,
     };
 
-    console.log(
-      `📧 Sending parent signup link from ${mailOptions.from} to ${mailOptions.to}`
-    );
     const info = await transporter.sendMail(mailOptions);
-    console.log(
-      `✅ Parent signup link sent successfully to ${to}, Message ID: ${info.messageId}`
-    );
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error('❌ Failed to send parent signup link email:', error);

@@ -258,7 +258,10 @@ async function sendConnectionRequest(requesterId, receiverId) {
       const existing = checkResult.rows[0];
       if (existing.status === 'pending') {
         await dbClient.query('ROLLBACK');
-        return { success: false, message: 'Connection request already pending' };
+        return {
+          success: false,
+          message: 'Connection request already pending',
+        };
       }
       if (existing.status === 'accepted') {
         await dbClient.query('ROLLBACK');
@@ -296,8 +299,7 @@ async function sendConnectionRequest(requesterId, receiverId) {
 
     const requesterQuery = 'SELECT full_name FROM users WHERE id = $1';
     const requesterResult = await pool.query(requesterQuery, [requesterId]);
-    const requesterName =
-      requesterResult.rows[0]?.full_name || 'Someone';
+    const requesterName = requesterResult.rows[0]?.full_name || 'Someone';
 
     try {
       await createNotification({
@@ -355,7 +357,8 @@ async function acceptConnectionRequest(requestId, receiverId) {
     `;
     await dbClient.query(updateQuery, [requestId]);
 
-    const requesterQuery = 'SELECT username, full_name FROM users WHERE id = $1';
+    const requesterQuery =
+      'SELECT username, full_name FROM users WHERE id = $1';
     const receiverQuery = 'SELECT username, full_name FROM users WHERE id = $1';
 
     const [requesterResult, receiverResult] = await Promise.all([
@@ -411,7 +414,9 @@ async function acceptConnectionRequest(requestId, receiverId) {
     await dbClient.query('COMMIT');
 
     const receiverName =
-      receiverResult.rows[0].full_name || receiverResult.rows[0].username || 'Someone';
+      receiverResult.rows[0].full_name ||
+      receiverResult.rows[0].username ||
+      'Someone';
 
     try {
       await createNotification({
@@ -491,7 +496,9 @@ async function getConnectionRequests(userId) {
 
   try {
     const result = await pool.query(query, [userId]);
-    console.log(`Found ${result.rows.length} connection requests for user ${userId}`);
+    console.log(
+      `Found ${result.rows.length} connection requests for user ${userId}`
+    );
     return result.rows;
   } catch (error) {
     console.error('Error fetching connection requests:', error);
@@ -506,8 +513,11 @@ async function checkConnectionRequestStatus(requesterId, receiverId) {
       FROM connection_requests 
       WHERE requester_id = $1 AND receiver_id = $2
     `;
-    const connectionResult = await pool.query(connectionQuery, [requesterId, receiverId]);
-    
+    const connectionResult = await pool.query(connectionQuery, [
+      requesterId,
+      receiverId,
+    ]);
+
     if (connectionResult.rows.length > 0) {
       const status = connectionResult.rows[0].status;
       if (status === 'accepted') {
@@ -521,8 +531,11 @@ async function checkConnectionRequestStatus(requesterId, receiverId) {
         (SELECT COUNT(*) FROM user_follows WHERE follower_id = $1 AND following_id = $2) as user1_follows_user2,
         (SELECT COUNT(*) FROM user_follows WHERE follower_id = $2 AND following_id = $1) as user2_follows_user1
     `;
-    const mutualResult = await pool.query(mutualFollowQuery, [requesterId, receiverId]);
-    
+    const mutualResult = await pool.query(mutualFollowQuery, [
+      requesterId,
+      receiverId,
+    ]);
+
     if (mutualResult.rows.length > 0) {
       const row = mutualResult.rows[0];
       if (row.user1_follows_user2 > 0 && row.user2_follows_user1 > 0) {

@@ -42,11 +42,13 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
+const { authenticateToken } = require('../middleware/auth');
+
 /**
  * POST /api/profile/upload
  * Upload profile or cover image
  */
-router.post('/upload', upload.single('file'), (req, res) => {
+router.post('/upload', authenticateToken, upload.single('file'), (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({

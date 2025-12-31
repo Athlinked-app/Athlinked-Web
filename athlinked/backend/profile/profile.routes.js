@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { authenticateToken } = require('../middleware/auth');
 const profileController = require('./profile.controller');
 const socialHandlesController = require('./social-handles.controller');
 const academicBackgroundsController = require('./academic-backgrounds.controller');
@@ -23,14 +24,18 @@ const videoMediaController = require('./video-media.controller');
  * Auth required
  * NOTE: Must be before /:userId route to avoid matching "images" as userId
  */
-router.post('/images', profileController.updateProfileImages);
+router.post(
+  '/images',
+  authenticateToken,
+  profileController.updateProfileImages
+);
 
 /**
  * POST /api/profile
  * Create or update user profile (UPSERT)
  * Auth required
  */
-router.post('/', profileController.upsertUserProfile);
+router.post('/', authenticateToken, profileController.upsertUserProfile);
 
 /**
  * Social Handles Routes
@@ -41,25 +46,40 @@ router.post('/', profileController.upsertUserProfile);
  * GET /api/profile/:userId/social-handles
  * Get all social handles for a user
  */
-router.get('/:userId/social-handles', socialHandlesController.getSocialHandlesController);
+router.get(
+  '/:userId/social-handles',
+  socialHandlesController.getSocialHandlesController
+);
 
 /**
  * POST /api/profile/:userId/social-handles
  * Create a new social handle
  */
-router.post('/:userId/social-handles', socialHandlesController.createSocialHandleController);
+router.post(
+  '/:userId/social-handles',
+  authenticateToken,
+  socialHandlesController.createSocialHandleController
+);
 
 /**
  * PUT /api/profile/social-handles/:id
  * Update a social handle
  */
-router.put('/social-handles/:id', socialHandlesController.updateSocialHandleController);
+router.put(
+  '/social-handles/:id',
+  authenticateToken,
+  socialHandlesController.updateSocialHandleController
+);
 
 /**
  * DELETE /api/profile/social-handles/:id
  * Delete a social handle
  */
-router.delete('/social-handles/:id', socialHandlesController.deleteSocialHandleController);
+router.delete(
+  '/social-handles/:id',
+  authenticateToken,
+  socialHandlesController.deleteSocialHandleController
+);
 
 /**
  * Academic Backgrounds Routes
@@ -69,25 +89,40 @@ router.delete('/social-handles/:id', socialHandlesController.deleteSocialHandleC
  * GET /api/profile/:userId/academic-backgrounds
  * Get all academic backgrounds for a user
  */
-router.get('/:userId/academic-backgrounds', academicBackgroundsController.getAcademicBackgroundsController);
+router.get(
+  '/:userId/academic-backgrounds',
+  academicBackgroundsController.getAcademicBackgroundsController
+);
 
 /**
  * POST /api/profile/:userId/academic-backgrounds
  * Create a new academic background
  */
-router.post('/:userId/academic-backgrounds', academicBackgroundsController.createAcademicBackgroundController);
+router.post(
+  '/:userId/academic-backgrounds',
+  authenticateToken,
+  academicBackgroundsController.createAcademicBackgroundController
+);
 
 /**
  * PUT /api/profile/academic-backgrounds/:id
  * Update an academic background
  */
-router.put('/academic-backgrounds/:id', academicBackgroundsController.updateAcademicBackgroundController);
+router.put(
+  '/academic-backgrounds/:id',
+  authenticateToken,
+  academicBackgroundsController.updateAcademicBackgroundController
+);
 
 /**
  * DELETE /api/profile/academic-backgrounds/:id
  * Delete an academic background
  */
-router.delete('/academic-backgrounds/:id', academicBackgroundsController.deleteAcademicBackgroundController);
+router.delete(
+  '/academic-backgrounds/:id',
+  authenticateToken,
+  academicBackgroundsController.deleteAcademicBackgroundController
+);
 
 /**
  * Achievements Routes
@@ -97,25 +132,40 @@ router.delete('/academic-backgrounds/:id', academicBackgroundsController.deleteA
  * GET /api/profile/:userId/achievements
  * Get all achievements for a user
  */
-router.get('/:userId/achievements', achievementsController.getAchievementsController);
+router.get(
+  '/:userId/achievements',
+  achievementsController.getAchievementsController
+);
 
 /**
  * POST /api/profile/:userId/achievements
  * Create a new achievement
  */
-router.post('/:userId/achievements', achievementsController.createAchievementController);
+router.post(
+  '/:userId/achievements',
+  authenticateToken,
+  achievementsController.createAchievementController
+);
 
 /**
  * PUT /api/profile/achievements/:id
  * Update an achievement
  */
-router.put('/achievements/:id', achievementsController.updateAchievementController);
+router.put(
+  '/achievements/:id',
+  authenticateToken,
+  achievementsController.updateAchievementController
+);
 
 /**
  * DELETE /api/profile/achievements/:id
  * Delete an achievement
  */
-router.delete('/achievements/:id', achievementsController.deleteAchievementController);
+router.delete(
+  '/achievements/:id',
+  authenticateToken,
+  achievementsController.deleteAchievementController
+);
 
 /**
  * Athletic Performance Routes
@@ -125,25 +175,40 @@ router.delete('/achievements/:id', achievementsController.deleteAchievementContr
  * GET /api/profile/:userId/athletic-performance
  * Get all athletic performance data for a user
  */
-router.get('/:userId/athletic-performance', athleticPerformanceController.getAthleticPerformanceController);
+router.get(
+  '/:userId/athletic-performance',
+  athleticPerformanceController.getAthleticPerformanceController
+);
 
 /**
  * POST /api/profile/:userId/athletic-performance
  * Create a new athletic performance entry
  */
-router.post('/:userId/athletic-performance', athleticPerformanceController.createAthleticPerformanceController);
+router.post(
+  '/:userId/athletic-performance',
+  authenticateToken,
+  athleticPerformanceController.createAthleticPerformanceController
+);
 
 /**
  * PUT /api/profile/athletic-performance/:id
  * Update an athletic performance entry
  */
-router.put('/athletic-performance/:id', athleticPerformanceController.updateAthleticPerformanceController);
+router.put(
+  '/athletic-performance/:id',
+  authenticateToken,
+  athleticPerformanceController.updateAthleticPerformanceController
+);
 
 /**
  * DELETE /api/profile/athletic-performance/:id
  * Delete an athletic performance entry
  */
-router.delete('/athletic-performance/:id', athleticPerformanceController.deleteAthleticPerformanceController);
+router.delete(
+  '/athletic-performance/:id',
+  authenticateToken,
+  athleticPerformanceController.deleteAthleticPerformanceController
+);
 
 /**
  * Competition Clubs Routes
@@ -153,25 +218,40 @@ router.delete('/athletic-performance/:id', athleticPerformanceController.deleteA
  * GET /api/profile/:userId/competition-clubs
  * Get all competition clubs for a user
  */
-router.get('/:userId/competition-clubs', competitionClubsController.getCompetitionClubsController);
+router.get(
+  '/:userId/competition-clubs',
+  competitionClubsController.getCompetitionClubsController
+);
 
 /**
  * POST /api/profile/:userId/competition-clubs
  * Create a new competition club entry
  */
-router.post('/:userId/competition-clubs', competitionClubsController.createCompetitionClubController);
+router.post(
+  '/:userId/competition-clubs',
+  authenticateToken,
+  competitionClubsController.createCompetitionClubController
+);
 
 /**
  * PUT /api/profile/competition-clubs/:id
  * Update a competition club entry
  */
-router.put('/competition-clubs/:id', competitionClubsController.updateCompetitionClubController);
+router.put(
+  '/competition-clubs/:id',
+  authenticateToken,
+  competitionClubsController.updateCompetitionClubController
+);
 
 /**
  * DELETE /api/profile/competition-clubs/:id
  * Delete a competition club entry
  */
-router.delete('/competition-clubs/:id', competitionClubsController.deleteCompetitionClubController);
+router.delete(
+  '/competition-clubs/:id',
+  authenticateToken,
+  competitionClubsController.deleteCompetitionClubController
+);
 
 /**
  * Character and Leadership Routes
@@ -181,25 +261,40 @@ router.delete('/competition-clubs/:id', competitionClubsController.deleteCompeti
  * GET /api/profile/:userId/character-leadership
  * Get all character and leadership data for a user
  */
-router.get('/:userId/character-leadership', characterLeadershipController.getCharacterLeadershipController);
+router.get(
+  '/:userId/character-leadership',
+  characterLeadershipController.getCharacterLeadershipController
+);
 
 /**
  * POST /api/profile/:userId/character-leadership
  * Create a new character and leadership entry
  */
-router.post('/:userId/character-leadership', characterLeadershipController.createCharacterLeadershipController);
+router.post(
+  '/:userId/character-leadership',
+  authenticateToken,
+  characterLeadershipController.createCharacterLeadershipController
+);
 
 /**
  * PUT /api/profile/character-leadership/:id
  * Update a character and leadership entry
  */
-router.put('/character-leadership/:id', characterLeadershipController.updateCharacterLeadershipController);
+router.put(
+  '/character-leadership/:id',
+  authenticateToken,
+  characterLeadershipController.updateCharacterLeadershipController
+);
 
 /**
  * DELETE /api/profile/character-leadership/:id
  * Delete a character and leadership entry
  */
-router.delete('/character-leadership/:id', characterLeadershipController.deleteCharacterLeadershipController);
+router.delete(
+  '/character-leadership/:id',
+  authenticateToken,
+  characterLeadershipController.deleteCharacterLeadershipController
+);
 
 /**
  * Health and Readiness Routes
@@ -209,25 +304,40 @@ router.delete('/character-leadership/:id', characterLeadershipController.deleteC
  * GET /api/profile/:userId/health-readiness
  * Get all health and readiness data for a user
  */
-router.get('/:userId/health-readiness', healthReadinessController.getHealthReadinessController);
+router.get(
+  '/:userId/health-readiness',
+  healthReadinessController.getHealthReadinessController
+);
 
 /**
  * POST /api/profile/:userId/health-readiness
  * Create a new health and readiness entry
  */
-router.post('/:userId/health-readiness', healthReadinessController.createHealthReadinessController);
+router.post(
+  '/:userId/health-readiness',
+  authenticateToken,
+  healthReadinessController.createHealthReadinessController
+);
 
 /**
  * PUT /api/profile/health-readiness/:id
  * Update a health and readiness entry
  */
-router.put('/health-readiness/:id', healthReadinessController.updateHealthReadinessController);
+router.put(
+  '/health-readiness/:id',
+  authenticateToken,
+  healthReadinessController.updateHealthReadinessController
+);
 
 /**
  * DELETE /api/profile/health-readiness/:id
  * Delete a health and readiness entry
  */
-router.delete('/health-readiness/:id', healthReadinessController.deleteHealthReadinessController);
+router.delete(
+  '/health-readiness/:id',
+  authenticateToken,
+  healthReadinessController.deleteHealthReadinessController
+);
 
 /**
  * Video and Media Routes
@@ -237,25 +347,40 @@ router.delete('/health-readiness/:id', healthReadinessController.deleteHealthRea
  * GET /api/profile/:userId/video-media
  * Get all video and media data for a user
  */
-router.get('/:userId/video-media', videoMediaController.getVideoMediaController);
+router.get(
+  '/:userId/video-media',
+  videoMediaController.getVideoMediaController
+);
 
 /**
  * POST /api/profile/:userId/video-media
  * Create a new video and media entry
  */
-router.post('/:userId/video-media', videoMediaController.createVideoMediaController);
+router.post(
+  '/:userId/video-media',
+  authenticateToken,
+  videoMediaController.createVideoMediaController
+);
 
 /**
  * PUT /api/profile/video-media/:id
  * Update a video and media entry
  */
-router.put('/video-media/:id', videoMediaController.updateVideoMediaController);
+router.put(
+  '/video-media/:id',
+  authenticateToken,
+  videoMediaController.updateVideoMediaController
+);
 
 /**
  * DELETE /api/profile/video-media/:id
  * Delete a video and media entry
  */
-router.delete('/video-media/:id', videoMediaController.deleteVideoMediaController);
+router.delete(
+  '/video-media/:id',
+  authenticateToken,
+  videoMediaController.deleteVideoMediaController
+);
 
 /**
  * GET /api/profile/:userId

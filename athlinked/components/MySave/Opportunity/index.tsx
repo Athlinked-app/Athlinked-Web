@@ -175,8 +175,17 @@ export default function MySaveOpportunity({
   };
 
   const handleShareOpportunity = () => {
-    // TODO: Implement share functionality
-    console.log('Share opportunity:', selectedOpportunity);
+    if (navigator.share && selectedOpportunity) {
+      navigator
+        .share({
+          title: selectedOpportunity.title,
+          text: selectedOpportunity.title,
+          url: window.location.href,
+        })
+        .catch(() => {
+          // Share failed or was cancelled
+        });
+    }
   };
 
   if (loading) {

@@ -93,7 +93,19 @@ export default function OTPVerification({
           data.message || 'Welcome! Account created successfully.'
         );
 
-        // Store user identifier in localStorage
+        // Store access and refresh tokens
+        if (data.accessToken) {
+          localStorage.setItem('accessToken', data.accessToken);
+        }
+        if (data.refreshToken) {
+          localStorage.setItem('refreshToken', data.refreshToken);
+        }
+        // Backward compatibility: also store as 'token' if only token is provided
+        if (data.token && !data.accessToken) {
+          localStorage.setItem('accessToken', data.token);
+        }
+
+        // Store user identifier in localStorage (for backward compatibility during migration)
         // Store email if available, otherwise store username
         if (data.user?.email) {
           localStorage.setItem('userEmail', data.user.email);

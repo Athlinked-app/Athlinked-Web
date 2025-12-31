@@ -2,7 +2,7 @@ const postsService = require('./posts.service');
 
 async function createPost(req, res) {
   try {
-    const userId = req.body.user_id || req.user?.id;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({
         success: false,

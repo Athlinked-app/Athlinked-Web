@@ -79,32 +79,17 @@ export default function NotificationsPage() {
 
     try {
       setLoading(true);
-      // TODO: Replace with proper authentication
-      // For now, pass userId as query param
-      const response = await fetch(
-        `http://localhost:3001/api/notifications?limit=50&offset=0&userId=${currentUserId}`
-      );
-
-      if (!response.ok) {
-        console.error(
-          'Failed to fetch notifications:',
-          response.status,
-          response.statusText
-        );
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        setNotifications([]);
-        return;
-      }
-
-      const data = await response.json();
-      console.log('Fetched notifications:', data);
+      // Get user ID from JWT token
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        success: boolean;
+        notifications?: Notification[];
+        message?: string;
+      }>(`/notifications?limit=50&offset=0`);
 
       if (data.success && data.notifications) {
         setNotifications(data.notifications);
-        console.log('Notifications set:', data.notifications.length);
       } else {
-        console.log('No notifications in response:', data);
         setNotifications([]);
       }
     } catch (error) {

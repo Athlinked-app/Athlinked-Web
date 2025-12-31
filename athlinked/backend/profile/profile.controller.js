@@ -24,16 +24,8 @@ async function getUserProfile(req, res) {
 
 async function upsertUserProfile(req, res) {
   try {
-    const userId = req.user?.id || req.body.userId || req.headers['x-user-id'];
-
-    console.log('Upsert profile request:', {
-      hasUser: !!req.user,
-      userIdFromUser: req.user?.id,
-      userIdFromBody: req.body.userId,
-      userIdFromHeader: req.headers['x-user-id'],
-      finalUserId: userId,
-      body: req.body,
-    });
+    // Use userId from JWT token (set by authenticateToken middleware)
+    const userId = req.user?.id;
 
     if (!userId) {
       return res.status(401).json({
@@ -64,13 +56,10 @@ async function upsertUserProfile(req, res) {
     if (primarySport !== undefined) profileData.primarySport = primarySport;
     if (sportsPlayed !== undefined) profileData.sportsPlayed = sportsPlayed;
 
-    console.log('Profile data to save:', profileData);
-
     const result = await profileService.upsertUserProfileService(
       userId,
       profileData
     );
-    console.log('Profile saved successfully:', result);
     return res.status(200).json(result);
   } catch (error) {
     console.error('Upsert user profile controller error:', error);
@@ -83,6 +72,7 @@ async function upsertUserProfile(req, res) {
 
 async function updateProfileImages(req, res) {
   try {
+    // Use userId from JWT token (set by authenticateToken middleware)
     const userId = req.user?.id;
 
     if (!userId) {

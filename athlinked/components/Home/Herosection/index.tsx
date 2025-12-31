@@ -103,25 +103,15 @@ export default function HomeHerosection({
 
     setIsUploading(true);
     try {
-      const userData = await getUserData();
-
-      const response = await fetch(
-        'http://localhost:3001/api/posts',
+      const { apiPost } = await import('@/utils/api');
+      const data = await apiPost<{ success: boolean; message?: string }>(
+        '/posts',
         {
-          method: 'POST',
-          headers: {
-            'ngrok-skip-browser-warning': 'true',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: userData.id,
-            post_type: 'text',
-            caption: postText.trim(),
-          }),
+          post_type: 'text',
+          caption: postText.trim(),
         }
       );
 
-      const data = await response.json();
       if (data.success) {
         setPostText('');
         if (onPostCreated) {
@@ -143,26 +133,17 @@ export default function HomeHerosection({
 
     setIsUploading(true);
     try {
-      const userData = await getUserData();
-
       const formData = new FormData();
       formData.append('media', selectedFile);
-      formData.append('user_id', userData.id);
       formData.append('post_type', selectedPostType!);
       formData.append('caption', caption);
 
-      const response = await fetch(
-        'http://localhost:3001/api/posts',
-        {
-          method: 'POST',
-          headers: {
-            'ngrok-skip-browser-warning': 'true',
-          },
-          body: formData,
-        }
+      const { apiUpload } = await import('@/utils/api');
+      const data = await apiUpload<{ success: boolean; message?: string }>(
+        '/posts',
+        formData
       );
 
-      const data = await response.json();
       if (data.success) {
         resetFileState();
         if (onPostCreated) {
@@ -190,13 +171,10 @@ export default function HomeHerosection({
   }) => {
     setIsUploading(true);
     try {
-      const userData = await getUserData();
-
       // If there's an image, use FormData
       if (data.image) {
         const formData = new FormData();
         formData.append('media', data.image);
-        formData.append('user_id', userData.id);
         formData.append('post_type', selectedPostType!);
         if (data.caption) {
           formData.append('caption', data.caption);
@@ -223,18 +201,11 @@ export default function HomeHerosection({
           }
         }
 
-        const response = await fetch(
-          'http://localhost:3001/api/posts',
-          {
-            method: 'POST',
-            headers: {
-              'ngrok-skip-browser-warning': 'true',
-            },
-            body: formData,
-          }
+        const { apiUpload } = await import('@/utils/api');
+        const result = await apiUpload<{ success: boolean; message?: string }>(
+          '/posts',
+          formData
         );
-
-        const result = await response.json();
 
         if (result.success) {
           setShowArticleEvent(false);
@@ -246,7 +217,6 @@ export default function HomeHerosection({
         }
       } else {
         const postData: any = {
-          user_id: userData.id,
           post_type: selectedPostType,
           caption: data.caption || null,
         };
@@ -263,27 +233,11 @@ export default function HomeHerosection({
           }
         }
 
-        const response = await fetch(
-          'http://localhost:3001/api/posts',
-          {
-            method: 'POST',
-            headers: {
-              'ngrok-skip-browser-warning': 'true',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(postData),
-          }
+        const { apiPost } = await import('@/utils/api');
+        const result = await apiPost<{ success: boolean; message?: string }>(
+          '/posts',
+          postData
         );
-
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          const text = await response.text();
-          console.error('Non-JSON response:', text.substring(0, 200));
-          alert('Failed to create post. Server returned invalid response.');
-          return;
-        }
-
-        const result = await response.json();
 
         if (result.success) {
           setShowArticleEvent(false);

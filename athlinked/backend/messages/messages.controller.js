@@ -4,12 +4,12 @@ const path = require('path');
 
 async function getConversations(req, res) {
   try {
-    const userId = req.user?.id || req.body.user_id || req.query.user_id;
+    const userId = req.user?.id;
 
     if (!userId) {
       return res.status(401).json({
         success: false,
-        message: 'Unauthorized - User ID required',
+        message: 'User authentication required',
       });
     }
 
@@ -30,13 +30,13 @@ async function getConversations(req, res) {
 
 async function getMessages(req, res) {
   try {
-    const userId = req.user?.id || req.body.user_id || req.query.user_id;
+    const userId = req.user?.id;
     const { conversationId } = req.params;
 
     if (!userId) {
       return res.status(401).json({
         success: false,
-        message: 'Unauthorized - User ID required',
+        message: 'User authentication required',
       });
     }
 
@@ -66,13 +66,13 @@ async function getMessages(req, res) {
 
 async function markAsRead(req, res) {
   try {
-    const userId = req.user?.id || req.body.user_id || req.query.user_id;
+    const userId = req.user?.id;
     const { conversationId } = req.params;
 
     if (!userId) {
       return res.status(401).json({
         success: false,
-        message: 'Unauthorized - User ID required',
+        message: 'User authentication required',
       });
     }
 
@@ -108,13 +108,13 @@ async function markAsRead(req, res) {
 
 async function searchUsers(req, res) {
   try {
-    const userId = req.user?.id || req.body.user_id || req.query.user_id;
+    const userId = req.user?.id;
     const { q } = req.query;
 
     if (!userId) {
       return res.status(401).json({
         success: false,
-        message: 'Unauthorized - User ID required',
+        message: 'User authentication required',
       });
     }
 
@@ -144,8 +144,15 @@ async function searchUsers(req, res) {
 
 async function getOrCreateConversation(req, res) {
   try {
-    const userId = req.user?.id || req.body.user_id;
+    const userId = req.user?.id;
     const { otherUserId } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
 
     if (!userId) {
       return res.status(401).json({

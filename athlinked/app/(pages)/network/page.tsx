@@ -27,9 +27,9 @@ interface ConnectionRequest {
 }
 
 export default function NetworkPage() {
-  const [activeTab, setActiveTab] = useState<'followers' | 'following' | 'invitations'>(
-    'followers'
-  );
+  const [activeTab, setActiveTab] = useState<
+    'followers' | 'following' | 'invitations'
+  >('followers');
   const [followers, setFollowers] = useState<User[]>([]);
   const [following, setFollowing] = useState<User[]>([]);
   const [invitations, setInvitations] = useState<ConnectionRequest[]>([]);
@@ -47,31 +47,28 @@ export default function NetworkPage() {
   useEffect(() => {
     const fetchCurrentUserId = async () => {
       try {
-        const userIdentifier = localStorage.getItem('userEmail');
-        if (!userIdentifier) {
-          return;
-        }
+        const { getCurrentUserId, getCurrentUser } =
+          await import('@/utils/auth');
+        const userId = getCurrentUserId();
+        const user = getCurrentUser();
 
-        let response;
-        if (userIdentifier.startsWith('username:')) {
-          const username = userIdentifier.replace('username:', '');
-          response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-          );
-        } else {
-          response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-          );
-        }
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.user) {
-            setCurrentUserId(data.user.id);
-            setCurrentUser({
-              full_name: data.user.full_name,
-              profile_url: data.user.profile_url,
-            });
+        if (userId) {
+          setCurrentUserId(userId);
+          // Fetch full user profile for display
+          const { apiGet } = await import('@/utils/api');
+          try {
+            const data = await apiGet<{ success: boolean; user?: any }>(
+              `/profile`
+            );
+            if (data.success && data.user) {
+              setCurrentUser({
+                full_name: data.user.full_name,
+                profile_url: data.user.profile_url,
+              });
+            }
+          } catch (error) {
+            // If profile fetch fails, use basic info from token
+            console.error('Error fetching user profile:', error);
           }
         }
       } catch (error) {
@@ -88,50 +85,50 @@ export default function NetworkPage() {
 
     try {
       setLoading(true);
+      const { apiGet } = await import('@/utils/api');
 
       // Fetch followers
-      const followersResponse = await fetch(
-        `http://localhost:3001/api/network/followers/${currentUserId}`
-      );
       let followersList: User[] = [];
-      if (followersResponse.ok) {
-        const followersData = await followersResponse.json();
+      try {
+        const followersData = await apiGet<{
+          success: boolean;
+          followers?: User[];
+        }>(`/network/followers/${currentUserId}`);
         if (followersData.success) {
           followersList = followersData.followers || [];
           setFollowers(followersList);
         }
+      } catch (error) {
+        console.error('Error fetching followers:', error);
       }
 
       // Fetch following
-      const followingResponse = await fetch(
-        `http://localhost:3001/api/network/following/${currentUserId}`
-      );
       let followingList: User[] = [];
-      if (followingResponse.ok) {
-        const followingData = await followingResponse.json();
+      try {
+        const followingData = await apiGet<{
+          success: boolean;
+          following?: User[];
+        }>(`/network/following/${currentUserId}`);
         if (followingData.success) {
           followingList = followingData.following || [];
           setFollowing(followingList);
         }
+      } catch (error) {
+        console.error('Error fetching following:', error);
       }
 
       // Fetch connection requests (invitations)
-      const invitationsResponse = await fetch(
-        `http://localhost:3001/api/network/invitations/${currentUserId}`
-      );
-      if (invitationsResponse.ok) {
-        const invitationsData = await invitationsResponse.json();
-        console.log('Invitations data:', invitationsData);
+      try {
+        const invitationsData = await apiGet<{
+          success: boolean;
+          requests?: ConnectionRequest[];
+        }>(`/network/invitations`);
         if (invitationsData.success) {
-          console.log('Setting invitations:', invitationsData.requests);
           setInvitations(invitationsData.requests || []);
-        } else {
-          console.log('Invitations fetch not successful:', invitationsData);
         }
-      } else {
-        console.error('Failed to fetch invitations:', invitationsResponse.status, invitationsResponse.statusText);
-        const errorText = await invitationsResponse.text();
-        console.error('Error response:', errorText);
+      } catch (error) {
+        console.error('Error fetching invitations:', error);
+        setInvitations([]);
       }
 
       // Update follow statuses
@@ -145,14 +142,12 @@ export default function NetworkPage() {
       for (const user of followersList) {
         if (user.id !== currentUserId && !statuses[user.id]) {
           try {
-            const isFollowingResponse = await fetch(
-              `http://localhost:3001/api/network/is-following/${user.id}?follower_id=${currentUserId}`
-            );
-            if (isFollowingResponse.ok) {
-              const isFollowingData = await isFollowingResponse.json();
-              if (isFollowingData.success) {
-                statuses[user.id] = isFollowingData.isFollowing;
-              }
+            const isFollowingData = await apiGet<{
+              success: boolean;
+              isFollowing?: boolean;
+            }>(`/network/is-following/${user.id}`);
+            if (isFollowingData.success) {
+              statuses[user.id] = isFollowingData.isFollowing || false;
             }
           } catch (error) {
             console.error(
@@ -240,75 +235,15 @@ export default function NetworkPage() {
     }
 
     try {
+      const { apiPost } = await import('@/utils/api');
       const endpoint = isCurrentlyFollowing
-        ? `http://localhost:3001/api/network/unfollow/${userId}`
-        : `http://localhost:3001/api/network/follow/${userId}`;
+        ? `/network/unfollow/${userId}`
+        : `/network/follow/${userId}`;
 
-      const userIdentifier = localStorage.getItem('userEmail');
-      if (!userIdentifier) {
-        alert('User not logged in');
-        return;
-      }
-
-      // Get user data to get user_id
-      let userResponse;
-      if (userIdentifier.startsWith('username:')) {
-        const username = userIdentifier.replace('username:', '');
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-        );
-      } else {
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
-      }
-
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-
-      const userDataResponse = await userResponse.json();
-      if (!userDataResponse.success || !userDataResponse.user) {
-        throw new Error('User not found');
-      }
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userDataResponse.user.id,
-        }),
-      });
-
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      let result;
-
-      if (contentType && contentType.includes('application/json')) {
-        try {
-          result = await response.json();
-        } catch (jsonError) {
-          console.error('JSON parse error:', jsonError);
-          const text = await response.text();
-          console.error('Response text:', text);
-          throw new Error(
-            `Failed to parse response: ${text.substring(0, 100)}`
-          );
-        }
-      } else {
-        const text = await response.text();
-        console.error(
-          'Non-JSON response (status:',
-          response.status,
-          '):',
-          text.substring(0, 200)
-        );
-        throw new Error(
-          `Server returned non-JSON response (status: ${response.status}). Check backend logs.`
-        );
-      }
+      const result = await apiPost<{ success: boolean; message?: string }>(
+        endpoint,
+        {}
+      );
 
       if (result.success) {
         // Update follow status
@@ -318,40 +253,21 @@ export default function NetworkPage() {
         }));
 
         // Refresh the lists
-        if (activeTab === 'followers') {
-          const followersResponse = await fetch(
-            `http://localhost:3001/api/network/followers/${currentUserId}`
-          );
-          if (followersResponse.ok) {
-            const followersData = await followersResponse.json();
-            if (followersData.success) {
-              setFollowers(followersData.followers || []);
-            }
-          }
-        } else {
-          const followingResponse = await fetch(
-            `http://localhost:3001/api/network/following/${currentUserId}`
-          );
-          if (followingResponse.ok) {
-            const followingData = await followingResponse.json();
-            if (followingData.success) {
-              setFollowing(followingData.following || []);
-            }
-          }
-        }
+        await fetchNetworkData();
       } else {
         alert(
           result.message ||
             `Failed to ${isCurrentlyFollowing ? 'unfollow' : 'follow'} user`
         );
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(
         `Error ${isCurrentlyFollowing ? 'unfollowing' : 'following'} user:`,
         error
       );
       alert(
-        `Failed to ${isCurrentlyFollowing ? 'unfollow' : 'follow'} user. Please try again.`
+        error.message ||
+          `Failed to ${isCurrentlyFollowing ? 'unfollow' : 'follow'} user. Please try again.`
       );
     }
   };
@@ -363,57 +279,25 @@ export default function NetworkPage() {
     }
 
     try {
-      const userIdentifier = localStorage.getItem('userEmail');
-      if (!userIdentifier) {
-        alert('User not logged in');
-        return;
-      }
-
-      let userResponse;
-      if (userIdentifier.startsWith('username:')) {
-        const username = userIdentifier.replace('username:', '');
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-        );
-      } else {
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
-      }
-
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-
-      const userDataResponse = await userResponse.json();
-      if (!userDataResponse.success || !userDataResponse.user) {
-        throw new Error('User not found');
-      }
-
-      const response = await fetch(
-        `http://localhost:3001/api/network/accept/${requestId}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: userDataResponse.user.id,
-          }),
-        }
+      const { apiPost } = await import('@/utils/api');
+      const result = await apiPost<{ success: boolean; message?: string }>(
+        `/network/accept/${requestId}`,
+        {}
       );
 
-      const result = await response.json();
       if (result.success) {
         setInvitations(prev => prev.filter(req => req.id !== requestId));
-        fetchNetworkData();
+        await fetchNetworkData();
         alert('Connection request accepted!');
       } else {
         alert(result.message || 'Failed to accept connection request');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error accepting invitation:', error);
-      alert('Failed to accept connection request. Please try again.');
+      alert(
+        error.message ||
+          'Failed to accept connection request. Please try again.'
+      );
     }
   };
 
@@ -424,60 +308,33 @@ export default function NetworkPage() {
     }
 
     try {
-      const userIdentifier = localStorage.getItem('userEmail');
-      if (!userIdentifier) {
-        alert('User not logged in');
-        return;
-      }
-
-      let userResponse;
-      if (userIdentifier.startsWith('username:')) {
-        const username = userIdentifier.replace('username:', '');
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-        );
-      } else {
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
-      }
-
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-
-      const userDataResponse = await userResponse.json();
-      if (!userDataResponse.success || !userDataResponse.user) {
-        throw new Error('User not found');
-      }
-
-      const response = await fetch(
-        `http://localhost:3001/api/network/reject/${requestId}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: userDataResponse.user.id,
-          }),
-        }
+      const { apiPost } = await import('@/utils/api');
+      const result = await apiPost<{ success: boolean; message?: string }>(
+        `/network/reject/${requestId}`,
+        {}
       );
 
-      const result = await response.json();
       if (result.success) {
         setInvitations(prev => prev.filter(req => req.id !== requestId));
         alert('Connection request rejected');
       } else {
         alert(result.message || 'Failed to reject connection request');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error rejecting invitation:', error);
-      alert('Failed to reject connection request. Please try again.');
+      alert(
+        error.message ||
+          'Failed to reject connection request. Please try again.'
+      );
     }
   };
 
-  const currentList = activeTab === 'followers' ? followers : activeTab === 'following' ? following : [];
+  const currentList =
+    activeTab === 'followers'
+      ? followers
+      : activeTab === 'following'
+        ? following
+        : [];
 
   return (
     <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
