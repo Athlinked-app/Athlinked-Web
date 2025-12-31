@@ -116,7 +116,7 @@ export default function ManageResourcesPage() {
     const videoUrl = video.video_url
       ? video.video_url.startsWith('http')
         ? video.video_url
-        : `http://localhost:3001${video.video_url}`
+        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${video.video_url}`
       : undefined;
 
     return {
@@ -133,7 +133,7 @@ export default function ManageResourcesPage() {
     const fileUrl = template.file_url
       ? template.file_url.startsWith('http')
         ? template.file_url
-        : `http://localhost:3001${template.file_url}`
+        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${template.file_url}`
       : undefined;
 
     return {
