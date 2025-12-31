@@ -34,10 +34,16 @@ router.get('/following/:userId', networkController.getFollowing);
  */
 router.get('/counts/:userId', networkController.getFollowCounts);
 
-/**
- * GET /api/network/is-following/:userId?follower_id=xxx
- * Check if a user is following another user
- */
 router.get('/is-following/:userId', networkController.isFollowing);
+
+router.post('/connect/:userId', networkController.sendConnectionRequest);
+
+router.post('/accept/:requestId', networkController.acceptConnectionRequest);
+
+router.post('/reject/:requestId', networkController.rejectConnectionRequest);
+
+router.get('/invitations/:userId', networkController.getConnectionRequests);
+
+router.get('/connection-status/:userId', networkController.checkConnectionRequestStatus);
 
 module.exports = router;

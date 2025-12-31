@@ -74,6 +74,20 @@ export default function Post({
       .slice(0, 2);
   };
 
+  const getProfileUrl = (profileUrl?: string | null): string | null => {
+    if (!profileUrl || profileUrl.trim() === '') return null;
+    if (profileUrl.startsWith('http://') || profileUrl.startsWith('https://')) {
+      return profileUrl;
+    }
+    if (profileUrl.startsWith('/')) {
+      if (profileUrl.startsWith('/assets')) {
+        return profileUrl;
+      }
+      return `http://localhost:3001${profileUrl}`;
+    }
+    return `http://localhost:3001/${profileUrl}`;
+  };
+
   const getEventTypeIcon = (eventType: string | null | undefined) => {
     const iconMap: Record<
       string,
@@ -424,17 +438,34 @@ export default function Post({
     <div className="w-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
       <div className="flex items-center gap-3 p-4 border-b border-gray-200 mb-4">
         <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
-          {post.user_profile_url && post.user_profile_url.trim() !== '' ? (
-            <img
-              src={post.user_profile_url}
-              alt={post.username}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className="text-gray-600 font-semibold text-xs">
-              {getInitials(post.username)}
-            </span>
-          )}
+          {(() => {
+            const profileUrl = getProfileUrl(post.user_profile_url);
+            if (profileUrl) {
+              return (
+                <img
+                  src={profileUrl}
+                  alt={post.username}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent && !parent.querySelector('span')) {
+                      const fallback = document.createElement('span');
+                      fallback.className = 'text-gray-600 font-semibold text-xs';
+                      fallback.textContent = getInitials(post.username);
+                      parent.appendChild(fallback);
+                    }
+                  }}
+                />
+              );
+            }
+            return (
+              <span className="text-gray-600 font-semibold text-xs">
+                {getInitials(post.username)}
+              </span>
+            );
+          })()}
         </div>
         <div className="flex-1">
           <p className="text-sm text-gray-500 font-medium">Athlete</p>
@@ -787,18 +818,34 @@ export default function Post({
 
             <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-3">
               <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
-                {post.user_profile_url &&
-                post.user_profile_url.trim() !== '' ? (
-                  <img
-                    src={post.user_profile_url}
-                    alt={post.username}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <span className="text-gray-600 font-semibold text-sm">
-                    {getInitials(post.username)}
-                  </span>
-                )}
+                {(() => {
+                  const profileUrl = getProfileUrl(post.user_profile_url);
+                  if (profileUrl) {
+                    return (
+                      <img
+                        src={profileUrl}
+                        alt={post.username}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent && !parent.querySelector('span')) {
+                            const fallback = document.createElement('span');
+                            fallback.className = 'text-gray-600 font-semibold text-sm';
+                            fallback.textContent = getInitials(post.username);
+                            parent.appendChild(fallback);
+                          }
+                        }}
+                      />
+                    );
+                  }
+                  return (
+                    <span className="text-gray-600 font-semibold text-sm">
+                      {getInitials(post.username)}
+                    </span>
+                  );
+                })()}
               </div>
               <div>
                 <p className="font-semibold text-gray-900">{post.username}</p>

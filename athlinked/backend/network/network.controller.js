@@ -194,6 +194,153 @@ async function isFollowing(req, res) {
   }
 }
 
+async function sendConnectionRequest(req, res) {
+  try {
+    const requesterId = req.user?.id || req.body.user_id;
+    const receiverId = req.params.userId;
+
+    if (!requesterId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
+
+    if (!receiverId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Receiver ID is required',
+      });
+    }
+
+    const result = await networkService.sendConnectionRequestService(
+      requesterId,
+      receiverId
+    );
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Send connection request controller error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
+async function acceptConnectionRequest(req, res) {
+  try {
+    const receiverId = req.user?.id || req.body.user_id;
+    const requestId = req.params.requestId;
+
+    if (!receiverId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
+
+    if (!requestId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request ID is required',
+      });
+    }
+
+    const result = await networkService.acceptConnectionRequestService(
+      requestId,
+      receiverId
+    );
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Accept connection request controller error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
+async function rejectConnectionRequest(req, res) {
+  try {
+    const receiverId = req.user?.id || req.body.user_id;
+    const requestId = req.params.requestId;
+
+    if (!receiverId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
+
+    if (!requestId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Request ID is required',
+      });
+    }
+
+    const result = await networkService.rejectConnectionRequestService(
+      requestId,
+      receiverId
+    );
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Reject connection request controller error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
+async function getConnectionRequests(req, res) {
+  try {
+    const userId = req.params.userId;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required',
+      });
+    }
+
+    const result = await networkService.getConnectionRequestsService(userId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Get connection requests controller error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
+async function checkConnectionRequestStatus(req, res) {
+  try {
+    const requesterId = req.user?.id || req.query.requester_id;
+    const receiverId = req.params.userId;
+
+    if (!requesterId || !receiverId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Requester ID and Receiver ID are required',
+      });
+    }
+
+    const result = await networkService.checkConnectionRequestStatusService(
+      requesterId,
+      receiverId
+    );
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Check connection request status controller error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 module.exports = {
   followUser,
   unfollowUser,
@@ -201,4 +348,9 @@ module.exports = {
   getFollowing,
   getFollowCounts,
   isFollowing,
+  sendConnectionRequest,
+  acceptConnectionRequest,
+  rejectConnectionRequest,
+  getConnectionRequests,
+  checkConnectionRequestStatus,
 };

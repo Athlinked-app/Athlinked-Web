@@ -96,10 +96,25 @@ export default function EditProfilePopup({
     }
   }, [userData?.sports_played]);
 
+  // Update city, education, and bio when userData changes
+  useEffect(() => {
+    if (userData?.city !== undefined) {
+      setCity(userData.city || '');
+    }
+    if (userData?.education !== undefined) {
+      setEducation(userData.education || '');
+    }
+    if (userData?.bio !== undefined) {
+      setBio(userData.bio || '');
+    }
+  }, [userData?.city, userData?.education, userData?.bio]);
+
   const fetchSports = async () => {
     setLoadingSports(true);
     try {
-      const response = await fetch('http://localhost:3001/api/sports');
+      const response = await fetch(
+        'http://localhost:3001/api/sports'
+      );
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.sports) {

@@ -36,6 +36,7 @@ interface CurrentUser {
   full_name: string;
   profile_url?: string;
   username?: string;
+  user_type?: string;
 }
 interface ProfileData {
   userId: string;
@@ -47,6 +48,7 @@ interface ProfileData {
   city: string | null;
   primarySport: string | null;
   sportsPlayed: string | null;
+  dob: string | null;
 }
 
 export default function Profile() {
@@ -89,8 +91,13 @@ export default function Profile() {
     HealthAndReadiness[]
   >([]);
   const [videoAndMedia, setVideoAndMedia] = useState<VideoAndMedia[]>([]);
-
-  // Determine which user ID to use for fetching data
+  const [followersCount, setFollowersCount] = useState<number>(0);
+  const [followingCount, setFollowingCount] = useState<number>(0);
+  const [connectionRequestStatus, setConnectionRequestStatus] = useState<{
+    exists: boolean;
+    status: string | null;
+  } | null>(null);
+  
   const targetUserId = viewUserId || currentUserId;
 
   const fetchPosts = async () => {
@@ -146,8 +153,7 @@ export default function Profile() {
           save_count: post.save_count || 0,
           created_at: post.created_at,
         }));
-
-        // Filter posts by targetUserId if viewing another user's profile
+        
         if (targetUserId && viewUserId) {
           transformedPosts = transformedPosts.filter(
             post => post.user_id === targetUserId
@@ -182,20 +188,29 @@ export default function Profile() {
   }, [targetUserId]);
 
   useEffect(() => {
+    setUserBio('');
+    
     if (targetUserId) {
       fetchProfileData();
+      fetchFollowCounts();
       if (viewUserId) {
         fetchViewUser();
       }
     }
-  }, [targetUserId, viewUserId]);
+  }, [targetUserId, viewUserId, currentUserId]);
 
-  // Fetch the user being viewed
+  useEffect(() => {
+    if (currentUserId && viewUserId && currentUserId !== viewUserId) {
+      checkConnectionRequestStatus();
+    } else {
+      setConnectionRequestStatus(null);
+    }
+  }, [currentUserId, viewUserId, followersCount]);
+  
   const fetchViewUser = async () => {
     if (!viewUserId) return;
 
     try {
-      // Fetch from users endpoint and find the user
       const response = await fetch(
         `http://localhost:3001/api/signup/users?limit=1000`
       );
@@ -210,12 +225,20 @@ export default function Profile() {
               full_name: user.full_name || user.username || 'User',
               profile_url: user.profile_url,
               username: user.username,
+              user_type: user.user_type,
             });
-            if (user.bio) {
-              setUserBio(user.bio);
-            }
             if (user.sports_played) {
-              setSportsPlayed(user.sports_played);
+              let sportsString = user.sports_played;
+              if (typeof sportsString === 'string') {
+                if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+                  sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
+                }
+                setSportsPlayed(sportsString);
+              } else if (Array.isArray(sportsString)) {
+                setSportsPlayed(sportsString.join(', '));
+              } else {
+                setSportsPlayed('');
+              }
             }
           }
         }
@@ -237,17 +260,142 @@ export default function Profile() {
         const data = await response.json();
         console.log('Profile data fetched:', data);
         setProfileData(data);
-        // Update userBio if bio is in profile data
-        if (data.bio) {
-          setUserBio(data.bio);
+        setUserBio(data.bio || '');
+        if (data.sportsPlayed !== undefined && data.sportsPlayed !== null) {
+          let sportsString = data.sportsPlayed;
+          if (typeof sportsString === 'string') {
+            if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+              sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
+            }
+            setSportsPlayed(sportsString);
+          } else if (Array.isArray(sportsString)) {
+            setSportsPlayed(sportsString.join(', '));
+          }
         }
       } else {
         console.log('No profile data found, will use defaults');
         setProfileData(null);
+        setUserBio('');
       }
     } catch (error) {
       console.error('Error fetching profile data:', error);
       setProfileData(null);
+      setUserBio('');
+    }
+  };
+
+  const fetchFollowCounts = async () => {
+    if (!targetUserId) return;
+    
+    try {
+      console.log('Fetching follow counts for userId:', targetUserId);
+      const response = await fetch(`http://localhost:3001/api/network/counts/${targetUserId}`);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Follow counts fetched:', data);
+        if (data.success) {
+          setFollowersCount(data.followers || 0);
+          setFollowingCount(data.following || 0);
+        }
+      } else {
+        console.log('Failed to fetch follow counts');
+        setFollowersCount(0);
+        setFollowingCount(0);
+      }
+    } catch (error) {
+      console.error('Error fetching follow counts:', error);
+      setFollowersCount(0);
+      setFollowingCount(0);
+    }
+  };
+
+  const checkConnectionRequestStatus = async () => {
+    if (!currentUserId || !viewUserId || currentUserId === viewUserId) {
+      setConnectionRequestStatus(null);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/network/connection-status/${viewUserId}?requester_id=${currentUserId}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setConnectionRequestStatus({
+            exists: data.exists,
+            status: data.status,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error checking connection request status:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (currentUserId && viewUserId && currentUserId !== viewUserId) {
+      checkConnectionRequestStatus();
+    }
+  }, [currentUserId, viewUserId, followersCount]);
+
+  const handleSendConnectionRequest = async () => {
+    if (!currentUserId || !viewUserId) {
+      alert('Unable to send connection request');
+      return;
+    }
+
+    try {
+      const userIdentifier = localStorage.getItem('userEmail');
+      if (!userIdentifier) {
+        alert('User not logged in');
+        return;
+      }
+
+      let userResponse;
+      if (userIdentifier.startsWith('username:')) {
+        const username = userIdentifier.replace('username:', '');
+        userResponse = await fetch(
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+        );
+      } else {
+        userResponse = await fetch(
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+        );
+      }
+
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const userDataResponse = await userResponse.json();
+      if (!userDataResponse.success || !userDataResponse.user) {
+        throw new Error('User not found');
+      }
+
+      const response = await fetch(
+        `http://localhost:3001/api/network/connect/${viewUserId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: userDataResponse.user.id,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        setConnectionRequestStatus({ exists: true, status: 'pending' });
+        alert('Connection request sent!');
+      } else {
+        alert(result.message || 'Failed to send connection request');
+      }
+    } catch (error) {
+      console.error('Error sending connection request:', error);
+      alert('Failed to send connection request. Please try again.');
     }
   };
 
@@ -282,29 +430,8 @@ export default function Profile() {
           full_name: data.user.full_name || data.user.username || 'User',
           profile_url: data.user.profile_url,
           username: data.user.username,
+          user_type: data.user.user_type,
         });
-        if (data.user.bio) {
-          setUserBio(data.user.bio);
-        }
-        // Always update sports_played, even if empty (to clear it)
-        if (
-          data.user.sports_played !== undefined &&
-          data.user.sports_played !== null
-        ) {
-          // Parse PostgreSQL array format if needed
-          let sportsString = data.user.sports_played;
-          if (
-            typeof sportsString === 'string' &&
-            sportsString.startsWith('{') &&
-            sportsString.endsWith('}')
-          ) {
-            sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
-          }
-          setSportsPlayed(sportsString);
-        } else {
-          // Clear sports if null/undefined
-          setSportsPlayed('');
-        }
       }
     } catch (error) {
       console.error('Error fetching current user:', error);
@@ -314,11 +441,53 @@ export default function Profile() {
   const handlePostCreated = () => {
     fetchPosts();
   };
+
+  const calculateAge = (dob: string | null | undefined): number | null => {
+    if (!dob) return null;
+    
+    try {
+      let birthDate: Date;
+      
+      if (dob.includes('-')) {
+        birthDate = new Date(dob);
+      } else if (dob.includes('/')) {
+        const parts = dob.split('/');
+        if (parts.length === 3) {
+          const month = parseInt(parts[0], 10) - 1;
+          const day = parseInt(parts[1], 10);
+          const year = parseInt(parts[2], 10);
+          birthDate = new Date(year, month, day);
+        } else {
+          return null;
+        }
+      } else {
+        birthDate = new Date(dob);
+      }
+      
+      if (isNaN(birthDate.getTime())) {
+        return null;
+      }
+      
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      
+      return age;
+    } catch (error) {
+      console.error('Error calculating age:', error);
+      return null;
+    }
+  };
+
   const getProfileUrl = (profileUrl?: string | null): string | undefined => {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
+      return `http://localhost:3001${profileUrl}`;
     }
     return profileUrl;
   };
@@ -335,50 +504,72 @@ export default function Profile() {
   return (
     <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
       <Header
-        userName={viewUser?.full_name || currentUser?.full_name}
-        userProfileUrl={getProfileUrl(
-          viewUser?.profile_url || currentUser?.profile_url
-        )}
+        userName={currentUser?.full_name}
+        userProfileUrl={getProfileUrl(currentUser?.profile_url)}
       />
 
       <main className="flex flex-1 w-full mt-5 overflow-hidden">
         <div className="hidden lg:block flex-[3] flex-shrink-0 border-r border-gray-200 overflow-hidden px-6 flex flex-col">
           <EditProfileModal
+            key={`${viewUserId || currentUserId}-${profileData?.profileImage}-${profileData?.bio}-${profileData?.education}-${profileData?.city}`}
             open={true}
             asSidebar={true}
             onClose={() => setShowEditProfile(false)}
             currentUserId={currentUserId}
             viewedUserId={viewUserId || currentUserId}
+            connectionRequestStatus={connectionRequestStatus}
+            onSendConnectionRequest={handleSendConnectionRequest}
             userData={{
-              full_name: viewUser?.full_name || currentUser?.full_name,
-              username: viewUser?.username || currentUser?.username,
-              profile_url: profileData?.profileImage
-                ? profileData.profileImage.startsWith('http')
-                  ? profileData.profileImage
-                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.profileImage}`
-                : viewUser?.profile_url || currentUser?.profile_url,
+              full_name: viewUserId ? (viewUser?.full_name || '') : (currentUser?.full_name || ''),
+              username: viewUserId ? (viewUser?.username || '') : (currentUser?.username || ''),
+              profile_url: profileData?.profileImage 
+                ? (profileData.profileImage.startsWith('http') 
+                    ? profileData.profileImage 
+                    : `http://localhost:3001${profileData.profileImage}`)
+                : viewUserId 
+                  ? (viewUser?.profile_url || null)
+                  : (currentUser?.profile_url || null),
               background_image_url: profileData?.coverImage
                 ? profileData.coverImage.startsWith('http')
                   ? profileData.coverImage
                   : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.coverImage}`
                 : null,
-              user_type: 'coach',
-              location: 'Rochester, NY',
-              age: 35,
-              followers_count: 10000,
-              sports_played:
-                profileData?.sportsPlayed !== undefined &&
-                profileData?.sportsPlayed !== null
-                  ? typeof profileData.sportsPlayed === 'string'
-                    ? profileData.sportsPlayed.replace(/[{}"']/g, '')
-                    : ''
-                  : '',
+              user_type: viewUserId ? (viewUser?.user_type || 'athlete') : (currentUser?.user_type || 'athlete'),
+              location: profileData?.city || '',
+              age: calculateAge(profileData?.dob) || undefined, 
+              followers_count: followersCount,
+              sports_played: (() => {
+                if (sportsPlayed) return sportsPlayed;
+                if (profileData?.sportsPlayed !== undefined && profileData?.sportsPlayed !== null) {
+                  const sports = profileData.sportsPlayed;
+                  if (typeof sports === 'string') {
+                    return sports.replace(/[{}"']/g, '');
+                  }
+                  if (Array.isArray(sports)) {
+                    return (sports as string[]).join(', ');
+                  }
+                }
+                return '';
+              })(),
               primary_sport: profileData?.primarySport || '',
               profile_completion: 60,
-              bio: profileData?.bio || '',
+              bio: userBio || profileData?.bio || '',
               education: profileData?.education || '',
+              city: profileData?.city || '',
             }}
-            onSave={async data => {
+            onSave={async (data: {
+              profile_url?: File;
+              background_image_url?: File;
+              sports_played?: string;
+              education?: string;
+              city?: string;
+              bio?: string;
+            }) => {
+              if (viewUserId && viewUserId !== currentUserId) {
+                console.log('Cannot save another user\'s profile');
+                return;
+              }
+
               console.log('Profile saved:', data);
 
               try {
@@ -417,12 +608,15 @@ export default function Profile() {
                 }
 
                 console.log('Profile data being sent to API:', profileData);
-                if (data.sports_played) {
-                  const sports = data.sports_played
-                    .split(',')
-                    .map(s => s.trim())
-                    .filter(Boolean);
-                  if (sports.length > 0) profileData.primarySport = sports[0];
+                if (data.sports_played !== undefined) {
+                  profileData.sportsPlayed = data.sports_played || undefined;
+                  if (data.sports_played) {
+                    const sports = data.sports_played
+                      .split(',')
+                      .map(s => s.trim())
+                      .filter(Boolean);
+                    if (sports.length > 0) profileData.primarySport = sports[0];
+                  }
                 }
                 if (data.profile_url instanceof File) {
                   const formData = new FormData();
@@ -488,61 +682,50 @@ export default function Profile() {
 
                 const result = await response.json();
                 console.log('Profile saved successfully:', result);
-
-                // Update bio state immediately
+                
                 if (data.bio !== undefined) {
                   setUserBio(data.bio || '');
                 }
-
-                // Update profileData state immediately
-                if (
-                  profileData.bio !== undefined ||
-                  profileData.education !== undefined ||
-                  profileData.city !== undefined
-                ) {
+                
+                if (profileData.bio !== undefined || profileData.education !== undefined || profileData.city !== undefined || profileData.profileImageUrl !== undefined || profileData.coverImageUrl !== undefined) {
                   setProfileData(prev => {
                     if (!prev) {
                       return {
                         userId: currentUserId,
                         fullName: null,
-                        profileImage: null,
-                        coverImage: null,
-                        bio:
-                          profileData.bio !== undefined
-                            ? profileData.bio
-                            : null,
-                        education:
-                          profileData.education !== undefined
-                            ? profileData.education
-                            : null,
-                        city:
-                          profileData.city !== undefined
-                            ? profileData.city
-                            : null,
+                        profileImage: profileData.profileImageUrl || null,
+                        coverImage: profileData.coverImageUrl || null,
+                        bio: profileData.bio !== undefined ? profileData.bio : null,
+                        education: profileData.education !== undefined ? profileData.education : null,
+                        city: profileData.city !== undefined ? profileData.city : null,
                         primarySport: null,
                         sportsPlayed: null,
+                        dob: null,
                       };
                     }
                     return {
                       ...prev,
-                      bio:
-                        profileData.bio !== undefined
-                          ? profileData.bio
-                          : prev.bio,
-                      education:
-                        profileData.education !== undefined
-                          ? profileData.education
-                          : prev.education,
-                      city:
-                        profileData.city !== undefined
-                          ? profileData.city
-                          : prev.city,
+                      profileImage: profileData.profileImageUrl !== undefined ? profileData.profileImageUrl : prev.profileImage,
+                      coverImage: profileData.coverImageUrl !== undefined ? profileData.coverImageUrl : prev.coverImage,
+                      bio: profileData.bio !== undefined ? profileData.bio : prev.bio,
+                      education: profileData.education !== undefined ? profileData.education : prev.education,
+                      city: profileData.city !== undefined ? profileData.city : prev.city,
                     };
                   });
                 }
-
-                fetchCurrentUser();
-                fetchProfileData();
+                
+                if (profileData.profileImageUrl !== undefined && currentUser) {
+                  setCurrentUser(prev => prev ? {
+                    ...prev,
+                    profile_url: profileData.profileImageUrl || prev.profile_url,
+                  } : prev);
+                }
+                
+                await fetchCurrentUser();
+                await fetchProfileData();
+                if (viewUserId) {
+                  await fetchViewUser();
+                }
               } catch (error) {
                 console.error('Error saving profile:', error);
                 alert('Error saving profile. Please try again.');
@@ -601,35 +784,43 @@ export default function Profile() {
                   <SocialHandles
                     handles={socialHandles}
                     onHandlesChange={setSocialHandles}
+                    userId={targetUserId}
                   />
                   <AcademicBackgrounds
                     backgrounds={academicBackgrounds}
                     onBackgroundsChange={setAcademicBackgrounds}
+                    userId={targetUserId}
                   />
                   <Achievements
                     achievements={achievements}
                     onAchievementsChange={setAchievements}
+                    userId={targetUserId}
                   />
                   <AthleticAndPerformanceComponent
                     athleticAndPerformance={athleticAndPerformance}
                     onAthleticAndPerformanceChange={setAthleticAndPerformance}
                     sportsPlayed={sportsPlayed}
+                    userId={targetUserId}
                   />
                   <CompetitionAndClubComponent
                     clubs={competitionAndClubs}
                     onClubsChange={setCompetitionAndClubs}
+                    userId={targetUserId}
                   />
                   <CharacterAndLeadershipComponent
                     characterAndLeadership={characterAndLeadership}
                     onCharacterAndLeadershipChange={setCharacterAndLeadership}
+                    userId={targetUserId}
                   />
                   <HealthAndReadinessComponent
                     healthAndReadiness={healthAndReadiness}
                     onHealthAndReadinessChange={setHealthAndReadiness}
+                    userId={targetUserId}
                   />
                   <VideoAndMediaComponent
                     videoAndMedia={videoAndMedia}
                     onVideoAndMediaChange={setVideoAndMedia}
+                    userId={targetUserId}
                   />
                 </>
               )}
@@ -688,12 +879,8 @@ export default function Profile() {
                     <Posts
                       posts={posts}
                       currentUserId={currentUserId || undefined}
-                      currentUserProfileUrl={getProfileUrl(
-                        viewUser?.profile_url || currentUser?.profile_url
-                      )}
-                      currentUsername={
-                        viewUser?.full_name || currentUser?.full_name || 'User'
-                      }
+                      currentUserProfileUrl={getProfileUrl(viewUserId ? (viewUser?.profile_url || null) : (currentUser?.profile_url || null))}
+                      currentUsername={viewUserId ? (viewUser?.full_name || 'User') : (currentUser?.full_name || 'User')}
                       loading={loading}
                       onCommentCountUpdate={fetchPosts}
                       onPostDeleted={fetchPosts}
@@ -702,14 +889,9 @@ export default function Profile() {
                   {activeFilter === 'clips' && (
                     <Clips
                       currentUserId={targetUserId || undefined}
-                      currentUserProfileUrl={getProfileUrl(
-                        viewUser?.profile_url || currentUser?.profile_url
-                      )}
-                      currentUsername={
-                        viewUser?.full_name || currentUser?.full_name || 'User'
-                      }
+                      currentUserProfileUrl={getProfileUrl(viewUserId ? (viewUser?.profile_url || null) : (currentUser?.profile_url || null))}
+                      currentUsername={viewUserId ? (viewUser?.full_name || 'User') : (currentUser?.full_name || 'User')}
                       onClipDeleted={() => {
-                        // Refresh clips if needed
                         window.location.reload();
                       }}
                     />
@@ -718,12 +900,8 @@ export default function Profile() {
                     <Article
                       posts={posts}
                       currentUserId={currentUserId || undefined}
-                      currentUserProfileUrl={getProfileUrl(
-                        viewUser?.profile_url || currentUser?.profile_url
-                      )}
-                      currentUsername={
-                        viewUser?.full_name || currentUser?.full_name || 'User'
-                      }
+                      currentUserProfileUrl={getProfileUrl(viewUserId ? (viewUser?.profile_url || null) : (currentUser?.profile_url || null))}
+                      currentUsername={viewUserId ? (viewUser?.full_name || 'User') : (currentUser?.full_name || 'User')}
                       loading={loading}
                       onCommentCountUpdate={fetchPosts}
                       onPostDeleted={fetchPosts}
@@ -733,12 +911,8 @@ export default function Profile() {
                     <Event
                       posts={posts}
                       currentUserId={currentUserId || undefined}
-                      currentUserProfileUrl={getProfileUrl(
-                        viewUser?.profile_url || currentUser?.profile_url
-                      )}
-                      currentUsername={
-                        viewUser?.full_name || currentUser?.full_name || 'User'
-                      }
+                      currentUserProfileUrl={getProfileUrl(viewUserId ? (viewUser?.profile_url || null) : (currentUser?.profile_url || null))}
+                      currentUsername={viewUserId ? (viewUser?.full_name || 'User') : (currentUser?.full_name || 'User')}
                       loading={loading}
                       onCommentCountUpdate={fetchPosts}
                       onPostDeleted={fetchPosts}
@@ -801,12 +975,8 @@ export default function Profile() {
                     <MySavePost
                       posts={posts}
                       currentUserId={currentUserId || undefined}
-                      currentUserProfileUrl={getProfileUrl(
-                        viewUser?.profile_url || currentUser?.profile_url
-                      )}
-                      currentUsername={
-                        viewUser?.full_name || currentUser?.full_name || 'User'
-                      }
+                      currentUserProfileUrl={getProfileUrl(viewUserId ? (viewUser?.profile_url || null) : (currentUser?.profile_url || null))}
+                      currentUsername={viewUserId ? (viewUser?.full_name || 'User') : (currentUser?.full_name || 'User')}
                       viewedUserId={viewUserId}
                       loading={loading}
                       onCommentCountUpdate={fetchPosts}
@@ -816,12 +986,8 @@ export default function Profile() {
                   {activeSaveFilter === 'clips' && (
                     <MySaveClips
                       currentUserId={currentUserId || undefined}
-                      currentUserProfileUrl={getProfileUrl(
-                        viewUser?.profile_url || currentUser?.profile_url
-                      )}
-                      currentUsername={
-                        viewUser?.full_name || currentUser?.full_name || 'User'
-                      }
+                      currentUserProfileUrl={getProfileUrl(viewUserId ? (viewUser?.profile_url || null) : (currentUser?.profile_url || null))}
+                      currentUsername={viewUserId ? (viewUser?.full_name || 'User') : (currentUser?.full_name || 'User')}
                       viewedUserId={viewUserId}
                       onClipDeleted={() => {
                         window.location.reload();
@@ -832,12 +998,8 @@ export default function Profile() {
                     <MySaveArticle
                       posts={posts}
                       currentUserId={currentUserId || undefined}
-                      currentUserProfileUrl={getProfileUrl(
-                        viewUser?.profile_url || currentUser?.profile_url
-                      )}
-                      currentUsername={
-                        viewUser?.full_name || currentUser?.full_name || 'User'
-                      }
+                      currentUserProfileUrl={getProfileUrl(viewUserId ? (viewUser?.profile_url || null) : (currentUser?.profile_url || null))}
+                      currentUsername={viewUserId ? (viewUser?.full_name || 'User') : (currentUser?.full_name || 'User')}
                       viewedUserId={viewUserId}
                       loading={loading}
                       onCommentCountUpdate={fetchPosts}

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { X, ChevronDown } from 'lucide-react';
 
 export interface CompetitionAndClub {
+  id?: string;
   clubOrTravelTeamName: string;
   teamLevel: string;
   leagueOrOrganizationName?: string;

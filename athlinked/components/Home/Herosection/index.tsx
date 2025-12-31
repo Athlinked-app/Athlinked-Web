@@ -105,18 +105,21 @@ export default function HomeHerosection({
     try {
       const userData = await getUserData();
 
-      const response = await fetch('http://localhost:3001/api/posts', {
-        method: 'POST',
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userData.id,
-          post_type: 'text',
-          caption: postText.trim(),
-        }),
-      });
+      const response = await fetch(
+        'http://localhost:3001/api/posts',
+        {
+          method: 'POST',
+          headers: {
+            'ngrok-skip-browser-warning': 'true',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: userData.id,
+            post_type: 'text',
+            caption: postText.trim(),
+          }),
+        }
+      );
 
       const data = await response.json();
       if (data.success) {
@@ -148,13 +151,16 @@ export default function HomeHerosection({
       formData.append('post_type', selectedPostType!);
       formData.append('caption', caption);
 
-      const response = await fetch('http://localhost:3001/api/posts', {
-        method: 'POST',
-        headers: {
-          'ngrok-skip-browser-warning': 'true',
-        },
-        body: formData,
-      });
+      const response = await fetch(
+        'http://localhost:3001/api/posts',
+        {
+          method: 'POST',
+          headers: {
+            'ngrok-skip-browser-warning': 'true',
+          },
+          body: formData,
+        }
+      );
 
       const data = await response.json();
       if (data.success) {
@@ -217,13 +223,16 @@ export default function HomeHerosection({
           }
         }
 
-        const response = await fetch('http://localhost:3001/api/posts', {
-          method: 'POST',
-          headers: {
-            'ngrok-skip-browser-warning': 'true',
-          },
-          body: formData,
-        });
+        const response = await fetch(
+          'http://localhost:3001/api/posts',
+          {
+            method: 'POST',
+            headers: {
+              'ngrok-skip-browser-warning': 'true',
+            },
+            body: formData,
+          }
+        );
 
         const result = await response.json();
 
@@ -254,14 +263,17 @@ export default function HomeHerosection({
           }
         }
 
-        const response = await fetch('http://localhost:3001/api/posts', {
-          method: 'POST',
-          headers: {
-            'ngrok-skip-browser-warning': 'true',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(postData),
-        });
+        const response = await fetch(
+          'http://localhost:3001/api/posts',
+          {
+            method: 'POST',
+            headers: {
+              'ngrok-skip-browser-warning': 'true',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(postData),
+          }
+        );
 
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {

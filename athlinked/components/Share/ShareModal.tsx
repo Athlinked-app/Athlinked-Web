@@ -158,7 +158,7 @@ export default function ShareModal({
   const getProfileUrl = (url: string | null | undefined) => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
-    return `https://qd9ngjg1-3001.inc1.devtunnels.ms${url}`;
+    return `http://localhost:3001${url}`;
   };
 
   const handleShareToWhatsApp = () => {

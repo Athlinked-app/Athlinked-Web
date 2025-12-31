@@ -30,7 +30,18 @@ const nextConfig = {
         hostname: 'images.unsplash.com',
         pathname: '/**',
       },
-      // Add any other image domains you use
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+        port: '3001',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'qd9ngjg1-3001.inc1.devtunnels.ms',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };

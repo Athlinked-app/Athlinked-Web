@@ -75,10 +75,14 @@ async function createPost(postData, client = null) {
 async function getPostsFeed(page = 1, limit = 50) {
   const offset = (page - 1) * limit;
   const query = `
-    SELECT *
-    FROM posts
-    WHERE is_active = true
-    ORDER BY created_at DESC
+    SELECT 
+      p.*,
+      COALESCE(u.profile_url, p.user_profile_url) as user_profile_url,
+      COALESCE(u.full_name, p.username) as username
+    FROM posts p
+    LEFT JOIN users u ON p.user_id = u.id
+    WHERE p.is_active = true
+    ORDER BY p.created_at DESC
     LIMIT $1 OFFSET $2
   `;
 
@@ -92,7 +96,15 @@ async function getPostsFeed(page = 1, limit = 50) {
 }
 
 async function getPostById(postId) {
-  const query = 'SELECT * FROM posts WHERE id = $1 AND is_active = true';
+  const query = `
+    SELECT 
+      p.*,
+      COALESCE(u.profile_url, p.user_profile_url) as user_profile_url,
+      COALESCE(u.full_name, p.username) as username
+    FROM posts p
+    LEFT JOIN users u ON p.user_id = u.id
+    WHERE p.id = $1 AND p.is_active = true
+  `;
   try {
     const result = await pool.query(query, [postId]);
     return result.rows[0] || null;

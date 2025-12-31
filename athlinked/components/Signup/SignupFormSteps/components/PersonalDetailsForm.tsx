@@ -92,7 +92,9 @@ export default function PersonalDetailsForm({
   const fetchSports = async () => {
     setLoadingSports(true);
     try {
-      const response = await fetch('http://localhost:3001/api/sports');
+      const response = await fetch(
+        'http://localhost:3001/api/sports'
+      );
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.sports) {

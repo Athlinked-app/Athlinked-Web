@@ -159,6 +159,107 @@ async function isFollowingService(followerId, followingId) {
   }
 }
 
+async function sendConnectionRequestService(requesterId, receiverId) {
+  try {
+    if (!requesterId || !receiverId) {
+      throw new Error('Requester ID and Receiver ID are required');
+    }
+
+    if (requesterId === receiverId) {
+      throw new Error('Cannot send connection request to yourself');
+    }
+
+    const result = await networkModel.sendConnectionRequest(
+      requesterId,
+      receiverId
+    );
+
+    return result;
+  } catch (error) {
+    console.error('Send connection request service error:', error.message);
+    throw error;
+  }
+}
+
+async function acceptConnectionRequestService(requestId, receiverId) {
+  try {
+    if (!requestId || !receiverId) {
+      throw new Error('Request ID and Receiver ID are required');
+    }
+
+    const result = await networkModel.acceptConnectionRequest(
+      requestId,
+      receiverId
+    );
+
+    return result;
+  } catch (error) {
+    console.error('Accept connection request service error:', error.message);
+    throw error;
+  }
+}
+
+async function rejectConnectionRequestService(requestId, receiverId) {
+  try {
+    if (!requestId || !receiverId) {
+      throw new Error('Request ID and Receiver ID are required');
+    }
+
+    const result = await networkModel.rejectConnectionRequest(
+      requestId,
+      receiverId
+    );
+
+    return result;
+  } catch (error) {
+    console.error('Reject connection request service error:', error.message);
+    throw error;
+  }
+}
+
+async function getConnectionRequestsService(userId) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const requests = await networkModel.getConnectionRequests(userId);
+    console.log(`Service: Found ${requests.length} connection requests for user ${userId}`);
+
+    return {
+      success: true,
+      requests,
+    };
+  } catch (error) {
+    console.error('Get connection requests service error:', error.message);
+    throw error;
+  }
+}
+
+async function checkConnectionRequestStatusService(requesterId, receiverId) {
+  try {
+    if (!requesterId || !receiverId) {
+      throw new Error('Requester ID and Receiver ID are required');
+    }
+
+    const status = await networkModel.checkConnectionRequestStatus(
+      requesterId,
+      receiverId
+    );
+
+    return {
+      success: true,
+      ...status,
+    };
+  } catch (error) {
+    console.error(
+      'Check connection request status service error:',
+      error.message
+    );
+    throw error;
+  }
+}
+
 module.exports = {
   followUserService,
   unfollowUserService,
@@ -166,4 +267,9 @@ module.exports = {
   getFollowingService,
   getFollowCountsService,
   isFollowingService,
+  sendConnectionRequestService,
+  acceptConnectionRequestService,
+  rejectConnectionRequestService,
+  getConnectionRequestsService,
+  checkConnectionRequestStatusService,
 };

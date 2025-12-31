@@ -55,6 +55,10 @@ export default function OpportunitiesPage() {
   const [saveAlertOpportunityId, setSaveAlertOpportunityId] = useState<
     string | null
   >(null);
+  const [currentUser, setCurrentUser] = useState<{
+    full_name?: string;
+    profile_url?: string;
+  } | null>(null);
 
   const staticOpportunities: OpportunityItem[] = [
     // SCHOLARSHIPS
@@ -268,6 +272,44 @@ export default function OpportunitiesPage() {
   const allOpportunities = [...opportunities, ...scrapedCamps];
 
   // Check saved status for opportunities
+  // Fetch current user
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const userIdentifier = localStorage.getItem('userEmail');
+        if (!userIdentifier) {
+          return;
+        }
+
+        let response;
+        if (userIdentifier.startsWith('username:')) {
+          const username = userIdentifier.replace('username:', '');
+          response = await fetch(
+            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          );
+        } else {
+          response = await fetch(
+            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          );
+        }
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.user) {
+            setCurrentUser({
+              full_name: data.user.full_name,
+              profile_url: data.user.profile_url,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+
+    fetchCurrentUser();
+  }, []);
+
   useEffect(() => {
     const checkSavedOpportunities = () => {
       const savedOpportunityIds = JSON.parse(
@@ -416,9 +458,25 @@ export default function OpportunitiesPage() {
   console.log('Filtered Data:', filteredData);
   console.log('==========================');
 
+  const getProfileUrl = (profileUrl?: string | null): string | undefined => {
+    if (!profileUrl || profileUrl.trim() === '') {
+      return undefined;
+    }
+    if (profileUrl.startsWith('http')) {
+      return profileUrl;
+    }
+    if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
+      return `http://localhost:3001${profileUrl}`;
+    }
+    return profileUrl;
+  };
+
   return (
     <div className="min-h-screen bg-gray-200">
-      <Header userName="Athlete Name" />
+      <Header
+        userName={currentUser?.full_name}
+        userProfileUrl={getProfileUrl(currentUser?.profile_url)}
+      />
 
       <div className="flex p-5 flex-1">
         <NavigationBar activeItem="opportunities" />

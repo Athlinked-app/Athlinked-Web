@@ -13,12 +13,26 @@ interface User {
   profile_url: string | null;
 }
 
+interface ConnectionRequest {
+  id: string;
+  requester_id: string;
+  receiver_id: string;
+  status: string;
+  created_at: string;
+  user_id: string;
+  username: string | null;
+  full_name: string | null;
+  user_type: string | null;
+  profile_url: string | null;
+}
+
 export default function NetworkPage() {
-  const [activeTab, setActiveTab] = useState<'followers' | 'following'>(
+  const [activeTab, setActiveTab] = useState<'followers' | 'following' | 'invitations'>(
     'followers'
   );
   const [followers, setFollowers] = useState<User[]>([]);
   const [following, setFollowing] = useState<User[]>([]);
+  const [invitations, setInvitations] = useState<ConnectionRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<{
@@ -101,6 +115,25 @@ export default function NetworkPage() {
         }
       }
 
+      // Fetch connection requests (invitations)
+      const invitationsResponse = await fetch(
+        `http://localhost:3001/api/network/invitations/${currentUserId}`
+      );
+      if (invitationsResponse.ok) {
+        const invitationsData = await invitationsResponse.json();
+        console.log('Invitations data:', invitationsData);
+        if (invitationsData.success) {
+          console.log('Setting invitations:', invitationsData.requests);
+          setInvitations(invitationsData.requests || []);
+        } else {
+          console.log('Invitations fetch not successful:', invitationsData);
+        }
+      } else {
+        console.error('Failed to fetch invitations:', invitationsResponse.status, invitationsResponse.statusText);
+        const errorText = await invitationsResponse.text();
+        console.error('Error response:', errorText);
+      }
+
       // Update follow statuses
       const statuses: { [key: string]: boolean } = {};
       // All users in following list are being followed
@@ -140,6 +173,12 @@ export default function NetworkPage() {
   useEffect(() => {
     fetchNetworkData();
   }, [currentUserId]);
+
+  useEffect(() => {
+    if (activeTab === 'invitations' && currentUserId) {
+      fetchNetworkData();
+    }
+  }, [activeTab, currentUserId]);
 
   // Refresh data when page becomes visible (e.g., when user follows from sidebar)
   useEffect(() => {
@@ -317,7 +356,128 @@ export default function NetworkPage() {
     }
   };
 
-  const currentList = activeTab === 'followers' ? followers : following;
+  const handleAcceptInvitation = async (requestId: string) => {
+    if (!currentUserId) {
+      alert('You must be logged in');
+      return;
+    }
+
+    try {
+      const userIdentifier = localStorage.getItem('userEmail');
+      if (!userIdentifier) {
+        alert('User not logged in');
+        return;
+      }
+
+      let userResponse;
+      if (userIdentifier.startsWith('username:')) {
+        const username = userIdentifier.replace('username:', '');
+        userResponse = await fetch(
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+        );
+      } else {
+        userResponse = await fetch(
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+        );
+      }
+
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const userDataResponse = await userResponse.json();
+      if (!userDataResponse.success || !userDataResponse.user) {
+        throw new Error('User not found');
+      }
+
+      const response = await fetch(
+        `http://localhost:3001/api/network/accept/${requestId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: userDataResponse.user.id,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        setInvitations(prev => prev.filter(req => req.id !== requestId));
+        fetchNetworkData();
+        alert('Connection request accepted!');
+      } else {
+        alert(result.message || 'Failed to accept connection request');
+      }
+    } catch (error) {
+      console.error('Error accepting invitation:', error);
+      alert('Failed to accept connection request. Please try again.');
+    }
+  };
+
+  const handleRejectInvitation = async (requestId: string) => {
+    if (!currentUserId) {
+      alert('You must be logged in');
+      return;
+    }
+
+    try {
+      const userIdentifier = localStorage.getItem('userEmail');
+      if (!userIdentifier) {
+        alert('User not logged in');
+        return;
+      }
+
+      let userResponse;
+      if (userIdentifier.startsWith('username:')) {
+        const username = userIdentifier.replace('username:', '');
+        userResponse = await fetch(
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+        );
+      } else {
+        userResponse = await fetch(
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+        );
+      }
+
+      if (!userResponse.ok) {
+        throw new Error('Failed to fetch user data');
+      }
+
+      const userDataResponse = await userResponse.json();
+      if (!userDataResponse.success || !userDataResponse.user) {
+        throw new Error('User not found');
+      }
+
+      const response = await fetch(
+        `http://localhost:3001/api/network/reject/${requestId}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            user_id: userDataResponse.user.id,
+          }),
+        }
+      );
+
+      const result = await response.json();
+      if (result.success) {
+        setInvitations(prev => prev.filter(req => req.id !== requestId));
+        alert('Connection request rejected');
+      } else {
+        alert(result.message || 'Failed to reject connection request');
+      }
+    } catch (error) {
+      console.error('Error rejecting invitation:', error);
+      alert('Failed to reject connection request. Please try again.');
+    }
+  };
+
+  const currentList = activeTab === 'followers' ? followers : activeTab === 'following' ? following : [];
 
   return (
     <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
@@ -364,10 +524,82 @@ export default function NetworkPage() {
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
                   )}
                 </button>
+                <button
+                  onClick={() => setActiveTab('invitations')}
+                  className={`px-6 py-3 font-medium text-base relative ${
+                    activeTab === 'invitations'
+                      ? 'text-[#CB9729]'
+                      : 'text-black hover:text-black'
+                  }`}
+                >
+                  Invitations
+                  {activeTab === 'invitations' && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
+                  )}
+                </button>
               </div>
 
               {loading ? (
                 <div className="text-center py-8 text-black">Loading...</div>
+              ) : activeTab === 'invitations' ? (
+                invitations.length === 0 ? (
+                  <div className="text-center py-8 text-black">
+                    No pending invitations
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {invitations.map(request => {
+                      const profileUrl = getProfileUrl(request.profile_url);
+                      return (
+                        <div
+                          key={request.id}
+                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-full bg-gray-300 overflow-hidden flex items-center justify-center">
+                              {profileUrl ? (
+                                <img
+                                  src={profileUrl}
+                                  alt={request.full_name || 'User'}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-black font-semibold text-sm">
+                                  {getInitials(request.full_name || 'User')}
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-medium text-black">
+                                {request.full_name || 'User'}
+                              </div>
+                              <div className="text-sm text-black">
+                                {request.user_type
+                                  ? request.user_type.charAt(0).toUpperCase() +
+                                    request.user_type.slice(1).toLowerCase()
+                                  : 'User'}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleAcceptInvitation(request.id)}
+                              className="px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-yellow-600 transition-colors font-medium text-sm"
+                            >
+                              Accept
+                            </button>
+                            <button
+                              onClick={() => handleRejectInvitation(request.id)}
+                              className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm"
+                            >
+                              Reject
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )
               ) : currentList.length === 0 ? (
                 <div className="text-center py-8 text-black">
                   No {activeTab === 'followers' ? 'followers' : 'followings'}{' '}

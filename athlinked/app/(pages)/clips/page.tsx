@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import NavigationBar from '@/components/NavigationBar';
+import Header from '@/components/Header';
 import FileUploadModal from '@/components/Clips/FileUploadModal';
 import ShareModal from '@/components/Share/ShareModal';
 import SaveModal from '@/components/Save/SaveModal';
@@ -52,6 +53,10 @@ interface Reel {
 export default function ClipsPage() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<{
+    full_name?: string;
+    profile_url?: string;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentReelIndex, setCurrentReelIndex] = useState(0);
   const [mutedReels, setMutedReels] = useState<{ [key: string]: boolean }>({});
@@ -87,30 +92,25 @@ export default function ClipsPage() {
   useEffect(() => {
     const initialMuted: { [key: string]: boolean } = {};
     reels.forEach(reel => {
-      // Start videos unmuted by default for audio
       initialMuted[reel.id] = false;
     });
     setMutedReels(initialMuted);
   }, [reels]);
 
-  // Update video muted property when mutedReels state changes
   useEffect(() => {
     Object.keys(mutedReels).forEach(reelId => {
       const video = videoRefs.current[reelId];
       if (video) {
         video.muted = mutedReels[reelId];
-        // Ensure volume is set to 1 when unmuted
         if (!mutedReels[reelId]) {
           video.volume = 1;
         }
-        // Only try to play with audio if user has interacted
         if (!video.paused && !mutedReels[reelId] && userHasInteracted) {
           const playPromise = video.play();
           if (playPromise !== undefined) {
             playPromisesRef.current[reelId] = playPromise;
             playPromise
               .catch(err => {
-                // Silently handle autoplay errors
                 if (err.name !== 'AbortError') {
                   console.error('Error playing video with audio:', err);
                 }
@@ -136,21 +136,16 @@ export default function ClipsPage() {
 
       if (reels[currentIndex]) {
         setSelectedReelId(reels[currentIndex].id);
-      }
-
-      // Play/pause videos based on current index and paused state
+      } // Play/pause videos based on current index and paused state
       reels.forEach((reel, index) => {
         const video = videoRefs.current[reel.id];
         if (video) {
           if (index === currentIndex && !pausedReels[reel.id]) {
-            // Try to play with audio by default
             const shouldBeMuted = mutedReels[reel.id] ?? false;
             video.muted = shouldBeMuted;
             if (!shouldBeMuted) {
               video.volume = 1;
             }
-
-            // Cancel any pending play promise
             if (playPromisesRef.current[reel.id]) {
               playPromisesRef.current[reel.id] = null;
             }
@@ -437,6 +432,10 @@ export default function ClipsPage() {
         if (data.success && data.user) {
           setUserData(data.user);
           setCurrentUserId(data.user.id);
+          setCurrentUser({
+            full_name: data.user.full_name,
+            profile_url: data.user.profile_url,
+          });
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -1085,28 +1084,21 @@ export default function ClipsPage() {
     );
   }
 
+  const getProfileUrl = (profileUrl?: string | null): string | undefined => {
+    if (!profileUrl || profileUrl.trim() === '') return undefined;
+    if (profileUrl.startsWith('http')) return profileUrl;
+    if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
+      return `http://localhost:3001${profileUrl}`;
+    }
+    return profileUrl;
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-200">
-      {/* Header - Full Width */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center w-full z-10">
-        <div className="flex items-center">
-          <img src="/Frame 171.png" alt="ATHLINKED" className="h-8 w-auto" />
-        </div>
-        <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden flex items-center justify-center">
-          {userData?.full_name ? (
-            <span className="text-black font-semibold text-xs">
-              {userData.full_name
-                .split(' ')
-                .map(word => word[0])
-                .join('')
-                .toUpperCase()
-                .slice(0, 2)}
-            </span>
-          ) : (
-            <span className="text-black font-semibold text-xs">U</span>
-          )}
-        </div>
-      </header>
+      <Header
+        userName={currentUser?.full_name}
+        userProfileUrl={getProfileUrl(currentUser?.profile_url)}
+      />
 
       {/* Content Area with Navigation and Main Content */}
       <div className="flex flex-1 overflow-hidden mt-5 ml-5">
