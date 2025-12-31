@@ -11,6 +11,8 @@ import {
   MapPin,
   Users,
   Calendar,
+  UserPlus,
+  MessageCircle,
 } from 'lucide-react';
 import EditProfilePopup from '../EditProfilePopup';
 
@@ -20,7 +22,11 @@ interface EditProfileModalProps {
   asSidebar?: boolean;
   currentUserId?: string | null;
   viewedUserId?: string | null;
-  onFavouriteChange?: () => void;
+  connectionRequestStatus?: {
+    exists: boolean;
+    status: string | null;
+  } | null;
+  onSendConnectionRequest?: () => void;
   userData?: {
     full_name?: string;
     username?: string;
@@ -69,7 +75,8 @@ export default function EditProfileModal({
   asSidebar = false,
   currentUserId,
   viewedUserId,
-  onFavouriteChange,
+  connectionRequestStatus,
+  onSendConnectionRequest,
   userData,
   onSave,
 }: EditProfileModalProps) {
@@ -105,9 +112,16 @@ export default function EditProfileModal({
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const backgroundImageInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch user data from API
+  // Fetch user data from API - only for current user, not when viewing another user
   useEffect(() => {
     const fetchUserData = async () => {
+      // If viewing another user's profile, don't fetch current user data
+      // Rely on userData prop instead
+      if (viewedUserId && viewedUserId !== currentUserId) {
+        setLoading(false);
+        return;
+      }
+
       try {
         const userIdentifier = localStorage.getItem('userEmail');
         if (!userIdentifier) {
@@ -135,49 +149,47 @@ export default function EditProfileModal({
         const data = await response.json();
         if (data.success && data.user) {
           setFetchedUserData(data.user);
-          // Update state with fetched data (prioritize fetched data over props)
-          if (data.user.full_name) {
-            setFullName(data.user.full_name);
-          }
-          if (data.user.profile_url) {
-            const profileUrl = data.user.profile_url.startsWith('http')
-              ? data.user.profile_url
-              : `http://localhost:3001${data.user.profile_url}`;
-            setProfileImagePreview(profileUrl);
-          }
-          if (data.user.background_image_url) {
-            const bgUrl = data.user.background_image_url.startsWith('http')
-              ? data.user.background_image_url
-              : `http://localhost:3001${data.user.background_image_url}`;
-            setBackgroundImagePreview(bgUrl);
-          }
-          if (data.user.sports_played) {
-            setSportsPlayed(data.user.sports_played);
-          }
-          if (data.user.primary_sport) {
-            setPrimarySport(data.user.primary_sport);
-          }
-          if (data.user.location) {
-            setLocation(data.user.location);
-          }
-          if (data.user.age) {
-            setAge(data.user.age.toString());
+          // Only update state if userData prop is not provided or if it's our own profile
+          if (!userData || !viewedUserId || viewedUserId === currentUserId) {
+            if (data.user.full_name) {
+              setFullName(data.user.full_name);
+            }
+            if (data.user.profile_url) {
+              const profileUrl = data.user.profile_url.startsWith('http')
+                ? data.user.profile_url
+                : `http://localhost:3001${data.user.profile_url}`;
+              setProfileImagePreview(profileUrl);
+            }
+            if (data.user.background_image_url) {
+              const bgUrl = data.user.background_image_url.startsWith('http')
+                ? data.user.background_image_url
+                : `http://localhost:3001${data.user.background_image_url}`;
+              setBackgroundImagePreview(bgUrl);
+            }
+            if (data.user.sports_played) {
+              setSportsPlayed(data.user.sports_played);
+            }
+            if (data.user.primary_sport) {
+              setPrimarySport(data.user.primary_sport);
+            }
+            if (data.user.location) {
+              setLocation(data.user.location);
+            }
+            if (data.user.age) {
+              setAge(data.user.age.toString());
+            }
           }
           // Note: bio and education are fetched from profile API, not user API
         }
 
-        // Also fetch profile data if we have user ID
-        if (data.success && data.user && data.user.id) {
+        // Also fetch profile data if we have user ID (only for own profile)
+        if (data.success && data.user && data.user.id && (!viewedUserId || viewedUserId === currentUserId)) {
           try {
             const profileResponse = await fetch(
               `http://localhost:3001/api/profile/${data.user.id}`
             );
             if (profileResponse.ok) {
               const profileData = await profileResponse.json();
-              console.log(
-                'Fetched profile data in EditProfileModal:',
-                profileData
-              );
               if (profileData.bio) setBio(profileData.bio);
               if (profileData.education) setEducation(profileData.education);
               if (profileData.profileImage) {
@@ -215,36 +227,50 @@ export default function EditProfileModal({
       fetchUserData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, viewedUserId, currentUserId]);
 
   // Update state when userData props change (from parent)
+  // This should take priority when viewing another user's profile
   useEffect(() => {
     if (userData) {
-      if (userData.full_name) setFullName(userData.full_name);
-      if (userData.username) setUsername(userData.username);
-      if (userData.location) setLocation(userData.location);
-      if (userData.age) setAge(userData.age.toString());
+      // When viewing another user, always use userData prop
+      // When viewing own profile, userData prop should also take priority
+      if (userData.full_name !== undefined) setFullName(userData.full_name || '');
+      if (userData.username !== undefined) setUsername(userData.username || '');
+      // Prioritize city over location if both are provided
+      if (userData.city !== undefined) {
+        setLocation(userData.city || '');
+      } else if (userData.location !== undefined) {
+        setLocation(userData.location || '');
+      }
+      if (userData.age !== undefined) setAge(userData.age?.toString() || '');
       // Always update sports_played, even if empty (to clear it)
       if (userData.sports_played !== undefined) {
         setSportsPlayed(userData.sports_played || '');
       }
-      if (userData.primary_sport) setPrimarySport(userData.primary_sport);
-      if (userData.bio !== undefined) setBio(userData.bio);
-      if (userData.education !== undefined) setEducation(userData.education);
-      if (userData.profile_url) {
-        const profileUrl = userData.profile_url.startsWith('http')
-          ? userData.profile_url
-          : `http://localhost:3001${userData.profile_url}`;
+      if (userData.primary_sport !== undefined) setPrimarySport(userData.primary_sport || '');
+      if (userData.bio !== undefined) setBio(userData.bio || '');
+      if (userData.education !== undefined) setEducation(userData.education || '');
+      // Profile image - prioritize userData prop, especially when viewing another user
+      if (userData.profile_url !== undefined) {
+        const profileUrl = userData.profile_url
+          ? (userData.profile_url.startsWith('http')
+              ? userData.profile_url
+              : `http://localhost:3001${userData.profile_url}`)
+          : null;
         setProfileImagePreview(profileUrl);
       }
-      if (userData.background_image_url) {
-        const bgUrl = userData.background_image_url.startsWith('http')
-          ? userData.background_image_url
-          : `http://localhost:3001${userData.background_image_url}`;
+      // Background image - prioritize userData prop, especially when viewing another user
+      if (userData.background_image_url !== undefined) {
+        const bgUrl = userData.background_image_url
+          ? (userData.background_image_url.startsWith('http')
+              ? userData.background_image_url
+              : `http://localhost:3001${userData.background_image_url}`)
+          : null;
         setBackgroundImagePreview(bgUrl);
       }
     }
-  }, [userData]);
+  }, [userData, viewedUserId]);
 
   const handleBackToHome = () => {
     router.push('/home');
@@ -543,17 +569,66 @@ export default function EditProfileModal({
             {/* Right Column - Action Buttons and Sports Information */}
             <div className="flex flex-col items-end gap-2">
               <div className="flex gap-3">
-                <button className="px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-[#b78322] transition-colors flex items-center gap-2">
-                  <Megaphone className="w-4 h-4" />
-                  <span>Boost Profile</span>
-                </button>
-                <button
-                  onClick={handleEditProfileClick}
-                  className="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-                >
-                  <Pencil className="w-4 h-4" />
-                  <span>Edit Profile</span>
-                </button>
+                {/* Show Edit Profile button only if viewing own profile */}
+                {(() => {
+                  // Determine if viewing own profile
+                  const isOwnProfile = !viewedUserId || 
+                    (currentUserId && viewedUserId === currentUserId) ||
+                    (!viewedUserId && !currentUserId); // If no viewedUserId, assume own profile
+                  return isOwnProfile;
+                })() ? (
+                  <button
+                    onClick={handleEditProfileClick}
+                    className="px-12 py-4 bg-[#CB9729] text-white rounded-lg hover:bg-[#b78322] transition-colors flex items-center gap-2"
+                  >
+                    <Pencil className="w-4 h-4" />
+                    <span>Edit Profile</span>
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        if (onSendConnectionRequest && connectionRequestStatus?.status !== 'connected') {
+                          onSendConnectionRequest();
+                        }
+                      }}
+                      disabled={
+                        (connectionRequestStatus?.exists &&
+                        connectionRequestStatus?.status === 'pending') ||
+                        connectionRequestStatus?.status === 'connected'
+                      }
+                      className={`px-6 py-4 rounded-lg transition-colors flex items-center gap-2 ${
+                        connectionRequestStatus?.status === 'connected'
+                          ? 'bg-green-600 text-white cursor-default'
+                          : connectionRequestStatus?.exists &&
+                            connectionRequestStatus?.status === 'pending'
+                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                          : 'bg-[#CB9729] text-white hover:bg-[#b78322]'
+                      }`}
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      <span>
+                        {connectionRequestStatus?.status === 'connected'
+                          ? 'Connected'
+                          : connectionRequestStatus?.exists &&
+                            connectionRequestStatus?.status === 'pending'
+                          ? 'Pending'
+                          : 'Connect'}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        // TODO: Implement message functionality
+                        console.log('Message clicked for user:', viewedUserId);
+                        router.push(`/messages?userId=${viewedUserId}`);
+                      }}
+                      className="px-6 py-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      <span>Message</span>
+                    </button>
+                  </>
+                )}
               </div>
 
               {/* Sports Information */}
@@ -572,30 +647,6 @@ export default function EditProfileModal({
                   <span className="mx-3">:</span>
                   <span className="text-gray-700">{primarySport || '—'}</span>
                 </div>
-                {(education || userData?.education) && (
-                  <div className="text-md flex">
-                    <span className="font-semibold text-gray-900 w-40 text-right">
-                      Education
-                    </span>
-                    <span className="mx-3">:</span>
-                    <span className="text-gray-700">
-                      {education || userData?.education || ''}
-                    </span>
-                  </div>
-                )}
-                {(bio || userData?.bio) && (
-                  <div className="text-md flex flex-col">
-                    <div className="flex">
-                      <span className="font-semibold text-gray-900 w-40 text-right">
-                        Bio
-                      </span>
-                      <span className="mx-3">:</span>
-                    </div>
-                    <span className="text-gray-700 ml-[11.5rem] mt-1">
-                      {bio || userData?.bio || ''}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -612,6 +663,7 @@ export default function EditProfileModal({
             sports_played: sportsPlayed,
             bio: bio,
             education: education,
+            city: location,
           }}
           onSave={handleEditPopupSave}
         />

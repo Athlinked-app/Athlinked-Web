@@ -140,13 +140,14 @@ async function createNotification(notificationData) {
     throw new Error('Missing required notification fields');
   }
 
-  // Validate notification type
   const validTypes = [
     'like',
     'comment',
     'mention',
     'follow_request',
     'follow_accepted',
+    'connection_request',
+    'connection_accepted',
   ];
   if (!validTypes.includes(type)) {
     throw new Error(`Invalid notification type: ${type}`);
