@@ -54,7 +54,7 @@ interface ProfileData {
 export default function Profile() {
   const searchParams = useSearchParams();
   const viewUserId = searchParams.get('userId'); // User ID from URL params
-  
+
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -62,9 +62,15 @@ export default function Profile() {
   const [viewUser, setViewUser] = useState<CurrentUser | null>(null); // User being viewed
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'activity' | 'mysave'>('profile');
-  const [activeFilter, setActiveFilter] = useState<'posts' | 'clips' | 'article' | 'event'>('posts');
-  const [activeSaveFilter, setActiveSaveFilter] = useState<'posts' | 'clips' | 'article' | 'opportunities'>('posts');
+  const [activeTab, setActiveTab] = useState<'profile' | 'activity' | 'mysave'>(
+    'profile'
+  );
+  const [activeFilter, setActiveFilter] = useState<
+    'posts' | 'clips' | 'article' | 'event'
+  >('posts');
+  const [activeSaveFilter, setActiveSaveFilter] = useState<
+    'posts' | 'clips' | 'article' | 'opportunities'
+  >('posts');
   const [userBio, setUserBio] = useState<string>('');
   const [socialHandles, setSocialHandles] = useState<SocialHandle[]>([]);
   const [academicBackgrounds, setAcademicBackgrounds] = useState<
@@ -149,9 +155,11 @@ export default function Profile() {
         }));
         
         if (targetUserId && viewUserId) {
-          transformedPosts = transformedPosts.filter(post => post.user_id === targetUserId);
+          transformedPosts = transformedPosts.filter(
+            post => post.user_id === targetUserId
+          );
         }
-        
+
         console.log('Transformed posts:', transformedPosts.length);
         setPosts(transformedPosts);
       } else {
@@ -172,7 +180,7 @@ export default function Profile() {
       fetchViewUser();
     }
   }, [viewUserId]);
-  
+
   useEffect(() => {
     if (targetUserId) {
       fetchPosts();
@@ -201,12 +209,12 @@ export default function Profile() {
   
   const fetchViewUser = async () => {
     if (!viewUserId) return;
-    
+
     try {
       const response = await fetch(
         `http://localhost:3001/api/signup/users?limit=1000`
       );
-      
+
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.users) {
@@ -242,10 +250,12 @@ export default function Profile() {
 
   const fetchProfileData = async () => {
     if (!targetUserId) return;
-    
+
     try {
       console.log('Fetching profile data for userId:', targetUserId);
-      const response = await fetch(`http://localhost:3001/api/profile/${targetUserId}`);
+      const response = await fetch(
+        `http://localhost:3001/api/profile/${targetUserId}`
+      );
       if (response.ok) {
         const data = await response.json();
         console.log('Profile data fetched:', data);
@@ -522,7 +532,7 @@ export default function Profile() {
               background_image_url: profileData?.coverImage
                 ? profileData.coverImage.startsWith('http')
                   ? profileData.coverImage
-                  : `http://localhost:3001${profileData.coverImage}`
+                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.coverImage}`
                 : null,
               user_type: viewUserId ? (viewUser?.user_type || 'athlete') : (currentUser?.user_type || 'athlete'),
               location: profileData?.city || '',
@@ -588,13 +598,13 @@ export default function Profile() {
                 });
 
                 if (data.bio !== undefined) {
-                  profileData.bio = data.bio || undefined; 
+                  profileData.bio = data.bio || undefined;
                 }
                 if (data.education !== undefined) {
-                  profileData.education = data.education || undefined; 
+                  profileData.education = data.education || undefined;
                 }
                 if (data.city !== undefined) {
-                  profileData.city = data.city || undefined; 
+                  profileData.city = data.city || undefined;
                 }
 
                 console.log('Profile data being sent to API:', profileData);
@@ -611,11 +621,14 @@ export default function Profile() {
                 if (data.profile_url instanceof File) {
                   const formData = new FormData();
                   formData.append('file', data.profile_url);
-                  const uploadResponse = await fetch('http://localhost:3001/api/profile/upload', {
-                    method: 'POST',
-                    body: formData,
-                  });
-                  
+                  const uploadResponse = await fetch(
+                    'http://localhost:3001/api/profile/upload',
+                    {
+                      method: 'POST',
+                      body: formData,
+                    }
+                  );
+
                   if (uploadResponse.ok) {
                     const uploadData = await uploadResponse.json();
                     if (uploadData.success && uploadData.fileUrl) {
@@ -629,11 +642,14 @@ export default function Profile() {
                 if (data.background_image_url instanceof File) {
                   const formData = new FormData();
                   formData.append('file', data.background_image_url);
-                  const uploadResponse = await fetch('http://localhost:3001/api/profile/upload', {
-                    method: 'POST',
-                    body: formData,
-                  });
-                  
+                  const uploadResponse = await fetch(
+                    'http://localhost:3001/api/profile/upload',
+                    {
+                      method: 'POST',
+                      body: formData,
+                    }
+                  );
+
                   if (uploadResponse.ok) {
                     const uploadData = await uploadResponse.json();
                     if (uploadData.success && uploadData.fileUrl) {
@@ -643,13 +659,16 @@ export default function Profile() {
                 } else if (typeof data.background_image_url === 'string') {
                   profileData.coverImageUrl = data.background_image_url;
                 }
-                const response = await fetch('http://localhost:3001/api/profile', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify(profileData),
-                });
+                const response = await fetch(
+                  'http://localhost:3001/api/profile',
+                  {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(profileData),
+                  }
+                );
 
                 if (!response.ok) {
                   const errorData = await response.json();
@@ -807,8 +826,10 @@ export default function Profile() {
               )}
               {activeTab === 'activity' && (
                 <div className="w-full bg-white rounded-lg p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">Activity</h2>
-                  
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                    Activity
+                  </h2>
+
                   {/* Filter Buttons */}
                   <div className="flex gap-3 mb-6">
                     <button
@@ -901,8 +922,10 @@ export default function Profile() {
               )}
               {activeTab === 'mysave' && (
                 <div className="w-full bg-white rounded-lg p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">My Save</h2>
-                  
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                    My Save
+                  </h2>
+
                   {/* Filter Buttons */}
                   <div className="flex gap-3 mb-6">
                     <button
@@ -986,8 +1009,12 @@ export default function Profile() {
                   {activeSaveFilter === 'opportunities' && (
                     <MySaveOpportunity
                       currentUserId={currentUserId || undefined}
-                      currentUserProfileUrl={getProfileUrl(viewUser?.profile_url || currentUser?.profile_url)}
-                      currentUsername={viewUser?.full_name || currentUser?.full_name || 'User'}
+                      currentUserProfileUrl={getProfileUrl(
+                        viewUser?.profile_url || currentUser?.profile_url
+                      )}
+                      currentUsername={
+                        viewUser?.full_name || currentUser?.full_name || 'User'
+                      }
                       viewedUserId={viewUserId}
                       loading={loading}
                       onCommentCountUpdate={fetchPosts}

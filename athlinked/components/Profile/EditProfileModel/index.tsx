@@ -195,7 +195,7 @@ export default function EditProfileModal({
               if (profileData.profileImage) {
                 const profileUrl = profileData.profileImage.startsWith('http')
                   ? profileData.profileImage
-                  : `http://localhost:3001${profileData.profileImage}`;
+                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.profileImage}`;
                 setProfileImagePreview(profileUrl);
               }
               if (profileData.coverImage) {
@@ -572,7 +572,8 @@ export default function EditProfileModal({
                 {/* Show Edit Profile button only if viewing own profile */}
                 {(() => {
                   // Determine if viewing own profile
-                  const isOwnProfile = !viewedUserId || 
+                  const isOwnProfile =
+                    !viewedUserId ||
                     (currentUserId && viewedUserId === currentUserId) ||
                     (!viewedUserId && !currentUserId); // If no viewedUserId, assume own profile
                   return isOwnProfile;

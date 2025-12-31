@@ -51,7 +51,11 @@ export default function MySaveClips({
         );
 
         if (!response.ok) {
-          console.error('Failed to fetch clips:', response.status, response.statusText);
+          console.error(
+            'Failed to fetch clips:',
+            response.status,
+            response.statusText
+          );
           setClips([]);
           return;
         }
@@ -72,7 +76,7 @@ export default function MySaveClips({
             id: clip.id,
             videoUrl: clip.video_url?.startsWith('http')
               ? clip.video_url
-              : `http://localhost:3001${clip.video_url}`,
+              : `https://qd9ngjg1-3001.inc1.devtunnels.ms${clip.video_url}`,
             author: clip.username || fallbackName,
             authorAvatar: clip.user_profile_url || null,
             caption: clip.description || '',
@@ -140,13 +144,18 @@ export default function MySaveClips({
                     playsInline
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
-                    <Play className="w-12 h-12 text-white opacity-80" fill="white" />
+                    <Play
+                      className="w-12 h-12 text-white opacity-80"
+                      fill="white"
+                    />
                   </div>
                 </div>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200 text-gray-400 p-2">
                   <Play className="w-12 h-12 mb-2" />
-                  <span className="text-xs text-center line-clamp-3">{clip.caption || 'Video clip'}</span>
+                  <span className="text-xs text-center line-clamp-3">
+                    {clip.caption || 'Video clip'}
+                  </span>
                 </div>
               )}
             </div>
@@ -163,7 +172,9 @@ export default function MySaveClips({
           />
           <div className="relative z-10 w-full max-w-4xl bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Saved Clip Details</h2>
+              <h2 className="text-xl font-bold text-gray-900">
+                Saved Clip Details
+              </h2>
               <button
                 onClick={() => setSelectedClip(null)}
                 className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -181,7 +192,7 @@ export default function MySaveClips({
                     className="w-full h-auto rounded-lg"
                   />
                 </div>
-                
+
                 {/* Clip Info */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
@@ -199,24 +210,37 @@ export default function MySaveClips({
                       </div>
                     )}
                     <div>
-                      <p className="font-semibold text-gray-900">{selectedClip.author}</p>
-                      <p className="text-sm text-gray-500">{selectedClip.timestamp}</p>
+                      <p className="font-semibold text-gray-900">
+                        {selectedClip.author}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {selectedClip.timestamp}
+                      </p>
                     </div>
                   </div>
-                  
+
                   {selectedClip.caption && (
                     <p className="text-gray-700">{selectedClip.caption}</p>
                   )}
-                  
+
                   <div className="flex items-center gap-6 text-gray-600">
                     <span className="flex items-center gap-1">
-                      <span className="font-semibold">{selectedClip.likes}</span> likes
+                      <span className="font-semibold">
+                        {selectedClip.likes}
+                      </span>{' '}
+                      likes
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="font-semibold">{selectedClip.commentCount}</span> comments
+                      <span className="font-semibold">
+                        {selectedClip.commentCount}
+                      </span>{' '}
+                      comments
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="font-semibold">{selectedClip.shares}</span> shares
+                      <span className="font-semibold">
+                        {selectedClip.shares}
+                      </span>{' '}
+                      shares
                     </span>
                   </div>
                 </div>
@@ -228,4 +252,3 @@ export default function MySaveClips({
     </>
   );
 }
-

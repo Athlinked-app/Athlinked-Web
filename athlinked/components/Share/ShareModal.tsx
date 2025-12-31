@@ -85,7 +85,7 @@ export default function ShareModal({
         socketRef.current.disconnect();
       }
 
-      const socket = io('http://localhost:3001', {
+      const socket = io('https://qd9ngjg1-3001.inc1.devtunnels.ms', {
         transports: ['websocket'],
       });
 
