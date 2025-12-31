@@ -352,13 +352,19 @@ export default function OpportunitiesPage() {
       setSaveAlertMessage('This opportunity is unsaved');
     } else {
       // Save - store the full opportunity object
-      const opportunity = allOpportunities.find(opp => opp.id === opportunityId);
+      const opportunity = allOpportunities.find(
+        opp => opp.id === opportunityId
+      );
       if (opportunity) {
         const savedOpportunitiesData = JSON.parse(
           localStorage.getItem('athlinked_saved_opportunities_data') || '[]'
         );
         // Check if already exists to avoid duplicates
-        if (!savedOpportunitiesData.find((opp: OpportunityItem) => opp.id === opportunityId)) {
+        if (
+          !savedOpportunitiesData.find(
+            (opp: OpportunityItem) => opp.id === opportunityId
+          )
+        ) {
           savedOpportunitiesData.push(opportunity);
           localStorage.setItem(
             'athlinked_saved_opportunities_data',
@@ -415,7 +421,7 @@ export default function OpportunitiesPage() {
       <Header userName="Athlete Name" />
 
       <div className="flex p-5 flex-1">
-        <NavigationBar activeItem="opportunities"  />
+        <NavigationBar activeItem="opportunities" />
 
         <div className="flex-1 bg-white mt-0 ml-5 mr-5 mb-5 rounded-xl flex flex-col h-[1200px] overflow-y-auto">
           <div className="border-b border-gray-200">
@@ -579,20 +585,23 @@ export default function OpportunitiesPage() {
                   }
                 }}
                 className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
-                  selectedOpportunity && savedOpportunities[selectedOpportunity.id]
+                  selectedOpportunity &&
+                  savedOpportunities[selectedOpportunity.id]
                     ? 'bg-[#CB9729] text-white border-[#CB9729]'
                     : 'border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 <Bookmark
                   className={`w-4 h-4 ${
-                    selectedOpportunity && savedOpportunities[selectedOpportunity.id]
+                    selectedOpportunity &&
+                    savedOpportunities[selectedOpportunity.id]
                       ? 'fill-current'
                       : ''
                   }`}
                 />
                 <span className="font-medium">
-                  {selectedOpportunity && savedOpportunities[selectedOpportunity.id]
+                  {selectedOpportunity &&
+                  savedOpportunities[selectedOpportunity.id]
                     ? 'Saved'
                     : 'Save'}
                 </span>

@@ -19,16 +19,13 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        'http://localhost:3001/api/login',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email: identifier, password }), // Backend still expects 'email' field
-        }
-      );
+      const response = await fetch('http://localhost:3001/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: identifier, password }), // Backend still expects 'email' field
+      });
 
       const data = await response.json();
 

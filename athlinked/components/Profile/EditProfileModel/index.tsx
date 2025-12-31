@@ -2,7 +2,18 @@
 
 import { useState, useRef, useEffect, type ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { X, ChevronLeft, Camera, Megaphone, Pencil, MapPin, Users, Calendar, UserPlus, MessageCircle } from 'lucide-react';
+import {
+  X,
+  ChevronLeft,
+  Camera,
+  Megaphone,
+  Pencil,
+  MapPin,
+  Users,
+  Calendar,
+  UserPlus,
+  MessageCircle,
+} from 'lucide-react';
 import EditProfilePopup from '../EditProfilePopup';
 
 interface EditProfileModalProps {
@@ -67,7 +78,9 @@ export default function EditProfileModal({
   const [fetchedUserData, setFetchedUserData] =
     useState<FetchedUserData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [currentUserFromFetch, setCurrentUserFromFetch] = useState<string | null>(null);
+  const [currentUserFromFetch, setCurrentUserFromFetch] = useState<
+    string | null
+  >(null);
   const [fullName, setFullName] = useState(userData?.full_name || '');
   const [username, setUsername] = useState(userData?.username || '');
   const [location, setLocation] = useState(userData?.location || '');
@@ -130,11 +143,11 @@ export default function EditProfileModal({
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -157,7 +170,7 @@ export default function EditProfileModal({
           if (data.user.profile_url) {
             const profileUrl = data.user.profile_url.startsWith('http')
               ? data.user.profile_url
-              : `http://localhost:3001${data.user.profile_url}`;
+              : `https://qd9ngjg1-3001.inc1.devtunnels.ms${data.user.profile_url}`;
             setProfileImagePreview(profileUrl);
           }
           if (data.user.background_image_url) {
@@ -175,14 +188,17 @@ export default function EditProfileModal({
           if (data.user.location) {
             setLocation(data.user.location);
           }
-          
+
           // Calculate age from date of birth
           if (data.user.dob) {
             const dob = new Date(data.user.dob);
             const today = new Date();
             let age = today.getFullYear() - dob.getFullYear();
             const monthDiff = today.getMonth() - dob.getMonth();
-            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+            if (
+              monthDiff < 0 ||
+              (monthDiff === 0 && today.getDate() < dob.getDate())
+            ) {
               age--;
             }
             setCalculatedAge(age.toString());
@@ -191,7 +207,7 @@ export default function EditProfileModal({
             setAge(data.user.age.toString());
             setCalculatedAge(data.user.age.toString());
           }
-          
+
           // Fetch followers count
           if (data.user.id) {
             fetchFollowersCount(data.user.id);
@@ -217,7 +233,7 @@ export default function EditProfileModal({
               if (profileData.profileImage) {
                 const profileUrl = profileData.profileImage.startsWith('http')
                   ? profileData.profileImage
-                  : `http://localhost:3001${profileData.profileImage}`;
+                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.profileImage}`;
                 setProfileImagePreview(profileUrl);
               }
               if (profileData.coverImage) {
@@ -268,7 +284,7 @@ export default function EditProfileModal({
       if (userData.profile_url) {
         const profileUrl = userData.profile_url.startsWith('http')
           ? userData.profile_url
-          : `http://localhost:3001${userData.profile_url}`;
+          : `https://qd9ngjg1-3001.inc1.devtunnels.ms${userData.profile_url}`;
         setProfileImagePreview(profileUrl);
       }
       if (userData.background_image_url) {
@@ -561,7 +577,7 @@ export default function EditProfileModal({
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
                   <span>
-                    {followersCount >= 1000 
+                    {followersCount >= 1000
                       ? `${(followersCount / 1000).toFixed(1)}k followers`
                       : `${followersCount} followers`}
                   </span>
@@ -581,9 +597,11 @@ export default function EditProfileModal({
                 {/* Show Edit Profile button only if viewing own profile */}
                 {(() => {
                   // Determine if viewing own profile
-                  const isOwnProfile = !viewedUserId || 
+                  const isOwnProfile =
+                    !viewedUserId ||
                     (currentUserId && viewedUserId === currentUserId) ||
-                    (currentUserFromFetch && viewedUserId === currentUserFromFetch) ||
+                    (currentUserFromFetch &&
+                      viewedUserId === currentUserFromFetch) ||
                     (!viewedUserId && !currentUserId); // If no viewedUserId, assume own profile
                   return isOwnProfile;
                 })() ? (
@@ -625,21 +643,31 @@ export default function EditProfileModal({
               {/* Sports Information */}
               <div className="space-y-1 mt-2">
                 <div className="text-md flex items-start">
-                  <span className="font-semibold text-gray-900 w-40 text-right flex-shrink-0">Sports Played</span>
+                  <span className="font-semibold text-gray-900 w-40 text-right flex-shrink-0">
+                    Sports Played
+                  </span>
                   <span className="mx-3 flex-shrink-0">:</span>
-                  <span className="text-gray-700 break-words max-w-xs" style={{ 
-                    display: '-webkit-box',
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: 'vertical',
-                    overflow: 'hidden'
-                  }}>{sportsPlayed || '—'}</span>
+                  <span
+                    className="text-gray-700 break-words max-w-xs"
+                    style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {sportsPlayed || '—'}
+                  </span>
                 </div>
                 <div className="text-md flex items-start">
-                  <span className="font-semibold text-gray-900 w-40 text-right flex-shrink-0">Primary Sports</span>
+                  <span className="font-semibold text-gray-900 w-40 text-right flex-shrink-0">
+                    Primary Sports
+                  </span>
                   <span className="mx-3 flex-shrink-0">:</span>
-                  <span className="text-gray-700 break-words max-w-xs">{primarySport || '—'}</span>
+                  <span className="text-gray-700 break-words max-w-xs">
+                    {primarySport || '—'}
+                  </span>
                 </div>
-               
               </div>
             </div>
           </div>

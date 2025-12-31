@@ -7,7 +7,7 @@ const { v4: uuidv4 } = require('uuid');
  * @returns {Promise<object|null>} Profile data with user full_name
  */
 async function getUserProfile(userId) {
-    const query = `
+  const query = `
     SELECT 
       up.id,
       up.user_id,

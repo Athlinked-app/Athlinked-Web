@@ -264,11 +264,11 @@ export default function SearchPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         response = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -313,7 +313,7 @@ export default function SearchPage() {
     setIsSearching(true);
     try {
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/users?limit=100`
+        `http://localhost:3001/api/signup/users?limit=100`
       );
 
       if (!response.ok) {
@@ -342,7 +342,7 @@ export default function SearchPage() {
             if (currentUserId) {
               try {
                 const isFollowingResponse = await fetch(
-                  `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/is-following/${user.id}?follower_id=${currentUserId}`
+                  `http://localhost:3001/api/network/is-following/${user.id}?follower_id=${currentUserId}`
                 );
                 if (isFollowingResponse.ok) {
                   const isFollowingData = await isFollowingResponse.json();
@@ -393,8 +393,8 @@ export default function SearchPage() {
 
     try {
       const endpoint = isCurrentlyFollowing
-        ? `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/unfollow/${userId}`
-        : `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/follow/${userId}`;
+        ? `http://localhost:3001/api/network/unfollow/${userId}`
+        : `http://localhost:3001/api/network/follow/${userId}`;
 
       const response = await fetch(endpoint, {
         method: 'POST',

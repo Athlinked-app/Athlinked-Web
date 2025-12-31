@@ -116,7 +116,7 @@ export default function ManageResourcesPage() {
     const videoUrl = video.video_url
       ? video.video_url.startsWith('http')
         ? video.video_url
-        : `http://localhost:3001${video.video_url}`
+        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${video.video_url}`
       : undefined;
 
     return {
@@ -133,7 +133,7 @@ export default function ManageResourcesPage() {
     const fileUrl = template.file_url
       ? template.file_url.startsWith('http')
         ? template.file_url
-        : `http://localhost:3001${template.file_url}`
+        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${template.file_url}`
       : undefined;
 
     return {
@@ -159,11 +159,11 @@ export default function ManageResourcesPage() {
       let endpoint = '';
 
       if (activeTab === 'guides') {
-        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/articles?user_id=${encodeURIComponent(currentUserId)}`;
+        endpoint = `http://localhost:3001/api/articles?user_id=${encodeURIComponent(currentUserId)}`;
       } else if (activeTab === 'videos') {
-        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/videos?user_id=${encodeURIComponent(currentUserId)}`;
+        endpoint = `http://localhost:3001/api/videos?user_id=${encodeURIComponent(currentUserId)}`;
       } else {
-        endpoint = `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/templates?user_id=${encodeURIComponent(currentUserId)}`;
+        endpoint = `http://localhost:3001/api/templates?user_id=${encodeURIComponent(currentUserId)}`;
       }
 
       const response = await fetch(endpoint);
@@ -334,20 +334,17 @@ export default function ManageResourcesPage() {
     try {
       const { title } = await scrapeArticleMetadata(articleUrl);
 
-      const response = await fetch(
-        'http://localhost:3001/api/articles',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: currentUserId,
-            title: title,
-            article_link: articleUrl,
-          }),
-        }
-      );
+      const response = await fetch('http://localhost:3001/api/articles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: currentUserId,
+          title: title,
+          article_link: articleUrl,
+        }),
+      });
 
       // Check if response is JSON
       const contentType = response.headers.get('content-type');

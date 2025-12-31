@@ -69,20 +69,19 @@ export default function HomeHerosection({
     }
 
     const headers = {
-   
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     };
 
     let userResponse;
     if (userIdentifier.startsWith('username:')) {
       const username = userIdentifier.replace('username:', '');
       userResponse = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`,
+        `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`,
         { headers }
       );
     } else {
       userResponse = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`,
+        `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`,
         { headers }
       );
     }
@@ -106,21 +105,18 @@ export default function HomeHerosection({
     try {
       const userData = await getUserData();
 
-      const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts',
-        {
-          method: 'POST',
-          headers: {
-            'ngrok-skip-browser-warning': 'true',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: userData.id,
-            post_type: 'text',
-            caption: postText.trim(),
-          }),
-        }
-      );
+      const response = await fetch('http://localhost:3001/api/posts', {
+        method: 'POST',
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: userData.id,
+          post_type: 'text',
+          caption: postText.trim(),
+        }),
+      });
 
       const data = await response.json();
       if (data.success) {
@@ -152,16 +148,13 @@ export default function HomeHerosection({
       formData.append('post_type', selectedPostType!);
       formData.append('caption', caption);
 
-      const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts',
-        {
-          method: 'POST',
-          headers: {
-            'ngrok-skip-browser-warning': 'true',
-          },
-          body: formData,
-        }
-      );
+      const response = await fetch('http://localhost:3001/api/posts', {
+        method: 'POST',
+        headers: {
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: formData,
+      });
 
       const data = await response.json();
       if (data.success) {
@@ -224,16 +217,13 @@ export default function HomeHerosection({
           }
         }
 
-        const response = await fetch(
-          'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts',
-          {
-            method: 'POST',
-            headers: {
-              'ngrok-skip-browser-warning': 'true',
-            },
-            body: formData,
-          }
-        );
+        const response = await fetch('http://localhost:3001/api/posts', {
+          method: 'POST',
+          headers: {
+            'ngrok-skip-browser-warning': 'true',
+          },
+          body: formData,
+        });
 
         const result = await response.json();
 
@@ -264,17 +254,14 @@ export default function HomeHerosection({
           }
         }
 
-        const response = await fetch(
-          'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts',
-          {
-            method: 'POST',
-            headers: {
-              'ngrok-skip-browser-warning': 'true',
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(postData),
-          }
-        );
+        const response = await fetch('http://localhost:3001/api/posts', {
+          method: 'POST',
+          headers: {
+            'ngrok-skip-browser-warning': 'true',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(postData),
+        });
 
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {

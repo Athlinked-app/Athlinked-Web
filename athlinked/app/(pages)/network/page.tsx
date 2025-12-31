@@ -185,7 +185,7 @@ export default function NetworkPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };
@@ -366,7 +366,6 @@ export default function NetworkPage() {
                 </button>
               </div>
 
-
               {loading ? (
                 <div className="text-center py-8 text-black">Loading...</div>
               ) : currentList.length === 0 ? (
@@ -398,7 +397,6 @@ export default function NetworkPage() {
                                 {getInitials(user.full_name || 'User')}
                               </span>
                             )}
-
                           </div>
                           <div>
                             <div className="font-medium text-black">

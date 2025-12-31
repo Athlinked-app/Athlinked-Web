@@ -42,7 +42,7 @@ export default function MentionInput({
 
       try {
         const response = await fetch(
-          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/following/${currentUserId}`
+          `http://localhost:3001/api/network/following/${currentUserId}`
         );
 
         if (response.ok) {
@@ -206,7 +206,7 @@ export default function MentionInput({
                     src={
                       follower.profile_url.startsWith('http')
                         ? follower.profile_url
-                        : `http://localhost:3001${follower.profile_url}`
+                        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${follower.profile_url}`
                     }
                     alt={follower.full_name}
                     className="w-full h-full rounded-full object-cover"

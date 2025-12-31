@@ -1,17 +1,38 @@
-import type { NextConfig } from 'next';
+// import type { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {
-  /* config options here */
+// const nextConfig: NextConfig = {
+//   /* config options here */
+//   images: {
+//     remotePatterns: [
+//       {
+//         protocol: 'https',
+//         hostname: 'images.unsplash.com',
+//         port: '',
+//         pathname: '/**',
+//       },
+//     ],
+//   },
+// };
+
+// export default nextConfig;
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'images.unsplash.com',
-        port: '',
+        hostname: 'qd9ngjg1-3001.inc1.devtunnels.ms',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
+      // Add any other image domains you use
     ],
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;

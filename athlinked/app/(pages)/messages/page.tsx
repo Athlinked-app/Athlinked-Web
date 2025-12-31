@@ -77,11 +77,11 @@ export default function MessagesPage() {
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -258,7 +258,7 @@ export default function MessagesPage() {
 
     try {
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/conversations?user_id=${currentUser.id}`
+        `http://localhost:3001/api/messages/conversations?user_id=${currentUser.id}`
       );
 
       if (!response.ok) {
@@ -280,7 +280,7 @@ export default function MessagesPage() {
 
     try {
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/${conversationId}?user_id=${currentUser.id}`
+        `http://localhost:3001/api/messages/${conversationId}?user_id=${currentUser.id}`
       );
 
       if (!response.ok) {
@@ -351,18 +351,15 @@ export default function MessagesPage() {
     if (!currentUser?.id) return;
 
     try {
-      await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/${conversationId}/read`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: currentUser.id,
-          }),
-        }
-      );
+      await fetch(`http://localhost:3001/api/messages/${conversationId}/read`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: currentUser.id,
+        }),
+      });
       fetchConversations();
     } catch (error) {
       console.error('Error marking messages as read:', error);
@@ -378,7 +375,7 @@ export default function MessagesPage() {
 
     try {
       const response = await fetch(
-        `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/search/users?q=${encodeURIComponent(query)}&user_id=${currentUser.id}`
+        `http://localhost:3001/api/messages/search/users?q=${encodeURIComponent(query)}&user_id=${currentUser.id}`
       );
 
       if (!response.ok) {
@@ -435,7 +432,7 @@ export default function MessagesPage() {
         return;
       }
       const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/messages/conversations/create',
+        'http://localhost:3001/api/messages/conversations/create',
         {
           method: 'POST',
           headers: {
@@ -962,7 +959,7 @@ export default function MessagesPage() {
                                             'http'
                                           )
                                             ? msg.post_data.user_profile_url
-                                            : `http://localhost:3001${msg.post_data.user_profile_url}`
+                                            : `https://qd9ngjg1-3001.inc1.devtunnels.ms${msg.post_data.user_profile_url}`
                                         }
                                         alt={msg.post_data.username || 'User'}
                                         className="w-full h-full object-cover"
@@ -984,7 +981,7 @@ export default function MessagesPage() {
                                     const mediaUrl =
                                       msg.post_data.media_url.startsWith('http')
                                         ? msg.post_data.media_url
-                                        : `http://localhost:3001${msg.post_data.media_url}`;
+                                        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${msg.post_data.media_url}`;
                                     const isVideo =
                                       msg.post_data.post_type === 'video' ||
                                       msg.post_data.media_url.match(
@@ -1076,7 +1073,7 @@ export default function MessagesPage() {
                                   'http'
                                 )
                                   ? msg.media_url
-                                  : `http://localhost:3001${msg.media_url}`;
+                                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${msg.media_url}`;
                                 const urlLower = msg.media_url.toLowerCase();
                                 const isImage =
                                   msg.message_type === 'image' ||
