@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import NavigationBar from '@/components/NavigationBar';
+import Header from '@/components/Header';
 import {
   Search,
   ChevronDown,
@@ -441,35 +442,19 @@ export default function StatsPage() {
   return (
     <div className="flex flex-col min-h-screen bg-gray-200">
       {/* Header - Full Width */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center w-full">
-        <div className="flex items-center">
-          <img src="/Frame 171.png" alt="ATHLINKED" className="h-8 w-auto" />
-        </div>
-        <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden flex items-center justify-center">
-          {getProfileUrl(userData?.profile_url) ? (
-            <img
-              src={getProfileUrl(userData?.profile_url) || ''}
-              alt="Profile"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className="text-black font-semibold text-xs">
-              {getInitials(userData?.full_name)}
-            </span>
-          )}
-        </div>
-      </header>
+      <Header
+        userName={userData?.full_name}
+        userProfileUrl={getProfileUrl(userData?.profile_url)}
+      />
 
       {/* Content Area with Navigation and Main Content */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Navigation Sidebar */}
-        <NavigationBar
-          activeItem="stats"
-          userName={userData?.full_name || ''}
-        />
+      <div className="flex flex-1 w-full mt-5 overflow-hidden px-3">
+      <div className="hidden md:flex px-6 ">
+          <NavigationBar activeItem="stats" />
+        </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col bg-white overflow-auto">
+        <div className="flex-1 flex flex-col bg-white overflow-auto rounded-lg">
           {/* Main Content */}
           <main className="flex-1 p-6 bg-white">
             {/* Athlete Profile Card */}

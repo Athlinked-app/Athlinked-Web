@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import NavigationBar from '@/components/NavigationBar';
 import Header from '@/components/Header';
 import FileUploadModal from '@/components/Clips/FileUploadModal';
@@ -85,6 +85,7 @@ export default function ClipsPage() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const playPromisesRef = useRef<{ [key: string]: Promise<void> | null }>({});
+  const commentsFetchedRef = useRef<Set<string>>(new Set());
 
   const [reels, setReels] = useState<Reel[]>([]);
   useEffect(() => {
@@ -805,6 +806,9 @@ export default function ClipsPage() {
 
         setReels(transformedClips);
 
+        // Clear comments fetched ref so comments are fetched for all clips
+        commentsFetchedRef.current.clear();
+
         if (transformedClips.length > 0 && !selectedReelId) {
           setSelectedReelId(transformedClips[0].id);
         }
@@ -1007,6 +1011,20 @@ export default function ClipsPage() {
       fetchClips();
     }
   }, [loading, userData]);
+
+  // Fetch comments for all clips after clips are loaded
+  useEffect(() => {
+    if (reels.length > 0 && userData) {
+      // Fetch comments for all clips that haven't been fetched yet
+      reels.forEach(reel => {
+        if (!commentsFetchedRef.current.has(reel.id)) {
+          commentsFetchedRef.current.add(reel.id);
+          fetchComments(reel.id);
+        }
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reels.length, userData]); // Only depend on length to avoid re-fetching when comments update
 
   // Try to enable audio automatically on page load using multiple strategies
   useEffect(() => {
