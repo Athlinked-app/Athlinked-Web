@@ -40,10 +40,12 @@ export default function CompetitionAndClub({
 
   const fetchCompetitionClubs = async () => {
     if (!userId) return;
-    
+
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/profile/${userId}/competition-clubs`);
+      const response = await fetch(
+        `http://localhost:3001/api/profile/${userId}/competition-clubs`
+      );
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
@@ -77,13 +79,16 @@ export default function CompetitionAndClub({
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/api/profile/competition-clubs/${existingClub.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newClub),
-        });
+        const response = await fetch(
+          `http://localhost:3001/api/profile/competition-clubs/${existingClub.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newClub),
+          }
+        );
 
         if (response.ok) {
           const result = await response.json();
@@ -98,7 +103,9 @@ export default function CompetitionAndClub({
           }
         } else {
           const errorData = await response.json();
-          alert(`Failed to update competition club: ${errorData.message || 'Unknown error'}`);
+          alert(
+            `Failed to update competition club: ${errorData.message || 'Unknown error'}`
+          );
         }
       } catch (error) {
         console.error('Error updating competition club:', error);
@@ -117,13 +124,16 @@ export default function CompetitionAndClub({
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/api/profile/${userId}/competition-clubs`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newClub),
-        });
+        const response = await fetch(
+          `http://localhost:3001/api/profile/${userId}/competition-clubs`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newClub),
+          }
+        );
 
         if (response.ok) {
           const result = await response.json();
@@ -136,7 +146,9 @@ export default function CompetitionAndClub({
           }
         } else {
           const errorData = await response.json();
-          alert(`Failed to save competition club: ${errorData.message || 'Unknown error'}`);
+          alert(
+            `Failed to save competition club: ${errorData.message || 'Unknown error'}`
+          );
         }
       } catch (error) {
         console.error('Error saving competition club:', error);
@@ -167,9 +179,12 @@ export default function CompetitionAndClub({
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/profile/competition-clubs/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/profile/competition-clubs/${id}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (response.ok) {
         const updatedClubs = clubsList.filter((_, i) => i !== index);
@@ -179,7 +194,9 @@ export default function CompetitionAndClub({
         }
       } else {
         const errorData = await response.json();
-        alert(`Failed to delete competition club: ${errorData.message || 'Unknown error'}`);
+        alert(
+          `Failed to delete competition club: ${errorData.message || 'Unknown error'}`
+        );
       }
     } catch (error) {
       console.error('Error deleting competition club:', error);

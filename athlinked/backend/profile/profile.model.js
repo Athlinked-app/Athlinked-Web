@@ -1,7 +1,7 @@
 const pool = require('../config/db');
 
 async function getUserProfile(userId) {
-    const query = `
+  const query = `
     SELECT 
       u.id as user_id,
       u.full_name,

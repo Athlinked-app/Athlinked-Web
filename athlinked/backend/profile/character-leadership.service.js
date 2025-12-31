@@ -13,9 +13,11 @@ function transformToFrontendFormat(row) {
     id: row.id,
     teamCaptain: row.team_captain,
     leadershipRoles: row.leadership_roles,
-    languagesSpoken: Array.isArray(row.languages_spoken) 
-      ? row.languages_spoken 
-      : (row.languages_spoken ? [row.languages_spoken] : []),
+    languagesSpoken: Array.isArray(row.languages_spoken)
+      ? row.languages_spoken
+      : row.languages_spoken
+        ? [row.languages_spoken]
+        : [],
     communityService: row.community_service,
   };
 }
@@ -106,4 +108,3 @@ module.exports = {
   updateCharacterLeadershipService,
   deleteCharacterLeadershipService,
 };
-

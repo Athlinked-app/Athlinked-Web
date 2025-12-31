@@ -35,34 +35,34 @@ export default function Posts({
       return false;
     }
     // Only show photo, video, or text posts (not articles or events)
-    return post.post_type === 'photo' || post.post_type === 'video' || post.post_type === 'text';
+    return (
+      post.post_type === 'photo' ||
+      post.post_type === 'video' ||
+      post.post_type === 'text'
+    );
   });
 
   // Get thumbnail URL for a post with proper URL formatting
   const getThumbnailUrl = (post: PostData): string | null => {
     const mediaUrl = post.media_url || post.image_url;
     if (!mediaUrl) return null;
-    
+
     // If URL already starts with http, return as is
     if (mediaUrl.startsWith('http')) return mediaUrl;
-    
+
     // Otherwise, prepend the base URL
     return `http://localhost:3001${mediaUrl}`;
   };
 
   if (loading) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        Loading posts...
-      </div>
+      <div className="text-center py-8 text-gray-500">Loading posts...</div>
     );
   }
 
   if (filteredPosts.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        No posts found.
-      </div>
+      <div className="text-center py-8 text-gray-500">No posts found.</div>
     );
   }
 
@@ -73,7 +73,7 @@ export default function Posts({
         {filteredPosts.map(post => {
           const thumbnailUrl = getThumbnailUrl(post);
           const isVideo = post.post_type === 'video';
-          
+
           return (
             <div
               key={post.id}
@@ -91,7 +91,10 @@ export default function Posts({
                         playsInline
                       />
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
-                        <Play className="w-12 h-12 text-white opacity-80" fill="white" />
+                        <Play
+                          className="w-12 h-12 text-white opacity-80"
+                          fill="white"
+                        />
                       </div>
                     </div>
                   ) : (
@@ -106,7 +109,9 @@ export default function Posts({
                 </>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200 text-gray-400 p-2">
-                  <span className="text-xs text-center line-clamp-3">{post.caption || 'Text post'}</span>
+                  <span className="text-xs text-center line-clamp-3">
+                    {post.caption || 'Text post'}
+                  </span>
                 </div>
               )}
             </div>
@@ -150,4 +155,3 @@ export default function Posts({
     </>
   );
 }
-

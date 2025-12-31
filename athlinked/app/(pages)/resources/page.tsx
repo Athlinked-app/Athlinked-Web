@@ -334,20 +334,17 @@ export default function ManageResourcesPage() {
     try {
       const { title } = await scrapeArticleMetadata(articleUrl);
 
-      const response = await fetch(
-        'http://localhost:3001/api/articles',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: currentUserId,
-            title: title,
-            article_link: articleUrl,
-          }),
-        }
-      );
+      const response = await fetch('http://localhost:3001/api/articles', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          user_id: currentUserId,
+          title: title,
+          article_link: articleUrl,
+        }),
+      });
 
       // Check if response is JSON
       const contentType = response.headers.get('content-type');

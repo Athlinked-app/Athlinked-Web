@@ -3,6 +3,7 @@ const { hashPassword } = require('../utils/hash');
 const { startOTPFlow, verifyOTP } = require('./otp.service');
 const { sendOTPEmail, sendParentSignupLink } = require('../utils/email');
 const profileModel = require('../profile/profile.model');
+const refreshTokensService = require('../auth/refresh-tokens.service');
 
 /**
  * Check if string is an email
@@ -68,9 +69,6 @@ async function startSignupService(userData) {
 
     const otp = startOTPFlow(otpData);
 
-    console.log(
-      `🔐 OTP generated for ${emailToSendOTP} (NOT returned in response)`
-    );
     await sendOTPEmail(emailToSendOTP, otp);
 
     if (parentEmail) {
@@ -84,15 +82,11 @@ async function startSignupService(userData) {
       );
       try {
         await sendParentSignupLink(parentEmail, username || input, signupLink);
-        console.log(
-          `✅ Parent signup link sent successfully to ${parentEmail}`
-        );
       } catch (error) {
         console.error('❌ Error: Failed to send parent signup link:', error);
         console.error('Error details:', error.message, error.stack);
       }
     } else {
-      console.log(`⚠️ Parent signup link not sent - parentEmail not provided`);
     }
 
     return {
@@ -137,10 +131,6 @@ async function verifyOtpService(email, otp) {
 
     const createdUser = await signupModel.createUser(userDataToCreate);
 
-    console.log(
-      `✅ User created successfully: ${createdUser.email || createdUser.username}`
-    );
-
     const completeUser = createdUser.email
       ? await signupModel.findByEmail(createdUser.email)
       : createdUser.username
@@ -167,9 +157,6 @@ async function verifyOtpService(email, otp) {
       });
 
       const sportsString = uniqueSportsArray.join(', ');
-      console.log(
-        `✅ Profile created for user ${createdUser.id} with sports: ${sportsString}`
-      );
     } catch (profileError) {
       console.error(
         '⚠️ Error creating profile during signup:',
@@ -178,17 +165,25 @@ async function verifyOtpService(email, otp) {
       // Don't fail signup if profile creation fails
     }
 
+    const userData = {
+      id: createdUser.id,
+      email: createdUser.email || null,
+      username: createdUser.username || null,
+      full_name: createdUser.full_name,
+      user_type: createdUser.user_type,
+      primary_sport: completeUser?.primary_sport || null,
+    };
+
+    // Generate access and refresh tokens
+    const { accessToken, refreshToken } =
+      await refreshTokensService.createTokenPair(userData);
+
     return {
       success: true,
       message: 'Welcome',
-      user: {
-        id: createdUser.id,
-        email: createdUser.email || null,
-        username: createdUser.username || null,
-        full_name: createdUser.full_name,
-        user_type: createdUser.user_type,
-        primary_sport: completeUser?.primary_sport || null,
-      },
+      accessToken,
+      refreshToken,
+      user: userData,
     };
   } catch (error) {
     console.error('Verify OTP service error:', error.message);
@@ -257,17 +252,22 @@ async function parentCompleteService(username, email, password) {
       parent_dob: null,
     });
 
-    console.log(`✅ Parent account created successfully for ${parentEmail}`);
+    const userData = {
+      id: newParentUser.id,
+      email: newParentUser.email,
+      full_name: newParentUser.full_name,
+      user_type: newParentUser.user_type,
+    };
+
+    // Generate JWT token
+    const { generateToken } = require('../utils/jwt');
+    const token = generateToken(userData);
 
     return {
       success: true,
       message: 'Parent account created successfully',
-      user: {
-        id: newParentUser.id,
-        email: newParentUser.email,
-        full_name: newParentUser.full_name,
-        user_type: newParentUser.user_type,
-      },
+      token,
+      user: userData,
     };
   } catch (error) {
     console.error('Parent complete service error:', error.message);

@@ -130,8 +130,13 @@ export default function NavigationBar({
           ? `http://localhost:3001${rawProfileUrl}`
           : rawProfileUrl
       : null;
-    
-  const userRole = propUserRole || (userData?.user_type ? userData.user_type.charAt(0).toUpperCase() + userData.user_type.slice(1).toLowerCase() : 'Athlete');
+
+  const userRole =
+    propUserRole ||
+    (userData?.user_type
+      ? userData.user_type.charAt(0).toUpperCase() +
+        userData.user_type.slice(1).toLowerCase()
+      : 'Athlete');
   const displayName = userName || 'User';
 
   const getInitials = (name: string) => {

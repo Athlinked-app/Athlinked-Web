@@ -41,10 +41,12 @@ export default function HealthAndReadinessComponent({
 
   const fetchHealthReadiness = async () => {
     if (!userId) return;
-    
+
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/profile/${userId}/health-readiness`);
+      const response = await fetch(
+        `http://localhost:3001/api/profile/${userId}/health-readiness`
+      );
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
@@ -78,13 +80,16 @@ export default function HealthAndReadinessComponent({
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/api/profile/health-readiness/${existingData.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newData),
-        });
+        const response = await fetch(
+          `http://localhost:3001/api/profile/health-readiness/${existingData.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newData),
+          }
+        );
 
         if (response.ok) {
           const result = await response.json();
@@ -99,7 +104,9 @@ export default function HealthAndReadinessComponent({
           }
         } else {
           const errorData = await response.json();
-          alert(`Failed to update health and readiness: ${errorData.message || 'Unknown error'}`);
+          alert(
+            `Failed to update health and readiness: ${errorData.message || 'Unknown error'}`
+          );
         }
       } catch (error) {
         console.error('Error updating health and readiness:', error);
@@ -118,13 +125,16 @@ export default function HealthAndReadinessComponent({
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/api/profile/${userId}/health-readiness`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newData),
-        });
+        const response = await fetch(
+          `http://localhost:3001/api/profile/${userId}/health-readiness`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newData),
+          }
+        );
 
         if (response.ok) {
           const result = await response.json();
@@ -137,7 +147,9 @@ export default function HealthAndReadinessComponent({
           }
         } else {
           const errorData = await response.json();
-          alert(`Failed to save health and readiness: ${errorData.message || 'Unknown error'}`);
+          alert(
+            `Failed to save health and readiness: ${errorData.message || 'Unknown error'}`
+          );
         }
       } catch (error) {
         console.error('Error saving health and readiness:', error);
@@ -168,19 +180,26 @@ export default function HealthAndReadinessComponent({
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/profile/health-readiness/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/profile/health-readiness/${id}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (response.ok) {
-        const updatedList = healthAndReadinessList.filter((_, i) => i !== index);
+        const updatedList = healthAndReadinessList.filter(
+          (_, i) => i !== index
+        );
         setHealthAndReadinessList(updatedList);
         if (onHealthAndReadinessChange) {
           onHealthAndReadinessChange(updatedList);
         }
       } else {
         const errorData = await response.json();
-        alert(`Failed to delete health and readiness: ${errorData.message || 'Unknown error'}`);
+        alert(
+          `Failed to delete health and readiness: ${errorData.message || 'Unknown error'}`
+        );
       }
     } catch (error) {
       console.error('Error deleting health and readiness:', error);

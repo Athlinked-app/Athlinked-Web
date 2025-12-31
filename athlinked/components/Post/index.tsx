@@ -446,13 +446,14 @@ export default function Post({
                   src={profileUrl}
                   alt={post.username}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
+                  onError={e => {
                     const target = e.currentTarget;
                     target.style.display = 'none';
                     const parent = target.parentElement;
                     if (parent && !parent.querySelector('span')) {
                       const fallback = document.createElement('span');
-                      fallback.className = 'text-gray-600 font-semibold text-xs';
+                      fallback.className =
+                        'text-gray-600 font-semibold text-xs';
                       fallback.textContent = getInitials(post.username);
                       parent.appendChild(fallback);
                     }
@@ -826,13 +827,14 @@ export default function Post({
                         src={profileUrl}
                         alt={post.username}
                         className="w-full h-full object-cover"
-                        onError={(e) => {
+                        onError={e => {
                           const target = e.currentTarget;
                           target.style.display = 'none';
                           const parent = target.parentElement;
                           if (parent && !parent.querySelector('span')) {
                             const fallback = document.createElement('span');
-                            fallback.className = 'text-gray-600 font-semibold text-sm';
+                            fallback.className =
+                              'text-gray-600 font-semibold text-sm';
                             fallback.textContent = getInitials(post.username);
                             parent.appendChild(fallback);
                           }

@@ -43,24 +43,26 @@ export default function MySaveArticle({
           if (response.ok) {
             const data = await response.json();
             if (data.success && data.posts) {
-              const transformedPosts: PostData[] = data.posts.map((post: any) => ({
-                id: post.id,
-                username: post.username || 'User',
-                user_profile_url: post.user_profile_url || null,
-                user_id: post.user_id,
-                post_type: post.post_type,
-                caption: post.caption,
-                media_url: post.media_url,
-                article_title: post.article_title,
-                article_body: post.article_body,
-                event_title: post.event_title,
-                event_date: post.event_date,
-                event_location: post.event_location,
-                like_count: post.like_count || 0,
-                comment_count: post.comment_count || 0,
-                save_count: post.save_count || 0,
-                created_at: post.created_at,
-              }));
+              const transformedPosts: PostData[] = data.posts.map(
+                (post: any) => ({
+                  id: post.id,
+                  username: post.username || 'User',
+                  user_profile_url: post.user_profile_url || null,
+                  user_id: post.user_id,
+                  post_type: post.post_type,
+                  caption: post.caption,
+                  media_url: post.media_url,
+                  article_title: post.article_title,
+                  article_body: post.article_body,
+                  event_title: post.event_title,
+                  event_date: post.event_date,
+                  event_location: post.event_location,
+                  like_count: post.like_count || 0,
+                  comment_count: post.comment_count || 0,
+                  save_count: post.save_count || 0,
+                  created_at: post.created_at,
+                })
+              );
               setSavedPosts(transformedPosts);
             }
           }
@@ -86,7 +88,7 @@ export default function MySaveArticle({
 
   // Determine which posts to show
   let filteredArticles: PostData[] = [];
-  
+
   if (viewedUserId && viewedUserId !== currentUserId) {
     // Show saved articles from backend for other users
     filteredArticles = savedPosts.filter(post => post.post_type === 'article');
@@ -105,10 +107,10 @@ export default function MySaveArticle({
   const getThumbnailUrl = (post: PostData): string | null => {
     const mediaUrl = post.media_url || post.image_url;
     if (!mediaUrl) return null;
-    
+
     // If URL already starts with http, return as is
     if (mediaUrl.startsWith('http')) return mediaUrl;
-    
+
     // Otherwise, prepend the base URL
     return `http://localhost:3001${mediaUrl}`;
   };
@@ -135,7 +137,7 @@ export default function MySaveArticle({
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {filteredArticles.map(article => {
           const thumbnailUrl = getThumbnailUrl(article);
-          
+
           return (
             <div
               key={article.id}
@@ -153,7 +155,9 @@ export default function MySaveArticle({
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200 text-gray-400 p-2">
                   <FileText className="w-12 h-12 mb-2 opacity-50" />
-                  <span className="text-xs text-center line-clamp-3">{article.article_title || 'Article'}</span>
+                  <span className="text-xs text-center line-clamp-3">
+                    {article.article_title || 'Article'}
+                  </span>
                 </div>
               )}
             </div>
@@ -170,7 +174,9 @@ export default function MySaveArticle({
           />
           <div className="relative z-10 w-full max-w-4xl bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Saved Article Details</h2>
+              <h2 className="text-xl font-bold text-gray-900">
+                Saved Article Details
+              </h2>
               <button
                 onClick={() => setSelectedArticle(null)}
                 className="p-2 rounded-full hover:bg-gray-100 transition-colors"

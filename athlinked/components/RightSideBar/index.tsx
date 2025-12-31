@@ -279,7 +279,9 @@ export default function RightSideBar() {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-500 mb-0.5">{person.role}</p>
+                    <p className="text-xs text-gray-500 mb-0.5">
+                      {person.role}
+                    </p>
                     <p className="text-sm font-semibold text-gray-900 truncate">
                       {person.name}
                     </p>
@@ -288,7 +290,7 @@ export default function RightSideBar() {
 
                 {/* Follow Button */}
                 <button
-                  onClick={(e) => {
+                  onClick={e => {
                     e.stopPropagation();
                     handleFollow(person.id, person.isFollowing);
                   }}

@@ -16,7 +16,7 @@ async function login(req, res) {
       });
     }
 
-    const result = await loginService.loginService(email, password);
+    const result = await loginService.loginService(email, password, req);
 
     return res.status(200).json(result);
   } catch (error) {

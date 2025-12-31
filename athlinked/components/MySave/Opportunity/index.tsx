@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { X, Briefcase, GraduationCap, Trophy, Bookmark, Share2 } from 'lucide-react';
+import {
+  X,
+  Briefcase,
+  GraduationCap,
+  Trophy,
+  Bookmark,
+  Share2,
+} from 'lucide-react';
 import SaveModal from '@/components/Save/SaveModal';
 
 interface OpportunityItem {
@@ -43,8 +50,11 @@ export default function MySaveOpportunity({
   onCommentCountUpdate,
   onPostDeleted,
 }: MySaveOpportunityProps) {
-  const [selectedOpportunity, setSelectedOpportunity] = useState<OpportunityItem | null>(null);
-  const [savedOpportunities, setSavedOpportunities] = useState<OpportunityItem[]>([]);
+  const [selectedOpportunity, setSelectedOpportunity] =
+    useState<OpportunityItem | null>(null);
+  const [savedOpportunities, setSavedOpportunities] = useState<
+    OpportunityItem[]
+  >([]);
   const [savedOpportunitiesStatus, setSavedOpportunitiesStatus] = useState<{
     [key: string]: boolean;
   }>({});
@@ -61,7 +71,7 @@ export default function MySaveOpportunity({
       localStorage.getItem('athlinked_saved_opportunities_data') || '[]'
     );
     setSavedOpportunities(savedOpportunitiesData);
-    
+
     // Check saved status
     const savedOpportunityIds = JSON.parse(
       localStorage.getItem('athlinked_saved_opportunities') || '[]'
@@ -120,13 +130,19 @@ export default function MySaveOpportunity({
       setSaveAlertMessage('This opportunity is unsaved');
     } else {
       // Save - store the full opportunity object
-      const opportunity = savedOpportunities.find(opp => opp.id === opportunityId);
+      const opportunity = savedOpportunities.find(
+        opp => opp.id === opportunityId
+      );
       if (opportunity) {
         const savedOpportunitiesData = JSON.parse(
           localStorage.getItem('athlinked_saved_opportunities_data') || '[]'
         );
         // Check if already exists to avoid duplicates
-        if (!savedOpportunitiesData.find((opp: OpportunityItem) => opp.id === opportunityId)) {
+        if (
+          !savedOpportunitiesData.find(
+            (opp: OpportunityItem) => opp.id === opportunityId
+          )
+        ) {
           savedOpportunitiesData.push(opportunity);
           localStorage.setItem(
             'athlinked_saved_opportunities_data',
@@ -159,8 +175,17 @@ export default function MySaveOpportunity({
   };
 
   const handleShareOpportunity = () => {
-    // TODO: Implement share functionality
-    console.log('Share opportunity:', selectedOpportunity);
+    if (navigator.share && selectedOpportunity) {
+      navigator
+        .share({
+          title: selectedOpportunity.title,
+          text: selectedOpportunity.title,
+          url: window.location.href,
+        })
+        .catch(() => {
+          // Share failed or was cancelled
+        });
+    }
   };
 
   if (loading) {
@@ -221,7 +246,9 @@ export default function MySaveOpportunity({
           />
           <div className="relative z-10 w-full max-w-2xl bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Saved Opportunity Details</h2>
+              <h2 className="text-xl font-bold text-gray-900">
+                Saved Opportunity Details
+              </h2>
               <button
                 onClick={() => setSelectedOpportunity(null)}
                 className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -240,7 +267,9 @@ export default function MySaveOpportunity({
                   />
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">{selectedOpportunity.category}</p>
+                  <p className="text-xs text-gray-500">
+                    {selectedOpportunity.category}
+                  </p>
                   <h3 className="text-base font-semibold text-gray-900">
                     {selectedOpportunity.title}
                   </h3>
@@ -262,20 +291,23 @@ export default function MySaveOpportunity({
                     }
                   }}
                   className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
-                    selectedOpportunity && savedOpportunitiesStatus[selectedOpportunity.id]
+                    selectedOpportunity &&
+                    savedOpportunitiesStatus[selectedOpportunity.id]
                       ? 'bg-[#CB9729] text-white border-[#CB9729]'
                       : 'border-gray-300 hover:bg-gray-50'
                   }`}
                 >
                   <Bookmark
                     className={`w-4 h-4 ${
-                      selectedOpportunity && savedOpportunitiesStatus[selectedOpportunity.id]
+                      selectedOpportunity &&
+                      savedOpportunitiesStatus[selectedOpportunity.id]
                         ? 'fill-current'
                         : ''
                     }`}
                   />
                   <span className="font-medium">
-                    {selectedOpportunity && savedOpportunitiesStatus[selectedOpportunity.id]
+                    {selectedOpportunity &&
+                    savedOpportunitiesStatus[selectedOpportunity.id]
                       ? 'Saved'
                       : 'Save'}
                   </span>
@@ -289,7 +321,9 @@ export default function MySaveOpportunity({
                     <h3 className="font-semibold text-gray-900 mb-2">
                       Eligibility:
                     </h3>
-                    <p className="text-sm text-gray-600">{selectedOpportunity.eligibility}</p>
+                    <p className="text-sm text-gray-600">
+                      {selectedOpportunity.eligibility}
+                    </p>
                   </div>
                 )}
 
@@ -299,10 +333,14 @@ export default function MySaveOpportunity({
                       Date & Venue:
                     </h3>
                     {selectedOpportunity.dates && (
-                      <p className="text-sm text-gray-600">{selectedOpportunity.dates}</p>
+                      <p className="text-sm text-gray-600">
+                        {selectedOpportunity.dates}
+                      </p>
                     )}
                     {selectedOpportunity.venue && (
-                      <p className="text-sm text-gray-600">{selectedOpportunity.venue}</p>
+                      <p className="text-sm text-gray-600">
+                        {selectedOpportunity.venue}
+                      </p>
                     )}
                   </div>
                 )}
@@ -312,14 +350,20 @@ export default function MySaveOpportunity({
                     <h3 className="font-semibold text-gray-900 mb-2">
                       Must Represent:
                     </h3>
-                    <p className="text-sm text-gray-600">{selectedOpportunity.mustRepresent}</p>
+                    <p className="text-sm text-gray-600">
+                      {selectedOpportunity.mustRepresent}
+                    </p>
                   </div>
                 )}
 
                 {selectedOpportunity.format && (
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-2">Format:</h3>
-                    <p className="text-sm text-gray-600">{selectedOpportunity.format}</p>
+                    <h3 className="font-semibold text-gray-900 mb-2">
+                      Format:
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {selectedOpportunity.format}
+                    </p>
                   </div>
                 )}
 
@@ -339,7 +383,9 @@ export default function MySaveOpportunity({
                     <h3 className="font-semibold text-gray-900 mb-2">
                       Membership Fee:
                     </h3>
-                    <p className="text-sm text-gray-600">{selectedOpportunity.membershipFee}</p>
+                    <p className="text-sm text-gray-600">
+                      {selectedOpportunity.membershipFee}
+                    </p>
                   </div>
                 )}
 
@@ -371,4 +417,3 @@ export default function MySaveOpportunity({
     </>
   );
 }
-

@@ -41,27 +41,23 @@ export default function Article({
   const getThumbnailUrl = (post: PostData): string | null => {
     const mediaUrl = post.media_url || post.image_url;
     if (!mediaUrl) return null;
-    
+
     // If URL already starts with http, return as is
     if (mediaUrl.startsWith('http')) return mediaUrl;
-    
+
     // Otherwise, prepend the base URL
     return `http://localhost:3001${mediaUrl}`;
   };
 
   if (loading) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        Loading articles...
-      </div>
+      <div className="text-center py-8 text-gray-500">Loading articles...</div>
     );
   }
 
   if (filteredArticles.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        No articles found.
-      </div>
+      <div className="text-center py-8 text-gray-500">No articles found.</div>
     );
   }
 
@@ -71,7 +67,7 @@ export default function Article({
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {filteredArticles.map(article => {
           const thumbnailUrl = getThumbnailUrl(article);
-          
+
           return (
             <div
               key={article.id}
@@ -93,14 +89,18 @@ export default function Article({
                   {/* Title overlay at bottom */}
                   {article.article_title && (
                     <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3">
-                      <p className="text-white font-bold text-sm line-clamp-2">{article.article_title}</p>
+                      <p className="text-white font-bold text-sm line-clamp-2">
+                        {article.article_title}
+                      </p>
                     </div>
                   )}
                 </div>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200 text-gray-900 p-2">
                   <FileText className="w-12 h-12 mb-2 text-gray-400" />
-                  <span className="text-sm text-center line-clamp-3 font-bold">{article.article_title || 'Article'}</span>
+                  <span className="text-sm text-center line-clamp-3 font-bold">
+                    {article.article_title || 'Article'}
+                  </span>
                 </div>
               )}
             </div>
@@ -117,7 +117,9 @@ export default function Article({
           />
           <div className="relative z-10 w-full max-w-4xl bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Article Details</h2>
+              <h2 className="text-xl font-bold text-gray-900">
+                Article Details
+              </h2>
               <button
                 onClick={() => setSelectedArticle(null)}
                 className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -144,4 +146,3 @@ export default function Article({
     </>
   );
 }
-

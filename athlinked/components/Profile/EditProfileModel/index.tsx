@@ -41,7 +41,8 @@ interface EditProfileModalProps {
     background_image_url?: string | null;
     bio?: string;
     education?: string;
- city?: string;  };
+    city?: string;
+  };
   onSave?: (data: {
     full_name?: string;
     username?: string;
@@ -183,7 +184,12 @@ export default function EditProfileModal({
         }
 
         // Also fetch profile data if we have user ID (only for own profile)
-        if (data.success && data.user && data.user.id && (!viewedUserId || viewedUserId === currentUserId)) {
+        if (
+          data.success &&
+          data.user &&
+          data.user.id &&
+          (!viewedUserId || viewedUserId === currentUserId)
+        ) {
           try {
             const profileResponse = await fetch(
               `http://localhost:3001/api/profile/${data.user.id}`
@@ -235,7 +241,8 @@ export default function EditProfileModal({
     if (userData) {
       // When viewing another user, always use userData prop
       // When viewing own profile, userData prop should also take priority
-      if (userData.full_name !== undefined) setFullName(userData.full_name || '');
+      if (userData.full_name !== undefined)
+        setFullName(userData.full_name || '');
       if (userData.username !== undefined) setUsername(userData.username || '');
       // Prioritize city over location if both are provided
       if (userData.city !== undefined) {
@@ -248,24 +255,26 @@ export default function EditProfileModal({
       if (userData.sports_played !== undefined) {
         setSportsPlayed(userData.sports_played || '');
       }
-      if (userData.primary_sport !== undefined) setPrimarySport(userData.primary_sport || '');
+      if (userData.primary_sport !== undefined)
+        setPrimarySport(userData.primary_sport || '');
       if (userData.bio !== undefined) setBio(userData.bio || '');
-      if (userData.education !== undefined) setEducation(userData.education || '');
+      if (userData.education !== undefined)
+        setEducation(userData.education || '');
       // Profile image - prioritize userData prop, especially when viewing another user
       if (userData.profile_url !== undefined) {
         const profileUrl = userData.profile_url
-          ? (userData.profile_url.startsWith('http')
-              ? userData.profile_url
-              : `http://localhost:3001${userData.profile_url}`)
+          ? userData.profile_url.startsWith('http')
+            ? userData.profile_url
+            : `http://localhost:3001${userData.profile_url}`
           : null;
         setProfileImagePreview(profileUrl);
       }
       // Background image - prioritize userData prop, especially when viewing another user
       if (userData.background_image_url !== undefined) {
         const bgUrl = userData.background_image_url
-          ? (userData.background_image_url.startsWith('http')
-              ? userData.background_image_url
-              : `http://localhost:3001${userData.background_image_url}`)
+          ? userData.background_image_url.startsWith('http')
+            ? userData.background_image_url
+            : `http://localhost:3001${userData.background_image_url}`
           : null;
         setBackgroundImagePreview(bgUrl);
       }
@@ -572,7 +581,8 @@ export default function EditProfileModal({
                 {/* Show Edit Profile button only if viewing own profile */}
                 {(() => {
                   // Determine if viewing own profile
-                  const isOwnProfile = !viewedUserId || 
+                  const isOwnProfile =
+                    !viewedUserId ||
                     (currentUserId && viewedUserId === currentUserId) ||
                     (!viewedUserId && !currentUserId); // If no viewedUserId, assume own profile
                   return isOwnProfile;
@@ -588,22 +598,25 @@ export default function EditProfileModal({
                   <>
                     <button
                       onClick={() => {
-                        if (onSendConnectionRequest && connectionRequestStatus?.status !== 'connected') {
+                        if (
+                          onSendConnectionRequest &&
+                          connectionRequestStatus?.status !== 'connected'
+                        ) {
                           onSendConnectionRequest();
                         }
                       }}
                       disabled={
                         (connectionRequestStatus?.exists &&
-                        connectionRequestStatus?.status === 'pending') ||
+                          connectionRequestStatus?.status === 'pending') ||
                         connectionRequestStatus?.status === 'connected'
                       }
                       className={`px-6 py-4 rounded-lg transition-colors flex items-center gap-2 ${
                         connectionRequestStatus?.status === 'connected'
                           ? 'bg-green-600 text-white cursor-default'
                           : connectionRequestStatus?.exists &&
-                            connectionRequestStatus?.status === 'pending'
-                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                          : 'bg-[#CB9729] text-white hover:bg-[#b78322]'
+                              connectionRequestStatus?.status === 'pending'
+                            ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                            : 'bg-[#CB9729] text-white hover:bg-[#b78322]'
                       }`}
                     >
                       <UserPlus className="w-4 h-4" />
@@ -611,15 +624,13 @@ export default function EditProfileModal({
                         {connectionRequestStatus?.status === 'connected'
                           ? 'Connected'
                           : connectionRequestStatus?.exists &&
-                            connectionRequestStatus?.status === 'pending'
-                          ? 'Pending'
-                          : 'Connect'}
+                              connectionRequestStatus?.status === 'pending'
+                            ? 'Pending'
+                            : 'Connect'}
                       </span>
                     </button>
                     <button
                       onClick={() => {
-                        // TODO: Implement message functionality
-                        console.log('Message clicked for user:', viewedUserId);
                         router.push(`/messages?userId=${viewedUserId}`);
                       }}
                       className="px-6 py-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"

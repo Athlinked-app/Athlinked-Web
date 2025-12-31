@@ -41,10 +41,12 @@ export default function AcademicBackgrounds({
 
   const fetchAcademicBackgrounds = async () => {
     if (!userId) return;
-    
+
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/profile/${userId}/academic-backgrounds`);
+      const response = await fetch(
+        `http://localhost:3001/api/profile/${userId}/academic-backgrounds`
+      );
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
@@ -78,13 +80,16 @@ export default function AcademicBackgrounds({
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/api/profile/academic-backgrounds/${existingBg.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newBackground),
-        });
+        const response = await fetch(
+          `http://localhost:3001/api/profile/academic-backgrounds/${existingBg.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newBackground),
+          }
+        );
 
         if (response.ok) {
           const result = await response.json();
@@ -99,7 +104,9 @@ export default function AcademicBackgrounds({
           }
         } else {
           const errorData = await response.json();
-          alert(`Failed to update academic background: ${errorData.message || 'Unknown error'}`);
+          alert(
+            `Failed to update academic background: ${errorData.message || 'Unknown error'}`
+          );
         }
       } catch (error) {
         console.error('Error updating academic background:', error);
@@ -118,13 +125,16 @@ export default function AcademicBackgrounds({
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/api/profile/${userId}/academic-backgrounds`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newBackground),
-        });
+        const response = await fetch(
+          `http://localhost:3001/api/profile/${userId}/academic-backgrounds`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newBackground),
+          }
+        );
 
         if (response.ok) {
           const result = await response.json();
@@ -137,7 +147,9 @@ export default function AcademicBackgrounds({
           }
         } else {
           const errorData = await response.json();
-          alert(`Failed to save academic background: ${errorData.message || 'Unknown error'}`);
+          alert(
+            `Failed to save academic background: ${errorData.message || 'Unknown error'}`
+          );
         }
       } catch (error) {
         console.error('Error saving academic background:', error);
@@ -170,9 +182,12 @@ export default function AcademicBackgrounds({
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/profile/academic-backgrounds/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/profile/academic-backgrounds/${id}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (response.ok) {
         const updatedBackgrounds = academicBackgrounds.filter(
@@ -184,7 +199,9 @@ export default function AcademicBackgrounds({
         }
       } else {
         const errorData = await response.json();
-        alert(`Failed to delete academic background: ${errorData.message || 'Unknown error'}`);
+        alert(
+          `Failed to delete academic background: ${errorData.message || 'Unknown error'}`
+        );
       }
     } catch (error) {
       console.error('Error deleting academic background:', error);

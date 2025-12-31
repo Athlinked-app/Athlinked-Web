@@ -33,13 +33,13 @@ export default function Favorite({
       ) : favouritedUsers.length === 0 ? (
         <div className="flex items-center justify-center py-12">
           <p className="text-gray-600">
-            No favourite profiles yet. Click the Favourite button on a profile to
-            add them here.
+            No favourite profiles yet. Click the Favourite button on a profile
+            to add them here.
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {favouritedUsers.map((user) => (
+          {favouritedUsers.map(user => (
             <div
               key={user.id}
               onClick={() => {
@@ -88,4 +88,3 @@ export default function Favorite({
     </div>
   );
 }
-

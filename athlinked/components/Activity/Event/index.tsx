@@ -41,27 +41,23 @@ export default function Event({
   const getThumbnailUrl = (post: PostData): string | null => {
     const mediaUrl = post.media_url || post.image_url;
     if (!mediaUrl) return null;
-    
+
     // If URL already starts with http, return as is
     if (mediaUrl.startsWith('http')) return mediaUrl;
-    
+
     // Otherwise, prepend the base URL
     return `http://localhost:3001${mediaUrl}`;
   };
 
   if (loading) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        Loading events...
-      </div>
+      <div className="text-center py-8 text-gray-500">Loading events...</div>
     );
   }
 
   if (filteredEvents.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        No events found.
-      </div>
+      <div className="text-center py-8 text-gray-500">No events found.</div>
     );
   }
 
@@ -71,7 +67,7 @@ export default function Event({
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {filteredEvents.map(event => {
           const thumbnailUrl = getThumbnailUrl(event);
-          
+
           return (
             <div
               key={event.id}
@@ -94,7 +90,9 @@ export default function Event({
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200 text-gray-400 p-2">
                   <Calendar className="w-12 h-12 mb-2" />
-                  <span className="text-xs text-center line-clamp-3">{event.event_title || 'Event'}</span>
+                  <span className="text-xs text-center line-clamp-3">
+                    {event.event_title || 'Event'}
+                  </span>
                 </div>
               )}
             </div>
@@ -138,4 +136,3 @@ export default function Event({
     </>
   );
 }
-

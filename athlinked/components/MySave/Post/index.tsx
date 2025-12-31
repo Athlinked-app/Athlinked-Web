@@ -43,24 +43,26 @@ export default function MySavePost({
           if (response.ok) {
             const data = await response.json();
             if (data.success && data.posts) {
-              const transformedPosts: PostData[] = data.posts.map((post: any) => ({
-                id: post.id,
-                username: post.username || 'User',
-                user_profile_url: post.user_profile_url || null,
-                user_id: post.user_id,
-                post_type: post.post_type,
-                caption: post.caption,
-                media_url: post.media_url,
-                article_title: post.article_title,
-                article_body: post.article_body,
-                event_title: post.event_title,
-                event_date: post.event_date,
-                event_location: post.event_location,
-                like_count: post.like_count || 0,
-                comment_count: post.comment_count || 0,
-                save_count: post.save_count || 0,
-                created_at: post.created_at,
-              }));
+              const transformedPosts: PostData[] = data.posts.map(
+                (post: any) => ({
+                  id: post.id,
+                  username: post.username || 'User',
+                  user_profile_url: post.user_profile_url || null,
+                  user_id: post.user_id,
+                  post_type: post.post_type,
+                  caption: post.caption,
+                  media_url: post.media_url,
+                  article_title: post.article_title,
+                  article_body: post.article_body,
+                  event_title: post.event_title,
+                  event_date: post.event_date,
+                  event_location: post.event_location,
+                  like_count: post.like_count || 0,
+                  comment_count: post.comment_count || 0,
+                  save_count: post.save_count || 0,
+                  created_at: post.created_at,
+                })
+              );
               setSavedPosts(transformedPosts);
             }
           }
@@ -87,11 +89,15 @@ export default function MySavePost({
 
   // Determine which posts to show
   let filteredPosts: PostData[] = [];
-  
+
   if (viewedUserId && viewedUserId !== currentUserId) {
     // Show saved posts from backend for other users
-    filteredPosts = savedPosts.filter(post => 
-      post.post_type === 'photo' || post.post_type === 'video' || post.post_type === 'text' || post.post_type === 'event'
+    filteredPosts = savedPosts.filter(
+      post =>
+        post.post_type === 'photo' ||
+        post.post_type === 'video' ||
+        post.post_type === 'text' ||
+        post.post_type === 'event'
     );
   } else {
     // Show saved posts from localStorage for own profile
@@ -100,7 +106,12 @@ export default function MySavePost({
       if (!savedPostIds.includes(post.id)) {
         return false;
       }
-      return post.post_type === 'photo' || post.post_type === 'video' || post.post_type === 'text' || post.post_type === 'event';
+      return (
+        post.post_type === 'photo' ||
+        post.post_type === 'video' ||
+        post.post_type === 'text' ||
+        post.post_type === 'event'
+      );
     });
   }
 
@@ -108,10 +119,10 @@ export default function MySavePost({
   const getThumbnailUrl = (post: PostData): string | null => {
     const mediaUrl = post.media_url || post.image_url;
     if (!mediaUrl) return null;
-    
+
     // If URL already starts with http, return as is
     if (mediaUrl.startsWith('http')) return mediaUrl;
-    
+
     // Otherwise, prepend the base URL
     return `http://localhost:3001${mediaUrl}`;
   };
@@ -140,7 +151,7 @@ export default function MySavePost({
           const thumbnailUrl = getThumbnailUrl(post);
           const isVideo = post.post_type === 'video';
           const isEvent = post.post_type === 'event';
-          
+
           return (
             <div
               key={post.id}
@@ -158,7 +169,10 @@ export default function MySavePost({
                         playsInline
                       />
                       <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
-                        <Play className="w-12 h-12 text-white opacity-80" fill="white" />
+                        <Play
+                          className="w-12 h-12 text-white opacity-80"
+                          fill="white"
+                        />
                       </div>
                     </div>
                   ) : (
@@ -183,10 +197,14 @@ export default function MySavePost({
                   {isEvent ? (
                     <>
                       <Calendar className="w-12 h-12 mb-2" />
-                      <span className="text-xs text-center line-clamp-3">{post.event_title || 'Event'}</span>
+                      <span className="text-xs text-center line-clamp-3">
+                        {post.event_title || 'Event'}
+                      </span>
                     </>
                   ) : (
-                    <span className="text-xs text-center line-clamp-3">{post.caption || 'Text post'}</span>
+                    <span className="text-xs text-center line-clamp-3">
+                      {post.caption || 'Text post'}
+                    </span>
                   )}
                 </div>
               )}
@@ -204,7 +222,9 @@ export default function MySavePost({
           />
           <div className="relative z-10 w-full max-w-4xl bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Saved Post Details</h2>
+              <h2 className="text-xl font-bold text-gray-900">
+                Saved Post Details
+              </h2>
               <button
                 onClick={() => setSelectedPost(null)}
                 className="p-2 rounded-full hover:bg-gray-100 transition-colors"

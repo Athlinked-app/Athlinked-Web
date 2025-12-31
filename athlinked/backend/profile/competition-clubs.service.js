@@ -108,4 +108,3 @@ module.exports = {
   updateCompetitionClubService,
   deleteCompetitionClubService,
 };
-
