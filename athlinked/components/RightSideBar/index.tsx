@@ -40,29 +40,29 @@ export default function RightSideBar() {
     const fetchData = async () => {
       try {
         setLoading(true);
+        const { apiGet } = await import('@/utils/api');
 
         let userId: string | null = null;
         const userIdentifier = localStorage.getItem('userEmail');
         if (userIdentifier) {
           try {
-            let response;
+            let data;
             if (userIdentifier.startsWith('username:')) {
               const username = userIdentifier.replace('username:', '');
-              response = await fetch(
-                `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-              );
+              data = await apiGet<{
+                success: boolean;
+                user?: { id: string };
+              }>(`/signup/user-by-username/${encodeURIComponent(username)}`);
             } else {
-              response = await fetch(
-                `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-              );
+              data = await apiGet<{
+                success: boolean;
+                user?: { id: string };
+              }>(`/signup/user/${encodeURIComponent(userIdentifier)}`);
             }
 
-            if (response.ok) {
-              const data = await response.json();
-              if (data.success && data.user) {
-                userId = data.user.id;
-                setCurrentUserId(data.user.id);
-              }
+            if (data.success && data.user) {
+              userId = data.user.id;
+              setCurrentUserId(data.user.id);
             }
           } catch (error) {
             console.error('Error fetching current user ID:', error);
@@ -70,31 +70,23 @@ export default function RightSideBar() {
         }
 
         const excludeParam = userId ? `&excludeUserId=${userId}` : '';
-        const response = await fetch(
-          `http://localhost:3001/api/signup/users?limit=10${excludeParam}`
-        );
-
-        if (!response.ok) {
-          console.error('Failed to fetch users');
-          setPeople([]);
-          return;
-        }
-
-        const data = await response.json();
+        const data = await apiGet<{
+          success: boolean;
+          users?: any[];
+        }>(`/signup/users?limit=10${excludeParam}`);
         if (data.success && data.users) {
           const transformedPeople: Person[] = await Promise.all(
             data.users.map(async (user: any) => {
               let isFollowing = false;
               if (userId) {
                 try {
-                  const isFollowingResponse = await fetch(
-                    `http://localhost:3001/api/network/is-following/${user.id}?follower_id=${userId}`
-                  );
-                  if (isFollowingResponse.ok) {
-                    const isFollowingData = await isFollowingResponse.json();
-                    if (isFollowingData.success) {
-                      isFollowing = isFollowingData.isFollowing;
-                    }
+                  const { apiGet } = await import('@/utils/api');
+                  const isFollowingData = await apiGet<{
+                    success: boolean;
+                    isFollowing?: boolean;
+                  }>(`/network/is-following/${user.id}?follower_id=${userId}`);
+                  if (isFollowingData.success) {
+                    isFollowing = isFollowingData.isFollowing || false;
                   }
                 } catch (error) {
                   console.error(
@@ -139,72 +131,16 @@ export default function RightSideBar() {
 
     try {
       const endpoint = isCurrentlyFollowing
-        ? `http://localhost:3001/api/network/unfollow/${id}`
-        : `http://localhost:3001/api/network/follow/${id}`;
+        ? `/network/unfollow/${id}`
+        : `/network/follow/${id}`;
 
-      const userIdentifier = localStorage.getItem('userEmail');
-      if (!userIdentifier) {
-        alert('User not logged in');
-        return;
-      }
-
-      let userResponse;
-      if (userIdentifier.startsWith('username:')) {
-        const username = userIdentifier.replace('username:', '');
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-        );
-      } else {
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
-      }
-
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-
-      const userDataResponse = await userResponse.json();
-      if (!userDataResponse.success || !userDataResponse.user) {
-        throw new Error('User not found');
-      }
-
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userDataResponse.user.id,
-        }),
+      const { apiPost } = await import('@/utils/api');
+      const result = await apiPost<{
+        success: boolean;
+        message?: string;
+      }>(endpoint, {
+        user_id: currentUserId,
       });
-
-      const contentType = response.headers.get('content-type');
-      let result;
-
-      if (contentType && contentType.includes('application/json')) {
-        try {
-          result = await response.json();
-        } catch (jsonError) {
-          console.error('JSON parse error:', jsonError);
-          const text = await response.text();
-          console.error('Response text:', text);
-          throw new Error(
-            `Failed to parse response: ${text.substring(0, 100)}`
-          );
-        }
-      } else {
-        const text = await response.text();
-        console.error(
-          'Non-JSON response (status:',
-          response.status,
-          '):',
-          text.substring(0, 200)
-        );
-        throw new Error(
-          `Server returned non-JSON response (status: ${response.status}). Check backend logs.`
-        );
-      }
 
       if (result.success) {
         setPeople(prevPeople =>

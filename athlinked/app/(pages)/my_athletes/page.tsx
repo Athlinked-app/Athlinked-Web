@@ -26,23 +26,23 @@ export default function MyAthletesPage() {
       // Fetch current user
       const userIdentifier = localStorage.getItem('userEmail');
       if (userIdentifier) {
-        let response;
+        const { apiGet } = await import('@/utils/api');
+        let data;
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
-          response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-          );
+          data = await apiGet<{
+            success: boolean;
+            user?: any;
+          }>(`/signup/user-by-username/${encodeURIComponent(username)}`);
         } else {
-          response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-          );
+          data = await apiGet<{
+            success: boolean;
+            user?: any;
+          }>(`/signup/user/${encodeURIComponent(userIdentifier)}`);
         }
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.user) {
-            setCurrentUser(data.user);
-          }
+        if (data.success && data.user) {
+          setCurrentUser(data.user);
         }
       }
 

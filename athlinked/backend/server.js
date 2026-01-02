@@ -68,6 +68,32 @@ io.on('connection', socket => {
       const receiverSockets = await io.in(`user:${receiverId}`).fetchSockets();
       const isReceiverOnline = receiverSockets.length > 0;
 
+      // Get updated conversation data for both users
+      const messagesModel = require('./messages/messages.model');
+      const conversationsService = require('./messages/messages.service');
+      
+      // Get updated conversations for receiver
+      const receiverConversations = await conversationsService.getConversations(receiverId);
+      const updatedReceiverConv = receiverConversations.find(
+  c => c.conversation_id === createdMessage.conversation_id
+);
+
+
+      // Get updated conversations for sender
+      const senderConversations = await conversationsService.getConversations(senderId);
+      const updatedSenderConv = senderConversations.find(
+  c => c.conversation_id === createdMessage.conversation_id
+);
+
+
+      // Get total unread count for receiver
+      const totalUnreadCount = receiverConversations.reduce(
+  (sum, conv) => sum + (conv.unread_count || 0),
+  0
+);
+
+
+      // Emit to receiver
       io.to(`user:${receiverId}`).emit('receive_message', {
         message_id: createdMessage.id,
         conversation_id: createdMessage.conversation_id,
@@ -79,6 +105,18 @@ io.on('connection', socket => {
         created_at: createdMessage.created_at,
       });
 
+      // Emit conversation update to receiver
+      if (updatedReceiverConv) {
+        io.to(`user:${receiverId}`).emit('conversation_updated', {
+          conversation: updatedReceiverConv,
+        });
+      }
+
+      // Emit total unread count update to receiver
+      io.to(`user:${receiverId}`).emit('message_count_update', {
+        count: totalUnreadCount,
+      });
+
       if (isReceiverOnline) {
         socket.emit('message_delivered', {
           message_id: createdMessage.id,
@@ -86,6 +124,7 @@ io.on('connection', socket => {
         });
       }
 
+      // Emit to sender
       socket.emit('receive_message', {
         message_id: createdMessage.id,
         conversation_id: createdMessage.conversation_id,
@@ -97,14 +136,34 @@ io.on('connection', socket => {
         created_at: createdMessage.created_at,
         is_delivered: isReceiverOnline,
       });
+
+      // Emit conversation update to sender
+      if (updatedSenderConv) {
+        socket.emit('conversation_updated', {
+          conversation: updatedSenderConv,
+        });
+      }
     } catch (error) {
       console.error('Error handling send_message:', error);
       socket.emit('error', { message: 'Failed to send message' });
     }
   });
 
-  socket.on('disconnect', () => {});
+  socket.on('disconnect', () => {
+    console.log(`User ${socketUserId || socket.userId} disconnected`);
+  });
 });
+
+// Helper function to emit events to specific users
+function emitToUser(userId, event, data) {
+  if (io) {
+    io.to(`user:${userId}`).emit(event, data);
+  }
+}
+
+// Make io available globally for use in other modules
+global.io = io;
+global.emitToUser = emitToUser;
 
 app.set('io', io);
 

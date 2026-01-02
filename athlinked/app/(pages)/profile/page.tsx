@@ -32,6 +32,8 @@ import MySavePost from '@/components/MySave/Post';
 import MySaveClips from '@/components/MySave/Clips';
 import MySaveArticle from '@/components/MySave/Article';
 import MySaveOpportunity from '@/components/MySave/Opportunity';
+import Favourites from '@/components/Profile/Favourites';
+import { apiGet, apiPost, apiUpload } from '@/utils/api';
 interface CurrentUser {
   id: string;
   full_name: string;
@@ -63,9 +65,9 @@ function ProfileContent() {
   const [viewUser, setViewUser] = useState<CurrentUser | null>(null); // User being viewed
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'activity' | 'mysave'>(
-    'profile'
-  );
+  const [activeTab, setActiveTab] = useState<
+    'profile' | 'activity' | 'mysave' | 'favourites'
+  >('profile');
   const [activeFilter, setActiveFilter] = useState<
     'posts' | 'clips' | 'article' | 'event'
   >('posts');
@@ -100,40 +102,30 @@ function ProfileContent() {
   } | null>(null);
 
   const targetUserId = viewUserId || currentUserId;
+  const isViewingOwnProfile = !viewUserId || viewUserId === currentUserId;
+
+  // Reset to profile tab if viewing someone else's profile and on a restricted tab
+  useEffect(() => {
+    if (!isViewingOwnProfile && (activeTab === 'activity' || activeTab === 'mysave' || activeTab === 'favourites')) {
+      setActiveTab('profile');
+    }
+  }, [isViewingOwnProfile, activeTab]);
 
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        'http://localhost:3001/api/posts?page=1&limit=50'
-      );
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        success: boolean;
+        posts?: PostData[];
+        data?: PostData[];
+      }>('/posts?page=1&limit=50');
 
-      if (!response.ok) {
-        console.error(
-          'Failed to fetch posts:',
-          response.status,
-          response.statusText
-        );
-        const text = await response.text();
-        console.error('Response text:', text.substring(0, 200));
-        setPosts([]);
-        return;
-      }
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        console.error('Non-JSON response from posts API');
-        const text = await response.text();
-        console.error('Response text:', text.substring(0, 200));
-        setPosts([]);
-        return;
-      }
-
-      const data = await response.json();
       console.log('Posts API response:', data);
 
-      if (data.success && data.posts) {
-        let transformedPosts: PostData[] = data.posts.map((post: any) => ({
+      if (data.success) {
+        const posts = data.posts || data.data || [];
+        let transformedPosts: PostData[] = posts.map((post: any) => ({
           id: post.id,
           username: post.username || 'User',
           user_profile_url:
@@ -212,17 +204,17 @@ function ProfileContent() {
     if (!viewUserId) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/signup/users?limit=1000`
-      );
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        success: boolean;
+        users?: any[];
+      }>('/signup/users?limit=1000');
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.users) {
-          const user = data.users.find((u: any) => u.id === viewUserId);
-          if (user) {
-            setViewUser({
-              id: user.id,
+      if (data.success && data.users) {
+        const user = data.users.find((u: any) => u.id === viewUserId);
+        if (user) {
+          setViewUser({
+            id: user.id,
               full_name: user.full_name || user.username || 'User',
               profile_url: user.profile_url,
               username: user.username,
@@ -246,7 +238,6 @@ function ProfileContent() {
             }
           }
         }
-      }
     } catch (error) {
       console.error('Error fetching view user:', error);
     }
@@ -257,30 +248,51 @@ function ProfileContent() {
 
     try {
       console.log('Fetching profile data for userId:', targetUserId);
-      const response = await fetch(
-        `http://localhost:3001/api/profile/${targetUserId}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Profile data fetched:', data);
-        setProfileData(data);
-        setUserBio(data.bio || '');
-        if (data.sportsPlayed !== undefined && data.sportsPlayed !== null) {
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        userId?: string;
+        fullName?: string | null;
+        profileImage?: string | null;
+        coverImage?: string | null;
+        bio?: string | null;
+        education?: string | null;
+        city?: string | null;
+        primarySport?: string | null;
+        sportsPlayed?: string | string[] | null;
+        dob?: string | null;
+      }>(`/profile/${targetUserId}`);
+      
+      console.log('Profile data fetched:', data);
+      
+      // Process sportsPlayed value
+      let processedSportsPlayed: string | null = null;
+      if (data.sportsPlayed !== undefined && data.sportsPlayed !== null) {
+        if (Array.isArray(data.sportsPlayed)) {
+          processedSportsPlayed = data.sportsPlayed.join(', ');
+        } else if (typeof data.sportsPlayed === 'string') {
           let sportsString = data.sportsPlayed;
-          if (typeof sportsString === 'string') {
-            if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
-              sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
-            }
-            setSportsPlayed(sportsString);
-          } else if (Array.isArray(sportsString)) {
-            setSportsPlayed(sportsString.join(', '));
+          if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+            sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
           }
+          processedSportsPlayed = sportsString;
         }
-      } else {
-        console.log('No profile data found, will use defaults');
-        setProfileData(null);
-        setUserBio('');
       }
+      
+      // Ensure userId is set from targetUserId if not in response
+      setProfileData({
+        userId: data.userId || targetUserId || '',
+        fullName: data.fullName ?? null,
+        profileImage: data.profileImage ?? null,
+        coverImage: data.coverImage ?? null,
+        bio: data.bio ?? null,
+        education: data.education ?? null,
+        city: data.city ?? null,
+        primarySport: data.primarySport ?? null,
+        sportsPlayed: processedSportsPlayed,
+        dob: data.dob ?? null,
+      });
+      setUserBio(data.bio || '');
+      setSportsPlayed(processedSportsPlayed || '');
     } catch (error) {
       console.error('Error fetching profile data:', error);
       setProfileData(null);
@@ -293,18 +305,17 @@ function ProfileContent() {
 
     try {
       console.log('Fetching follow counts for userId:', targetUserId);
-      const response = await fetch(
-        `http://localhost:3001/api/network/counts/${targetUserId}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Follow counts fetched:', data);
-        if (data.success) {
-          setFollowersCount(data.followers || 0);
-          setFollowingCount(data.following || 0);
-        }
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        success: boolean;
+        followers?: number;
+        following?: number;
+      }>(`/network/counts/${targetUserId}`);
+      console.log('Follow counts fetched:', data);
+      if (data.success) {
+        setFollowersCount(data.followers || 0);
+        setFollowingCount(data.following || 0);
       } else {
-        console.log('Failed to fetch follow counts');
         setFollowersCount(0);
         setFollowingCount(0);
       }
@@ -322,17 +333,17 @@ function ProfileContent() {
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/network/connection-status/${viewUserId}?requester_id=${currentUserId}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setConnectionRequestStatus({
-            exists: data.exists,
-            status: data.status,
-          });
-        }
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        success: boolean;
+        exists?: boolean;
+        status?: string | null;
+      }>(`/network/connection-status/${viewUserId}?requester_id=${currentUserId}`);
+      if (data.success) {
+        setConnectionRequestStatus({
+          exists: data.exists || false,
+          status: data.status || null,
+        });
       }
     } catch (error) {
       console.error('Error checking connection request status:', error);
@@ -358,41 +369,31 @@ function ProfileContent() {
         return;
       }
 
-      let userResponse;
+      const { apiGet, apiPost } = await import('@/utils/api');
+      let userDataResponse;
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-        );
+        userDataResponse = await apiGet<{
+          success: boolean;
+          user?: { id: string };
+        }>(`/signup/user-by-username/${encodeURIComponent(username)}`);
       } else {
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
+        userDataResponse = await apiGet<{
+          success: boolean;
+          user?: { id: string };
+        }>(`/signup/user/${encodeURIComponent(userIdentifier)}`);
       }
 
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-
-      const userDataResponse = await userResponse.json();
       if (!userDataResponse.success || !userDataResponse.user) {
         throw new Error('User not found');
       }
 
-      const response = await fetch(
-        `http://localhost:3001/api/network/connect/${viewUserId}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: userDataResponse.user.id,
-          }),
-        }
-      );
-
-      const result = await response.json();
+      const result = await apiPost<{
+        success: boolean;
+        message?: string;
+      }>(`/network/connect/${viewUserId}`, {
+        user_id: userDataResponse.user.id,
+      });
       if (result.success) {
         setConnectionRequestStatus({ exists: true, status: 'pending' });
         alert('Connection request sent!');
@@ -412,23 +413,32 @@ function ProfileContent() {
         return;
       }
 
-      let response;
+      const { apiGet } = await import('@/utils/api');
+      let data;
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
-        response = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-        );
+        data = await apiGet<{
+          success: boolean;
+          user?: {
+            id: string;
+            full_name?: string;
+            username?: string;
+            profile_url?: string;
+            user_type?: string;
+          };
+        }>(`/signup/user-by-username/${encodeURIComponent(username)}`);
       } else {
-        response = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
+        data = await apiGet<{
+          success: boolean;
+          user?: {
+            id: string;
+            full_name?: string;
+            username?: string;
+            profile_url?: string;
+            user_type?: string;
+          };
+        }>(`/signup/user/${encodeURIComponent(userIdentifier)}`);
       }
-
-      if (!response.ok) {
-        return;
-      }
-
-      const data = await response.json();
       if (data.success && data.user) {
         setCurrentUserId(data.user.id);
         setCurrentUser({
@@ -674,22 +684,20 @@ function ProfileContent() {
                   profileData.coverImageUrl = data.background_image_url;
                 }
                 
-                const response = await apiRequest('/profile', {
-                  method: 'POST',
-                  body: JSON.stringify(profileData),
-                });
+                const result = await apiPost<{
+                  success: boolean;
+                  message?: string;
+                }>('/profile', profileData);
 
-                if (!response.ok) {
-                  const errorData = await response.json();
-                  console.error('Failed to save profile:', errorData);
+                if (!result.success) {
+                  console.error('Failed to save profile:', result);
                   alert(
                     'Failed to save profile: ' +
-                      (errorData.message || 'Unknown error')
+                      (result.message || 'Unknown error')
                   );
                   return;
                 }
 
-                const result = await response.json();
                 console.log('Profile saved successfully:', result);
 
                 if (data.bio !== undefined) {
@@ -791,34 +799,58 @@ function ProfileContent() {
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
                 )}
               </button>
-              <div className="h-6 w-px bg-gray-200"></div>
-              <button
-                onClick={() => setActiveTab('activity')}
-                className={`px-6 py-3 font-medium text-xl transition-colors relative ${
-                  activeTab === 'activity'
-                    ? 'text-[#CB9729]'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Activity
-                {activeTab === 'activity' && (
-                  <div className="absolute bottom-0 text-xl  left-0 right-0 h-0.5 bg-[#CB9729]"></div>
-                )}
-              </button>
-              <div className="h-6 w-px bg-gray-200"></div>
-              <button
-                onClick={() => setActiveTab('mysave')}
-                className={`px-6 py-3 font-medium text-xl  transition-colors relative ${
-                  activeTab === 'mysave'
-                    ? 'text-[#CB9729]'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                My Save
-                {activeTab === 'mysave' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
-                )}
-              </button>
+              {/* Show Activity, My Save, and Favourites tabs only when viewing own profile */}
+              {isViewingOwnProfile && (
+                <>
+                  <div className="h-6 w-px bg-gray-200"></div>
+                  <button
+                    onClick={() => setActiveTab('activity')}
+                    className={`px-6 py-3 font-medium text-xl transition-colors relative ${
+                      activeTab === 'activity'
+                        ? 'text-[#CB9729]'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Activity
+                    {activeTab === 'activity' && (
+                      <div className="absolute bottom-0 text-xl  left-0 right-0 h-0.5 bg-[#CB9729]"></div>
+                    )}
+                  </button>
+                  <div className="h-6 w-px bg-gray-200"></div>
+                  <button
+                    onClick={() => setActiveTab('mysave')}
+                    className={`px-6 py-3 font-medium text-xl  transition-colors relative ${
+                      activeTab === 'mysave'
+                        ? 'text-[#CB9729]'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    My Save
+                    {activeTab === 'mysave' && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
+                    )}
+                  </button>
+                  {/* Show Favourites tab only for coaches */}
+                  {currentUser?.user_type === 'coach' && (
+                    <>
+                      <div className="h-6 w-px bg-gray-200"></div>
+                      <button
+                        onClick={() => setActiveTab('favourites')}
+                        className={`px-6 py-3 font-medium text-xl transition-colors relative ${
+                          activeTab === 'favourites'
+                            ? 'text-[#CB9729]'
+                            : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        Favourites
+                        {activeTab === 'favourites' && (
+                          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
+                        )}
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
             </div>
 
             <div className="mt-4 space-y-4 overflow-y-auto flex-1 pb-4 px-1 max-h-[400px] lg:max-h-[450px] ">
@@ -1120,6 +1152,9 @@ function ProfileContent() {
                     />
                   )}
                 </div>
+              )}
+              {activeTab === 'favourites' && currentUserId && (
+                <Favourites coachId={currentUserId} />
               )}
             </div>
           </div>

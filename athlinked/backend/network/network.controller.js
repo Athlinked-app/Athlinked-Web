@@ -28,6 +28,26 @@ async function followUser(req, res) {
       followerId,
       followingId
     );
+    
+    // Emit WebSocket event for real-time follow update
+    try {
+      const app = require('../app');
+      const io = app.get('io');
+      if (io && result.success) {
+        // Emit to the user being followed
+        io.to(`user:${followingId}`).emit('user_followed', {
+          followerId,
+          followingId,
+        });
+        // Emit to the follower (for their own UI updates)
+        io.to(`user:${followerId}`).emit('follow_success', {
+          followingId,
+        });
+      }
+    } catch (error) {
+      console.error('Error emitting follow WebSocket event:', error);
+    }
+    
     return res.status(200).json(result);
   } catch (error) {
     console.error('Follow user controller error:', error);
@@ -72,6 +92,26 @@ async function unfollowUser(req, res) {
       followerId,
       followingId
     );
+    
+    // Emit WebSocket event for real-time unfollow update
+    try {
+      const app = require('../app');
+      const io = app.get('io');
+      if (io && result.success) {
+        // Emit to the user being unfollowed
+        io.to(`user:${followingId}`).emit('user_unfollowed', {
+          followerId,
+          followingId,
+        });
+        // Emit to the unfollower
+        io.to(`user:${followerId}`).emit('unfollow_success', {
+          followingId,
+        });
+      }
+    } catch (error) {
+      console.error('Error emitting unfollow WebSocket event:', error);
+    }
+    
     return res.status(200).json(result);
   } catch (error) {
     console.error('Unfollow user controller error:', error);

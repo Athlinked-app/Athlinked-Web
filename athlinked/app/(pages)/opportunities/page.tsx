@@ -6,6 +6,7 @@ import NavigationBar from '@/components/NavigationBar';
 import Header from '@/components/Header';
 import CampDetailsPopup from '@/components/opportunities/CampDetailsPopup';
 import SaveModal from '@/components/Save/SaveModal';
+import { apiGet } from '@/utils/api';
 
 type TabType = 'all' | 'tryouts' | 'scholarships' | 'tournaments';
 
@@ -281,26 +282,31 @@ export default function OpportunitiesPage() {
           return;
         }
 
-        let response;
+        let data;
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
-          response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-          );
+          data = await apiGet<{
+            success: boolean;
+            user?: {
+              full_name?: string;
+              profile_url?: string;
+            };
+          }>(`/signup/user-by-username/${encodeURIComponent(username)}`);
         } else {
-          response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-          );
+          data = await apiGet<{
+            success: boolean;
+            user?: {
+              full_name?: string;
+              profile_url?: string;
+            };
+          }>(`/signup/user/${encodeURIComponent(userIdentifier)}`);
         }
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.user) {
-            setCurrentUser({
-              full_name: data.user.full_name,
-              profile_url: data.user.profile_url,
-            });
-          }
+        if (data.success && data.user) {
+          setCurrentUser({
+            full_name: data.user.full_name,
+            profile_url: data.user.profile_url,
+          });
         }
       } catch (error) {
         console.error('Error fetching current user:', error);

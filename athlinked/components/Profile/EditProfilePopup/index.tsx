@@ -112,12 +112,13 @@ export default function EditProfilePopup({
   const fetchSports = async () => {
     setLoadingSports(true);
     try {
-      const response = await fetch('http://localhost:3001/api/sports');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.sports) {
-          setAllSports(data.sports);
-        }
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        success: boolean;
+        sports?: any[];
+      }>('/sports');
+      if (data.success && data.sports) {
+        setAllSports(data.sports);
       }
     } catch (error) {
       console.error('Error fetching sports:', error);
@@ -315,7 +316,7 @@ export default function EditProfilePopup({
                 readOnly
                 onClick={() => setShowSportsDropdown(!showSportsDropdown)}
                 placeholder="Football, Basketball, Baseball"
-                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900 cursor-pointer"
+                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black placeholder:text-gray-400 cursor-pointer"
               />
               <div
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
@@ -361,7 +362,7 @@ export default function EditProfilePopup({
                           onChange={() => handleSportToggle(sport.name)}
                           className="w-4 h-4 text-[#CB9729] border-gray-300 rounded focus:ring-[#CB9729] focus:ring-2"
                         />
-                        <span className="ml-3 text-sm text-gray-700">
+                        <span className="ml-3 text-sm text-black">
                           {sport.name}
                         </span>
                       </label>
@@ -393,7 +394,7 @@ export default function EditProfilePopup({
                   value={education}
                   onChange={e => setEducation(e.target.value)}
                   placeholder="Ex: Stanford University"
-                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
+                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black placeholder:text-gray-400"
                 />
                 <button
                   type="button"
@@ -415,7 +416,7 @@ export default function EditProfilePopup({
                   value={city}
                   onChange={e => setCity(e.target.value)}
                   placeholder="Ex: New York"
-                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
+                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black placeholder:text-gray-400"
                 />
                 <button
                   type="button"
@@ -437,7 +438,7 @@ export default function EditProfilePopup({
                   onChange={e => setBio(e.target.value)}
                   placeholder="Write here......"
                   rows={6}
-                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900 resize-none"
+                  className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black placeholder:text-gray-400 resize-none"
                 />
                 <button
                   type="button"

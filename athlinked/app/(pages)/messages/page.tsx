@@ -120,13 +120,19 @@ function MessagesPageContent() {
   useEffect(() => {
     if (!currentUser?.id) return;
 
-    const newSocket = io('http://localhost:3001', {
-      transports: ['websocket'],
-    });
+    // Use centralized WebSocket utility
+    const { getSocket } = require('@/utils/useSocket');
+    const newSocket = getSocket();
+    
+    if (!newSocket) return;
 
-    newSocket.on('connect', () => {
+    if (newSocket.connected) {
       newSocket.emit('userId', { userId: currentUser.id });
-    });
+    } else {
+      newSocket.on('connect', () => {
+        newSocket.emit('userId', { userId: currentUser.id });
+      });
+    }
 
     newSocket.on(
       'receive_message',
@@ -138,6 +144,34 @@ function MessagesPageContent() {
           message_type?: string;
         }
       ) => {
+        // Update conversation list when receiving a message
+        setConversations(prev => {
+          const updated = prev.map(conv => {
+            if (conv.conversation_id === data.conversation_id) {
+              return {
+                ...conv,
+                last_message: data.message || (data.media_url ? 'Media' : ''),
+                last_message_time: data.created_at,
+                unread_count:
+                  data.sender_id === currentUser.id
+                    ? conv.unread_count
+                    : conv.unread_count + 1,
+              };
+            }
+            return conv;
+          });
+
+          // If conversation doesn't exist in list, fetch conversations
+          const exists = updated.some(
+            conv => conv.conversation_id === data.conversation_id
+          );
+          if (!exists && data.sender_id !== currentUser.id) {
+            fetchConversations();
+          }
+
+          return updated;
+        });
+
         if (selectedConversation?.conversation_id === data.conversation_id) {
           const isOurMessage = data.sender_id === currentUser.id;
 
@@ -256,11 +290,36 @@ function MessagesPageContent() {
       }
     );
 
+    // Listen for conversation updates
+    newSocket.on('conversation_updated', (data: { conversation: Conversation }) => {
+      setConversations(prev => {
+        const index = prev.findIndex(
+          conv => conv.conversation_id === data.conversation.conversation_id
+        );
+        if (index >= 0) {
+          const updated = [...prev];
+          updated[index] = data.conversation;
+          // Move updated conversation to top
+          const [updatedConv] = updated.splice(index, 1);
+          return [updatedConv, ...updated];
+        } else {
+          // New conversation, add to top
+          return [data.conversation, ...prev];
+        }
+      });
+    });
+
     socketRef.current = newSocket;
     setSocket(newSocket);
 
     return () => {
-      newSocket.disconnect();
+      // Don't disconnect the global socket, just remove listeners
+      if (newSocket) {
+        newSocket.off('receive_message');
+        newSocket.off('message_delivered');
+        newSocket.off('messages_read');
+        newSocket.off('conversation_updated');
+      }
     };
   }, [currentUser?.id, selectedConversation?.conversation_id]);
 
@@ -570,25 +629,16 @@ function MessagesPageContent() {
           formData.append('message', messageText);
         }
 
-        // File upload with FormData - need to include auth token
-        const { getToken } = await import('@/utils/api');
-        const token = getToken();
-        const uploadResponse = await fetch(
-          'http://localhost:3001/api/messages/upload',
-          {
-            method: 'POST',
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-            body: formData,
-          }
-        );
-
-        if (!uploadResponse.ok) {
-          throw new Error('Failed to upload file');
-        }
-
-        const uploadData = await uploadResponse.json();
+        // File upload with FormData
+        const { apiUpload } = await import('@/utils/api');
+        const uploadData = await apiUpload<{
+          success: boolean;
+          media_url?: string;
+          fileUrl?: string;
+          message?: string;
+        }>('/messages/upload', formData);
         if (uploadData.success) {
-          mediaUrl = uploadData.media_url;
+          mediaUrl = uploadData.media_url || uploadData.fileUrl || null;
           messageType = selectedFile.type.startsWith('image/')
             ? 'image'
             : selectedFile.type.startsWith('video/')

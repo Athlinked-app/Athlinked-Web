@@ -5,6 +5,7 @@ import { Plus, Trash2, Pencil } from 'lucide-react';
 import HealthAndReadinessPopup, {
   type HealthAndReadiness,
 } from '../HealthandReadinessPopup';
+import { apiGet, apiPost, apiPut, apiDelete } from '@/utils/api';
 
 export type { HealthAndReadiness };
 
@@ -44,16 +45,14 @@ export default function HealthAndReadinessComponent({
 
     try {
       setLoading(true);
-      const response = await fetch(
-        `http://localhost:3001/api/profile/${userId}/health-readiness`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setHealthAndReadinessList(data.data);
-          if (onHealthAndReadinessChange) {
-            onHealthAndReadinessChange(data.data);
-          }
+      const data = await apiGet<{
+        success: boolean;
+        data?: HealthAndReadiness[];
+      }>(`/profile/${userId}/health-readiness`);
+      if (data.success && data.data) {
+        setHealthAndReadinessList(data.data);
+        if (onHealthAndReadinessChange) {
+          onHealthAndReadinessChange(data.data);
         }
       }
     } catch (error) {
@@ -80,32 +79,23 @@ export default function HealthAndReadinessComponent({
       }
 
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/profile/health-readiness/${existingData.id}`,
-          {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(newData),
-          }
-        );
+        const result = await apiPut<{
+          success: boolean;
+          data?: HealthAndReadiness;
+          message?: string;
+        }>(`/profile/health-readiness/${existingData.id}`, newData);
 
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            const updatedList = [...healthAndReadinessList];
-            updatedList[editingIndex] = result.data;
-            setHealthAndReadinessList(updatedList);
-            if (onHealthAndReadinessChange) {
-              onHealthAndReadinessChange(updatedList);
-            }
-            setEditingIndex(null);
+        if (result.success && result.data) {
+          const updatedList = [...healthAndReadinessList];
+          updatedList[editingIndex] = result.data;
+          setHealthAndReadinessList(updatedList);
+          if (onHealthAndReadinessChange) {
+            onHealthAndReadinessChange(updatedList);
           }
+          setEditingIndex(null);
         } else {
-          const errorData = await response.json();
           alert(
-            `Failed to update health and readiness: ${errorData.message || 'Unknown error'}`
+            `Failed to update health and readiness: ${result.message || 'Unknown error'}`
           );
         }
       } catch (error) {
@@ -125,30 +115,21 @@ export default function HealthAndReadinessComponent({
       }
 
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/profile/${userId}/health-readiness`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(newData),
-          }
-        );
+        const result = await apiPost<{
+          success: boolean;
+          data?: HealthAndReadiness;
+          message?: string;
+        }>(`/profile/${userId}/health-readiness`, newData);
 
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            const updatedList = [...healthAndReadinessList, result.data];
-            setHealthAndReadinessList(updatedList);
-            if (onHealthAndReadinessChange) {
-              onHealthAndReadinessChange(updatedList);
-            }
+        if (result.success && result.data) {
+          const updatedList = [...healthAndReadinessList, result.data];
+          setHealthAndReadinessList(updatedList);
+          if (onHealthAndReadinessChange) {
+            onHealthAndReadinessChange(updatedList);
           }
         } else {
-          const errorData = await response.json();
           alert(
-            `Failed to save health and readiness: ${errorData.message || 'Unknown error'}`
+            `Failed to save health and readiness: ${result.message || 'Unknown error'}`
           );
         }
       } catch (error) {
@@ -180,14 +161,12 @@ export default function HealthAndReadinessComponent({
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/profile/health-readiness/${id}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const result = await apiDelete<{
+        success: boolean;
+        message?: string;
+      }>(`/profile/health-readiness/${id}`);
 
-      if (response.ok) {
+      if (result.success) {
         const updatedList = healthAndReadinessList.filter(
           (_, i) => i !== index
         );
@@ -196,9 +175,8 @@ export default function HealthAndReadinessComponent({
           onHealthAndReadinessChange(updatedList);
         }
       } else {
-        const errorData = await response.json();
         alert(
-          `Failed to delete health and readiness: ${errorData.message || 'Unknown error'}`
+          `Failed to delete health and readiness: ${result.message || 'Unknown error'}`
         );
       }
     } catch (error) {
@@ -216,7 +194,13 @@ export default function HealthAndReadinessComponent({
           </h2>
           <button
             onClick={() => {
-              setEditingIndex(null);
+              // If there's existing data, show the first entry for editing
+              // Otherwise, open empty form for new entry
+              if (healthAndReadinessList.length > 0) {
+                setEditingIndex(0);
+              } else {
+                setEditingIndex(null);
+              }
               setShowPopup(true);
             }}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"

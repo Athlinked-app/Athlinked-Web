@@ -5,6 +5,7 @@ import { Plus, Trash2, Pencil } from 'lucide-react';
 import CharacterAndLeadershipPopup, {
   type CharacterAndLeadership,
 } from '../CharacterandLeadershipPopup';
+import { apiGet, apiPost, apiPut, apiDelete } from '@/utils/api';
 
 export type { CharacterAndLeadership };
 
@@ -45,16 +46,14 @@ export default function CharacterAndLeadershipComponent({
 
     try {
       setLoading(true);
-      const response = await fetch(
-        `http://localhost:3001/api/profile/${userId}/character-leadership`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setCharacterAndLeadershipList(data.data);
-          if (onCharacterAndLeadershipChange) {
-            onCharacterAndLeadershipChange(data.data);
-          }
+      const data = await apiGet<{
+        success: boolean;
+        data?: CharacterAndLeadership[];
+      }>(`/profile/${userId}/character-leadership`);
+      if (data.success && data.data) {
+        setCharacterAndLeadershipList(data.data);
+        if (onCharacterAndLeadershipChange) {
+          onCharacterAndLeadershipChange(data.data);
         }
       }
     } catch (error) {
@@ -81,32 +80,23 @@ export default function CharacterAndLeadershipComponent({
       }
 
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/profile/character-leadership/${existingData.id}`,
-          {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(newData),
-          }
-        );
+        const result = await apiPut<{
+          success: boolean;
+          data?: CharacterAndLeadership;
+          message?: string;
+        }>(`/profile/character-leadership/${existingData.id}`, newData);
 
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            const updatedList = [...characterAndLeadershipList];
-            updatedList[editingIndex] = result.data;
-            setCharacterAndLeadershipList(updatedList);
-            if (onCharacterAndLeadershipChange) {
-              onCharacterAndLeadershipChange(updatedList);
-            }
-            setEditingIndex(null);
+        if (result.success && result.data) {
+          const updatedList = [...characterAndLeadershipList];
+          updatedList[editingIndex] = result.data;
+          setCharacterAndLeadershipList(updatedList);
+          if (onCharacterAndLeadershipChange) {
+            onCharacterAndLeadershipChange(updatedList);
           }
+          setEditingIndex(null);
         } else {
-          const errorData = await response.json();
           alert(
-            `Failed to update character and leadership: ${errorData.message || 'Unknown error'}`
+            `Failed to update character and leadership: ${result.message || 'Unknown error'}`
           );
         }
       } catch (error) {
@@ -126,30 +116,21 @@ export default function CharacterAndLeadershipComponent({
       }
 
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/profile/${userId}/character-leadership`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(newData),
-          }
-        );
+        const result = await apiPost<{
+          success: boolean;
+          data?: CharacterAndLeadership;
+          message?: string;
+        }>(`/profile/${userId}/character-leadership`, newData);
 
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            const updatedList = [...characterAndLeadershipList, result.data];
-            setCharacterAndLeadershipList(updatedList);
-            if (onCharacterAndLeadershipChange) {
-              onCharacterAndLeadershipChange(updatedList);
-            }
+        if (result.success && result.data) {
+          const updatedList = [...characterAndLeadershipList, result.data];
+          setCharacterAndLeadershipList(updatedList);
+          if (onCharacterAndLeadershipChange) {
+            onCharacterAndLeadershipChange(updatedList);
           }
         } else {
-          const errorData = await response.json();
           alert(
-            `Failed to save character and leadership: ${errorData.message || 'Unknown error'}`
+            `Failed to save character and leadership: ${result.message || 'Unknown error'}`
           );
         }
       } catch (error) {
@@ -183,14 +164,12 @@ export default function CharacterAndLeadershipComponent({
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/profile/character-leadership/${id}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const result = await apiDelete<{
+        success: boolean;
+        message?: string;
+      }>(`/profile/character-leadership/${id}`);
 
-      if (response.ok) {
+      if (result.success) {
         const updatedList = characterAndLeadershipList.filter(
           (_, i) => i !== index
         );
@@ -199,9 +178,8 @@ export default function CharacterAndLeadershipComponent({
           onCharacterAndLeadershipChange(updatedList);
         }
       } else {
-        const errorData = await response.json();
         alert(
-          `Failed to delete character and leadership: ${errorData.message || 'Unknown error'}`
+          `Failed to delete character and leadership: ${result.message || 'Unknown error'}`
         );
       }
     } catch (error) {
@@ -219,7 +197,13 @@ export default function CharacterAndLeadershipComponent({
           </h2>
           <button
             onClick={() => {
-              setEditingIndex(null);
+              // If there's existing data, show the first entry for editing
+              // Otherwise, open empty form for new entry
+              if (characterAndLeadershipList.length > 0) {
+                setEditingIndex(0);
+              } else {
+                setEditingIndex(null);
+              }
               setShowPopup(true);
             }}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"

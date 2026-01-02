@@ -119,6 +119,33 @@ async function likePost(req, res) {
     }
 
     const result = await postsService.likePostService(postId, userId);
+    
+    // Emit WebSocket event for real-time like update
+    try {
+      const app = require('../app');
+      const io = app.get('io');
+      if (io && result.success) {
+        // Get post owner for notification
+        const postsModel = require('./posts.model');
+        const post = await postsModel.getPostById(postId);
+        if (post) {
+          // Emit to post owner
+          io.to(`user:${post.user_id}`).emit('post_liked', {
+            postId,
+            userId,
+            likeCount: result.like_count,
+          });
+          // Emit to all users viewing this post (for real-time updates)
+          io.emit('post_like_update', {
+            postId,
+            likeCount: result.like_count,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error emitting like WebSocket event:', error);
+    }
+    
     return res.status(200).json(result);
   } catch (error) {
     console.error('Like post controller error:', error);
@@ -148,6 +175,22 @@ async function unlikePost(req, res) {
     }
 
     const result = await postsService.unlikePostService(postId, userId);
+    
+    // Emit WebSocket event for real-time unlike update
+    try {
+      const app = require('../app');
+      const io = app.get('io');
+      if (io && result.success) {
+        // Emit to all users viewing this post
+        io.emit('post_like_update', {
+          postId,
+          likeCount: result.like_count,
+        });
+      }
+    } catch (error) {
+      console.error('Error emitting unlike WebSocket event:', error);
+    }
+    
     return res.status(200).json(result);
   } catch (error) {
     console.error('Unlike post controller error:', error);
@@ -183,6 +226,33 @@ async function addComment(req, res) {
       userId,
       comment.trim()
     );
+    
+    // Emit WebSocket event for real-time comment update
+    try {
+      const app = require('../app');
+      const io = app.get('io');
+      if (io && result.success) {
+        // Get post owner for notification
+        const postsModel = require('./posts.model');
+        const post = await postsModel.getPostById(postId);
+        if (post) {
+          // Emit to post owner
+          io.to(`user:${post.user_id}`).emit('post_commented', {
+            postId,
+            userId,
+            comment: result.comment,
+          });
+          // Emit to all users viewing this post
+          io.emit('post_comment_update', {
+            postId,
+            comment: result.comment,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error emitting comment WebSocket event:', error);
+    }
+    
     return res.status(201).json(result);
   } catch (error) {
     console.error('Add comment controller error:', error);

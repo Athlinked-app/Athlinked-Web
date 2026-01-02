@@ -132,7 +132,7 @@ export default function CompetitionAndClubPopup({
               value={clubOrTravelTeamName}
               onChange={e => setClubOrTravelTeamName(e.target.value)}
               placeholder="Club or Travel Team Name"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black placeholder:text-gray-400"
             />
           </div>
 
@@ -149,7 +149,7 @@ export default function CompetitionAndClubPopup({
                   : 'border-gray-300'
               }`}
             >
-              <span className={teamLevel ? 'text-gray-900' : 'text-gray-500'}>
+              <span className={teamLevel ? 'text-black' : 'text-gray-500'}>
                 {teamLevel || 'Select team level'}
               </span>
               <ChevronDown
@@ -165,7 +165,7 @@ export default function CompetitionAndClubPopup({
                       setTeamLevel(level);
                       setShowTeamLevelDropdown(false);
                     }}
-                    className={`px-4 py-2 hover:bg-gray-50 cursor-pointer ${
+                    className={`px-4 py-2 hover:bg-gray-50 cursor-pointer text-black ${
                       teamLevel === level ? 'bg-blue-50' : ''
                     }`}
                   >
@@ -186,7 +186,7 @@ export default function CompetitionAndClubPopup({
               value={leagueOrOrganizationName}
               onChange={e => setLeagueOrOrganizationName(e.target.value)}
               placeholder="National Youth Sports League"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black placeholder:text-gray-400"
             />
           </div>
 
@@ -204,7 +204,7 @@ export default function CompetitionAndClubPopup({
                   onChange={e => setTournamentParticipation(e.target.value)}
                   className="w-4 h-4 text-[#CB9729] focus:ring-[#CB9729]"
                 />
-                <span className="text-gray-700">Yes</span>
+                <span className="text-black">Yes</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -215,7 +215,7 @@ export default function CompetitionAndClubPopup({
                   onChange={e => setTournamentParticipation(e.target.value)}
                   className="w-4 h-4 text-[#CB9729] focus:ring-[#CB9729]"
                 />
-                <span className="text-gray-700">No</span>
+                <span className="text-black">No</span>
               </label>
             </div>
           </div>
