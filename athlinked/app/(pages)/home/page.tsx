@@ -139,7 +139,7 @@ export default function Landing() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
+      return `http://localhost:3001${profileUrl}`;
     }
     return profileUrl;
   };
@@ -162,8 +162,8 @@ export default function Landing() {
         userProfileUrl={getProfileUrl(currentUser?.profile_url)}
       />
 
-      <main className="flex flex-1 w-full mt-5 overflow-hidden">
-        <div className="hidden md:flex px-6 ">
+      <main className="flex flex-1 w-full mt-5 overflow-hidden ">
+        <div className="hidden md:flex px-3 ">
           <NavigationBar activeItem="home" />
         </div>
 

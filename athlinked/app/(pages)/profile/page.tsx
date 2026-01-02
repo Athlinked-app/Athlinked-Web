@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
+import { apiRequest, apiUpload } from '@/utils/api';
 import RightSideBar from '@/components/RightSideBar';
 import { type PostData } from '@/components/Post';
 import EditProfileModal from '@/components/Profile/EditProfileModel';
@@ -554,7 +555,7 @@ function ProfileContent() {
               background_image_url: profileData?.coverImage
                 ? profileData.coverImage.startsWith('http')
                   ? profileData.coverImage
-                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.coverImage}`
+                  : `http://localhost:3001${profileData.coverImage}`
                 : null,
               user_type: viewUserId
                 ? viewUser?.user_type || 'athlete'
@@ -653,6 +654,7 @@ function ProfileContent() {
                       success: boolean;
                       fileUrl?: string;
                     }>('/profile/upload', formData);
+
                     if (uploadData.success && uploadData.fileUrl) {
                       profileData.profileImageUrl = uploadData.fileUrl;
                     }
@@ -671,6 +673,7 @@ function ProfileContent() {
                       success: boolean;
                       fileUrl?: string;
                     }>('/profile/upload', formData);
+
                     if (uploadData.success && uploadData.fileUrl) {
                       profileData.coverImageUrl = uploadData.fileUrl;
                     }
@@ -1074,8 +1077,6 @@ function ProfileContent() {
                       Opportunities
                     </button>
                   </div>
-
-                  {/* Filtered Content */}
                   {activeSaveFilter === 'posts' && (
                     <MySavePost
                       posts={posts}
