@@ -7,9 +7,8 @@ const notificationService = require('./notifications.service');
  */
 async function getNotifications(req, res) {
   try {
-    // TODO: Replace with proper authentication middleware
-    // For now, accept userId from query params as temporary workaround
-    const recipientUserId = req.user?.id || req.query.userId;
+    // Use userId from JWT token (set by authenticateToken middleware)
+    const recipientUserId = req.user?.id;
 
     if (!recipientUserId) {
       return res.status(401).json({

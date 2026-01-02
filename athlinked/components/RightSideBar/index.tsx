@@ -31,7 +31,7 @@ export default function RightSideBar() {
     if (!profileUrl || profileUrl.trim() === '') return null;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };
@@ -279,7 +279,9 @@ export default function RightSideBar() {
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-500 mb-0.5">{person.role}</p>
+                    <p className="text-xs text-gray-500 mb-0.5">
+                      {person.role}
+                    </p>
                     <p className="text-sm font-semibold text-gray-900 truncate">
                       {person.name}
                     </p>
@@ -288,7 +290,7 @@ export default function RightSideBar() {
 
                 {/* Follow Button */}
                 <button
-                  onClick={(e) => {
+                  onClick={e => {
                     e.stopPropagation();
                     handleFollow(person.id, person.isFollowing);
                   }}

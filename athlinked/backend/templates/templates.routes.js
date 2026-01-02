@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { authenticateToken } = require('../middleware/auth');
 const templatesController = require('./templates.controller');
 const upload = require('../utils/upload-resources');
 
@@ -8,7 +9,12 @@ const upload = require('../utils/upload-resources');
  * Create a new template
  * Auth required - user_id in body or req.user.id
  */
-router.post('/', upload.single('file'), templatesController.createTemplate);
+router.post(
+  '/',
+  authenticateToken,
+  upload.single('file'),
+  templatesController.createTemplate
+);
 
 /**
  * GET /api/templates
@@ -21,6 +27,6 @@ router.get('/', templatesController.getAllTemplates);
  * Soft delete a template (set is_active = false)
  * Auth required - user_id in body or req.user.id
  */
-router.delete('/:id', templatesController.deleteTemplate);
+router.delete('/:id', authenticateToken, templatesController.deleteTemplate);
 
 module.exports = router;

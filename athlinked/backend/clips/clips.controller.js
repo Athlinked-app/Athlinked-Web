@@ -8,7 +8,7 @@ const clipsService = require('./clips.service');
 async function createClip(req, res) {
   try {
     const { description } = req.body;
-    const user_id = req.user?.id || req.body.user_id; // Get from auth middleware or body
+    const user_id = req.user?.id; // Get from auth middleware
     const file = req.file; // File from multer
 
     if (!user_id) {
@@ -82,7 +82,7 @@ async function addComment(req, res) {
   try {
     const { clipId } = req.params;
     const { comment } = req.body;
-    const user_id = req.user?.id || req.body.user_id; // Get from auth middleware or body
+    const user_id = req.user?.id; // Get from auth middleware
 
     if (!user_id) {
       return res.status(401).json({
@@ -130,7 +130,7 @@ async function replyToComment(req, res) {
   try {
     const { commentId } = req.params;
     const { comment } = req.body;
-    const user_id = req.user?.id || req.body.user_id; // Get from auth middleware or body
+    const user_id = req.user?.id; // Get from auth middleware
 
     if (!user_id) {
       return res.status(401).json({
@@ -206,7 +206,7 @@ async function getClipComments(req, res) {
 async function deleteClip(req, res) {
   try {
     const clipId = req.params.clipId;
-    const userId = req.body.user_id || req.user?.id;
+    const userId = req.user?.id;
 
     if (!userId) {
       return res.status(401).json({

@@ -334,12 +334,13 @@ export default function SearchPage() {
 
     try {
       // Fetch all content types in parallel
-      const [usersResponse, postsResponse, clipsResponse, articlesResponse] = await Promise.all([
-        fetch(`${baseUrl}/api/signup/users?limit=100`).catch(() => null),
-        fetch(`${baseUrl}/api/posts?page=1&limit=100`).catch(() => null),
-        fetch(`${baseUrl}/api/clips?page=1&limit=100`).catch(() => null),
-        fetch(`${baseUrl}/api/articles`).catch(() => null),
-      ]);
+      const [usersResponse, postsResponse, clipsResponse, articlesResponse] =
+        await Promise.all([
+          fetch(`${baseUrl}/api/signup/users?limit=100`).catch(() => null),
+          fetch(`${baseUrl}/api/posts?page=1&limit=100`).catch(() => null),
+          fetch(`${baseUrl}/api/clips?page=1&limit=100`).catch(() => null),
+          fetch(`${baseUrl}/api/articles`).catch(() => null),
+        ]);
 
       // Process users
       if (usersResponse && usersResponse.ok) {
@@ -406,8 +407,7 @@ export default function SearchPage() {
               const username = (post.username || '').toLowerCase();
               const caption = (post.caption || '').toLowerCase();
               return (
-                username.includes(searchLower) ||
-                caption.includes(searchLower)
+                username.includes(searchLower) || caption.includes(searchLower)
               );
             })
             .map((post: any) => ({
@@ -713,7 +713,7 @@ export default function SearchPage() {
         article => !articleIdsInPosts.has(article.id)
       );
       const allPostsForDisplay = [...filteredPosts, ...uniqueArticles];
-      
+
       const hasPeople = searchQuery.trim() !== '' && searchResults.length > 0;
       const hasPosts = allPostsForDisplay.length > 0;
       const hasClips = searchClips.length > 0;
@@ -822,7 +822,7 @@ export default function SearchPage() {
                   const videoUrl = clip.video_url?.startsWith('http')
                     ? clip.video_url
                     : `http://localhost:3001${clip.video_url}`;
-                  
+
                   return (
                     <div
                       key={clip.id}
@@ -836,7 +836,10 @@ export default function SearchPage() {
                           playsInline
                         />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                          <Play className="w-12 h-12 text-white opacity-80" fill="white" />
+                          <Play
+                            className="w-12 h-12 text-white opacity-80"
+                            fill="white"
+                          />
                         </div>
                       </div>
                       <div className="p-4">
@@ -936,7 +939,7 @@ export default function SearchPage() {
             const videoUrl = clip.video_url?.startsWith('http')
               ? clip.video_url
               : `http://localhost:3001${clip.video_url}`;
-            
+
             return (
               <div
                 key={clip.id}
@@ -950,7 +953,10 @@ export default function SearchPage() {
                     playsInline
                   />
                   <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                    <Play className="w-12 h-12 text-white opacity-80" fill="white" />
+                    <Play
+                      className="w-12 h-12 text-white opacity-80"
+                      fill="white"
+                    />
                   </div>
                 </div>
                 <div className="p-4">
@@ -1069,13 +1075,13 @@ export default function SearchPage() {
                   />
                   {searchQuery && (
                     <button
-                    onClick={() => {
-                      setSearchQuery('');
-                      setSearchResults([]);
-                      setSearchPosts([]);
-                      setSearchClips([]);
-                      setSearchArticles([]);
-                    }}
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSearchResults([]);
+                        setSearchPosts([]);
+                        setSearchClips([]);
+                        setSearchArticles([]);
+                      }}
                       className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
                       <X size={20} />

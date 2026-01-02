@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { authenticateToken } = require('../middleware/auth');
 const articlesController = require('./articles.controller');
 
 /**
@@ -7,7 +8,7 @@ const articlesController = require('./articles.controller');
  * Create a new article
  * Auth required - user_id in body or req.user.id
  */
-router.post('/', articlesController.createArticle);
+router.post('/', authenticateToken, articlesController.createArticle);
 
 /**
  * GET /api/articles
@@ -20,6 +21,6 @@ router.get('/', articlesController.getAllArticles);
  * Soft delete an article (set is_active = false)
  * Auth required - user_id in body or req.user.id
  */
-router.delete('/:id', articlesController.deleteArticle);
+router.delete('/:id', authenticateToken, articlesController.deleteArticle);
 
 module.exports = router;

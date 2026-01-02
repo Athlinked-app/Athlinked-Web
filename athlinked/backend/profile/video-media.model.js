@@ -139,4 +139,3 @@ module.exports = {
   updateVideoMedia,
   deleteVideoMedia,
 };
-

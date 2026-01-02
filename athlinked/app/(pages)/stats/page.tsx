@@ -77,7 +77,7 @@ export default function StatsPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };
@@ -202,9 +202,7 @@ export default function StatsPage() {
       setLoadingPositions(true);
       try {
         // Get all sports first
-        const sportsResponse = await fetch(
-          'http://localhost:3001/api/sports'
-        );
+        const sportsResponse = await fetch('http://localhost:3001/api/sports');
         const sportsData = await sportsResponse.json();
 
         if (!sportsData.success) {

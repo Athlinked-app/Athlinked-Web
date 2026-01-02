@@ -101,8 +101,8 @@ export default function Header({
   const rawProfileUrl =
     propUserProfileUrl ||
     (userData?.profile_url &&
-      typeof userData.profile_url === 'string' &&
-      userData.profile_url.trim() !== ''
+    typeof userData.profile_url === 'string' &&
+    userData.profile_url.trim() !== ''
       ? userData.profile_url
       : null);
 
@@ -111,7 +111,7 @@ export default function Header({
       ? rawProfileUrl.startsWith('http')
         ? rawProfileUrl
         : rawProfileUrl.startsWith('/') && !rawProfileUrl.startsWith('/assets')
-          ? `http://localhost:3001${rawProfileUrl}`
+          ? `https://qd9ngjg1-3001.inc1.devtunnels.ms${rawProfileUrl}`
           : rawProfileUrl
       : null;
 
@@ -127,7 +127,10 @@ export default function Header({
   // Close popup when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
+      if (
+        popupRef.current &&
+        !popupRef.current.contains(event.target as Node)
+      ) {
         setShowPopup(false);
       }
     };
@@ -141,13 +144,35 @@ export default function Header({
     };
   }, [showPopup]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('userEmail');
+  const handleLogout = async () => {
+    // Revoke refresh token on server
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (refreshToken) {
+      try {
+        await fetch('http://localhost:3001/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ refreshToken }),
+        });
+      } catch (error) {
+        console.error('Error revoking token:', error);
+      }
+    }
+
+    // Remove tokens and old userEmail
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('userEmail');
+    }
     router.push('/login');
   };
 
-  const userRole = userData?.user_type 
-    ? userData.user_type.charAt(0).toUpperCase() + userData.user_type.slice(1).toLowerCase()
+  const userRole = userData?.user_type
+    ? userData.user_type.charAt(0).toUpperCase() +
+      userData.user_type.slice(1).toLowerCase()
     : 'User';
 
   return (

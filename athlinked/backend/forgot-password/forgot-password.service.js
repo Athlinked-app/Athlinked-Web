@@ -191,8 +191,6 @@ async function resetPasswordService(emailOrUsername, otp, newPassword) {
       hashedPassword
     );
 
-    console.log(`✅ Password reset successfully for ${normalizedInput}`);
-
     return {
       success: true,
       message: 'Password reset successfully',

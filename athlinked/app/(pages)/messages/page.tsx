@@ -71,35 +71,43 @@ function MessagesPageContent() {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
-        const userIdentifier = localStorage.getItem('userEmail');
-        if (!userIdentifier) {
-          return;
-        }
+        const { getCurrentUserId, getCurrentUser } =
+          await import('@/utils/auth');
+        const userId = getCurrentUserId();
+        const user = getCurrentUser();
 
-        let response;
-        if (userIdentifier.startsWith('username:')) {
-          const username = userIdentifier.replace('username:', '');
-          response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-          );
-        } else {
-          response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-          );
-        }
-
-        if (!response.ok) {
-          return;
-        }
-
-        const data = await response.json();
-        if (data.success && data.user) {
-          setCurrentUser({
-            id: data.user.id,
-            full_name: data.user.full_name || 'User',
-            profile_url: data.user.profile_url,
-            username: data.user.username,
-          });
+        if (userId) {
+          // Fetch full user profile for display
+          const { apiGet } = await import('@/utils/api');
+          try {
+            const data = await apiGet<{ success: boolean; user?: any }>(
+              `/profile`
+            );
+            if (data.success && data.user) {
+              setCurrentUser({
+                id: userId,
+                full_name: data.user.full_name || 'User',
+                profile_url: data.user.profile_url,
+                username: data.user.username,
+              });
+            } else {
+              // Fallback to token data
+              setCurrentUser({
+                id: userId,
+                full_name: user?.username || 'User',
+                profile_url: undefined,
+                username: user?.username ?? undefined,
+              });
+            }
+          } catch (error) {
+            // Fallback to token data
+            setCurrentUser({
+              id: userId,
+              full_name: user?.username || 'User',
+              profile_url: undefined,
+              username: user?.username ?? undefined,
+            });
+          }
         }
       } catch (error) {
         console.error('Error fetching current user:', error);
@@ -260,16 +268,11 @@ function MessagesPageContent() {
     if (!currentUser?.id) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/messages/conversations?user_id=${currentUser.id}`
-      );
-
-      if (!response.ok) {
-        console.error('Failed to fetch conversations');
-        return;
-      }
-
-      const data = await response.json();
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        success: boolean;
+        conversations?: Conversation[];
+      }>(`/messages/conversations`);
       if (data.success && data.conversations) {
         setConversations(data.conversations);
       }
@@ -282,24 +285,10 @@ function MessagesPageContent() {
     if (!currentUser?.id) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/messages/${conversationId}?user_id=${currentUser.id}`
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{ success: boolean; messages?: Message[] }>(
+        `/messages/${conversationId}`
       );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        try {
-          errorData = JSON.parse(errorText);
-        } catch {
-          errorData = { message: errorText || 'Failed to fetch messages' };
-        }
-        console.error('Failed to fetch messages:', response.status, errorData);
-        setMessages([]);
-        return;
-      }
-
-      const data = await response.json();
       if (data.success && data.messages) {
         const messagesWithStatus = data.messages.map((msg: any) => {
           let messageType = msg.message_type;
@@ -354,18 +343,8 @@ function MessagesPageContent() {
     if (!currentUser?.id) return;
 
     try {
-      await fetch(
-        `http://localhost:3001/api/messages/${conversationId}/read`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: currentUser.id,
-          }),
-        }
-      );
+      const { apiPost } = await import('@/utils/api');
+      await apiPost(`/messages/${conversationId}/read`, {});
       fetchConversations();
     } catch (error) {
       console.error('Error marking messages as read:', error);
@@ -380,25 +359,21 @@ function MessagesPageContent() {
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/messages/search/users?q=${encodeURIComponent(query)}&user_id=${currentUser.id}`
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{ success: boolean; users?: SearchUser[] }>(
+        `/messages/search/users?q=${encodeURIComponent(query)}`
       );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('Failed to search users:', response.status, errorData);
-        return;
-      }
-
-      const data = await response.json();
       if (data.success && data.users) {
         setSearchResults(data.users);
         setShowSearchResults(true);
       } else {
-        console.error('Search users response error:', data);
+        setSearchResults([]);
+        setShowSearchResults(false);
       }
     } catch (error) {
       console.error('Error searching users:', error);
+      setSearchResults([]);
+      setShowSearchResults(false);
     }
   };
 
@@ -437,46 +412,24 @@ function MessagesPageContent() {
         setShowSearchResults(false);
         return;
       }
-      const response = await fetch(
-        'http://localhost:3001/api/messages/conversations/create',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: currentUser.id,
-            otherUserId: user.id,
-          }),
-        }
-      );
+      const { apiPost } = await import('@/utils/api');
+      const data = await apiPost<{
+        success: boolean;
+        conversation?: Conversation;
+        message?: string;
+      }>('/messages/conversations/create', {
+        otherUserId: user.id,
+      });
 
-      if (!response.ok) {
-        let errorData: { message?: string } = {};
-        try {
-          const text = await response.text();
-          errorData = text ? JSON.parse(text) : {};
-        } catch (e) {
-          console.error('Failed to parse error response:', e);
-        }
-        console.error(
-          'Failed to create conversation:',
-          response.status,
-          errorData
-        );
-        alert(
-          `Failed to create conversation: ${errorData?.message || 'Unknown error'}`
-        );
-        return;
-      }
-
-      const data = await response.json();
       if (data.success && data.conversation) {
         setSelectedConversation(data.conversation);
         await fetchConversations();
         setSearchQuery('');
         setShowSearchResults(false);
       } else {
+        alert(
+          `Failed to create conversation: ${data.message || 'Unknown error'}`
+        );
         console.error('Create conversation response error:', data);
       }
     } catch (error) {
@@ -515,21 +468,19 @@ function MessagesPageContent() {
       // If no conversation exists, try to create one or find the user
       try {
         // First, try to search for the user to get their info
-        const searchResponse = await fetch(
-          `http://localhost:3001/api/messages/search/users?q=&user_id=${currentUser.id}`
-        );
+        const { apiGet } = await import('@/utils/api');
+        const searchData = await apiGet<{
+          success: boolean;
+          users?: SearchUser[];
+        }>(`/messages/search/users?q=`);
+        if (searchData.success && searchData.users) {
+          const targetUser = searchData.users.find(
+            (u: SearchUser) => u.id === userIdFromUrl
+          );
 
-        if (searchResponse.ok) {
-          const searchData = await searchResponse.json();
-          if (searchData.success && searchData.users) {
-            const targetUser = searchData.users.find(
-              (u: SearchUser) => u.id === userIdFromUrl
-            );
-
-            if (targetUser) {
-              // Create conversation with this user
-              await handleSelectUser(targetUser);
-            }
+          if (targetUser) {
+            // Create conversation with this user
+            await handleSelectUser(targetUser);
           }
         }
       } catch (error) {
@@ -619,10 +570,14 @@ function MessagesPageContent() {
           formData.append('message', messageText);
         }
 
+        // File upload with FormData - need to include auth token
+        const { getToken } = await import('@/utils/api');
+        const token = getToken();
         const uploadResponse = await fetch(
           'http://localhost:3001/api/messages/upload',
           {
             method: 'POST',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
             body: formData,
           }
         );
@@ -1018,7 +973,7 @@ function MessagesPageContent() {
                                             'http'
                                           )
                                             ? msg.post_data.user_profile_url
-                                            : `http://localhost:3001${msg.post_data.user_profile_url}`
+                                            : `https://qd9ngjg1-3001.inc1.devtunnels.ms${msg.post_data.user_profile_url}`
                                         }
                                         alt={msg.post_data.username || 'User'}
                                         className="w-full h-full object-cover"
@@ -1040,7 +995,7 @@ function MessagesPageContent() {
                                     const mediaUrl =
                                       msg.post_data.media_url.startsWith('http')
                                         ? msg.post_data.media_url
-                                        : `http://localhost:3001${msg.post_data.media_url}`;
+                                        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${msg.post_data.media_url}`;
                                     const isVideo =
                                       msg.post_data.post_type === 'video' ||
                                       msg.post_data.media_url.match(
@@ -1132,7 +1087,7 @@ function MessagesPageContent() {
                                   'http'
                                 )
                                   ? msg.media_url
-                                  : `http://localhost:3001${msg.media_url}`;
+                                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${msg.media_url}`;
                                 const urlLower = msg.media_url.toLowerCase();
                                 const isImage =
                                   msg.message_type === 'image' ||

@@ -49,8 +49,8 @@ async function createCharacterLeadership(userId, data) {
   `;
 
   // Convert languages array to PostgreSQL array format
-  const languagesArray = Array.isArray(data.languagesSpoken) 
-    ? data.languagesSpoken 
+  const languagesArray = Array.isArray(data.languagesSpoken)
+    ? data.languagesSpoken
     : [];
 
   const values = [
@@ -91,8 +91,8 @@ async function updateCharacterLeadership(id, data) {
   }
   if (data.languagesSpoken !== undefined) {
     updateFields.push(`languages_spoken = $${paramIndex++}`);
-    const languagesArray = Array.isArray(data.languagesSpoken) 
-      ? data.languagesSpoken 
+    const languagesArray = Array.isArray(data.languagesSpoken)
+      ? data.languagesSpoken
       : [];
     values.push(languagesArray.length > 0 ? languagesArray : null);
   }
@@ -154,4 +154,3 @@ module.exports = {
   updateCharacterLeadership,
   deleteCharacterLeadership,
 };
-

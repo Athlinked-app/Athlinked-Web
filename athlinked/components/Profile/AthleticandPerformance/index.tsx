@@ -44,10 +44,12 @@ export default function AthleticAndPerformanceComponent({
 
   const fetchAthleticPerformance = async () => {
     if (!userId) return;
-    
+
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/profile/${userId}/athletic-performance`);
+      const response = await fetch(
+        `http://localhost:3001/api/profile/${userId}/athletic-performance`
+      );
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
@@ -81,13 +83,16 @@ export default function AthleticAndPerformanceComponent({
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/api/profile/athletic-performance/${existingData.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newData),
-        });
+        const response = await fetch(
+          `http://localhost:3001/api/profile/athletic-performance/${existingData.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newData),
+          }
+        );
 
         if (response.ok) {
           const result = await response.json();
@@ -102,7 +107,9 @@ export default function AthleticAndPerformanceComponent({
           }
         } else {
           const errorData = await response.json();
-          alert(`Failed to update athletic performance: ${errorData.message || 'Unknown error'}`);
+          alert(
+            `Failed to update athletic performance: ${errorData.message || 'Unknown error'}`
+          );
         }
       } catch (error) {
         console.error('Error updating athletic performance:', error);
@@ -121,13 +128,16 @@ export default function AthleticAndPerformanceComponent({
       }
 
       try {
-        const response = await fetch(`http://localhost:3001/api/profile/${userId}/athletic-performance`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(newData),
-        });
+        const response = await fetch(
+          `http://localhost:3001/api/profile/${userId}/athletic-performance`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(newData),
+          }
+        );
 
         if (response.ok) {
           const result = await response.json();
@@ -140,7 +150,9 @@ export default function AthleticAndPerformanceComponent({
           }
         } else {
           const errorData = await response.json();
-          alert(`Failed to save athletic performance: ${errorData.message || 'Unknown error'}`);
+          alert(
+            `Failed to save athletic performance: ${errorData.message || 'Unknown error'}`
+          );
         }
       } catch (error) {
         console.error('Error saving athletic performance:', error);
@@ -173,9 +185,12 @@ export default function AthleticAndPerformanceComponent({
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/profile/athletic-performance/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/profile/athletic-performance/${id}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (response.ok) {
         const updatedList = athleticAndPerformanceList.filter(
@@ -187,7 +202,9 @@ export default function AthleticAndPerformanceComponent({
         }
       } else {
         const errorData = await response.json();
-        alert(`Failed to delete athletic performance: ${errorData.message || 'Unknown error'}`);
+        alert(
+          `Failed to delete athletic performance: ${errorData.message || 'Unknown error'}`
+        );
       }
     } catch (error) {
       console.error('Error deleting athletic performance:', error);

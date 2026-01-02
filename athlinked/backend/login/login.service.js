@@ -1,5 +1,6 @@
 const loginModel = require('./login.model');
 const { comparePassword } = require('../utils/hash');
+const refreshTokensService = require('../auth/refresh-tokens.service');
 
 /**
  * Check if string is an email
@@ -16,7 +17,7 @@ function isEmail(str) {
  * @param {string} password - Plain text password
  * @returns {Promise<object>} Service result with user data if successful
  */
-async function loginService(emailOrUsername, password) {
+async function loginService(emailOrUsername, password, req = null) {
   try {
     if (!emailOrUsername || !password) {
       throw new Error('Email/username and password are required');
@@ -46,17 +47,29 @@ async function loginService(emailOrUsername, password) {
     // Return user data without password
     const { password: _, ...userWithoutPassword } = user;
 
+    const userData = {
+      id: userWithoutPassword.id,
+      email: userWithoutPassword.email,
+      username: userWithoutPassword.username || null,
+      full_name: userWithoutPassword.full_name,
+      user_type: userWithoutPassword.user_type,
+      primary_sport: userWithoutPassword.primary_sport || null,
+    };
+
+    // Generate access and refresh tokens
+    const { accessToken, refreshToken } =
+      await refreshTokensService.createTokenPair(
+        userData,
+        req?.headers['user-agent'] || null,
+        req?.ip || null
+      );
+
     return {
       success: true,
       message: 'Login successful',
-      user: {
-        id: userWithoutPassword.id,
-        email: userWithoutPassword.email,
-        username: userWithoutPassword.username || null,
-        full_name: userWithoutPassword.full_name,
-        user_type: userWithoutPassword.user_type,
-        primary_sport: userWithoutPassword.primary_sport || null,
-      },
+      accessToken,
+      refreshToken,
+      user: userData,
     };
   } catch (error) {
     console.error('Login service error:', error.message);

@@ -15,9 +15,9 @@ export default function ConnectionPopup({
 }: ConnectionPopupProps) {
   if (!open) return null;
 
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md">
-        <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-md">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-900">
             Connection Required
@@ -30,8 +30,8 @@ export default function ConnectionPopup({
           </button>
         </div>
         <p className="text-gray-700 mb-6">
-          Please connect with <span className="font-semibold">{username}</span> to
-          message with them.
+          Please connect with <span className="font-semibold">{username}</span>{' '}
+          to message with them.
         </p>
         <div className="flex justify-end">
           <button
@@ -45,4 +45,3 @@ export default function ConnectionPopup({
     </div>
   );
 }
-

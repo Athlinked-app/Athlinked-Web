@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { authenticateToken } = require('../middleware/auth');
 const statsController = require('./stats.controller');
 
 // 1. Get All Sports
@@ -17,11 +18,16 @@ router.get(
 // 4. Create / Update User Sport Profile
 router.post(
   '/user-sport-profile',
+  authenticateToken,
   statsController.createOrUpdateUserSportProfile
 );
 
 // 5. Save User Position Stats
-router.post('/user/position-stats', statsController.saveUserPositionStats);
+router.post(
+  '/user/position-stats',
+  authenticateToken,
+  statsController.saveUserPositionStats
+);
 
 // 6. Get User Stats for a Sport
 router.get(

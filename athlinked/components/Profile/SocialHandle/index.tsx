@@ -76,10 +76,12 @@ export default function SocialHandles({
 
   const fetchSocialHandles = async () => {
     if (!userId) return;
-    
+
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/profile/${userId}/social-handles`);
+      const response = await fetch(
+        `http://localhost:3001/api/profile/${userId}/social-handles`
+      );
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
@@ -108,16 +110,19 @@ export default function SocialHandles({
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/profile/${userId}/social-handles`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          platform: newHandle.platform,
-          url: newHandle.url,
-        }),
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/profile/${userId}/social-handles`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            platform: newHandle.platform,
+            url: newHandle.url,
+          }),
+        }
+      );
 
       if (response.ok) {
         const result = await response.json();
@@ -130,7 +135,9 @@ export default function SocialHandles({
         }
       } else {
         const errorData = await response.json();
-        alert(`Failed to save social handle: ${errorData.message || 'Unknown error'}`);
+        alert(
+          `Failed to save social handle: ${errorData.message || 'Unknown error'}`
+        );
       }
     } catch (error) {
       console.error('Error saving social handle:', error);
@@ -150,9 +157,12 @@ export default function SocialHandles({
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/api/profile/social-handles/${id}`, {
-        method: 'DELETE',
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/profile/social-handles/${id}`,
+        {
+          method: 'DELETE',
+        }
+      );
 
       if (response.ok) {
         const updatedHandles = socialHandles.filter((_, i) => i !== index);
@@ -162,7 +172,9 @@ export default function SocialHandles({
         }
       } else {
         const errorData = await response.json();
-        alert(`Failed to delete social handle: ${errorData.message || 'Unknown error'}`);
+        alert(
+          `Failed to delete social handle: ${errorData.message || 'Unknown error'}`
+        );
       }
     } catch (error) {
       console.error('Error deleting social handle:', error);

@@ -98,48 +98,15 @@ export default function CommentsPanel({
     setIsLoading(true);
 
     try {
-      const userIdentifier = localStorage.getItem('userEmail');
-      if (!userIdentifier) {
-        alert('User not logged in');
-        return;
-      }
+      const { apiPost } = await import('@/utils/api');
 
-      let userResponse;
-      if (userIdentifier.startsWith('username:')) {
-        const username = userIdentifier.replace('username:', '');
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-        );
-      } else {
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
-      }
-
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-
-      const userData = await userResponse.json();
-      if (!userData.success || !userData.user) {
-        throw new Error('User not found');
-      }
-
-      const response = await fetch(
-        `http://localhost:3001/api/posts/${post.id}/comments`,
+      const result = await apiPost<{ success: boolean; message?: string }>(
+        `/posts/${post.id}/comments`,
         {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: userData.user.id,
-            comment: commentText.trim(),
-          }),
+          comment: commentText.trim(),
         }
       );
 
-      const result = await response.json();
       if (result.success) {
         setCommentText('');
         await loadComments();
@@ -171,49 +138,16 @@ export default function CommentsPanel({
     setIsLoading(true);
 
     try {
-      const userIdentifier = localStorage.getItem('userEmail');
-      if (!userIdentifier) {
-        alert('User not logged in');
-        return;
-      }
+      const { apiPost } = await import('@/utils/api');
 
-      let userResponse;
-      if (userIdentifier.startsWith('username:')) {
-        const username = userIdentifier.replace('username:', '');
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-        );
-      } else {
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
-      }
-
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-
-      const userData = await userResponse.json();
-      if (!userData.success || !userData.user) {
-        throw new Error('User not found');
-      }
-
-      const response = await fetch(
-        `http://localhost:3001/api/posts/comments/${parentCommentId}/reply`,
+      const response = await apiPost<{ success: boolean; message?: string }>(
+        `/posts/comments/${parentCommentId}/reply`,
         {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: userData.user.id,
-            comment: replyText.trim(),
-          }),
+          comment: replyText.trim(),
         }
       );
 
-      const result = await response.json();
-      if (result.success) {
+      if (response.success) {
         setReplyText('');
         setReplyingTo(null);
         await loadComments();
@@ -221,11 +155,11 @@ export default function CommentsPanel({
           onCommentAdded();
         }
       } else {
-        alert(result.message || 'Failed to add reply');
+        alert(response.message || 'Failed to add reply');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding reply:', error);
-      alert('Failed to add reply. Please try again.');
+      alert(error.message || 'Failed to add reply. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -301,7 +235,7 @@ export default function CommentsPanel({
                           src={
                             comment.user_profile_url.startsWith('http')
                               ? comment.user_profile_url
-                              : `http://localhost:3001${comment.user_profile_url}`
+                              : `https://qd9ngjg1-3001.inc1.devtunnels.ms${comment.user_profile_url}`
                           }
                           alt={comment.username}
                           className="w-full h-full object-cover"
@@ -356,7 +290,7 @@ export default function CommentsPanel({
                                   src={
                                     reply.user_profile_url.startsWith('http')
                                       ? reply.user_profile_url
-                                      : `http://localhost:3001${reply.user_profile_url}`
+                                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${reply.user_profile_url}`
                                   }
                                   alt={reply.username}
                                   className="w-full h-full object-cover"

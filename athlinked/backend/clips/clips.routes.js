@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const { authenticateToken } = require('../middleware/auth');
 const clipsController = require('./clips.controller');
 const upload = require('../utils/upload');
 
@@ -8,7 +9,12 @@ const upload = require('../utils/upload');
  * Create a new clip
  * Auth required
  */
-router.post('/', upload.single('video'), clipsController.createClip);
+router.post(
+  '/',
+  authenticateToken,
+  upload.single('video'),
+  clipsController.createClip
+);
 
 /**
  * GET /api/clips
@@ -21,7 +27,7 @@ router.get('/', clipsController.getClipsFeed);
  * Add a comment to a clip
  * Auth required
  */
-router.post('/:clipId/comments', clipsController.addComment);
+router.post('/:clipId/comments', authenticateToken, clipsController.addComment);
 
 /**
  * GET /api/clips/:clipId/comments
@@ -34,6 +40,6 @@ router.get('/:clipId/comments', clipsController.getClipComments);
  * Delete a clip
  * Auth required
  */
-router.delete('/:clipId', clipsController.deleteClip);
+router.delete('/:clipId', authenticateToken, clipsController.deleteClip);
 
 module.exports = router;
