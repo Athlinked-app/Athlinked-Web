@@ -101,6 +101,14 @@ function ProfileContent() {
   } | null>(null);
 
   const targetUserId = viewUserId || currentUserId;
+  const isViewingOwnProfile = !viewUserId || viewUserId === currentUserId;
+
+  // Reset to profile tab if viewing someone else's profile and on a restricted tab
+  useEffect(() => {
+    if (!isViewingOwnProfile && (activeTab === 'activity' || activeTab === 'mysave' || activeTab === 'favourites')) {
+      setActiveTab('profile');
+    }
+  }, [isViewingOwnProfile, activeTab]);
 
   const fetchPosts = async () => {
     try {
@@ -792,51 +800,56 @@ function ProfileContent() {
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
                 )}
               </button>
-              <div className="h-6 w-px bg-gray-200"></div>
-              <button
-                onClick={() => setActiveTab('activity')}
-                className={`px-6 py-3 font-medium text-xl transition-colors relative ${
-                  activeTab === 'activity'
-                    ? 'text-[#CB9729]'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Activity
-                {activeTab === 'activity' && (
-                  <div className="absolute bottom-0 text-xl  left-0 right-0 h-0.5 bg-[#CB9729]"></div>
-                )}
-              </button>
-              <div className="h-6 w-px bg-gray-200"></div>
-              <button
-                onClick={() => setActiveTab('mysave')}
-                className={`px-6 py-3 font-medium text-xl  transition-colors relative ${
-                  activeTab === 'mysave'
-                    ? 'text-[#CB9729]'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                My Save
-                {activeTab === 'mysave' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
-                )}
-              </button>
-              {/* Show Favourites tab only for coaches */}
-              {currentUser?.user_type === 'coach' && (
+              {/* Show Activity, My Save, and Favourites tabs only when viewing own profile */}
+              {isViewingOwnProfile && (
                 <>
                   <div className="h-6 w-px bg-gray-200"></div>
                   <button
-                    onClick={() => setActiveTab('favourites')}
+                    onClick={() => setActiveTab('activity')}
                     className={`px-6 py-3 font-medium text-xl transition-colors relative ${
-                      activeTab === 'favourites'
+                      activeTab === 'activity'
                         ? 'text-[#CB9729]'
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
-                    Favourites
-                    {activeTab === 'favourites' && (
+                    Activity
+                    {activeTab === 'activity' && (
+                      <div className="absolute bottom-0 text-xl  left-0 right-0 h-0.5 bg-[#CB9729]"></div>
+                    )}
+                  </button>
+                  <div className="h-6 w-px bg-gray-200"></div>
+                  <button
+                    onClick={() => setActiveTab('mysave')}
+                    className={`px-6 py-3 font-medium text-xl  transition-colors relative ${
+                      activeTab === 'mysave'
+                        ? 'text-[#CB9729]'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    My Save
+                    {activeTab === 'mysave' && (
                       <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
                     )}
                   </button>
+                  {/* Show Favourites tab only for coaches */}
+                  {currentUser?.user_type === 'coach' && (
+                    <>
+                      <div className="h-6 w-px bg-gray-200"></div>
+                      <button
+                        onClick={() => setActiveTab('favourites')}
+                        className={`px-6 py-3 font-medium text-xl transition-colors relative ${
+                          activeTab === 'favourites'
+                            ? 'text-[#CB9729]'
+                            : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        Favourites
+                        {activeTab === 'favourites' && (
+                          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
+                        )}
+                      </button>
+                    </>
+                  )}
                 </>
               )}
             </div>
