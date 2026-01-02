@@ -5,6 +5,7 @@ import { Plus, Trash2, FileText, Pencil } from 'lucide-react';
 import AcademicBackgroundPopup, {
   type AcademicBackground,
 } from '../AcademicBackgroundPopup';
+import { apiGet, apiPost, apiPut, apiDelete } from '@/utils/api';
 
 export type { AcademicBackground };
 
@@ -44,16 +45,14 @@ export default function AcademicBackgrounds({
 
     try {
       setLoading(true);
-      const response = await fetch(
-        `http://localhost:3001/api/profile/${userId}/academic-backgrounds`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setAcademicBackgrounds(data.data);
-          if (onBackgroundsChange) {
-            onBackgroundsChange(data.data);
-          }
+      const data = await apiGet<{
+        success: boolean;
+        data?: AcademicBackground[];
+      }>(`/profile/${userId}/academic-backgrounds`);
+      if (data.success && data.data) {
+        setAcademicBackgrounds(data.data);
+        if (onBackgroundsChange) {
+          onBackgroundsChange(data.data);
         }
       }
     } catch (error) {
@@ -80,32 +79,23 @@ export default function AcademicBackgrounds({
       }
 
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/profile/academic-backgrounds/${existingBg.id}`,
-          {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(newBackground),
-          }
-        );
+        const result = await apiPut<{
+          success: boolean;
+          data?: AcademicBackground;
+          message?: string;
+        }>(`/profile/academic-backgrounds/${existingBg.id}`, newBackground);
 
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            const updatedBackgrounds = [...academicBackgrounds];
-            updatedBackgrounds[editingIndex] = result.data;
-            setAcademicBackgrounds(updatedBackgrounds);
-            if (onBackgroundsChange) {
-              onBackgroundsChange(updatedBackgrounds);
-            }
-            setEditingIndex(null);
+        if (result.success && result.data) {
+          const updatedBackgrounds = [...academicBackgrounds];
+          updatedBackgrounds[editingIndex] = result.data;
+          setAcademicBackgrounds(updatedBackgrounds);
+          if (onBackgroundsChange) {
+            onBackgroundsChange(updatedBackgrounds);
           }
+          setEditingIndex(null);
         } else {
-          const errorData = await response.json();
           alert(
-            `Failed to update academic background: ${errorData.message || 'Unknown error'}`
+            `Failed to update academic background: ${result.message || 'Unknown error'}`
           );
         }
       } catch (error) {
@@ -125,30 +115,21 @@ export default function AcademicBackgrounds({
       }
 
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/profile/${userId}/academic-backgrounds`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(newBackground),
-          }
-        );
+        const result = await apiPost<{
+          success: boolean;
+          data?: AcademicBackground;
+          message?: string;
+        }>(`/profile/${userId}/academic-backgrounds`, newBackground);
 
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            const updatedBackgrounds = [...academicBackgrounds, result.data];
-            setAcademicBackgrounds(updatedBackgrounds);
-            if (onBackgroundsChange) {
-              onBackgroundsChange(updatedBackgrounds);
-            }
+        if (result.success && result.data) {
+          const updatedBackgrounds = [...academicBackgrounds, result.data];
+          setAcademicBackgrounds(updatedBackgrounds);
+          if (onBackgroundsChange) {
+            onBackgroundsChange(updatedBackgrounds);
           }
         } else {
-          const errorData = await response.json();
           alert(
-            `Failed to save academic background: ${errorData.message || 'Unknown error'}`
+            `Failed to save academic background: ${result.message || 'Unknown error'}`
           );
         }
       } catch (error) {
@@ -182,14 +163,12 @@ export default function AcademicBackgrounds({
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/profile/academic-backgrounds/${id}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const result = await apiDelete<{
+        success: boolean;
+        message?: string;
+      }>(`/profile/academic-backgrounds/${id}`);
 
-      if (response.ok) {
+      if (result.success) {
         const updatedBackgrounds = academicBackgrounds.filter(
           (_, i) => i !== index
         );
@@ -198,9 +177,8 @@ export default function AcademicBackgrounds({
           onBackgroundsChange(updatedBackgrounds);
         }
       } else {
-        const errorData = await response.json();
         alert(
-          `Failed to delete academic background: ${errorData.message || 'Unknown error'}`
+          `Failed to delete academic background: ${result.message || 'Unknown error'}`
         );
       }
     } catch (error) {
@@ -218,7 +196,13 @@ export default function AcademicBackgrounds({
           </h2>
           <button
             onClick={() => {
-              setEditingIndex(null);
+              // If there's existing data, show the first entry for editing
+              // Otherwise, open empty form for new entry
+              if (academicBackgrounds.length > 0) {
+                setEditingIndex(0);
+              } else {
+                setEditingIndex(null);
+              }
               setShowPopup(true);
             }}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"

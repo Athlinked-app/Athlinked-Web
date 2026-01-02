@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, FileText, Pencil } from 'lucide-react';
 import AchievementsPopup, { type Achievement } from '../AchievementsPopup';
+import { apiGet, apiPost, apiPut, apiDelete } from '@/utils/api';
 
 export type { Achievement };
 
@@ -42,16 +43,14 @@ export default function Achievements({
 
     try {
       setLoading(true);
-      const response = await fetch(
-        `http://localhost:3001/api/profile/${userId}/achievements`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setAchievementsList(data.data);
-          if (onAchievementsChange) {
-            onAchievementsChange(data.data);
-          }
+      const data = await apiGet<{
+        success: boolean;
+        data?: Achievement[];
+      }>(`/profile/${userId}/achievements`);
+      if (data.success && data.data) {
+        setAchievementsList(data.data);
+        if (onAchievementsChange) {
+          onAchievementsChange(data.data);
         }
       }
     } catch (error) {
@@ -78,32 +77,23 @@ export default function Achievements({
       }
 
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/profile/achievements/${existingAchievement.id}`,
-          {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(newAchievement),
-          }
-        );
+        const result = await apiPut<{
+          success: boolean;
+          data?: Achievement;
+          message?: string;
+        }>(`/profile/achievements/${existingAchievement.id}`, newAchievement);
 
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            const updatedAchievements = [...achievementsList];
-            updatedAchievements[editingIndex] = result.data;
-            setAchievementsList(updatedAchievements);
-            if (onAchievementsChange) {
-              onAchievementsChange(updatedAchievements);
-            }
-            setEditingIndex(null);
+        if (result.success && result.data) {
+          const updatedAchievements = [...achievementsList];
+          updatedAchievements[editingIndex] = result.data;
+          setAchievementsList(updatedAchievements);
+          if (onAchievementsChange) {
+            onAchievementsChange(updatedAchievements);
           }
+          setEditingIndex(null);
         } else {
-          const errorData = await response.json();
           alert(
-            `Failed to update achievement: ${errorData.message || 'Unknown error'}`
+            `Failed to update achievement: ${result.message || 'Unknown error'}`
           );
         }
       } catch (error) {
@@ -123,30 +113,21 @@ export default function Achievements({
       }
 
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/profile/${userId}/achievements`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(newAchievement),
-          }
-        );
+        const result = await apiPost<{
+          success: boolean;
+          data?: Achievement;
+          message?: string;
+        }>(`/profile/${userId}/achievements`, newAchievement);
 
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            const updatedAchievements = [...achievementsList, result.data];
-            setAchievementsList(updatedAchievements);
-            if (onAchievementsChange) {
-              onAchievementsChange(updatedAchievements);
-            }
+        if (result.success && result.data) {
+          const updatedAchievements = [...achievementsList, result.data];
+          setAchievementsList(updatedAchievements);
+          if (onAchievementsChange) {
+            onAchievementsChange(updatedAchievements);
           }
         } else {
-          const errorData = await response.json();
           alert(
-            `Failed to save achievement: ${errorData.message || 'Unknown error'}`
+            `Failed to save achievement: ${result.message || 'Unknown error'}`
           );
         }
       } catch (error) {
@@ -180,14 +161,12 @@ export default function Achievements({
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/profile/achievements/${id}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const result = await apiDelete<{
+        success: boolean;
+        message?: string;
+      }>(`/profile/achievements/${id}`);
 
-      if (response.ok) {
+      if (result.success) {
         const updatedAchievements = achievementsList.filter(
           (_, i) => i !== index
         );
@@ -196,9 +175,8 @@ export default function Achievements({
           onAchievementsChange(updatedAchievements);
         }
       } else {
-        const errorData = await response.json();
         alert(
-          `Failed to delete achievement: ${errorData.message || 'Unknown error'}`
+          `Failed to delete achievement: ${result.message || 'Unknown error'}`
         );
       }
     } catch (error) {
@@ -214,7 +192,13 @@ export default function Achievements({
           <h2 className="text-2xl font-bold text-gray-900">Achievements</h2>
           <button
             onClick={() => {
-              setEditingIndex(null);
+              // If there's existing data, show the first entry for editing
+              // Otherwise, open empty form for new entry
+              if (achievementsList.length > 0) {
+                setEditingIndex(0);
+              } else {
+                setEditingIndex(null);
+              }
               setShowPopup(true);
             }}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"

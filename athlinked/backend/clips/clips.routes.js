@@ -12,7 +12,30 @@ const upload = require('../utils/upload');
 router.post(
   '/',
   authenticateToken,
-  upload.single('video'),
+  (req, res, next) => {
+    upload.single('video')(req, res, (err) => {
+      if (err) {
+        // Handle multer errors
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({
+            success: false,
+            message: 'File size too large. Maximum size is 50MB',
+          });
+        }
+        if (err.message) {
+          return res.status(400).json({
+            success: false,
+            message: err.message,
+          });
+        }
+        return res.status(400).json({
+          success: false,
+          message: 'File upload error',
+        });
+      }
+      next();
+    });
+  },
   clipsController.createClip
 );
 
