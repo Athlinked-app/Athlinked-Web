@@ -651,7 +651,7 @@ export default function ClipsPage() {
           id: clip.id,
           videoUrl: clip.video_url?.startsWith('http')
             ? clip.video_url
-            : `https://qd9ngjg1-3001.inc1.devtunnels.ms${clip.video_url}`,
+            : `http://localhost:3001${clip.video_url}`,
           author: clip.username || fallbackName,
           authorAvatar:
             clip.user_profile_url && clip.user_profile_url.trim() !== ''

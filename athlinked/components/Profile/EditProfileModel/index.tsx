@@ -201,7 +201,7 @@ export default function EditProfileModal({
               if (profileData.profileImage) {
                 const profileUrl = profileData.profileImage.startsWith('http')
                   ? profileData.profileImage
-                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.profileImage}`;
+                  : `http://localhost:3001${profileData.profileImage}`;
                 setProfileImagePreview(profileUrl);
               }
               if (profileData.coverImage) {

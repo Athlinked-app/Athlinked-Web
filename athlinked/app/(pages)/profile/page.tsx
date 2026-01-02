@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
+import { apiRequest, apiUpload } from '@/utils/api';
 import RightSideBar from '@/components/RightSideBar';
 import { type PostData } from '@/components/Post';
 import EditProfileModal from '@/components/Profile/EditProfileModel';
@@ -544,7 +545,7 @@ function ProfileContent() {
               background_image_url: profileData?.coverImage
                 ? profileData.coverImage.startsWith('http')
                   ? profileData.coverImage
-                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.coverImage}`
+                  : `http://localhost:3001${profileData.coverImage}`
                 : null,
               user_type: viewUserId
                 ? viewUser?.user_type || 'athlete'
@@ -638,19 +639,17 @@ function ProfileContent() {
                 if (data.profile_url instanceof File) {
                   const formData = new FormData();
                   formData.append('file', data.profile_url);
-                  const uploadResponse = await fetch(
-                    'http://localhost:3001/api/profile/upload',
-                    {
-                      method: 'POST',
-                      body: formData,
-                    }
-                  );
+                  try {
+                    const uploadData = await apiUpload<{
+                      success: boolean;
+                      fileUrl?: string;
+                    }>('/profile/upload', formData);
 
-                  if (uploadResponse.ok) {
-                    const uploadData = await uploadResponse.json();
                     if (uploadData.success && uploadData.fileUrl) {
                       profileData.profileImageUrl = uploadData.fileUrl;
                     }
+                  } catch (error) {
+                    console.error('Error uploading profile image:', error);
                   }
                 } else if (typeof data.profile_url === 'string') {
                   profileData.profileImageUrl = data.profile_url;
@@ -659,33 +658,26 @@ function ProfileContent() {
                 if (data.background_image_url instanceof File) {
                   const formData = new FormData();
                   formData.append('file', data.background_image_url);
-                  const uploadResponse = await fetch(
-                    'http://localhost:3001/api/profile/upload',
-                    {
-                      method: 'POST',
-                      body: formData,
-                    }
-                  );
+                  try {
+                    const uploadData = await apiUpload<{
+                      success: boolean;
+                      fileUrl?: string;
+                    }>('/profile/upload', formData);
 
-                  if (uploadResponse.ok) {
-                    const uploadData = await uploadResponse.json();
                     if (uploadData.success && uploadData.fileUrl) {
                       profileData.coverImageUrl = uploadData.fileUrl;
                     }
+                  } catch (error) {
+                    console.error('Error uploading cover image:', error);
                   }
                 } else if (typeof data.background_image_url === 'string') {
                   profileData.coverImageUrl = data.background_image_url;
                 }
-                const response = await fetch(
-                  'http://localhost:3001/api/profile',
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(profileData),
-                  }
-                );
+                
+                const response = await apiRequest('/profile', {
+                  method: 'POST',
+                  body: JSON.stringify(profileData),
+                });
 
                 if (!response.ok) {
                   const errorData = await response.json();

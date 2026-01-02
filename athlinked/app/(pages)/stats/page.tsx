@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import NavigationBar from '@/components/NavigationBar';
+import { apiRequest } from '@/utils/api';
 import {
   Search,
   ChevronDown,
@@ -77,7 +78,7 @@ export default function StatsPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
+      return `http://localhost:3001${profileUrl}`;
     }
     return profileUrl;
   };
@@ -310,8 +311,8 @@ export default function StatsPage() {
 
       setLoadingStats(true);
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/user/${userId}/sport-profiles`
+        const response = await apiRequest(
+          `/user/${userId}/sport-profiles`
         );
         const data = await response.json();
 
@@ -902,13 +903,10 @@ export default function StatsPage() {
                     }
 
                     // Step 4: Create or update user sport profile
-                    const profileResponse = await fetch(
-                      'http://localhost:3001/api/user-sport-profile',
+                    const profileResponse = await apiRequest(
+                      '/user-sport-profile',
                       {
                         method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
                         body: JSON.stringify({
                           user_id: userId,
                           sportId: sport.id,
@@ -968,13 +966,10 @@ export default function StatsPage() {
 
                     // Step 6: Save position stats
                     if (stats.length > 0) {
-                      const statsResponse = await fetch(
-                        'http://localhost:3001/api/user/position-stats',
+                      const statsResponse = await apiRequest(
+                        '/user/position-stats',
                         {
                           method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                          },
                           body: JSON.stringify({
                             user_id: userId,
                             userSportProfileId:
@@ -1001,8 +996,8 @@ export default function StatsPage() {
                     });
                     setAvailableFields([]);
                     // Refresh stats data
-                    const refreshResponse = await fetch(
-                      `http://localhost:3001/api/user/${userId}/sport-profiles`
+                    const refreshResponse = await apiRequest(
+                      `/user/${userId}/sport-profiles`
                     );
                     const refreshData = await refreshResponse.json();
                     if (refreshData.success) {

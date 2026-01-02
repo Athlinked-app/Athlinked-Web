@@ -46,7 +46,7 @@ export default function Event({
     if (mediaUrl.startsWith('http')) return mediaUrl;
 
     // Otherwise, prepend the base URL
-    return `https://qd9ngjg1-3001.inc1.devtunnels.ms${mediaUrl}`;
+    return `http://localhost:3001${mediaUrl}`;
   };
 
   if (loading) {
@@ -136,3 +136,4 @@ export default function Event({
     </>
   );
 }
+
