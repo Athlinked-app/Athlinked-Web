@@ -106,6 +106,28 @@ async function markAllAsRead(recipientUserId) {
 }
 
 /**
+ * Delete a notification
+ * @param {string} notificationId - Notification ID
+ * @param {string} recipientUserId - User ID (for security check)
+ * @returns {Promise<boolean>} True if notification was deleted, false if not found
+ */
+async function deleteNotification(notificationId, recipientUserId) {
+  const query = `
+    DELETE FROM notifications
+    WHERE id = $1 AND recipient_user_id = $2
+    RETURNING id
+  `;
+
+  try {
+    const result = await pool.query(query, [notificationId, recipientUserId]);
+    return result.rowCount > 0;
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+    throw error;
+  }
+}
+
+/**
  * Create a new notification
  * @param {object} notificationData - Notification data
  * @param {string} notificationData.recipientUserId - Recipient user ID
@@ -209,4 +231,5 @@ module.exports = {
   markAsRead,
   markAllAsRead,
   createNotification,
+  deleteNotification,
 };

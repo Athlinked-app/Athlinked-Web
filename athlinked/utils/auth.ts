@@ -71,13 +71,8 @@ export async function logout(): Promise<void> {
   // Revoke refresh token on server
   if (refreshToken) {
     try {
-      await fetch('http://localhost:3001/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ refreshToken }),
-      });
+      const { apiPost } = await import('./api');
+      await apiPost('/auth/logout', { refreshToken });
     } catch (error) {
       console.error('Error revoking token:', error);
     }

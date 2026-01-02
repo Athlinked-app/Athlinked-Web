@@ -120,17 +120,16 @@ export default function Post({
   useEffect(() => {
     const fetchCommentCount = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/posts/${post.id}/comments`
-        );
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.comments) {
-            const parentComments = data.comments.filter(
-              (c: any) => !c.parent_comment_id
-            );
-            setCommentCount(parentComments.length);
-          }
+        const { apiGet } = await import('@/utils/api');
+        const data = await apiGet<{
+          success: boolean;
+          comments?: any[];
+        }>(`/posts/${post.id}/comments`);
+        if (data.success && data.comments) {
+          const parentComments = data.comments.filter(
+            (c: any) => !c.parent_comment_id
+          );
+          setCommentCount(parentComments.length);
         }
       } catch (error) {
         console.error('Error fetching comment count:', error);
@@ -158,15 +157,14 @@ export default function Post({
       if (!currentUserId) return;
 
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/posts/${post.id}/like-status?user_id=${currentUserId}`
-        );
+        const { apiGet } = await import('@/utils/api');
+        const data = await apiGet<{
+          success: boolean;
+          isLiked?: boolean;
+        }>(`/posts/${post.id}/like-status?user_id=${currentUserId}`);
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setLiked(data.isLiked);
-          }
+        if (data.success) {
+          setLiked(data.isLiked || false);
         }
       } catch (error) {
         console.error('Error checking like status:', error);
@@ -174,6 +172,24 @@ export default function Post({
     };
 
     checkLikeStatus();
+
+    // Set up WebSocket for real-time like updates
+    const { getSocket } = require('@/utils/useSocket');
+    const socket = getSocket();
+    
+    if (socket) {
+      const handleLikeUpdate = (data: { postId: string; likeCount: number }) => {
+        if (data.postId === post.id) {
+          setLikeCount(data.likeCount);
+        }
+      };
+
+      socket.on('post_like_update', handleLikeUpdate);
+
+      return () => {
+        socket.off('post_like_update', handleLikeUpdate);
+      };
+    }
   }, [post.id, currentUserId]);
 
   const handleLike = async () => {
@@ -188,53 +204,20 @@ export default function Post({
     setLikeCount(prev => (liked ? prev - 1 : prev + 1));
 
     try {
-      // Get user data
-      const userIdentifier = localStorage.getItem('userEmail');
-      if (!userIdentifier) {
-        alert('User not logged in');
-        // Revert optimistic update
-        setLiked(wasLiked);
-        setLikeCount(prev => (wasLiked ? prev + 1 : prev - 1));
-        return;
-      }
-
-      let userResponse;
-      if (userIdentifier.startsWith('username:')) {
-        const username = userIdentifier.replace('username:', '');
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-        );
-      } else {
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
-      }
-
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-
-      const userData = await userResponse.json();
-      if (!userData.success || !userData.user) {
-        throw new Error('User not found');
-      }
-
+      const { apiPost } = await import('@/utils/api');
+      
       // Call like or unlike API based on current state
       const endpoint = wasLiked
-        ? `http://localhost:3001/api/posts/${post.id}/unlike`
-        : `http://localhost:3001/api/posts/${post.id}/like`;
+        ? `/posts/${post.id}/unlike`
+        : `/posts/${post.id}/like`;
 
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: userData.user.id,
-        }),
+      const result = await apiPost<{
+        success: boolean;
+        like_count?: number;
+        message?: string;
+      }>(endpoint, {
+        user_id: currentUserId,
       });
-
-      const result = await response.json();
 
       if (result.success) {
         // Update like count from API response
@@ -262,17 +245,16 @@ export default function Post({
 
   const handleCommentAdded = async () => {
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/posts/${post.id}/comments`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.comments) {
-          const parentComments = data.comments.filter(
-            (c: any) => !c.parent_comment_id
-          );
-          setCommentCount(parentComments.length);
-        }
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        success: boolean;
+        comments?: any[];
+      }>(`/posts/${post.id}/comments`);
+      if (data.success && data.comments) {
+        const parentComments = data.comments.filter(
+          (c: any) => !c.parent_comment_id
+        );
+        setCommentCount(parentComments.length);
       }
     } catch (error) {
       console.error('Error fetching comment count:', error);
@@ -320,47 +302,16 @@ export default function Post({
 
     setIsDeleting(true);
     try {
-      const userIdentifier = localStorage.getItem('userEmail');
-      if (!userIdentifier) {
+      if (!currentUserId) {
         alert('User not logged in');
         return;
       }
 
-      let userResponse;
-      if (userIdentifier.startsWith('username:')) {
-        const username = userIdentifier.replace('username:', '');
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-        );
-      } else {
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
-      }
-
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-
-      const userData = await userResponse.json();
-      if (!userData.success || !userData.user) {
-        throw new Error('User not found');
-      }
-
-      const response = await fetch(
-        `http://localhost:3001/api/posts/${post.id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: userData.user.id,
-          }),
-        }
-      );
-
-      const result = await response.json();
+      const { apiDelete } = await import('@/utils/api');
+      const result = await apiDelete<{
+        success: boolean;
+        message?: string;
+      }>(`/posts/${post.id}`);
       if (result.success) {
         if (onPostDeleted) {
           onPostDeleted();

@@ -42,6 +42,110 @@ export default function NavigationBar({
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [notificationCount, setNotificationCount] = useState<number>(0);
+  const [messageCount, setMessageCount] = useState<number>(0);
+
+  // Fetch notification count and set up WebSocket
+  useEffect(() => {
+    const fetchNotificationCount = async () => {
+      try {
+        const { apiGet } = await import('@/utils/api');
+        const { getCurrentUserId } = await import('@/utils/auth');
+        const userId = getCurrentUserId();
+        
+        if (!userId) return;
+
+        const data = await apiGet<{
+          success: boolean;
+          unreadCount?: number;
+          count?: number;
+        }>('/notifications/unread-count');
+        
+        if (data.success) {
+          const count = data.unreadCount ?? data.count ?? 0;
+          setNotificationCount(count);
+        }
+      } catch (error) {
+        console.error('Error fetching notification count:', error);
+      }
+    };
+
+    // Initial fetch
+    fetchNotificationCount();
+
+    // Fetch message count
+    const fetchMessageCount = async () => {
+      try {
+        const { apiGet } = await import('@/utils/api');
+        const { getCurrentUserId } = await import('@/utils/auth');
+        const userId = getCurrentUserId();
+        
+        if (!userId) return;
+
+        const data = await apiGet<{
+          success: boolean;
+          unreadCount?: number;
+          count?: number;
+        }>('/messages/unread-count');
+        
+        if (data.success) {
+          const count = data.unreadCount ?? data.count ?? 0;
+          setMessageCount(count);
+        }
+      } catch (error) {
+        console.error('Error fetching message count:', error);
+      }
+    };
+
+    fetchMessageCount();
+
+    // Set up WebSocket connection
+    let socket: any = null;
+    let handleNotificationCountUpdate: ((data: { count: number }) => void) | null = null;
+    let handleNewNotification: (() => void) | null = null;
+    let handleMessageCountUpdate: ((data: { count: number }) => void) | null = null;
+
+    const setupWebSocket = async () => {
+      const { getSocket } = await import('@/utils/useSocket');
+      socket = getSocket();
+      
+      if (socket) {
+        // Listen for notification count updates
+        handleNotificationCountUpdate = (data: { count: number }) => {
+          setNotificationCount(data.count);
+        };
+        
+        handleNewNotification = () => {
+          fetchNotificationCount();
+        };
+
+        // Listen for message count updates
+        handleMessageCountUpdate = (data: { count: number }) => {
+          setMessageCount(data.count);
+        };
+
+        socket.on('notification_count_update', handleNotificationCountUpdate);
+        socket.on('new_notification', handleNewNotification);
+        socket.on('message_count_update', handleMessageCountUpdate);
+      }
+    };
+
+    setupWebSocket();
+    
+    return () => {
+      if (socket) {
+        if (handleNotificationCountUpdate) {
+          socket.off('notification_count_update', handleNotificationCountUpdate);
+        }
+        if (handleNewNotification) {
+          socket.off('new_notification', handleNewNotification);
+        }
+        if (handleMessageCountUpdate) {
+          socket.off('message_count_update', handleMessageCountUpdate);
+        }
+      }
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -239,13 +343,25 @@ export default function NavigationBar({
                 {href !== '#' ? (
                   <Link
                     href={href}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors relative ${
                       isActive
                         ? ' text-[#CB9729]'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
                   >
-                    <Icon size={20} strokeWidth={2} />
+                    <div className="relative flex-shrink-0">
+                      <Icon size={20} strokeWidth={2} />
+                      {item.id === 'notifications' && notificationCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center z-10 border-2 border-white shadow-md">
+                          {notificationCount > 99 ? '99+' : notificationCount}
+                        </span>
+                      )}
+                      {item.id === 'message' && messageCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center z-10 border-2 border-white shadow-md">
+                          {messageCount > 99 ? '99+' : messageCount}
+                        </span>
+                      )}
+                    </div>
                     <span className="text-md font-medium">{item.label}</span>
                   </Link>
                 ) : (

@@ -68,29 +68,21 @@ export default function HomeHerosection({
       throw new Error('User not logged in');
     }
 
-    const headers = {
-      'Content-Type': 'application/json',
-    };
-
-    let userResponse;
+    const { apiGet } = await import('@/utils/api');
+    let userData;
     if (userIdentifier.startsWith('username:')) {
       const username = userIdentifier.replace('username:', '');
-      userResponse = await fetch(
-        `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`,
-        { headers }
-      );
+      userData = await apiGet<{
+        success: boolean;
+        user?: any;
+      }>(`/signup/user-by-username/${encodeURIComponent(username)}`);
     } else {
-      userResponse = await fetch(
-        `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`,
-        { headers }
-      );
+      userData = await apiGet<{
+        success: boolean;
+        user?: any;
+      }>(`/signup/user/${encodeURIComponent(userIdentifier)}`);
     }
 
-    if (!userResponse.ok) {
-      throw new Error('Failed to fetch user data');
-    }
-
-    const userData = await userResponse.json();
     if (!userData.success || !userData.user) {
       throw new Error('User not found');
     }

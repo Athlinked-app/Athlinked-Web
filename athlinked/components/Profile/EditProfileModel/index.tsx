@@ -682,7 +682,12 @@ export default function EditProfileModal({
                 </div>
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
-                  <span>10k followers</span>
+                  <span>
+                    {userData?.followers_count !== undefined
+                      ? userData.followers_count.toLocaleString()
+                      : '0'}{' '}
+                    followers
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4" />

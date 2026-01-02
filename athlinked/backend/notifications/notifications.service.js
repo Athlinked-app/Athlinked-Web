@@ -143,9 +143,49 @@ async function markAllAsReadService(recipientUserId) {
   }
 }
 
+/**
+ * Delete notification service
+ * @param {string} notificationId - Notification ID
+ * @param {string} recipientUserId - User ID (for security check)
+ * @returns {Promise<object>} Service result
+ */
+async function deleteNotificationService(notificationId, recipientUserId) {
+  try {
+    if (!notificationId) {
+      throw new Error('Notification ID is required');
+    }
+
+    if (!recipientUserId) {
+      throw new Error('Recipient user ID is required');
+    }
+
+    const deleted = await notificationModel.deleteNotification(
+      notificationId,
+      recipientUserId
+    );
+
+    if (!deleted) {
+      return {
+        success: false,
+        message:
+          'Notification not found or you do not have permission to delete it',
+      };
+    }
+
+    return {
+      success: true,
+      message: 'Notification deleted successfully',
+    };
+  } catch (error) {
+    console.error('Delete notification service error:', error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   getNotificationsService,
   getUnreadCountService,
   markAsReadService,
   markAllAsReadService,
+  deleteNotificationService,
 };

@@ -334,56 +334,22 @@ export default function ManageResourcesPage() {
     try {
       const { title } = await scrapeArticleMetadata(articleUrl);
 
-      const response = await fetch('http://localhost:3001/api/articles', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: currentUserId,
-          title: title,
-          article_link: articleUrl,
-        }),
+      const { apiPost } = await import('@/utils/api');
+      const data = await apiPost<{
+        success: boolean;
+        article?: any;
+        message?: string;
+      }>('/articles', {
+        user_id: currentUserId,
+        title: title,
+        article_link: articleUrl,
       });
 
-      // Check if response is JSON
-      const contentType = response.headers.get('content-type');
-      let data;
-
-      if (contentType && contentType.includes('application/json')) {
-        try {
-          data = await response.json();
-        } catch (jsonError) {
-          console.error('JSON parse error:', jsonError);
-          const text = await response.text();
-          console.error('Response text:', text);
-          throw new Error(
-            `Failed to parse response: ${text.substring(0, 100)}`
-          );
-        }
-      } else {
-        // If not JSON, read as text to see what we got
-        const text = await response.text();
-        console.error(
-          'Non-JSON response (status:',
-          response.status,
-          '):',
-          text.substring(0, 200)
-        );
-        throw new Error(
-          `Server returned non-JSON response (status: ${response.status}). Check backend logs.`
-        );
-      }
-
-      if (response.ok) {
-        if (data.success) {
-          setShowUrlModal(false);
-          setArticleUrl('');
-          // Refresh resources
-          fetchResources();
-        } else {
-          alert(data.message || 'Failed to add article');
-        }
+      if (data.success) {
+        setShowUrlModal(false);
+        setArticleUrl('');
+        // Refresh resources
+        fetchResources();
       } else {
         alert(data.message || 'Failed to add article');
       }

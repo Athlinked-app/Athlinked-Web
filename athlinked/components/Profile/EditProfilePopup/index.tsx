@@ -112,12 +112,13 @@ export default function EditProfilePopup({
   const fetchSports = async () => {
     setLoadingSports(true);
     try {
-      const response = await fetch('http://localhost:3001/api/sports');
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.sports) {
-          setAllSports(data.sports);
-        }
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        success: boolean;
+        sports?: any[];
+      }>('/sports');
+      if (data.success && data.sports) {
+        setAllSports(data.sports);
       }
     } catch (error) {
       console.error('Error fetching sports:', error);
