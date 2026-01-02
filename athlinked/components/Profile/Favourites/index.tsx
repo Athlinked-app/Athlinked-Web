@@ -12,7 +12,7 @@ interface FavoriteAthlete {
   profile_url: string | null;
   bio: string | null;
   primary_sport: string | null;
-  sports_played: string | null;
+  sports_played: string | string[] | null;
   city: string | null;
   education: string | null;
   favorited_at: string;
@@ -183,10 +183,10 @@ export default function Favourites({ coachId }: FavouritesProps) {
                       {athlete.sports_played && (
                         <p className="text-sm text-gray-600 mt-2">
                           <span className="font-medium">Sports:</span>{' '}
-                          {typeof athlete.sports_played === 'string'
-                            ? athlete.sports_played.replace(/[{}"']/g, '')
-                            : Array.isArray(athlete.sports_played)
-                              ? athlete.sports_played.join(', ')
+                          {Array.isArray(athlete.sports_played)
+                            ? athlete.sports_played.join(', ')
+                            : typeof athlete.sports_played === 'string'
+                              ? athlete.sports_played.replace(/[{}"']/g, '')
                               : athlete.sports_played}
                         </p>
                       )}
