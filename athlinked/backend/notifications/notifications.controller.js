@@ -99,6 +99,21 @@ async function markAsRead(req, res) {
       return res.status(404).json(result);
     }
 
+    // Emit notification count update via WebSocket
+    try {
+      const app = require('../app');
+      const io = app.get('io');
+      if (io) {
+        const notificationModel = require('./notifications.model');
+        const unreadCount = await notificationModel.getUnreadCount(recipientUserId);
+        io.to(`user:${recipientUserId}`).emit('notification_count_update', {
+          count: unreadCount,
+        });
+      }
+    } catch (error) {
+      console.error('Error emitting notification count update:', error);
+    }
+
     return res.status(200).json(result);
   } catch (error) {
     console.error('Mark notification as read controller error:', error);
@@ -138,9 +153,72 @@ async function markAllAsRead(req, res) {
   }
 }
 
+/**
+ * Controller to delete a notification
+ * @param {object} req - Express request object
+ * @param {object} res - Express response object
+ */
+async function deleteNotification(req, res) {
+  try {
+    const recipientUserId = req.user?.id;
+
+    if (!recipientUserId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
+
+    const notificationId = req.params.id;
+
+    if (!notificationId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Notification ID is required',
+      });
+    }
+
+    const result = await notificationService.deleteNotificationService(
+      notificationId,
+      recipientUserId
+    );
+
+    if (!result.success) {
+      return res.status(404).json(result);
+    }
+
+    // Emit notification count update and deletion via WebSocket
+    try {
+      const app = require('../app');
+      const io = app.get('io');
+      if (io) {
+        const notificationModel = require('./notifications.model');
+        const unreadCount = await notificationModel.getUnreadCount(recipientUserId);
+        io.to(`user:${recipientUserId}`).emit('notification_deleted', {
+          notificationId,
+        });
+        io.to(`user:${recipientUserId}`).emit('notification_count_update', {
+          count: unreadCount,
+        });
+      }
+    } catch (error) {
+      console.error('Error emitting notification deletion update:', error);
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Delete notification controller error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 module.exports = {
   getNotifications,
   getUnreadCount,
   markAsRead,
   markAllAsRead,
+  deleteNotification,
 };

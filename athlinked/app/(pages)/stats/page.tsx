@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Header from '@/components/Header';
 import NavigationBar from '@/components/NavigationBar';
+import { apiGet, apiPost } from '@/utils/api';
 import {
   Search,
   ChevronDown,
@@ -95,19 +97,19 @@ export default function StatsPage() {
         }
 
         // Fetch user data from backend
-        let response;
+        let data;
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
-          response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-          );
+          data = await apiGet<{
+            success: boolean;
+            user?: any;
+          }>(`/signup/user-by-username/${encodeURIComponent(username)}`);
         } else {
-          response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-          );
+          data = await apiGet<{
+            success: boolean;
+            user?: any;
+          }>(`/signup/user/${encodeURIComponent(userIdentifier)}`);
         }
-
-        const data = await response.json();
 
         if (data.success && data.user) {
           setUserData(data.user);
@@ -134,10 +136,10 @@ export default function StatsPage() {
           // If no sports_played, try to get from all available sports in database
           if (sportsList.length === 0) {
             try {
-              const sportsResponse = await fetch(
-                'http://localhost:3001/api/sports'
-              );
-              const sportsData = await sportsResponse.json();
+              const sportsData = await apiGet<{
+                success: boolean;
+                sports?: { name: string; id: string }[];
+              }>('/sports');
               if (sportsData.success && sportsData.sports) {
                 // Use all available sports as fallback
                 sportsList = sportsData.sports.map(
@@ -201,10 +203,12 @@ export default function StatsPage() {
       setLoadingPositions(true);
       try {
         // Get all sports first
-        const sportsResponse = await fetch('http://localhost:3001/api/sports');
-        const sportsData = await sportsResponse.json();
+        const sportsData = await apiGet<{
+          success: boolean;
+          sports?: any[];
+        }>('/sports');
 
-        if (!sportsData.success) {
+        if (!sportsData.success || !sportsData.sports) {
           console.error('Failed to fetch sports');
           setAvailablePositions([]);
           setLoadingPositions(false);
@@ -226,10 +230,11 @@ export default function StatsPage() {
         }
 
         // Get positions for this sport
-        const positionsResponse = await fetch(
-          `http://localhost:3001/api/sports/${sport.id}/positions`
-        );
-        const positionsData = await positionsResponse.json();
+        const positionsData = await apiGet<{
+          success: boolean;
+          positions?: any[];
+          message?: string;
+        }>(`/sports/${sport.id}/positions`);
 
         if (positionsData.success && positionsData.positions) {
           setAvailablePositions(positionsData.positions);
@@ -277,10 +282,11 @@ export default function StatsPage() {
 
       setLoadingFields(true);
       try {
-        const fieldsResponse = await fetch(
-          `http://localhost:3001/api/positions/${selectedPosition.id}/fields`
-        );
-        const fieldsData = await fieldsResponse.json();
+        const fieldsData = await apiGet<{
+          success: boolean;
+          fields?: any[];
+          message?: string;
+        }>(`/positions/${selectedPosition.id}/fields`);
 
         if (fieldsData.success && fieldsData.fields) {
           setAvailableFields(fieldsData.fields);
@@ -309,12 +315,13 @@ export default function StatsPage() {
 
       setLoadingStats(true);
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/user/${userId}/sport-profiles`
-        );
-        const data = await response.json();
+        const data = await apiGet<{
+          success: boolean;
+          profiles?: any[];
+          message?: string;
+        }>(`/user/${userId}/sport-profiles`);
 
-        if (data.success) {
+        if (data.success && data.profiles) {
           setUserProfiles(data.profiles);
         } else {
           console.error('Failed to fetch user profiles:', data.message);
@@ -438,39 +445,26 @@ export default function StatsPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-200">
-      {/* Header - Full Width */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center w-full">
-        <div className="flex items-center">
-          <img src="/Frame 171.png" alt="ATHLINKED" className="h-8 w-auto" />
-        </div>
-        <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden flex items-center justify-center">
-          {getProfileUrl(userData?.profile_url) ? (
-            <img
-              src={getProfileUrl(userData?.profile_url) || ''}
-              alt="Profile"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className="text-black font-semibold text-xs">
-              {getInitials(userData?.full_name)}
-            </span>
-          )}
-        </div>
-      </header>
+      {/* Header Component */}
+      <Header
+        userName={userData?.full_name}
+        userProfileUrl={getProfileUrl(userData?.profile_url)}
+      />
 
       {/* Content Area with Navigation and Main Content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden mt-5 overflow-hidden ">
         {/* Navigation Sidebar */}
+        <div className="hidden md:flex px-6 ">
         <NavigationBar
           activeItem="stats"
           userName={userData?.full_name || ''}
         />
-
+</div>
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col bg-white overflow-auto">
-          {/* Main Content */}
+
+        <div className="flex-1 flex flex-col px-3 gap-4 overflow-hidden min-w-0">
+        <div className="flex-1 flex flex-col bg-white overflow-auto rounded-lg">
           <main className="flex-1 p-6 bg-white">
-            {/* Athlete Profile Card */}
             <div className="bg-[#CB9729] rounded-lg p-6 mb-6 flex items-center justify-between shadow-sm">
               <div className="flex items-center gap-6">
                 <div className="w-24 h-24 rounded-full bg-white overflow-hidden border-2 border-white shadow-md flex items-center justify-center">
@@ -650,20 +644,17 @@ export default function StatsPage() {
             </div>
           </main>
         </div>
+        </div>
       </div>
 
       {/* Add Stats Modal */}
       {showAddStatsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-end">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowAddStatsModal(false)}
           />
-
-          {/* Modal - Slides in from right */}
           <div className="relative z-10 w-full max-w-md bg-white h-full shadow-2xl overflow-y-auto">
-            {/* Header */}
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-black">Add Stats</h2>
@@ -697,8 +688,6 @@ export default function StatsPage() {
                 </div>
               </div>
             </div>
-
-            {/* Form Content */}
             <div className="p-6 space-y-6">
               {/* Sport Name */}
               <div className="mb-2">
@@ -706,8 +695,6 @@ export default function StatsPage() {
                   {getSportDisplayName(activeSport)}
                 </h3>
               </div>
-
-              {/* Year Field */}
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
                   Year
@@ -861,12 +848,12 @@ export default function StatsPage() {
                   setSaving(true);
                   try {
                     // Step 1: Get all sports to find sport ID
-                    const sportsResponse = await fetch(
-                      'http://localhost:3001/api/sports'
-                    );
-                    const sportsData = await sportsResponse.json();
+                    const sportsData = await apiGet<{
+                      success: boolean;
+                      sports?: any[];
+                    }>('/sports');
 
-                    if (!sportsData.success) {
+                    if (!sportsData.success || !sportsData.sports) {
                       throw new Error('Failed to fetch sports');
                     }
 
@@ -890,12 +877,13 @@ export default function StatsPage() {
                     }
 
                     // Step 2: Get positions for the sport
-                    const positionsResponse = await fetch(
-                      `http://localhost:3001/api/sports/${sport.id}/positions`
-                    );
-                    const positionsData = await positionsResponse.json();
+                    const positionsData = await apiGet<{
+                      success: boolean;
+                      positions?: any[];
+                      message?: string;
+                    }>(`/sports/${sport.id}/positions`);
 
-                    if (!positionsData.success) {
+                    if (!positionsData.success || !positionsData.positions) {
                       throw new Error('Failed to fetch positions');
                     }
 
@@ -911,31 +899,27 @@ export default function StatsPage() {
                     }
 
                     // Step 3: Get fields for the position
-                    const fieldsResponse = await fetch(
-                      `http://localhost:3001/api/positions/${position.id}/fields`
-                    );
-                    const fieldsData = await fieldsResponse.json();
+                    const fieldsData = await apiGet<{
+                      success: boolean;
+                      fields?: any[];
+                      message?: string;
+                    }>(`/positions/${position.id}/fields`);
 
-                    if (!fieldsData.success) {
+                    if (!fieldsData.success || !fieldsData.fields) {
                       throw new Error('Failed to fetch fields');
                     }
 
                     // Step 4: Create or update user sport profile
-                    const profileResponse = await fetch(
-                      'http://localhost:3001/api/user-sport-profile',
-                      {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                          user_id: userId,
-                          sportId: sport.id,
-                          positionId: position.id,
-                        }),
-                      }
-                    );
-                    const profileData = await profileResponse.json();
+                    const profileData = await apiPost<{
+                      success: boolean;
+                      profileId?: string;
+                      user_sport_profile_id?: string;
+                      message?: string;
+                    }>('/user-sport-profile', {
+                      user_id: userId,
+                      sportId: sport.id,
+                      positionId: position.id,
+                    });
 
                     if (!profileData.success) {
                       throw new Error(
@@ -987,22 +971,15 @@ export default function StatsPage() {
 
                     // Step 6: Save position stats
                     if (stats.length > 0) {
-                      const statsResponse = await fetch(
-                        'http://localhost:3001/api/user/position-stats',
-                        {
-                          method: 'POST',
-                          headers: {
-                            'Content-Type': 'application/json',
-                          },
-                          body: JSON.stringify({
-                            user_id: userId,
-                            userSportProfileId:
-                              profileData.user_sport_profile_id,
-                            stats: stats,
-                          }),
-                        }
-                      );
-                      const statsData = await statsResponse.json();
+                      const statsData = await apiPost<{
+                        success: boolean;
+                        message?: string;
+                      }>('/user/position-stats', {
+                        user_id: userId,
+                        userSportProfileId:
+                          profileData.user_sport_profile_id || profileData.profileId || '',
+                        stats: stats,
+                      });
 
                       if (!statsData.success) {
                         throw new Error(
@@ -1020,11 +997,12 @@ export default function StatsPage() {
                     });
                     setAvailableFields([]);
                     // Refresh stats data
-                    const refreshResponse = await fetch(
-                      `http://localhost:3001/api/user/${userId}/sport-profiles`
-                    );
-                    const refreshData = await refreshResponse.json();
-                    if (refreshData.success) {
+                    const refreshData = await apiGet<{
+                      success: boolean;
+                      profiles?: any[];
+                      message?: string;
+                    }>(`/user/${userId}/sport-profiles`);
+                    if (refreshData.success && refreshData.profiles) {
                       setUserProfiles(refreshData.profiles);
                     }
                   } catch (error: any) {

@@ -1,6 +1,40 @@
 const notificationModel = require('./notifications.model');
 
 /**
+ * Emit notification via WebSocket
+ */
+function emitNotification(io, notification) {
+  if (!io || !notification) return;
+  
+  try {
+    // Emit to the recipient user's room
+    io.to(`user:${notification.recipient_user_id}`).emit('new_notification', {
+      id: notification.id,
+      actorFullName: notification.actor_full_name,
+      type: notification.type,
+      message: notification.message,
+      entityType: notification.entity_type,
+      entityId: notification.entity_id,
+      isRead: notification.is_read,
+      createdAt: notification.created_at,
+    });
+
+    // Emit notification count update
+    notificationModel.getUnreadCount(notification.recipient_user_id)
+      .then(count => {
+        io.to(`user:${notification.recipient_user_id}`).emit('notification_count_update', {
+          count,
+        });
+      })
+      .catch(err => {
+        console.error('Error fetching unread count for WebSocket:', err);
+      });
+  } catch (error) {
+    console.error('Error emitting notification via WebSocket:', error);
+  }
+}
+
+/**
  * Helper function to create a notification
  * This is for INTERNAL USE ONLY - not exposed as a public API
  *
@@ -79,6 +113,19 @@ async function createNotification(options) {
     });
 
     console.log('Notification created successfully:', notification.id);
+    
+    // Emit via WebSocket if available
+    try {
+      const app = require('../app');
+      const io = app.get('io');
+      if (io) {
+        emitNotification(io, notification);
+      }
+    } catch (error) {
+      console.error('Error emitting notification via WebSocket:', error);
+      // Don't throw - notification was created successfully
+    }
+    
     return notification;
   } catch (error) {
     console.error('Error creating notification:', error);
@@ -88,4 +135,5 @@ async function createNotification(options) {
 
 module.exports = {
   createNotification,
+  emitNotification,
 };

@@ -19,6 +19,19 @@ async function createClip(req, res) {
     }
 
     if (!file) {
+      // Check if it's a multer error
+      if (req.fileValidationError) {
+        return res.status(400).json({
+          success: false,
+          message: req.fileValidationError,
+        });
+      }
+      if (req.fileSizeError) {
+        return res.status(400).json({
+          success: false,
+          message: 'File size too large. Maximum size is 50MB',
+        });
+      }
       return res.status(400).json({
         success: false,
         message: 'Video file is required',

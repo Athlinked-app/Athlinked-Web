@@ -162,8 +162,8 @@ export default function Landing() {
         userProfileUrl={getProfileUrl(currentUser?.profile_url)}
       />
 
-      <main className="flex flex-1 w-full mt-5 overflow-hidden">
-        <div className="hidden md:flex px-6 ">
+      <main className="flex flex-1 w-full mt-5 overflow-hidden ">
+        <div className="hidden md:flex px-3 ">
           <NavigationBar activeItem="home" />
         </div>
 

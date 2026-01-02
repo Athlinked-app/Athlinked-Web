@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import SocialHandlePopup from '../SocialHandlePopup';
+import { apiGet, apiPost, apiDelete } from '@/utils/api';
 
 export interface SocialHandle {
   id?: string;
@@ -79,16 +80,13 @@ export default function SocialHandles({
 
     try {
       setLoading(true);
-      const response = await fetch(
-        `http://localhost:3001/api/profile/${userId}/social-handles`
+      const data = await apiGet<{ success: boolean; data?: SocialHandle[] }>(
+        `/profile/${userId}/social-handles`
       );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setSocialHandles(data.data);
-          if (onHandlesChange) {
-            onHandlesChange(data.data);
-          }
+      if (data.success && data.data) {
+        setSocialHandles(data.data);
+        if (onHandlesChange) {
+          onHandlesChange(data.data);
         }
       }
     } catch (error) {
@@ -110,33 +108,24 @@ export default function SocialHandles({
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/profile/${userId}/social-handles`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            platform: newHandle.platform,
-            url: newHandle.url,
-          }),
-        }
-      );
+      const result = await apiPost<{
+        success: boolean;
+        data?: SocialHandle;
+        message?: string;
+      }>(`/profile/${userId}/social-handles`, {
+        platform: newHandle.platform,
+        url: newHandle.url,
+      });
 
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          const updatedHandles = [...socialHandles, result.data];
-          setSocialHandles(updatedHandles);
-          if (onHandlesChange) {
-            onHandlesChange(updatedHandles);
-          }
+      if (result.success && result.data) {
+        const updatedHandles = [...socialHandles, result.data];
+        setSocialHandles(updatedHandles);
+        if (onHandlesChange) {
+          onHandlesChange(updatedHandles);
         }
       } else {
-        const errorData = await response.json();
         alert(
-          `Failed to save social handle: ${errorData.message || 'Unknown error'}`
+          `Failed to save social handle: ${result.message || 'Unknown error'}`
         );
       }
     } catch (error) {
@@ -157,23 +146,20 @@ export default function SocialHandles({
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/profile/social-handles/${id}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const result = await apiDelete<{
+        success: boolean;
+        message?: string;
+      }>(`/profile/social-handles/${id}`);
 
-      if (response.ok) {
+      if (result.success) {
         const updatedHandles = socialHandles.filter((_, i) => i !== index);
         setSocialHandles(updatedHandles);
         if (onHandlesChange) {
           onHandlesChange(updatedHandles);
         }
       } else {
-        const errorData = await response.json();
         alert(
-          `Failed to delete social handle: ${errorData.message || 'Unknown error'}`
+          `Failed to delete social handle: ${result.message || 'Unknown error'}`
         );
       }
     } catch (error) {

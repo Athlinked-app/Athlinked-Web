@@ -18,6 +18,7 @@ const statsRoutes = require('./stats/stats.routes');
 const profileRoutes = require('./profile/profile.routes');
 const profileUploadRoutes = require('./profile/profile-upload.routes');
 const notificationsRoutes = require('./notifications/notifications.routes');
+const favoritesRoutes = require('./favorites/favorites.routes');
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use('/api', statsRoutes);
 app.use('/api/profile', profileUploadRoutes); // Upload route must be first
 app.use('/api/profile', profileRoutes);
 app.use('/api/notifications', notificationsRoutes);
+app.use('/api/favorites', favoritesRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

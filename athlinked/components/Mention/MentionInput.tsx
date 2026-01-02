@@ -41,22 +41,21 @@ export default function MentionInput({
       if (!currentUserId) return;
 
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/network/following/${currentUserId}`
-        );
+        const { apiGet } = await import('@/utils/api');
+        const data = await apiGet<{
+          success: boolean;
+          following?: any[];
+        }>(`/network/following/${currentUserId}`);
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.following) {
-            setFollowers(
-              data.following.map((user: any) => ({
-                id: user.id,
-                full_name: user.full_name || 'User',
-                username: user.username,
-                profile_url: user.profile_url,
-              }))
-            );
-          }
+        if (data.success && data.following) {
+          setFollowers(
+            data.following.map((user: any) => ({
+              id: user.id,
+              full_name: user.full_name || 'User',
+              username: user.username,
+              profile_url: user.profile_url,
+            }))
+          );
         }
       } catch (error) {
         console.error('Error fetching followers:', error);
