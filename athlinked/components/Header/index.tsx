@@ -111,7 +111,7 @@ export default function Header({
       ? rawProfileUrl.startsWith('http')
         ? rawProfileUrl
         : rawProfileUrl.startsWith('/') && !rawProfileUrl.startsWith('/assets')
-          ? `https://qd9ngjg1-3001.inc1.devtunnels.ms${rawProfileUrl}`
+          ? `http://localhost:3001${rawProfileUrl}`
           : rawProfileUrl
       : null;
 

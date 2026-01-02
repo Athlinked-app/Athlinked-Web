@@ -17,7 +17,6 @@ import {
   Plus,
   ChevronUp,
   ChevronDown,
-  X,
   Trash2,
   MoreVertical,
   Bookmark,
@@ -65,7 +64,6 @@ export default function ClipsPage() {
     {}
   );
   const [selectedReelId, setSelectedReelId] = useState<string | null>(null);
-  const [showComments, setShowComments] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [selectedReelForShare, setSelectedReelForShare] = useState<Reel | null>(
@@ -137,6 +135,8 @@ export default function ClipsPage() {
 
       if (reels[currentIndex]) {
         setSelectedReelId(reels[currentIndex].id);
+        // Fetch comments for the current reel
+        fetchComments(reels[currentIndex].id);
       } // Play/pause audio based on current index and paused state
       reels.forEach((reel, index) => {
         const audio = audioRefs.current[reel.id];
@@ -183,6 +183,8 @@ export default function ClipsPage() {
 
     if (reels.length > 0 && !selectedReelId) {
       setSelectedReelId(reels[0].id);
+      // Fetch comments for the first reel
+      fetchComments(reels[0].id);
     }
 
     // Play the first audio on initial load (only after user interaction)
@@ -556,8 +558,7 @@ export default function ClipsPage() {
   };
 
   const handleComment = async (reelId: string) => {
-    setSelectedReelId(reelId);
-    setShowComments(true);
+    // Just fetch comments when comment button is clicked
     await fetchComments(reelId);
   };
 
@@ -651,7 +652,7 @@ export default function ClipsPage() {
           id: clip.id,
           videoUrl: clip.video_url?.startsWith('http')
             ? clip.video_url
-            : `https://qd9ngjg1-3001.inc1.devtunnels.ms${clip.video_url}`,
+            : `http://localhost:3001${clip.video_url}`,
           author: clip.username || fallbackName,
           authorAvatar:
             clip.user_profile_url && clip.user_profile_url.trim() !== ''
@@ -842,10 +843,8 @@ export default function ClipsPage() {
           className="flex-1 relative bg-gray-200 overflow-hidden"
           style={{ height: 'calc(100vh - 73px)' }}
         >
-          {/* Scrollable Reels Container */}
-          <div
-            className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${showComments ? 'right-[calc(396px+0.5rem)]' : 'right-0'}`}
-          >
+          {/* Scrollable Reels Container - Always has space for comments on the right */}
+          <div className="absolute inset-0 flex items-center justify-center right-[calc(396px+0.5rem)]">
             {/* Create Button - Fixed on video container when videos exist */}
             {reels.length > 0 && (
               <div
@@ -908,7 +907,7 @@ export default function ClipsPage() {
                                 [reel.id]: !prev[reel.id],
                               }))
                             }
-                            className="p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors backdrop-blur-sm"
+                            className="p-2 mt-10 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors backdrop-blur-sm"
                           >
                             <MoreVertical size={20} />
                           </button>
@@ -926,7 +925,7 @@ export default function ClipsPage() {
                                       : 'none'
                                   }
                                 />
-                                <span className="text-sm font-medium">
+                                <span className="text-sm bottom-30font-medium">
                                   {savedClips[reel.id] ? 'Saved' : 'Save Clip'}
                                 </span>
                               </button>
@@ -952,7 +951,7 @@ export default function ClipsPage() {
 
                       {/* Bottom Section - Profile, Username, and Description */}
                       <div
-                        className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10"
+                        className="absolute bottom-20 left-0 right-0 p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10"
                         style={{ pointerEvents: 'none' }}
                       >
                         <div
@@ -992,7 +991,7 @@ export default function ClipsPage() {
 
                       {/* Right Side - Interaction Buttons */}
                       <div
-                        className="absolute right-4 bottom-15 flex flex-col items-center gap-6"
+                        className="absolute right-4 bottom-52 flex flex-col items-center gap-6"
                         style={{ pointerEvents: 'auto' }}
                       >
                         <button
@@ -1005,16 +1004,6 @@ export default function ClipsPage() {
                           />
                           <span className="text-xs font-medium">
                             {reel.likes}
-                          </span>
-                        </button>
-
-                        <button
-                          onClick={() => handleComment(reel.id)}
-                          className="flex flex-col items-center gap-1 text-white hover:scale-110 transition-transform"
-                        >
-                          <MessageSquare size={28} />
-                          <span className="text-xs font-medium">
-                            {reel.commentCount}
                           </span>
                         </button>
 
@@ -1062,138 +1051,173 @@ export default function ClipsPage() {
             </div>
           </div>
 
-          {/* Comments Section - Visible when comment button is pressed */}
-          {showComments && (
-            <div
-              className="absolute top-1/2 transform -translate-y-1/2 bg-white border-l border-gray-200 flex flex-col z-10 shadow-lg"
-              style={{
-                right: '6.5rem', // Reduced from 2rem to 0.5rem to reduce gap
-                width: 'calc(25.5rem * 1.1)', // Increased w-90 (22.5rem/360px) by 10%
-                height: 'calc(66.666667vh * 1.1)', // Increased h-2/3 by 10%
-              }}
-            >
-              {/* Comments Header */}
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
-                <h2 className="text-lg font-semibold text-black">Comments</h2>
-                <button
-                  onClick={() => setShowComments(false)}
-                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <X size={20} className="text-black" />
-                </button>
-              </div>
+          {/* Comments Section - Always Visible on the Right, positioned higher */}
+          <div
+            className="absolute bg-white border-l border-gray-200 flex flex-col z-10 shadow-lg"
+            style={{
+              right: '6.5rem',
+              top: 'calc(50% - calc(66.666667vh * 1.1) / 2 - 3rem)',
+              width: 'calc(25.5rem * 1.1)',
+              height: 'calc(66.666667vh * 1.1)',
+            }}
+          >
+            {/* Comments Header */}
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0">
+              <h2 className="text-lg font-semibold text-black">Comments</h2>
+            </div>
 
-              {/* Comments List */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 relative">
-                {selectedReel && selectedReel.comments.length > 0 ? (
-                  <>
-                    {selectedReel.comments.map(comment => (
-                      <div key={comment.id} className="flex gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                          {comment.authorAvatar ? (
-                            <img
-                              src={comment.authorAvatar}
-                              alt={comment.author}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-black font-semibold text-xs">
-                              {comment.author
-                                .split(' ')
-                                .map(word => word[0])
-                                .join('')
-                                .toUpperCase()
-                                .slice(0, 2)}
-                            </span>
+            {/* Comments List */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 relative">
+              {selectedReel && selectedReel.comments.length > 0 ? (
+                <>
+                  {selectedReel.comments.map(comment => (
+                    <div key={comment.id} className="flex gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                        {comment.authorAvatar ? (
+                          <img
+                            src={comment.authorAvatar}
+                            alt={comment.author}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <span className="text-black font-semibold text-xs">
+                            {comment.author
+                              .split(' ')
+                              .map(word => word[0])
+                              .join('')
+                              .toUpperCase()
+                              .slice(0, 2)}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <div className="mb-1">
+                          <span className="font-semibold text-black text-sm">
+                            {comment.author}
+                          </span>
+                        </div>
+                        <p className="text-sm text-black mb-2">
+                          {comment.text}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-black">
+                          <button className="hover:text-black">Reply</button>
+                          {comment.hasReplies && (
+                            <button className="hover:text-black">
+                              View replies
+                            </button>
                           )}
                         </div>
-                        <div className="flex-1">
-                          <div className="mb-1">
-                            <span className="font-semibold text-black text-sm">
-                              {comment.author}
-                            </span>
-                          </div>
-                          <p className="text-sm text-black mb-2">
-                            {comment.text}
-                          </p>
-                          <div className="flex items-center gap-4 text-xs text-black">
-                            <button className="hover:text-black">Reply</button>
-                            {comment.hasReplies && (
-                              <button className="hover:text-black">
-                                View replies
-                              </button>
-                            )}
-                          </div>
-                        </div>
                       </div>
-                    ))}
-                    {/* Scroll Arrows */}
-                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex flex-col gap-2">
-                      <button className="w-10 h-10 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm">
-                        <ChevronUp size={20} className="text-black" />
-                      </button>
-                      <button className="w-10 h-10 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors shadow-sm">
-                        <ChevronDown size={20} className="text-black" />
-                      </button>
                     </div>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-black">
-                    <MessageSquare size={48} className="mb-4 opacity-50" />
-                    <p className="text-sm">No comments yet</p>
-                    <p className="text-xs mt-1">Be the first to comment!</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Comment Input */}
-              <div className="p-4 border-t border-gray-200 flex-shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-300 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                    {userData?.full_name ? (
-                      <span className="text-black font-semibold text-xs">
-                        {userData.full_name
-                          .split(' ')
-                          .map(word => word[0])
-                          .join('')
-                          .toUpperCase()
-                          .slice(0, 2)}
-                      </span>
-                    ) : (
-                      <span className="text-black font-semibold text-xs">
-                        U
-                      </span>
-                    )}
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Write your comment here.."
-                    value={commentTexts[selectedReel?.id || ''] || ''}
-                    onChange={e =>
-                      setCommentTexts(prev => ({
-                        ...prev,
-                        [selectedReel?.id || '']: e.target.value,
-                      }))
-                    }
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm text-black"
-                    onKeyPress={e => {
-                      if (e.key === 'Enter' && selectedReel) {
-                        handleAddComment(selectedReel.id);
-                      }
-                    }}
-                  />
-                  <button
-                    onClick={() =>
-                      selectedReel && handleAddComment(selectedReel.id)
-                    }
-                    className="p-2 bg-[#CB9729] text-white rounded-full hover:bg-yellow-600 transition-colors"
-                  >
-                    <Send size={18} />
-                  </button>
+                  ))}
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-black">
+                  <MessageSquare size={48} className="mb-4 opacity-50" />
+                  <p className="text-sm">No comments yet</p>
+                  <p className="text-xs mt-1">Be the first to comment!</p>
                 </div>
+              )}
+            </div>
+
+            {/* Comment Input */}
+            <div className="p-4 border-t border-gray-200 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-gray-300 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                  {userData?.full_name ? (
+                    <span className="text-black font-semibold text-xs">
+                      {userData.full_name
+                        .split(' ')
+                        .map(word => word[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2)}
+                    </span>
+                  ) : (
+                    <span className="text-black font-semibold text-xs">U</span>
+                  )}
+                </div>
+                <input
+                  type="text"
+                  placeholder="Write your comment here.."
+                  value={commentTexts[selectedReel?.id || ''] || ''}
+                  onChange={e =>
+                    setCommentTexts(prev => ({
+                      ...prev,
+                      [selectedReel?.id || '']: e.target.value,
+                    }))
+                  }
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm text-black"
+                  onKeyPress={e => {
+                    if (e.key === 'Enter' && selectedReel) {
+                      handleAddComment(selectedReel.id);
+                    }
+                  }}
+                />
+                <button
+                  onClick={() =>
+                    selectedReel && handleAddComment(selectedReel.id)
+                  }
+                  className="p-2 bg-[#CB9729] text-white rounded-full hover:bg-yellow-600 transition-colors"
+                >
+                  <Send size={18} />
+                </button>
               </div>
             </div>
-          )}
+          </div>
+
+          {/* Navigation Arrows - Below the comments box on the left side */}
+          <div
+            className="absolute flex flex-col gap-4"
+            style={{
+              right: 'calc(6.5rem + calc(25.5rem * 1.1) - 4rem)',
+              top: 'calc(50% - calc(66.666667vh * 1.1) / 2 - 3rem + calc(66.666667vh * 1.1) + 1rem)',
+            }}
+          >
+            <button
+              onClick={() => {
+                if (currentReelIndex > 0 && scrollContainerRef.current) {
+                  const container = scrollContainerRef.current;
+                  const reelHeight = container.clientHeight;
+                  container.scrollTo({
+                    top: (currentReelIndex - 1) * reelHeight,
+                    behavior: 'smooth',
+                  });
+                }
+              }}
+              disabled={currentReelIndex === 0}
+              className={`w-12 h-12 rounded-full bg-white border border-gray-300 flex items-center justify-center transition-colors shadow-lg ${
+                currentReelIndex === 0
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'hover:bg-gray-50'
+              }`}
+            >
+              <ChevronUp size={24} className="text-black" />
+            </button>
+            <button
+              onClick={() => {
+                if (
+                  currentReelIndex < reels.length - 1 &&
+                  scrollContainerRef.current
+                ) {
+                  const container = scrollContainerRef.current;
+                  const reelHeight = container.clientHeight;
+                  container.scrollTo({
+                    top: (currentReelIndex + 1) * reelHeight,
+                    behavior: 'smooth',
+                  });
+                }
+              }}
+              disabled={currentReelIndex === reels.length - 1}
+              className={`w-12 h-12 rounded-full bg-white border border-gray-300 flex items-center justify-center transition-colors shadow-lg ${
+                currentReelIndex === reels.length - 1
+                  ? 'opacity-50 cursor-not-allowed'
+                  : 'hover:bg-gray-50'
+              }`}
+            >
+              <ChevronDown size={24} className="text-black" />
+            </button>
+          </div>
         </div>
       </div>
 
