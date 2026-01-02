@@ -276,24 +276,41 @@ function ProfileContent() {
         education?: string | null;
         city?: string | null;
         primarySport?: string | null;
-        sportsPlayed?: string | null;
+        sportsPlayed?: string | string[] | null;
         dob?: string | null;
       }>(`/profile/${targetUserId}`);
       
       console.log('Profile data fetched:', data);
-      setProfileData(data);
-      setUserBio(data.bio || '');
+      
+      // Process sportsPlayed value
+      let processedSportsPlayed: string | null = null;
       if (data.sportsPlayed !== undefined && data.sportsPlayed !== null) {
-        let sportsString = data.sportsPlayed;
-        if (typeof sportsString === 'string') {
+        if (Array.isArray(data.sportsPlayed)) {
+          processedSportsPlayed = data.sportsPlayed.join(', ');
+        } else if (typeof data.sportsPlayed === 'string') {
+          let sportsString = data.sportsPlayed;
           if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
             sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
           }
-          setSportsPlayed(sportsString);
-        } else if (Array.isArray(sportsString)) {
-          setSportsPlayed(sportsString.join(', '));
+          processedSportsPlayed = sportsString;
         }
       }
+      
+      // Ensure userId is set from targetUserId if not in response
+      setProfileData({
+        userId: data.userId || targetUserId || '',
+        fullName: data.fullName ?? null,
+        profileImage: data.profileImage ?? null,
+        coverImage: data.coverImage ?? null,
+        bio: data.bio ?? null,
+        education: data.education ?? null,
+        city: data.city ?? null,
+        primarySport: data.primarySport ?? null,
+        sportsPlayed: processedSportsPlayed,
+        dob: data.dob ?? null,
+      });
+      setUserBio(data.bio || '');
+      setSportsPlayed(processedSportsPlayed || '');
     } catch (error) {
       console.error('Error fetching profile data:', error);
       setProfileData(null);

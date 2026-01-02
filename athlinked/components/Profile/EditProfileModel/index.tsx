@@ -55,6 +55,7 @@ interface EditProfileModalProps {
     background_image_url?: File;
     bio?: string;
     education?: string;
+    city?: string;
   }) => void;
 }
 
