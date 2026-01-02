@@ -51,7 +51,7 @@ export default function Posts({
     if (mediaUrl.startsWith('http')) return mediaUrl;
 
     // Otherwise, prepend the base URL
-    return `http://localhost:3001${mediaUrl}`;
+    return `https://qd9ngjg1-3001.inc1.devtunnels.ms${mediaUrl}`;
   };
 
   if (loading) {

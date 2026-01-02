@@ -15,6 +15,7 @@ import {
   HelpCircle,
   LogOut,
   X,
+  UserCheck,
 } from 'lucide-react';
 
 interface NavigationBarProps {
@@ -103,6 +104,7 @@ export default function NavigationBar({
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'clips', icon: Play, label: 'Clips' },
     { id: 'network', icon: Users, label: 'My Network' },
+    { id: 'my_athletes', icon: UserCheck, label: 'My Athletes' }, // New menu item
     { id: 'opportunities', icon: Briefcase, label: 'Opportunities' },
     { id: 'message', icon: MessageSquare, label: 'Message' },
     { id: 'notifications', icon: Bell, label: 'Notifications' },
@@ -127,7 +129,7 @@ export default function NavigationBar({
       ? rawProfileUrl.startsWith('http')
         ? rawProfileUrl
         : rawProfileUrl.startsWith('/') && !rawProfileUrl.startsWith('/assets')
-          ? `http://localhost:3001${rawProfileUrl}`
+          ? `https://qd9ngjg1-3001.inc1.devtunnels.ms${rawProfileUrl}`
           : rawProfileUrl
       : null;
 
@@ -215,6 +217,8 @@ export default function NavigationBar({
                   return '/clips';
                 case 'network':
                   return '/network';
+                case 'my_athletes':
+                  return '/my_athletes';
                 case 'opportunities':
                   return '/opportunities';
                 case 'resource':

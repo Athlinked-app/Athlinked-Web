@@ -550,7 +550,7 @@ function ProfileContent() {
               background_image_url: profileData?.coverImage
                 ? profileData.coverImage.startsWith('http')
                   ? profileData.coverImage
-                  : `http://localhost:3001${profileData.coverImage}`
+                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.coverImage}`
                 : null,
               user_type: viewUserId
                 ? viewUser?.user_type || 'athlete'
