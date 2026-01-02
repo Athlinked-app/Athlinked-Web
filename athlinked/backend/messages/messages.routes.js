@@ -25,5 +25,10 @@ router.get(
   authenticateToken,
   messagesController.getMessages
 );
+router.get(
+  '/unread-count',
+  authenticateToken,
+  messagesController.getUnreadCount
+);
 
 module.exports = router;

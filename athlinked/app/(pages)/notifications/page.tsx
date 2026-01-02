@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Trash2 } from 'lucide-react';
 import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import Header from '@/components/Header';
@@ -39,28 +39,36 @@ export default function NotificationsPage() {
           return;
         }
 
-        let response;
+        const { apiGet } = await import('@/utils/api');
+        let data;
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
-          response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-          );
+          data = await apiGet<{
+            success: boolean;
+            user?: {
+              id: string;
+              full_name?: string;
+              profile_url?: string;
+            };
+          }>(`/signup/user-by-username/${encodeURIComponent(username)}`);
         } else {
-          response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-          );
+          data = await apiGet<{
+            success: boolean;
+            user?: {
+              id: string;
+              full_name?: string;
+              profile_url?: string;
+            };
+          }>(`/signup/user/${encodeURIComponent(userIdentifier)}`);
         }
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.user) {
-            setCurrentUserId(data.user.id);
-            setCurrentUser({
-              id: data.user.id,
-              full_name: data.user.full_name,
-              profile_url: data.user.profile_url,
-            });
-          }
+        if (data.success && data.user) {
+          setCurrentUserId(data.user.id);
+          setCurrentUser({
+            id: data.user.id,
+            full_name: data.user.full_name,
+            profile_url: data.user.profile_url,
+          });
         }
       } catch (error) {
         console.error('Error fetching current user:', error);
@@ -100,6 +108,31 @@ export default function NotificationsPage() {
     }
   };
 
+  // Set up WebSocket for real-time notifications
+  useEffect(() => {
+    if (!currentUserId) return;
+
+    const { getSocket } = require('@/utils/useSocket');
+    const socket = getSocket();
+    
+    if (socket) {
+      // Listen for new notifications
+      socket.on('new_notification', (notification: Notification) => {
+        setNotifications(prev => [notification, ...prev]);
+      });
+
+      // Listen for notification deletion
+      socket.on('notification_deleted', (data: { notificationId: string }) => {
+        setNotifications(prev => prev.filter(n => n.id !== data.notificationId));
+      });
+
+      return () => {
+        socket.off('new_notification');
+        socket.off('notification_deleted');
+      };
+    }
+  }, [currentUserId]);
+
   // Fetch notifications on mount and when userId changes
   useEffect(() => {
     fetchNotifications();
@@ -130,21 +163,19 @@ export default function NotificationsPage() {
 
   const handleDismiss = async (id: string) => {
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/notifications/${id}/read`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
+      const { apiPost } = await import('@/utils/api');
+      const data = await apiPost<{
+        success: boolean;
+        message?: string;
+      }>(`/notifications/${id}/read`, {});
 
-      if (response.ok) {
+      if (data.success) {
         // Update local state
         setNotifications(
           notifications.map(n => (n.id === id ? { ...n, isRead: true } : n))
         );
+        // Dispatch event to update notification count
+        window.dispatchEvent(new Event('notification-updated'));
       }
     } catch (error) {
       console.error('Error marking notification as read:', error);
@@ -152,6 +183,32 @@ export default function NotificationsPage() {
       setNotifications(
         notifications.map(n => (n.id === id ? { ...n, isRead: true } : n))
       );
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this notification?')) {
+      return;
+    }
+
+    try {
+      const { apiDelete } = await import('@/utils/api');
+      const data = await apiDelete<{
+        success: boolean;
+        message?: string;
+      }>(`/notifications/${id}`);
+
+      if (data.success) {
+        // Remove notification from local state
+        setNotifications(notifications.filter(n => n.id !== id));
+        // Dispatch event to update notification count
+        window.dispatchEvent(new Event('notification-updated'));
+      } else {
+        alert(data.message || 'Failed to delete notification');
+      }
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      alert('Failed to delete notification. Please try again.');
     }
   };
 
@@ -303,13 +360,26 @@ export default function NotificationsPage() {
                             </div>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleDismiss(notification.id)}
-                          className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-                          aria-label="Mark as read"
-                        >
-                          <X size={18} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleDelete(notification.id)}
+                            className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                            aria-label="Delete notification"
+                            title="Delete notification"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                          {!notification.isRead && (
+                            <button
+                              onClick={() => handleDismiss(notification.id)}
+                              className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                              aria-label="Mark as read"
+                              title="Mark as read"
+                            >
+                              <X size={18} />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}

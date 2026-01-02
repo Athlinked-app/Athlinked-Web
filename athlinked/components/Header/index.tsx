@@ -49,34 +49,23 @@ export default function Header({
       }
 
       try {
-        const userIdentifier = localStorage.getItem('userEmail');
-        if (!userIdentifier) {
+        // Use authenticated API to get current user profile
+        const { apiGet } = await import('@/utils/api');
+        const { getCurrentUserId } = await import('@/utils/auth');
+        const userId = getCurrentUserId();
+        
+        if (!userId) {
           if (isMounted) {
             setLoading(false);
           }
           return;
         }
 
-        let response;
-        if (userIdentifier.startsWith('username:')) {
-          const username = userIdentifier.replace('username:', '');
-          response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-          );
-        } else {
-          response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-          );
-        }
+        const data = await apiGet<{
+          success: boolean;
+          user?: UserData;
+        }>('/profile');
 
-        if (!response.ok) {
-          if (isMounted) {
-            setLoading(false);
-          }
-          return;
-        }
-
-        const data = await response.json();
         if (data.success && data.user && isMounted) {
           setUserData(data.user);
         }
@@ -149,13 +138,8 @@ export default function Header({
     const refreshToken = localStorage.getItem('refreshToken');
     if (refreshToken) {
       try {
-        await fetch('http://localhost:3001/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refreshToken }),
-        });
+        const { apiPost } = await import('@/utils/api');
+        await apiPost('/auth/logout', { refreshToken });
       } catch (error) {
         console.error('Error revoking token:', error);
       }

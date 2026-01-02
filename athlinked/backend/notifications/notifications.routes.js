@@ -40,4 +40,15 @@ router.post(
   notificationController.markAllAsRead
 );
 
+/**
+ * DELETE /api/notifications/:id
+ * Delete a notification
+ * Auth required
+ */
+router.delete(
+  '/:id',
+  authenticateToken,
+  notificationController.deleteNotification
+);
+
 module.exports = router;

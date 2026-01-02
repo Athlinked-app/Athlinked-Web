@@ -86,10 +86,37 @@ async function markAsRead(req, res) {
     const result = await messagesService.markAsRead(conversationId, userId);
 
     const io = req.app.get('io');
-    if (io && result.senderId) {
-      io.to(`user:${result.senderId}`).emit('messages_read', {
-        conversationId,
-        readerId: userId,
+    if (io) {
+      // Emit to sender that messages were read
+      if (result.senderId) {
+        io.to(`user:${result.senderId}`).emit('messages_read', {
+          conversationId,
+          readerId: userId,
+        });
+      }
+
+      // Get updated conversation for the reader
+      const updatedConversations = await messagesService.getConversations(userId);
+      const updatedConv = updatedConversations.find(
+        (c) => c.conversation_id === conversationId
+      );
+
+      // Emit conversation update to reader
+      if (updatedConv) {
+        io.to(`user:${userId}`).emit('conversation_updated', {
+          conversation: updatedConv,
+        });
+      }
+
+      // Get total unread count for reader
+      const totalUnreadCount = updatedConversations.reduce(
+        (sum, conv) => sum + (conv.unread_count || 0),
+        0
+      );
+
+      // Emit total unread count update to reader
+      io.to(`user:${userId}`).emit('message_count_update', {
+        count: totalUnreadCount,
       });
     }
 
@@ -224,6 +251,37 @@ async function uploadMessageFile(req, res) {
   }
 }
 
+async function getUnreadCount(req, res) {
+  try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
+
+    const conversations = await messagesService.getConversations(userId);
+    const totalUnreadCount = conversations.reduce(
+      (sum, conv) => sum + (conv.unread_count || 0),
+      0
+    );
+
+    res.json({
+      success: true,
+      unreadCount: totalUnreadCount,
+      count: totalUnreadCount, // Alias for consistency
+    });
+  } catch (error) {
+    console.error('Error getting unread message count:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 module.exports = {
   getConversations,
   getMessages,
@@ -231,4 +289,5 @@ module.exports = {
   searchUsers,
   getOrCreateConversation,
   uploadMessageFile,
+  getUnreadCount,
 };

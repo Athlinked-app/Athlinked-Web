@@ -32,7 +32,7 @@ import MySaveClips from '@/components/MySave/Clips';
 import MySaveArticle from '@/components/MySave/Article';
 import MySaveOpportunity from '@/components/MySave/Opportunity';
 import Favourites from '@/components/Profile/Favourites';
-import { apiPost, apiUpload } from '@/utils/api';
+import { apiGet, apiPost, apiUpload } from '@/utils/api';
 interface CurrentUser {
   id: string;
   full_name: string;
@@ -113,36 +113,18 @@ function ProfileContent() {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        'http://localhost:3001/api/posts?page=1&limit=50'
-      );
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        success: boolean;
+        posts?: PostData[];
+        data?: PostData[];
+      }>('/posts?page=1&limit=50');
 
-      if (!response.ok) {
-        console.error(
-          'Failed to fetch posts:',
-          response.status,
-          response.statusText
-        );
-        const text = await response.text();
-        console.error('Response text:', text.substring(0, 200));
-        setPosts([]);
-        return;
-      }
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        console.error('Non-JSON response from posts API');
-        const text = await response.text();
-        console.error('Response text:', text.substring(0, 200));
-        setPosts([]);
-        return;
-      }
-
-      const data = await response.json();
       console.log('Posts API response:', data);
 
-      if (data.success && data.posts) {
-        let transformedPosts: PostData[] = data.posts.map((post: any) => ({
+      if (data.success) {
+        const posts = data.posts || data.data || [];
+        let transformedPosts: PostData[] = posts.map((post: any) => ({
           id: post.id,
           username: post.username || 'User',
           user_profile_url:
@@ -221,17 +203,17 @@ function ProfileContent() {
     if (!viewUserId) return;
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/signup/users?limit=1000`
-      );
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        success: boolean;
+        users?: any[];
+      }>('/signup/users?limit=1000');
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.users) {
-          const user = data.users.find((u: any) => u.id === viewUserId);
-          if (user) {
-            setViewUser({
-              id: user.id,
+      if (data.success && data.users) {
+        const user = data.users.find((u: any) => u.id === viewUserId);
+        if (user) {
+          setViewUser({
+            id: user.id,
               full_name: user.full_name || user.username || 'User',
               profile_url: user.profile_url,
               username: user.username,
@@ -255,7 +237,6 @@ function ProfileContent() {
             }
           }
         }
-      }
     } catch (error) {
       console.error('Error fetching view user:', error);
     }
@@ -323,18 +304,17 @@ function ProfileContent() {
 
     try {
       console.log('Fetching follow counts for userId:', targetUserId);
-      const response = await fetch(
-        `http://localhost:3001/api/network/counts/${targetUserId}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Follow counts fetched:', data);
-        if (data.success) {
-          setFollowersCount(data.followers || 0);
-          setFollowingCount(data.following || 0);
-        }
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        success: boolean;
+        followers?: number;
+        following?: number;
+      }>(`/network/counts/${targetUserId}`);
+      console.log('Follow counts fetched:', data);
+      if (data.success) {
+        setFollowersCount(data.followers || 0);
+        setFollowingCount(data.following || 0);
       } else {
-        console.log('Failed to fetch follow counts');
         setFollowersCount(0);
         setFollowingCount(0);
       }
@@ -352,17 +332,17 @@ function ProfileContent() {
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/network/connection-status/${viewUserId}?requester_id=${currentUserId}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success) {
-          setConnectionRequestStatus({
-            exists: data.exists,
-            status: data.status,
-          });
-        }
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        success: boolean;
+        exists?: boolean;
+        status?: string | null;
+      }>(`/network/connection-status/${viewUserId}?requester_id=${currentUserId}`);
+      if (data.success) {
+        setConnectionRequestStatus({
+          exists: data.exists || false,
+          status: data.status || null,
+        });
       }
     } catch (error) {
       console.error('Error checking connection request status:', error);
@@ -388,41 +368,31 @@ function ProfileContent() {
         return;
       }
 
-      let userResponse;
+      const { apiGet, apiPost } = await import('@/utils/api');
+      let userDataResponse;
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-        );
+        userDataResponse = await apiGet<{
+          success: boolean;
+          user?: { id: string };
+        }>(`/signup/user-by-username/${encodeURIComponent(username)}`);
       } else {
-        userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
+        userDataResponse = await apiGet<{
+          success: boolean;
+          user?: { id: string };
+        }>(`/signup/user/${encodeURIComponent(userIdentifier)}`);
       }
 
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-
-      const userDataResponse = await userResponse.json();
       if (!userDataResponse.success || !userDataResponse.user) {
         throw new Error('User not found');
       }
 
-      const response = await fetch(
-        `http://localhost:3001/api/network/connect/${viewUserId}`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            user_id: userDataResponse.user.id,
-          }),
-        }
-      );
-
-      const result = await response.json();
+      const result = await apiPost<{
+        success: boolean;
+        message?: string;
+      }>(`/network/connect/${viewUserId}`, {
+        user_id: userDataResponse.user.id,
+      });
       if (result.success) {
         setConnectionRequestStatus({ exists: true, status: 'pending' });
         alert('Connection request sent!');
@@ -442,23 +412,32 @@ function ProfileContent() {
         return;
       }
 
-      let response;
+      const { apiGet } = await import('@/utils/api');
+      let data;
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
-        response = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-        );
+        data = await apiGet<{
+          success: boolean;
+          user?: {
+            id: string;
+            full_name?: string;
+            username?: string;
+            profile_url?: string;
+            user_type?: string;
+          };
+        }>(`/signup/user-by-username/${encodeURIComponent(username)}`);
       } else {
-        response = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
+        data = await apiGet<{
+          success: boolean;
+          user?: {
+            id: string;
+            full_name?: string;
+            username?: string;
+            profile_url?: string;
+            user_type?: string;
+          };
+        }>(`/signup/user/${encodeURIComponent(userIdentifier)}`);
       }
-
-      if (!response.ok) {
-        return;
-      }
-
-      const data = await response.json();
       if (data.success && data.user) {
         setCurrentUserId(data.user.id);
         setCurrentUser({
