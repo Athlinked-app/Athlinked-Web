@@ -13,6 +13,7 @@ import {
   Calendar,
   UserPlus,
   MessageCircle,
+  Heart,
 } from 'lucide-react';
 import EditProfilePopup from '../EditProfilePopup';
 
@@ -109,6 +110,9 @@ export default function EditProfileModal({
     userData?.profile_completion || 60
   );
   const [showEditPopup, setShowEditPopup] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [currentUserType, setCurrentUserType] = useState<string | null>(null);
 
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const backgroundImageInputRef = useRef<HTMLInputElement>(null);
@@ -150,6 +154,10 @@ export default function EditProfileModal({
         const data = await response.json();
         if (data.success && data.user) {
           setFetchedUserData(data.user);
+          // Set current user type from fetched data
+          if (data.user.user_type) {
+            setCurrentUserType(data.user.user_type);
+          }
           // Only update state if userData prop is not provided or if it's our own profile
           if (!userData || !viewedUserId || viewedUserId === currentUserId) {
             if (data.user.full_name) {
@@ -191,29 +199,35 @@ export default function EditProfileModal({
           (!viewedUserId || viewedUserId === currentUserId)
         ) {
           try {
-            const profileResponse = await fetch(
-              `http://localhost:3001/api/profile/${data.user.id}`
-            );
-            if (profileResponse.ok) {
-              const profileData = await profileResponse.json();
-              if (profileData.bio) setBio(profileData.bio);
-              if (profileData.education) setEducation(profileData.education);
-              if (profileData.profileImage) {
-                const profileUrl = profileData.profileImage.startsWith('http')
-                  ? profileData.profileImage
-                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.profileImage}`;
-                setProfileImagePreview(profileUrl);
-              }
-              if (profileData.coverImage) {
-                const bgUrl = profileData.coverImage.startsWith('http')
-                  ? profileData.coverImage
-                  : `http://localhost:3001${profileData.coverImage}`;
-                setBackgroundImagePreview(bgUrl);
-              }
-              if (profileData.primarySport) {
-                setPrimarySport(profileData.primarySport);
-                setSportsPlayed(profileData.primarySport);
-              }
+            const { apiGet } = await import('@/utils/api');
+            const profileData = await apiGet<{
+              bio?: string | null;
+              education?: string | null;
+              city?: string | null;
+              profileImage?: string | null;
+              coverImage?: string | null;
+              primarySport?: string | null;
+              sportsPlayed?: string | null;
+            }>(`/profile/${data.user.id}`);
+            
+            if (profileData.bio) setBio(profileData.bio);
+            if (profileData.education) setEducation(profileData.education);
+            if (profileData.city) setLocation(profileData.city);
+            if (profileData.profileImage) {
+              const profileUrl = profileData.profileImage.startsWith('http')
+                ? profileData.profileImage
+                : `http://localhost:3001${profileData.profileImage}`;
+              setProfileImagePreview(profileUrl);
+            }
+            if (profileData.coverImage) {
+              const bgUrl = profileData.coverImage.startsWith('http')
+                ? profileData.coverImage
+                : `http://localhost:3001${profileData.coverImage}`;
+              setBackgroundImagePreview(bgUrl);
+            }
+            if (profileData.primarySport) {
+              setPrimarySport(profileData.primarySport);
+              setSportsPlayed(profileData.primarySport);
             }
           } catch (error) {
             console.error(
@@ -234,6 +248,74 @@ export default function EditProfileModal({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, viewedUserId, currentUserId]);
+
+  // Check favorite status when viewing an athlete profile as a coach
+  useEffect(() => {
+    const checkFavoriteStatus = async () => {
+      if (
+        !open ||
+        !currentUserId ||
+        !viewedUserId ||
+        currentUserId === viewedUserId
+      ) {
+        setIsFavorite(false);
+        return;
+      }
+
+      // Fetch current user data to check user type
+      try {
+        const userIdentifier = localStorage.getItem('userEmail');
+        if (!userIdentifier) {
+          setIsFavorite(false);
+          return;
+        }
+
+        let response;
+        if (userIdentifier.startsWith('username:')) {
+          const username = userIdentifier.replace('username:', '');
+          response = await fetch(
+            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          );
+        } else {
+          response = await fetch(
+            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          );
+        }
+
+        if (response.ok) {
+          const data = await response.json();
+          const fetchedCurrentUserType = data.user?.user_type;
+          setCurrentUserType(fetchedCurrentUserType || null);
+          const viewedUserType = userData?.user_type;
+
+          if (fetchedCurrentUserType === 'coach' && viewedUserType === 'athlete') {
+            try {
+              const { apiGet } = await import('@/utils/api');
+              const result = await apiGet<{ success: boolean; isFavorite: boolean }>(
+                `/favorites/${viewedUserId}/status`
+              );
+              if (result.success) {
+                setIsFavorite(result.isFavorite);
+              }
+            } catch (error) {
+              console.error('Error checking favorite status:', error);
+            }
+          } else {
+            setIsFavorite(false);
+          }
+        } else {
+          setCurrentUserType(null);
+          setIsFavorite(false);
+        }
+      } catch (error) {
+        console.error('Error fetching current user for favorite check:', error);
+        setCurrentUserType(null);
+        setIsFavorite(false);
+      }
+    };
+
+    checkFavoriteStatus();
+  }, [open, currentUserId, viewedUserId, userData]);
 
   // Update state when userData props change (from parent)
   // This should take priority when viewing another user's profile
@@ -317,6 +399,40 @@ export default function EditProfileModal({
     backgroundImageInputRef.current?.click();
   };
 
+  const handleToggleFavorite = async () => {
+    if (!currentUserId || !viewedUserId || currentUserId === viewedUserId) {
+      return;
+    }
+
+    setFavoriteLoading(true);
+    try {
+      const { apiPost, apiDelete } = await import('@/utils/api');
+      
+      if (isFavorite) {
+        const result = await apiDelete<{
+          success: boolean;
+          isFavorite: boolean;
+        }>(`/favorites/${viewedUserId}`);
+        if (result.success) {
+          setIsFavorite(false);
+        }
+      } else {
+        const result = await apiPost<{
+          success: boolean;
+          isFavorite: boolean;
+        }>(`/favorites/${viewedUserId}`, {});
+        if (result.success) {
+          setIsFavorite(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      alert('Failed to update favorite. Please try again.');
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
+
   const handleSave = () => {
     if (onSave) {
       onSave({
@@ -342,6 +458,7 @@ export default function EditProfileModal({
     background_image_url?: File;
     sports_played?: string;
     education?: string;
+    city?: string;
     bio?: string;
   }) => {
     // Update local state with the saved data
@@ -359,6 +476,9 @@ export default function EditProfileModal({
     if (data.bio) {
       setBio(data.bio);
     }
+    if (data.city !== undefined) {
+      setLocation(data.city);
+    }
     // Call parent onSave if provided
     if (onSave) {
       onSave({
@@ -367,6 +487,7 @@ export default function EditProfileModal({
         sports_played: data.sports_played,
         bio: data.bio !== undefined ? data.bio : undefined,
         education: data.education !== undefined ? data.education : undefined,
+        city: data.city !== undefined ? data.city : undefined,
       });
     }
   };
@@ -533,7 +654,7 @@ export default function EditProfileModal({
                 value={fullName}
                 onChange={e => setFullName(e.target.value)}
                 placeholder="Full Name"
-                className="text-2xl font-medium text-gray-900 mb-2 w-full border-none focus:outline-none focus:ring-0 bg-transparent"
+                className="text-2xl font-medium text-black mb-2 w-full border-none focus:outline-none focus:ring-0 bg-transparent placeholder:text-gray-400"
               />
               <p className="text-lg text-gray-600 mb-4">
                 {(() => {
@@ -555,7 +676,7 @@ export default function EditProfileModal({
                     value={location}
                     onChange={e => setLocation(e.target.value)}
                     placeholder="Location"
-                    className="w-28 border-none focus:outline-none focus:ring-0 bg-transparent"
+                    className="w-28 border-none focus:outline-none focus:ring-0 bg-transparent text-black placeholder:text-gray-400"
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -569,7 +690,7 @@ export default function EditProfileModal({
                     value={age}
                     onChange={e => setAge(e.target.value)}
                     placeholder="Age"
-                    className="w-20 border-none focus:outline-none focus:ring-0 bg-transparent"
+                    className="w-20 border-none focus:outline-none focus:ring-0 bg-transparent text-black placeholder:text-gray-400"
                   />
                 </div>
               </div>
@@ -638,6 +759,30 @@ export default function EditProfileModal({
                       <MessageCircle className="w-4 h-4" />
                       <span>Message</span>
                     </button>
+                    {/* Show Favourites button only if coach viewing athlete */}
+                    {(() => {
+                      const userType = currentUserType || fetchedUserData?.user_type;
+                      const viewedUserType = userData?.user_type;
+                      return (
+                        userType === 'coach' &&
+                        viewedUserType === 'athlete'
+                      );
+                    })() && (
+                      <button
+                        onClick={handleToggleFavorite}
+                        disabled={favoriteLoading}
+                        className={`px-6 py-4 rounded-lg transition-colors flex items-center gap-2 ${
+                          isFavorite
+                            ? 'bg-red-500 text-white hover:bg-red-600'
+                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                        } ${favoriteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        <Heart
+                          className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`}
+                        />
+                        <span>Favourites</span>
+                      </button>
+                    )}
                   </>
                 )}
               </div>

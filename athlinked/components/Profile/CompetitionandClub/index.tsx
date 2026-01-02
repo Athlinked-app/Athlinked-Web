@@ -5,6 +5,7 @@ import { Plus, Trash2, Pencil } from 'lucide-react';
 import CompetitionAndClubPopup, {
   type CompetitionAndClub,
 } from '../CompetitionandClubPopup';
+import { apiGet, apiPost, apiPut, apiDelete } from '@/utils/api';
 
 export type { CompetitionAndClub };
 
@@ -43,16 +44,14 @@ export default function CompetitionAndClub({
 
     try {
       setLoading(true);
-      const response = await fetch(
-        `http://localhost:3001/api/profile/${userId}/competition-clubs`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.data) {
-          setClubsList(data.data);
-          if (onClubsChange) {
-            onClubsChange(data.data);
-          }
+      const data = await apiGet<{
+        success: boolean;
+        data?: CompetitionAndClub[];
+      }>(`/profile/${userId}/competition-clubs`);
+      if (data.success && data.data) {
+        setClubsList(data.data);
+        if (onClubsChange) {
+          onClubsChange(data.data);
         }
       }
     } catch (error) {
@@ -79,32 +78,23 @@ export default function CompetitionAndClub({
       }
 
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/profile/competition-clubs/${existingClub.id}`,
-          {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(newClub),
-          }
-        );
+        const result = await apiPut<{
+          success: boolean;
+          data?: CompetitionAndClub;
+          message?: string;
+        }>(`/profile/competition-clubs/${existingClub.id}`, newClub);
 
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            const updatedClubs = [...clubsList];
-            updatedClubs[editingIndex] = result.data;
-            setClubsList(updatedClubs);
-            if (onClubsChange) {
-              onClubsChange(updatedClubs);
-            }
-            setEditingIndex(null);
+        if (result.success && result.data) {
+          const updatedClubs = [...clubsList];
+          updatedClubs[editingIndex] = result.data;
+          setClubsList(updatedClubs);
+          if (onClubsChange) {
+            onClubsChange(updatedClubs);
           }
+          setEditingIndex(null);
         } else {
-          const errorData = await response.json();
           alert(
-            `Failed to update competition club: ${errorData.message || 'Unknown error'}`
+            `Failed to update competition club: ${result.message || 'Unknown error'}`
           );
         }
       } catch (error) {
@@ -124,30 +114,21 @@ export default function CompetitionAndClub({
       }
 
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/profile/${userId}/competition-clubs`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(newClub),
-          }
-        );
+        const result = await apiPost<{
+          success: boolean;
+          data?: CompetitionAndClub;
+          message?: string;
+        }>(`/profile/${userId}/competition-clubs`, newClub);
 
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
-            const updatedClubs = [...clubsList, result.data];
-            setClubsList(updatedClubs);
-            if (onClubsChange) {
-              onClubsChange(updatedClubs);
-            }
+        if (result.success && result.data) {
+          const updatedClubs = [...clubsList, result.data];
+          setClubsList(updatedClubs);
+          if (onClubsChange) {
+            onClubsChange(updatedClubs);
           }
         } else {
-          const errorData = await response.json();
           alert(
-            `Failed to save competition club: ${errorData.message || 'Unknown error'}`
+            `Failed to save competition club: ${result.message || 'Unknown error'}`
           );
         }
       } catch (error) {
@@ -179,23 +160,20 @@ export default function CompetitionAndClub({
     }
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/profile/competition-clubs/${id}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      const result = await apiDelete<{
+        success: boolean;
+        message?: string;
+      }>(`/profile/competition-clubs/${id}`);
 
-      if (response.ok) {
+      if (result.success) {
         const updatedClubs = clubsList.filter((_, i) => i !== index);
         setClubsList(updatedClubs);
         if (onClubsChange) {
           onClubsChange(updatedClubs);
         }
       } else {
-        const errorData = await response.json();
         alert(
-          `Failed to delete competition club: ${errorData.message || 'Unknown error'}`
+          `Failed to delete competition club: ${result.message || 'Unknown error'}`
         );
       }
     } catch (error) {
@@ -213,7 +191,13 @@ export default function CompetitionAndClub({
           </h2>
           <button
             onClick={() => {
-              setEditingIndex(null);
+              // If there's existing data, show the first entry for editing
+              // Otherwise, open empty form for new entry
+              if (clubsList.length > 0) {
+                setEditingIndex(0);
+              } else {
+                setEditingIndex(null);
+              }
               setShowPopup(true);
             }}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"

@@ -31,6 +31,8 @@ import MySavePost from '@/components/MySave/Post';
 import MySaveClips from '@/components/MySave/Clips';
 import MySaveArticle from '@/components/MySave/Article';
 import MySaveOpportunity from '@/components/MySave/Opportunity';
+import Favourites from '@/components/Profile/Favourites';
+import { apiPost, apiUpload } from '@/utils/api';
 interface CurrentUser {
   id: string;
   full_name: string;
@@ -62,9 +64,9 @@ function ProfileContent() {
   const [viewUser, setViewUser] = useState<CurrentUser | null>(null); // User being viewed
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
-  const [activeTab, setActiveTab] = useState<'profile' | 'activity' | 'mysave'>(
-    'profile'
-  );
+  const [activeTab, setActiveTab] = useState<
+    'profile' | 'activity' | 'mysave' | 'favourites'
+  >('profile');
   const [activeFilter, setActiveFilter] = useState<
     'posts' | 'clips' | 'article' | 'event'
   >('posts');
@@ -99,6 +101,14 @@ function ProfileContent() {
   } | null>(null);
 
   const targetUserId = viewUserId || currentUserId;
+  const isViewingOwnProfile = !viewUserId || viewUserId === currentUserId;
+
+  // Reset to profile tab if viewing someone else's profile and on a restricted tab
+  useEffect(() => {
+    if (!isViewingOwnProfile && (activeTab === 'activity' || activeTab === 'mysave' || activeTab === 'favourites')) {
+      setActiveTab('profile');
+    }
+  }, [isViewingOwnProfile, activeTab]);
 
   const fetchPosts = async () => {
     try {
@@ -256,29 +266,33 @@ function ProfileContent() {
 
     try {
       console.log('Fetching profile data for userId:', targetUserId);
-      const response = await fetch(
-        `http://localhost:3001/api/profile/${targetUserId}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Profile data fetched:', data);
-        setProfileData(data);
-        setUserBio(data.bio || '');
-        if (data.sportsPlayed !== undefined && data.sportsPlayed !== null) {
-          let sportsString = data.sportsPlayed;
-          if (typeof sportsString === 'string') {
-            if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
-              sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
-            }
-            setSportsPlayed(sportsString);
-          } else if (Array.isArray(sportsString)) {
-            setSportsPlayed(sportsString.join(', '));
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        userId?: string;
+        fullName?: string | null;
+        profileImage?: string | null;
+        coverImage?: string | null;
+        bio?: string | null;
+        education?: string | null;
+        city?: string | null;
+        primarySport?: string | null;
+        sportsPlayed?: string | null;
+        dob?: string | null;
+      }>(`/profile/${targetUserId}`);
+      
+      console.log('Profile data fetched:', data);
+      setProfileData(data);
+      setUserBio(data.bio || '');
+      if (data.sportsPlayed !== undefined && data.sportsPlayed !== null) {
+        let sportsString = data.sportsPlayed;
+        if (typeof sportsString === 'string') {
+          if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+            sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
           }
+          setSportsPlayed(sportsString);
+        } else if (Array.isArray(sportsString)) {
+          setSportsPlayed(sportsString.join(', '));
         }
-      } else {
-        console.log('No profile data found, will use defaults');
-        setProfileData(null);
-        setUserBio('');
       }
     } catch (error) {
       console.error('Error fetching profile data:', error);
@@ -638,19 +652,16 @@ function ProfileContent() {
                 if (data.profile_url instanceof File) {
                   const formData = new FormData();
                   formData.append('file', data.profile_url);
-                  const uploadResponse = await fetch(
-                    'http://localhost:3001/api/profile/upload',
-                    {
-                      method: 'POST',
-                      body: formData,
-                    }
-                  );
-
-                  if (uploadResponse.ok) {
-                    const uploadData = await uploadResponse.json();
+                  try {
+                    const uploadData = await apiUpload<{
+                      success: boolean;
+                      fileUrl?: string;
+                    }>('/profile/upload', formData);
                     if (uploadData.success && uploadData.fileUrl) {
                       profileData.profileImageUrl = uploadData.fileUrl;
                     }
+                  } catch (error) {
+                    console.error('Error uploading profile image:', error);
                   }
                 } else if (typeof data.profile_url === 'string') {
                   profileData.profileImageUrl = data.profile_url;
@@ -659,45 +670,35 @@ function ProfileContent() {
                 if (data.background_image_url instanceof File) {
                   const formData = new FormData();
                   formData.append('file', data.background_image_url);
-                  const uploadResponse = await fetch(
-                    'http://localhost:3001/api/profile/upload',
-                    {
-                      method: 'POST',
-                      body: formData,
-                    }
-                  );
-
-                  if (uploadResponse.ok) {
-                    const uploadData = await uploadResponse.json();
+                  try {
+                    const uploadData = await apiUpload<{
+                      success: boolean;
+                      fileUrl?: string;
+                    }>('/profile/upload', formData);
                     if (uploadData.success && uploadData.fileUrl) {
                       profileData.coverImageUrl = uploadData.fileUrl;
                     }
+                  } catch (error) {
+                    console.error('Error uploading cover image:', error);
                   }
                 } else if (typeof data.background_image_url === 'string') {
                   profileData.coverImageUrl = data.background_image_url;
                 }
-                const response = await fetch(
-                  'http://localhost:3001/api/profile',
-                  {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(profileData),
-                  }
-                );
+                
+                const result = await apiPost<{
+                  success: boolean;
+                  message?: string;
+                }>('/profile', profileData);
 
-                if (!response.ok) {
-                  const errorData = await response.json();
-                  console.error('Failed to save profile:', errorData);
+                if (!result.success) {
+                  console.error('Failed to save profile:', result);
                   alert(
                     'Failed to save profile: ' +
-                      (errorData.message || 'Unknown error')
+                      (result.message || 'Unknown error')
                   );
                   return;
                 }
 
-                const result = await response.json();
                 console.log('Profile saved successfully:', result);
 
                 if (data.bio !== undefined) {
@@ -799,34 +800,58 @@ function ProfileContent() {
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
                 )}
               </button>
-              <div className="h-6 w-px bg-gray-200"></div>
-              <button
-                onClick={() => setActiveTab('activity')}
-                className={`px-6 py-3 font-medium text-xl transition-colors relative ${
-                  activeTab === 'activity'
-                    ? 'text-[#CB9729]'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Activity
-                {activeTab === 'activity' && (
-                  <div className="absolute bottom-0 text-xl  left-0 right-0 h-0.5 bg-[#CB9729]"></div>
-                )}
-              </button>
-              <div className="h-6 w-px bg-gray-200"></div>
-              <button
-                onClick={() => setActiveTab('mysave')}
-                className={`px-6 py-3 font-medium text-xl  transition-colors relative ${
-                  activeTab === 'mysave'
-                    ? 'text-[#CB9729]'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                My Save
-                {activeTab === 'mysave' && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
-                )}
-              </button>
+              {/* Show Activity, My Save, and Favourites tabs only when viewing own profile */}
+              {isViewingOwnProfile && (
+                <>
+                  <div className="h-6 w-px bg-gray-200"></div>
+                  <button
+                    onClick={() => setActiveTab('activity')}
+                    className={`px-6 py-3 font-medium text-xl transition-colors relative ${
+                      activeTab === 'activity'
+                        ? 'text-[#CB9729]'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Activity
+                    {activeTab === 'activity' && (
+                      <div className="absolute bottom-0 text-xl  left-0 right-0 h-0.5 bg-[#CB9729]"></div>
+                    )}
+                  </button>
+                  <div className="h-6 w-px bg-gray-200"></div>
+                  <button
+                    onClick={() => setActiveTab('mysave')}
+                    className={`px-6 py-3 font-medium text-xl  transition-colors relative ${
+                      activeTab === 'mysave'
+                        ? 'text-[#CB9729]'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    My Save
+                    {activeTab === 'mysave' && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
+                    )}
+                  </button>
+                  {/* Show Favourites tab only for coaches */}
+                  {currentUser?.user_type === 'coach' && (
+                    <>
+                      <div className="h-6 w-px bg-gray-200"></div>
+                      <button
+                        onClick={() => setActiveTab('favourites')}
+                        className={`px-6 py-3 font-medium text-xl transition-colors relative ${
+                          activeTab === 'favourites'
+                            ? 'text-[#CB9729]'
+                            : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        Favourites
+                        {activeTab === 'favourites' && (
+                          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
+                        )}
+                      </button>
+                    </>
+                  )}
+                </>
+              )}
             </div>
 
             <div className="mt-4 space-y-4 overflow-y-auto flex-1 pb-4 px-1 max-h-[400px] lg:max-h-[450px] ">
@@ -1130,6 +1155,9 @@ function ProfileContent() {
                     />
                   )}
                 </div>
+              )}
+              {activeTab === 'favourites' && currentUserId && (
+                <Favourites coachId={currentUserId} />
               )}
             </div>
           </div>

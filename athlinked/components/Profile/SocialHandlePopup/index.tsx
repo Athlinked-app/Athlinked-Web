@@ -104,7 +104,7 @@ export default function SocialHandlePopup({
               }`}
             >
               <span
-                className={selectedPlatform ? 'text-gray-900' : 'text-gray-500'}
+                className={selectedPlatform ? 'text-black' : 'text-gray-500'}
               >
                 {selectedPlatform || 'Select Social Handles'}
               </span>
@@ -132,7 +132,7 @@ export default function SocialHandlePopup({
                   <div
                     key={platform}
                     onClick={() => handlePlatformSelect(platform)}
-                    className="px-4 py-2 hover:bg-gray-50 cursor-pointer"
+                    className="px-4 py-2 hover:bg-gray-50 cursor-pointer text-black"
                   >
                     {platform}
                   </div>
@@ -149,7 +149,7 @@ export default function SocialHandlePopup({
               value={url}
               onChange={e => setUrl(e.target.value)}
               placeholder="Social Handle URL"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black placeholder:text-gray-400"
             />
           </div>
         </div>

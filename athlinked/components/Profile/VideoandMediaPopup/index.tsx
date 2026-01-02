@@ -137,7 +137,7 @@ export default function VideoAndMediaPopup({
             : 'border-gray-300'
         }`}
       >
-        <span className={value ? 'text-gray-900' : 'text-gray-500'}>
+        <span className={value ? 'text-black' : 'text-gray-500'}>
           {value || placeholder}
         </span>
         <ChevronDown
@@ -153,7 +153,7 @@ export default function VideoAndMediaPopup({
                 onSelect(option);
                 setShowDropdown(false);
               }}
-              className={`px-4 py-2 hover:bg-gray-50 cursor-pointer ${
+              className={`px-4 py-2 hover:bg-gray-50 cursor-pointer text-black ${
                 value === option ? 'bg-blue-50' : ''
               }`}
             >

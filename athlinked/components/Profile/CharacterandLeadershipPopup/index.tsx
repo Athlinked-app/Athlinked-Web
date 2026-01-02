@@ -154,7 +154,7 @@ export default function CharacterAndLeadershipPopup({
                   onChange={e => setTeamCaptain(e.target.value)}
                   className="w-4 h-4 text-[#CB9729] focus:ring-[#CB9729]"
                 />
-                <span className="text-gray-700">Yes</span>
+                <span className="text-black">Yes</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -165,7 +165,7 @@ export default function CharacterAndLeadershipPopup({
                   onChange={e => setTeamCaptain(e.target.value)}
                   className="w-4 h-4 text-[#CB9729] focus:ring-[#CB9729]"
                 />
-                <span className="text-gray-700">No</span>
+                <span className="text-black">No</span>
               </label>
             </div>
           </div>
@@ -186,7 +186,7 @@ export default function CharacterAndLeadershipPopup({
               }`}
             >
               <span
-                className={leadershipRoles ? 'text-gray-900' : 'text-gray-500'}
+                className={leadershipRoles ? 'text-black' : 'text-gray-500'}
               >
                 {leadershipRoles || 'Select mentorship'}
               </span>
@@ -203,7 +203,7 @@ export default function CharacterAndLeadershipPopup({
                       setLeadershipRoles(role);
                       setShowLeadershipRolesDropdown(false);
                     }}
-                    className={`px-4 py-2 hover:bg-gray-50 cursor-pointer ${
+                    className={`px-4 py-2 hover:bg-gray-50 cursor-pointer text-black ${
                       leadershipRoles === role ? 'bg-blue-50' : ''
                     }`}
                   >
@@ -231,7 +231,7 @@ export default function CharacterAndLeadershipPopup({
                     onChange={() => handleLanguageToggle(language)}
                     className="w-4 h-4 text-[#CB9729] rounded focus:ring-[#CB9729] border-gray-300"
                   />
-                  <span className="text-gray-700">{language}</span>
+                  <span className="text-black">{language}</span>
                 </label>
               ))}
             </div>
@@ -247,7 +247,7 @@ export default function CharacterAndLeadershipPopup({
               onChange={e => setCommunityService(e.target.value)}
               placeholder="Describe your community service or volunteer work"
               rows={4}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900 resize-none"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black placeholder:text-gray-400 resize-none"
             />
           </div>
         </div>
