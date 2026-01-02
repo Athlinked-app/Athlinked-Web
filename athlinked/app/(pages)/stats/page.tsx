@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Header from '@/components/Header';
 import NavigationBar from '@/components/NavigationBar';
 import {
   Search,
@@ -440,39 +441,26 @@ export default function StatsPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-200">
-      {/* Header - Full Width */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center w-full">
-        <div className="flex items-center">
-          <img src="/Frame 171.png" alt="ATHLINKED" className="h-8 w-auto" />
-        </div>
-        <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden flex items-center justify-center">
-          {getProfileUrl(userData?.profile_url) ? (
-            <img
-              src={getProfileUrl(userData?.profile_url) || ''}
-              alt="Profile"
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <span className="text-black font-semibold text-xs">
-              {getInitials(userData?.full_name)}
-            </span>
-          )}
-        </div>
-      </header>
+      {/* Header Component */}
+      <Header
+        userName={userData?.full_name}
+        userProfileUrl={getProfileUrl(userData?.profile_url)}
+      />
 
       {/* Content Area with Navigation and Main Content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden mt-5 overflow-hidden ">
         {/* Navigation Sidebar */}
+        <div className="hidden md:flex px-6 ">
         <NavigationBar
           activeItem="stats"
           userName={userData?.full_name || ''}
         />
-
+</div>
         {/* Main Content Area */}
-        <div className="flex-1 flex flex-col bg-white overflow-auto">
-          {/* Main Content */}
+
+        <div className="flex-1 flex flex-col px-3 gap-4 overflow-hidden min-w-0">
+        <div className="flex-1 flex flex-col bg-white overflow-auto rounded-lg">
           <main className="flex-1 p-6 bg-white">
-            {/* Athlete Profile Card */}
             <div className="bg-[#CB9729] rounded-lg p-6 mb-6 flex items-center justify-between shadow-sm">
               <div className="flex items-center gap-6">
                 <div className="w-24 h-24 rounded-full bg-white overflow-hidden border-2 border-white shadow-md flex items-center justify-center">
@@ -652,20 +640,17 @@ export default function StatsPage() {
             </div>
           </main>
         </div>
+        </div>
       </div>
 
       {/* Add Stats Modal */}
       {showAddStatsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-end">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowAddStatsModal(false)}
           />
-
-          {/* Modal - Slides in from right */}
           <div className="relative z-10 w-full max-w-md bg-white h-full shadow-2xl overflow-y-auto">
-            {/* Header */}
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold text-black">Add Stats</h2>
@@ -699,8 +684,6 @@ export default function StatsPage() {
                 </div>
               </div>
             </div>
-
-            {/* Form Content */}
             <div className="p-6 space-y-6">
               {/* Sport Name */}
               <div className="mb-2">
@@ -708,8 +691,6 @@ export default function StatsPage() {
                   {getSportDisplayName(activeSport)}
                 </h3>
               </div>
-
-              {/* Year Field */}
               <div>
                 <label className="block text-sm font-medium text-black mb-2">
                   Year

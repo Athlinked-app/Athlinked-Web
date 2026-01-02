@@ -946,8 +946,6 @@ export default function Profile() {
                       Opportunities
                     </button>
                   </div>
-
-                  {/* Filtered Content */}
                   {activeSaveFilter === 'posts' && (
                     <MySavePost
                       posts={posts}
