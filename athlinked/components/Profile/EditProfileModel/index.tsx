@@ -44,6 +44,17 @@ interface EditProfileModalProps {
     education?: string;
     city?: string;
   };
+  profileSections?: {
+    bio?: string;
+    socialHandles?: any[];
+    academicBackgrounds?: any[];
+    achievements?: any[];
+    athleticAndPerformance?: any[];
+    competitionAndClubs?: any[];
+    characterAndLeadership?: any[];
+    healthAndReadiness?: any[];
+    videoAndMedia?: any[];
+  };
   onSave?: (data: {
     full_name?: string;
     username?: string;
@@ -81,6 +92,7 @@ export default function EditProfileModal({
   connectionRequestStatus,
   onSendConnectionRequest,
   userData,
+  profileSections,
   onSave,
 }: EditProfileModalProps) {
   const router = useRouter();
@@ -502,23 +514,30 @@ export default function EditProfileModal({
       .slice(0, 2);
   };
 
-  // Calculate completion percentage based on filled fields
+  // Calculate completion percentage based on all profile sections
   // This recalculates on every render when any field changes
   const calculateCompletion = () => {
     let completed = 0;
-    const totalFields = 7;
+    const totalSections = 12; // Total number of profile sections
 
-    // Check each field - must be non-empty
+    // Basic Profile Information (3 sections)
     if (fullName && fullName.trim() !== '') completed++;
-    if (username && username.trim() !== '') completed++;
-    if (location && location.trim() !== '') completed++;
-    if (age && age.trim() !== '') completed++;
-    if (sportsPlayed && sportsPlayed.trim() !== '') completed++;
-    if (primarySport && primarySport.trim() !== '') completed++;
     if (profileImagePreview) completed++;
+    if ((location && location.trim() !== '') || (age && age.trim() !== '')) completed++;
+
+    // Profile Sections (9 sections)
+    if (profileSections?.bio && profileSections.bio.trim() !== '') completed++;
+    if (profileSections?.socialHandles && profileSections.socialHandles.length > 0) completed++;
+    if (profileSections?.academicBackgrounds && profileSections.academicBackgrounds.length > 0) completed++;
+    if (profileSections?.achievements && profileSections.achievements.length > 0) completed++;
+    if (profileSections?.athleticAndPerformance && profileSections.athleticAndPerformance.length > 0) completed++;
+    if (profileSections?.competitionAndClubs && profileSections.competitionAndClubs.length > 0) completed++;
+    if (profileSections?.characterAndLeadership && profileSections.characterAndLeadership.length > 0) completed++;
+    if (profileSections?.healthAndReadiness && profileSections.healthAndReadiness.length > 0) completed++;
+    if (profileSections?.videoAndMedia && profileSections.videoAndMedia.length > 0) completed++;
 
     const percentage = Math.min(
-      Math.round((completed / totalFields) * 100),
+      Math.round((completed / totalSections) * 100),
       100
     );
     return percentage;
@@ -625,17 +644,10 @@ export default function EditProfileModal({
                   )}
                 </div>
               </div>
-              {/* Completion Percentage */}
-              <div className="absolute bottom-0 right-0 bg-[#CB9729] text-white text-xs font-semibold rounded-full w-10 h-10 flex items-center justify-center border-2 border-white">
+              {/* Completion Percentage Circle */}
+              <div className="absolute bottom-0 right-0 bg-[#CB9729] text-white text-sm font-bold rounded-full w-12 h-12 flex items-center justify-center border-2 border-white shadow-lg">
                 {currentCompletion}%
               </div>
-              {/* Camera Icon */}
-              <button
-                onClick={handleProfileImageClick}
-                className="absolute bottom-0 right-0 bg-gray-200 hover:bg-gray-300 rounded-full p-2.5 border-2 border-white transition-colors"
-              >
-                <Camera className="w-5 h-5 text-gray-700" />
-              </button>
               <input
                 ref={profileImageInputRef}
                 type="file"
@@ -669,34 +681,36 @@ export default function EditProfileModal({
                 })()}
               </p>
 
-              <div className="flex flex-row gap-3 text-gray-600">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
+              <div className="flex flex-row items-center gap-3 text-gray-600">
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 flex-shrink-0" />
                   <input
                     type="text"
                     value={location}
                     onChange={e => setLocation(e.target.value)}
                     placeholder="Location"
-                    className="w-28 border-none focus:outline-none focus:ring-0 bg-transparent text-black placeholder:text-gray-400"
+                    className="border-none focus:outline-none focus:ring-0 bg-transparent text-gray-600 placeholder:text-gray-400"
+                    style={{ width: location ? `${Math.max(location.length * 7 + 16, 60)}px` : '60px' }}
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  <span>
+                <div className="flex items-center gap-1.5">
+                  <Users className="w-4 h-4 flex-shrink-0" />
+                  <span className="whitespace-nowrap">
                     {userData?.followers_count !== undefined
                       ? userData.followers_count.toLocaleString()
                       : '0'}{' '}
                     followers
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 flex-shrink-0" />
                   <input
                     type="number"
                     value={age}
                     onChange={e => setAge(e.target.value)}
                     placeholder="Age"
-                    className="w-20 border-none focus:outline-none focus:ring-0 bg-transparent text-black placeholder:text-gray-400"
+                    className="border-none focus:outline-none focus:ring-0 bg-transparent text-gray-600 placeholder:text-gray-400"
+                    style={{ width: age ? `${Math.max(age.length * 7 + 8, 35)}px` : '35px' }}
                   />
                 </div>
               </div>
@@ -739,7 +753,7 @@ export default function EditProfileModal({
                       }
                       className={`px-6 py-4 rounded-lg transition-colors flex items-center gap-2 ${
                         connectionRequestStatus?.status === 'connected'
-                          ? 'bg-green-600 text-white cursor-default'
+                          ? 'bg-white border border-[#CB9729] text-[#CB9729]  cursor-default'
                           : connectionRequestStatus?.exists &&
                               connectionRequestStatus?.status === 'pending'
                             ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
@@ -779,7 +793,7 @@ export default function EditProfileModal({
                         disabled={favoriteLoading}
                         className={`px-6 py-4 rounded-lg transition-colors flex items-center gap-2 ${
                           isFavorite
-                            ? 'bg-red-500 text-white hover:bg-red-600'
+                            ? 'bg-[#CB9729] text-white hover:bg-red-600'
                             : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
                         } ${favoriteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
@@ -794,22 +808,28 @@ export default function EditProfileModal({
               </div>
 
               {/* Sports Information */}
-              <div className="space-y-1 mt-2">
-                <div className="text-md flex">
-                  <span className="font-semibold text-gray-900 w-40 text-right">
-                    Sports Played
-                  </span>
-                  <span className="mx-3">:</span>
-                  <span className="text-gray-700">{sportsPlayed || '—'}</span>
-                </div>
-                <div className="text-md flex">
-                  <span className="font-semibold text-gray-900 w-40 text-right">
-                    Primary Sports
-                  </span>
-                  <span className="mx-3">:</span>
-                  <span className="text-gray-700">{primarySport || '—'}</span>
-                </div>
-              </div>
+              {(() => {
+                const userType =
+                  fetchedUserData?.user_type || userData?.user_type;
+                return userType === 'athlete' ? (
+                  <div className="space-y-1 mt-2">
+                    <div className="text-md flex">
+                      <span className="font-semibold text-gray-900 w-40 text-right">
+                        Sports Played
+                      </span>
+                      <span className="mx-3">:</span>
+                      <span className="text-gray-700">{sportsPlayed || '—'}</span>
+                    </div>
+                    <div className="text-md flex">
+                      <span className="font-semibold text-gray-900 w-40 text-right">
+                        Primary Sports
+                      </span>
+                      <span className="mx-3">:</span>
+                      <span className="text-gray-700">{primarySport || '—'}</span>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
             </div>
           </div>
         </div>

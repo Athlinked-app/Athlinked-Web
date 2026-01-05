@@ -582,6 +582,17 @@ function ProfileContent() {
               education: profileData?.education || '',
               city: profileData?.city || '',
             }}
+            profileSections={{
+              bio: userBio || profileData?.bio || '',
+              socialHandles: socialHandles,
+              academicBackgrounds: academicBackgrounds,
+              achievements: achievements,
+              athleticAndPerformance: athleticAndPerformance,
+              competitionAndClubs: competitionAndClubs,
+              characterAndLeadership: characterAndLeadership,
+              healthAndReadiness: healthAndReadiness,
+              videoAndMedia: videoAndMedia,
+            }}
             onSave={async (data: {
               profile_url?: File;
               background_image_url?: File;
