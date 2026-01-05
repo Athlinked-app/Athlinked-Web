@@ -118,14 +118,144 @@ export const getFieldsForPosition = (
         return [];
     }
   } else if (sport === 'football') {
-    // Football fields (existing)
-    return [
-      'Year',
-      'Passing Yards',
-      'Passing Touchdowns',
-      'Completion Percentage',
-      'Interceptions Thrown',
-    ];
+    switch (position) {
+      case 'Quarterback':
+        return [
+          'Year',
+          'Passing Yards',
+          'Passing Touchdowns',
+          'Completion Percentage',
+          'Interceptions Thrown',
+          'Rushing Yards',
+          'Rushing Touchdowns',
+          'QBR (Quarterback Rating)',
+          'Pass Attempts',
+          'Pass Completions',
+          'Longest Pass',
+          'Sacks Taken',
+          'Fumbles',
+        ];
+      case 'Running Back':
+        return [
+          'Year',
+          'Rushing Yards',
+          'Rushing Touchdowns',
+          'Rushing Attempts',
+          'Yards Per Carry',
+          'Receptions',
+          'Receiving Yards',
+          'Receiving Touchdowns',
+          'Fumbles',
+          'Longest Run',
+        ];
+      case 'Wide Receiver':
+        return [
+          'Year',
+          'Receptions',
+          'Receiving Yards',
+          'Receiving Touchdowns',
+          'Yards Per Reception',
+          'Targets',
+          'Catch Percentage',
+          'Longest Reception',
+          'Fumbles',
+        ];
+      case 'Tight End':
+        return [
+          'Year',
+          'Receptions',
+          'Receiving Yards',
+          'Receiving Touchdowns',
+          'Yards Per Reception',
+          'Targets',
+          'Catch Percentage',
+          'Blocking Grade',
+          'Longest Reception',
+        ];
+      case 'Offensive Line':
+        return [
+          'Year',
+          'Games Played',
+          'Pancake Blocks',
+          'Sacks Allowed',
+          'Blocking Grade',
+          'Penalties',
+        ];
+      case 'Defensive Line':
+        return [
+          'Year',
+          'Tackles',
+          'Sacks',
+          'Tackles for Loss',
+          'Forced Fumbles',
+          'Fumble Recoveries',
+          'Pass Deflections',
+          'QB Hurries',
+        ];
+      case 'Linebacker':
+        return [
+          'Year',
+          'Tackles',
+          'Sacks',
+          'Tackles for Loss',
+          'Interceptions',
+          'Pass Deflections',
+          'Forced Fumbles',
+          'Fumble Recoveries',
+          'Defensive Touchdowns',
+        ];
+      case 'Cornerback':
+        return [
+          'Year',
+          'Tackles',
+          'Interceptions',
+          'Pass Deflections',
+          'Forced Fumbles',
+          'Fumble Recoveries',
+          'Defensive Touchdowns',
+          'Completion Percentage Allowed',
+        ];
+      case 'Safety':
+        return [
+          'Year',
+          'Tackles',
+          'Interceptions',
+          'Pass Deflections',
+          'Forced Fumbles',
+          'Fumble Recoveries',
+          'Defensive Touchdowns',
+          'Tackles for Loss',
+        ];
+      case 'Kicker':
+        return [
+          'Year',
+          'Field Goals Made',
+          'Field Goals Attempted',
+          'Field Goal Percentage',
+          'Longest Field Goal',
+          'Extra Points Made',
+          'Extra Points Attempted',
+          'Touchbacks',
+        ];
+      case 'Punter':
+        return [
+          'Year',
+          'Punts',
+          'Punt Average',
+          'Longest Punt',
+          'Punts Inside 20',
+          'Touchbacks',
+        ];
+      default:
+        // Fallback for any other football positions
+        return [
+          'Year',
+          'Games Played',
+          'Tackles',
+          'Sacks',
+          'Interceptions',
+        ];
+    }
   } else if (sport === 'golf') {
     switch (position) {
       case 'General':

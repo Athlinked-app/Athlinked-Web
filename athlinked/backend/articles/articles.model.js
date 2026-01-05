@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const pool = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
 

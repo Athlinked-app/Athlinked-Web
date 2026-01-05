@@ -251,6 +251,45 @@ async function getAllUsers(req, res) {
   }
 }
 
+/**
+ * Controller to get children for the authenticated parent
+ * @param {object} req - Express request object
+ * @param {object} res - Express response object
+ */
+async function getMyChildren(req, res) {
+  try {
+    // Get parent email from authenticated user
+    const parentEmail = req.user?.email;
+
+    if (!parentEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'Parent email not found in token',
+      });
+    }
+
+    // Verify user is a parent
+    if (req.user?.user_type !== 'parent') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only parents can access their children',
+      });
+    }
+
+    const result = await signupService.getChildrenByParentEmailService(
+      parentEmail
+    );
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Get my children error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 module.exports = {
   startSignup,
   verifyOtp,
@@ -258,4 +297,5 @@ module.exports = {
   getUserByUsername,
   parentComplete,
   getAllUsers,
+  getMyChildren,
 };

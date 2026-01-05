@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const signupModel = require('./signup.model');
 const { hashPassword } = require('../utils/hash');
 const { startOTPFlow, verifyOTP } = require('./otp.service');
@@ -92,6 +93,7 @@ async function startSignupService(userData) {
     return {
       success: true,
       message: 'OTP sent to email',
+      email: emailToSendOTP,
     };
   } catch (error) {
     console.error('Start signup service error:', error.message);
@@ -156,7 +158,7 @@ async function verifyOtpService(email, otp) {
         primarySport: primarySport,
       });
 
-      const sportsString = uniqueSportsArray.join(', ');
+      // deduplicated sports stored in profile; no local use needed
     } catch (profileError) {
       console.error(
         '⚠️ Error creating profile during signup:',
@@ -201,16 +203,15 @@ async function verifyOtpService(email, otp) {
 async function parentCompleteService(username, email, password) {
   try {
     let childUser;
-    let identifier;
 
     if (username) {
       childUser = await signupModel.findByUsername(
         username.toLowerCase().trim()
       );
-      identifier = username;
+      // username is used to find the childUser above
     } else if (email) {
       childUser = await signupModel.findByEmail(email.toLowerCase().trim());
-      identifier = email;
+      // email is used to find the childUser above
     } else {
       throw new Error('Username or email is required');
     }
@@ -285,10 +286,11 @@ async function getAllUsersService(excludeUserId = null, limit = 10) {
   try {
     const users = await signupModel.getAllUsers(excludeUserId, limit);
 
-    // Remove password from all users
+    // Remove password from all users (produce shallow copies)
     const sanitizedUsers = users.map(user => {
-      const { password, ...userData } = user;
-      return userData;
+      const copy = { ...user };
+      delete copy.password;
+      return copy;
     });
 
     return {
@@ -301,9 +303,40 @@ async function getAllUsersService(excludeUserId = null, limit = 10) {
   }
 }
 
+/**
+ * Get children for a parent by parent email
+ * @param {string} parentEmail - Parent's email address
+ * @returns {Promise<object>} Service result with children array
+ */
+async function getChildrenByParentEmailService(parentEmail) {
+  try {
+    if (!parentEmail) {
+      throw new Error('Parent email is required');
+    }
+
+    const children = await signupModel.getChildrenByParentEmail(parentEmail);
+
+    // Remove password from all children (produce shallow copies)
+    const sanitizedChildren = children.map(child => {
+      const copy = { ...child };
+      delete copy.password;
+      return copy;
+    });
+
+    return {
+      success: true,
+      children: sanitizedChildren,
+    };
+  } catch (error) {
+    console.error('Get children service error:', error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   startSignupService,
   verifyOtpService,
   parentCompleteService,
   getAllUsersService,
+  getChildrenByParentEmailService,
 };
