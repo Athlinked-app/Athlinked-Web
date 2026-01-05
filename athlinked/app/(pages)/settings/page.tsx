@@ -21,7 +21,8 @@ export default function SettingsPage() {
   const router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-  const [activeSettingsItem, setActiveSettingsItem] = useState<string>('personal-info');
+  const [activeSettingsItem, setActiveSettingsItem] =
+    useState<string>('personal-info');
 
   useEffect(() => {
     fetchCurrentUser();
@@ -100,8 +101,6 @@ export default function SettingsPage() {
       />
 
       <main className="flex flex-1 w-full mt-5 overflow-hidden">
-
-
         {/* Settings Content */}
         <div className="flex-1 flex gap-4 px-4 overflow-hidden">
           {/* Settings Navigation Sidebar */}
@@ -122,7 +121,9 @@ export default function SettingsPage() {
               <PrivacyPolicy />
             ) : (
               <div className="text-center text-gray-500 mt-20">
-                <p className="text-lg">Settings content for: {activeSettingsItem}</p>
+                <p className="text-lg">
+                  Settings content for: {activeSettingsItem}
+                </p>
                 <p className="text-sm mt-2">Content will be displayed here</p>
               </div>
             )}

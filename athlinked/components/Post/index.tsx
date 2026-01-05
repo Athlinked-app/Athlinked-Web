@@ -176,9 +176,12 @@ export default function Post({
     // Set up WebSocket for real-time like updates
     const { getSocket } = require('@/utils/useSocket');
     const socket = getSocket();
-    
+
     if (socket) {
-      const handleLikeUpdate = (data: { postId: string; likeCount: number }) => {
+      const handleLikeUpdate = (data: {
+        postId: string;
+        likeCount: number;
+      }) => {
         if (data.postId === post.id) {
           setLikeCount(data.likeCount);
         }
@@ -205,7 +208,7 @@ export default function Post({
 
     try {
       const { apiPost } = await import('@/utils/api');
-      
+
       // Call like or unlike API based on current state
       const endpoint = wasLiked
         ? `/posts/${post.id}/unlike`

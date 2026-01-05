@@ -40,7 +40,7 @@ export default function Favourites({ coachId }: FavouritesProps) {
         success: boolean;
         favorites: FavoriteAthlete[];
       }>('/favorites');
-      
+
       if (result.success && result.favorites) {
         setFavorites(result.favorites);
       }
@@ -57,7 +57,7 @@ export default function Favourites({ coachId }: FavouritesProps) {
         success: boolean;
         isFavorite: boolean;
       }>(`/favorites/${athleteId}`);
-      
+
       if (result.success) {
         setFavorites(prev => prev.filter(fav => fav.id !== athleteId));
       }
@@ -103,7 +103,8 @@ export default function Favourites({ coachId }: FavouritesProps) {
       <div className="w-full bg-white rounded-lg p-6 mt-4">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Favourites</h2>
         <p className="text-gray-500 italic">
-          No favorite athletes yet. Add athletes to your favorites to see them here.
+          No favorite athletes yet. Add athletes to your favorites to see them
+          here.
         </p>
       </div>
     );
@@ -197,9 +198,7 @@ export default function Favourites({ coachId }: FavouritesProps) {
                       onClick={e => {
                         e.stopPropagation();
                         if (
-                          confirm(
-                            `Remove ${athlete.full_name} from favorites?`
-                          )
+                          confirm(`Remove ${athlete.full_name} from favorites?`)
                         ) {
                           handleRemoveFavorite(athlete.id);
                         }
@@ -219,4 +218,3 @@ export default function Favourites({ coachId }: FavouritesProps) {
     </div>
   );
 }
-

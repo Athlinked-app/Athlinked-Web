@@ -19,6 +19,7 @@ const profileRoutes = require('./profile/profile.routes');
 const profileUploadRoutes = require('./profile/profile-upload.routes');
 const notificationsRoutes = require('./notifications/notifications.routes');
 const favoritesRoutes = require('./favorites/favorites.routes');
+const searchRoutes = require('./search/search.routes');
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/signup', signupRoutes);
+app.use('/api/search', searchRoutes);
 app.use('/api/login', loginRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/clips', clipsRoutes);
