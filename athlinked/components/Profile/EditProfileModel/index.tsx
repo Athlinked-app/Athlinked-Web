@@ -210,7 +210,7 @@ export default function EditProfileModal({
               primarySport?: string | null;
               sportsPlayed?: string | null;
             }>(`/profile/${data.user.id}`);
-            
+
             if (profileData.bio) setBio(profileData.bio);
             if (profileData.education) setEducation(profileData.education);
             if (profileData.city) setLocation(profileData.city);
@@ -289,12 +289,16 @@ export default function EditProfileModal({
           setCurrentUserType(fetchedCurrentUserType || null);
           const viewedUserType = userData?.user_type;
 
-          if (fetchedCurrentUserType === 'coach' && viewedUserType === 'athlete') {
+          if (
+            fetchedCurrentUserType === 'coach' &&
+            viewedUserType === 'athlete'
+          ) {
             try {
               const { apiGet } = await import('@/utils/api');
-              const result = await apiGet<{ success: boolean; isFavorite: boolean }>(
-                `/favorites/${viewedUserId}/status`
-              );
+              const result = await apiGet<{
+                success: boolean;
+                isFavorite: boolean;
+              }>(`/favorites/${viewedUserId}/status`);
               if (result.success) {
                 setIsFavorite(result.isFavorite);
               }
@@ -408,7 +412,7 @@ export default function EditProfileModal({
     setFavoriteLoading(true);
     try {
       const { apiPost, apiDelete } = await import('@/utils/api');
-      
+
       if (isFavorite) {
         const result = await apiDelete<{
           success: boolean;
@@ -767,11 +771,11 @@ export default function EditProfileModal({
                     </button>
                     {/* Show Favourites button only if coach viewing athlete */}
                     {(() => {
-                      const userType = currentUserType || fetchedUserData?.user_type;
+                      const userType =
+                        currentUserType || fetchedUserData?.user_type;
                       const viewedUserType = userData?.user_type;
                       return (
-                        userType === 'coach' &&
-                        viewedUserType === 'athlete'
+                        userType === 'coach' && viewedUserType === 'athlete'
                       );
                     })() && (
                       <button

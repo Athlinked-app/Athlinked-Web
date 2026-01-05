@@ -123,7 +123,7 @@ function MessagesPageContent() {
     // Use centralized WebSocket utility
     const { getSocket } = require('@/utils/useSocket');
     const newSocket = getSocket();
-    
+
     if (!newSocket) return;
 
     if (newSocket.connected) {
@@ -291,23 +291,26 @@ function MessagesPageContent() {
     );
 
     // Listen for conversation updates
-    newSocket.on('conversation_updated', (data: { conversation: Conversation }) => {
-      setConversations(prev => {
-        const index = prev.findIndex(
-          conv => conv.conversation_id === data.conversation.conversation_id
-        );
-        if (index >= 0) {
-          const updated = [...prev];
-          updated[index] = data.conversation;
-          // Move updated conversation to top
-          const [updatedConv] = updated.splice(index, 1);
-          return [updatedConv, ...updated];
-        } else {
-          // New conversation, add to top
-          return [data.conversation, ...prev];
-        }
-      });
-    });
+    newSocket.on(
+      'conversation_updated',
+      (data: { conversation: Conversation }) => {
+        setConversations(prev => {
+          const index = prev.findIndex(
+            conv => conv.conversation_id === data.conversation.conversation_id
+          );
+          if (index >= 0) {
+            const updated = [...prev];
+            updated[index] = data.conversation;
+            // Move updated conversation to top
+            const [updatedConv] = updated.splice(index, 1);
+            return [updatedConv, ...updated];
+          } else {
+            // New conversation, add to top
+            return [data.conversation, ...prev];
+          }
+        });
+      }
+    );
 
     socketRef.current = newSocket;
     setSocket(newSocket);

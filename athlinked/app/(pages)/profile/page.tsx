@@ -33,7 +33,7 @@ import MySaveClips from '@/components/MySave/Clips';
 import MySaveArticle from '@/components/MySave/Article';
 import MySaveOpportunity from '@/components/MySave/Opportunity';
 import Favourites from '@/components/Profile/Favourites';
-import { apiGet, apiPost, apiUpload } from '@/utils/api';
+import { apiGet, apiPost } from '@/utils/api';
 interface CurrentUser {
   id: string;
   full_name: string;
@@ -106,7 +106,12 @@ function ProfileContent() {
 
   // Reset to profile tab if viewing someone else's profile and on a restricted tab
   useEffect(() => {
-    if (!isViewingOwnProfile && (activeTab === 'activity' || activeTab === 'mysave' || activeTab === 'favourites')) {
+    if (
+      !isViewingOwnProfile &&
+      (activeTab === 'activity' ||
+        activeTab === 'mysave' ||
+        activeTab === 'favourites')
+    ) {
       setActiveTab('profile');
     }
   }, [isViewingOwnProfile, activeTab]);
@@ -215,29 +220,26 @@ function ProfileContent() {
         if (user) {
           setViewUser({
             id: user.id,
-              full_name: user.full_name || user.username || 'User',
-              profile_url: user.profile_url,
-              username: user.username,
-              user_type: user.user_type,
-            });
-            if (user.sports_played) {
-              let sportsString = user.sports_played;
-              if (typeof sportsString === 'string') {
-                if (
-                  sportsString.startsWith('{') &&
-                  sportsString.endsWith('}')
-                ) {
-                  sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
-                }
-                setSportsPlayed(sportsString);
-              } else if (Array.isArray(sportsString)) {
-                setSportsPlayed(sportsString.join(', '));
-              } else {
-                setSportsPlayed('');
+            full_name: user.full_name || user.username || 'User',
+            profile_url: user.profile_url,
+            username: user.username,
+            user_type: user.user_type,
+          });
+          if (user.sports_played) {
+            let sportsString = user.sports_played;
+            if (typeof sportsString === 'string') {
+              if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+                sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
               }
+              setSportsPlayed(sportsString);
+            } else if (Array.isArray(sportsString)) {
+              setSportsPlayed(sportsString.join(', '));
+            } else {
+              setSportsPlayed('');
             }
           }
         }
+      }
     } catch (error) {
       console.error('Error fetching view user:', error);
     }
@@ -261,9 +263,9 @@ function ProfileContent() {
         sportsPlayed?: string | string[] | null;
         dob?: string | null;
       }>(`/profile/${targetUserId}`);
-      
+
       console.log('Profile data fetched:', data);
-      
+
       // Process sportsPlayed value
       let processedSportsPlayed: string | null = null;
       if (data.sportsPlayed !== undefined && data.sportsPlayed !== null) {
@@ -277,7 +279,7 @@ function ProfileContent() {
           processedSportsPlayed = sportsString;
         }
       }
-      
+
       // Ensure userId is set from targetUserId if not in response
       setProfileData({
         userId: data.userId || targetUserId || '',
@@ -338,7 +340,9 @@ function ProfileContent() {
         success: boolean;
         exists?: boolean;
         status?: string | null;
-      }>(`/network/connection-status/${viewUserId}?requester_id=${currentUserId}`);
+      }>(
+        `/network/connection-status/${viewUserId}?requester_id=${currentUserId}`
+      );
       if (data.success) {
         setConnectionRequestStatus({
           exists: data.exists || false,
@@ -683,7 +687,7 @@ function ProfileContent() {
                 } else if (typeof data.background_image_url === 'string') {
                   profileData.coverImageUrl = data.background_image_url;
                 }
-                
+
                 const result = await apiPost<{
                   success: boolean;
                   message?: string;

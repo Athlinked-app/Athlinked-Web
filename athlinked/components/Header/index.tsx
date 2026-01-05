@@ -53,7 +53,7 @@ export default function Header({
         const { apiGet } = await import('@/utils/api');
         const { getCurrentUserId } = await import('@/utils/auth');
         const userId = getCurrentUserId();
-        
+
         if (!userId) {
           if (isMounted) {
             setLoading(false);

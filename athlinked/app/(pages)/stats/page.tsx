@@ -488,134 +488,134 @@ export default function StatsPage() {
       <div className="flex flex-1 overflow-hidden mt-5 overflow-hidden ">
         {/* Navigation Sidebar */}
         <div className="hidden md:flex px-6 ">
-        <NavigationBar
-          activeItem="stats"
-          userName={userData?.full_name || ''}
-        />
-</div>
+          <NavigationBar
+            activeItem="stats"
+            userName={userData?.full_name || ''}
+          />
+        </div>
         {/* Main Content Area */}
 
         <div className="flex-1 flex flex-col px-3 gap-4 overflow-hidden min-w-0">
-        <div className="flex-1 flex flex-col bg-white overflow-auto rounded-lg">
-          <main className="flex-1 p-6 bg-white">
-            <div className="bg-[#CB9729] rounded-lg p-6 mb-6 flex items-center justify-between shadow-sm">
-              <div className="flex items-center gap-6">
-                <div className="w-24 h-24 rounded-full bg-white overflow-hidden border-2 border-white shadow-md flex items-center justify-center">
-                  {getProfileUrl(userData?.profile_url) ? (
-                    <img
-                      src={getProfileUrl(userData?.profile_url) || ''}
-                      alt={displayName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-black font-semibold text-lg">
-                      {getInitials(userData?.full_name || 'User')}
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-white mb-1">
-                    {displayName}
-                  </h1>
-                  <p className="text-white text-base">{primarySport} • #45</p>
-                </div>
-              </div>
-              <div className="text-white space-y-1.5 text-right">
-                <div className="text-sm">Height: 6'2.75"</div>
-                <div className="text-sm">Weight: 221.3 pounds</div>
-                <div className="text-sm">Hand: 9.6"</div>
-                <div className="text-sm">Arm: 31.9"</div>
-              </div>
-            </div>
-
-            {/* Sport Tabs */}
-            <div className="flex gap-2 mb-6">
-              {sports.map(sport => {
-                const sportKey = sport.toLowerCase();
-                const displayName = getSportDisplayName(sport);
-                return (
-                  <button
-                    key={sportKey}
-                    onClick={() => setActiveSport(sportKey)}
-                    className={`px-6 py-2.5 rounded-lg font-medium transition-colors ${
-                      activeSport === sportKey
-                        ? 'bg-[#CB9729] text-white shadow-sm'
-                        : 'bg-white text-black hover:bg-gray-100 border border-gray-200'
-                    }`}
-                  >
-                    {displayName}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Football Stats Section */}
-            <div className="bg-white rounded-lg shadow-sm">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-xl font-bold text-black mb-4">
-                  {getSportDisplayName(activeSport)} Stats
-                </h2>
-
-                {/* Action Bar */}
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 relative">
-                    <Search
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black"
-                      size={20}
-                    />
-                    <input
-                      type="text"
-                      placeholder="Search"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-black"
-                    />
+          <div className="flex-1 flex flex-col bg-white overflow-auto rounded-lg">
+            <main className="flex-1 p-6 bg-white">
+              <div className="bg-[#CB9729] rounded-lg p-6 mb-6 flex items-center justify-between shadow-sm">
+                <div className="flex items-center gap-6">
+                  <div className="w-24 h-24 rounded-full bg-white overflow-hidden border-2 border-white shadow-md flex items-center justify-center">
+                    {getProfileUrl(userData?.profile_url) ? (
+                      <img
+                        src={getProfileUrl(userData?.profile_url) || ''}
+                        alt={displayName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-black font-semibold text-lg">
+                        {getInitials(userData?.full_name || 'User')}
+                      </span>
+                    )}
                   </div>
-                  <div className="relative">
-                    <select
-                      value={selectedPosition}
-                      onChange={e => setSelectedPosition(e.target.value)}
-                      className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-yellow-500 min-w-[180px] text-black"
+                  <div>
+                    <h1 className="text-3xl font-bold text-white mb-1">
+                      {displayName}
+                    </h1>
+                    <p className="text-white text-base">{primarySport} • #45</p>
+                  </div>
+                </div>
+                <div className="text-white space-y-1.5 text-right">
+                  <div className="text-sm">Height: 6'2.75"</div>
+                  <div className="text-sm">Weight: 221.3 pounds</div>
+                  <div className="text-sm">Hand: 9.6"</div>
+                  <div className="text-sm">Arm: 31.9"</div>
+                </div>
+              </div>
+
+              {/* Sport Tabs */}
+              <div className="flex gap-2 mb-6">
+                {sports.map(sport => {
+                  const sportKey = sport.toLowerCase();
+                  const displayName = getSportDisplayName(sport);
+                  return (
+                    <button
+                      key={sportKey}
+                      onClick={() => setActiveSport(sportKey)}
+                      className={`px-6 py-2.5 rounded-lg font-medium transition-colors ${
+                        activeSport === sportKey
+                          ? 'bg-[#CB9729] text-white shadow-sm'
+                          : 'bg-white text-black hover:bg-gray-100 border border-gray-200'
+                      }`}
                     >
-                      <option value="" className="text-black">
-                        All Positions
-                      </option>
-                      {loadingPositions ? (
-                        <option disabled className="text-black">
-                          Loading positions...
-                        </option>
-                      ) : availablePositions.length === 0 ? (
-                        <option disabled className="text-black">
-                          No positions available
-                        </option>
-                      ) : (
-                        availablePositions.map(position => (
-                          <option
-                            key={position.id}
-                            value={position.name}
-                            className="text-black"
-                          >
-                            {position.name}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                    <ChevronDown
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 text-black pointer-events-none"
-                      size={20}
-                    />
-                  </div>
-                  <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    <Edit size={18} />
-                    <span>Edit</span>
-                  </button>
-                  <button
-                    onClick={() => setShowAddStatsModal(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-yellow-600 transition-colors"
-                  >
-                    <Plus size={18} />
-                    <span>Add Data</span>
-                  </button>
-                </div>
+                      {displayName}
+                    </button>
+                  );
+                })}
               </div>
+
+              {/* Football Stats Section */}
+              <div className="bg-white rounded-lg shadow-sm">
+                <div className="p-6 border-b border-gray-200">
+                  <h2 className="text-xl font-bold text-black mb-4">
+                    {getSportDisplayName(activeSport)} Stats
+                  </h2>
+
+                  {/* Action Bar */}
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 relative">
+                      <Search
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black"
+                        size={20}
+                      />
+                      <input
+                        type="text"
+                        placeholder="Search"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-black"
+                      />
+                    </div>
+                    <div className="relative">
+                      <select
+                        value={selectedPosition}
+                        onChange={e => setSelectedPosition(e.target.value)}
+                        className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-yellow-500 min-w-[180px] text-black"
+                      >
+                        <option value="" className="text-black">
+                          All Positions
+                        </option>
+                        {loadingPositions ? (
+                          <option disabled className="text-black">
+                            Loading positions...
+                          </option>
+                        ) : availablePositions.length === 0 ? (
+                          <option disabled className="text-black">
+                            No positions available
+                          </option>
+                        ) : (
+                          availablePositions.map(position => (
+                            <option
+                              key={position.id}
+                              value={position.name}
+                              className="text-black"
+                            >
+                              {position.name}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                      <ChevronDown
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-black pointer-events-none"
+                        size={20}
+                      />
+                    </div>
+                    <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                      <Edit size={18} />
+                      <span>Edit</span>
+                    </button>
+                    <button
+                      onClick={() => setShowAddStatsModal(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-yellow-600 transition-colors"
+                    >
+                      <Plus size={18} />
+                      <span>Add Data</span>
+                    </button>
+                  </div>
+                </div>
 
               {/* Statistics Table */}
               <div className="overflow-x-auto">
@@ -654,22 +654,44 @@ export default function StatsPage() {
                             {getYearForProfile(profile) || '—'}
                           </td>
                           {allFieldLabels.map(fieldLabel => (
-                            <td
+                            <th
                               key={fieldLabel}
-                              className="px-6 py-4 whitespace-nowrap text-sm text-black"
+                              className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider"
                             >
-                              {getValueForField(profile, fieldLabel) || '—'}
-                            </td>
+                              {fieldLabel}
+                            </th>
                           ))}
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                )}
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {currentProfiles.map(profile => (
+                          <tr
+                            key={profile.id}
+                            className="hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
+                              {getYearForProfile(profile) || '—'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                              {profile.position_name}
+                            </td>
+                            {allFieldLabels.map(fieldLabel => (
+                              <td
+                                key={fieldLabel}
+                                className="px-6 py-4 whitespace-nowrap text-sm text-black"
+                              >
+                                {getValueForField(profile, fieldLabel) || '—'}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
               </div>
-            </div>
-          </main>
-        </div>
+            </main>
+          </div>
         </div>
       </div>
 
@@ -1035,7 +1057,9 @@ export default function StatsPage() {
                       }>('/user/position-stats', {
                         user_id: userId,
                         userSportProfileId:
-                          profileData.user_sport_profile_id || profileData.profileId || '',
+                          profileData.user_sport_profile_id ||
+                          profileData.profileId ||
+                          '',
                         stats: stats,
                       });
 
