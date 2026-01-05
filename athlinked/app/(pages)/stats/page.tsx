@@ -654,16 +654,38 @@ export default function StatsPage() {
                             {getYearForProfile(profile) || '—'}
                           </td>
                           {allFieldLabels.map(fieldLabel => (
-                            <td
+                            <th
                               key={fieldLabel}
-                              className="px-6 py-4 whitespace-nowrap text-sm text-black"
+                              className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider"
                             >
-                              {getValueForField(profile, fieldLabel) || '—'}
-                            </td>
+                              {fieldLabel}
+                            </th>
                           ))}
                         </tr>
-                      ))}
-                    </tbody>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {currentProfiles.map(profile => (
+                          <tr
+                            key={profile.id}
+                            className="hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
+                              {getYearForProfile(profile) || '—'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                              {profile.position_name}
+                            </td>
+                            {allFieldLabels.map(fieldLabel => (
+                              <td
+                                key={fieldLabel}
+                                className="px-6 py-4 whitespace-nowrap text-sm text-black"
+                              >
+                                {getValueForField(profile, fieldLabel) || '—'}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
                     </table>
                   )}
                 </div>
