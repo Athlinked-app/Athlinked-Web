@@ -154,10 +154,39 @@ async function getAllUsers(excludeUserId = null, limit = 10) {
   return result.rows;
 }
 
+/**
+ * Get all children for a parent by parent email
+ * @param {string} parentEmail - Parent's email address
+ * @returns {Promise<Array>} Array of child user data
+ */
+async function getChildrenByParentEmail(parentEmail) {
+  const query = `
+    SELECT 
+      id, 
+      full_name, 
+      username, 
+      email, 
+      user_type, 
+      profile_url, 
+      cover_url,
+      dob,
+      primary_sport,
+      sports_played,
+      created_at
+    FROM users
+    WHERE parent_email = $1 AND user_type != 'parent'
+    ORDER BY created_at DESC
+  `;
+  
+  const result = await pool.query(query, [parentEmail.toLowerCase().trim()]);
+  return result.rows;
+}
+
 module.exports = {
   findByEmail,
   findByUsername,
   findById,
   createUser,
   getAllUsers,
+  getChildrenByParentEmail,
 };

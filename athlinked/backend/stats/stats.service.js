@@ -80,13 +80,20 @@ async function createOrUpdateUserSportProfileService(
       throw new Error('Invalid sport or position ID');
     }
 
+    // Get user's full name
+    const pool = require('../config/db');
+    const userQuery = 'SELECT full_name FROM users WHERE id = $1';
+    const userResult = await pool.query(userQuery, [userId]);
+    const fullName = userResult.rows[0]?.full_name || null;
+
     // Get or create profile
     const userSportProfileId = await statsModel.getOrCreateUserSportProfile(
       userId,
       sportId,
       positionId,
       names.sport_name,
-      names.position_name
+      names.position_name,
+      fullName
     );
 
     return {
@@ -197,6 +204,7 @@ async function getAllUserSportProfilesService(userId) {
         sport_name: profile.sport_name,
         position_id: profile.position_id,
         position_name: profile.position_name,
+        full_name: profile.full_name || null,
         created_at: profile.created_at,
         stats: profile.stats.map(stat => ({
           field_label: stat.field_label,
