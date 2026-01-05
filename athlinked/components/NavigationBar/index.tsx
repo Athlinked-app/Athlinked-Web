@@ -52,7 +52,7 @@ export default function NavigationBar({
         const { apiGet } = await import('@/utils/api');
         const { getCurrentUserId } = await import('@/utils/auth');
         const userId = getCurrentUserId();
-        
+
         if (!userId) return;
 
         const data = await apiGet<{
@@ -60,7 +60,7 @@ export default function NavigationBar({
           unreadCount?: number;
           count?: number;
         }>('/notifications/unread-count');
-        
+
         if (data.success) {
           const count = data.unreadCount ?? data.count ?? 0;
           setNotificationCount(count);
@@ -79,7 +79,7 @@ export default function NavigationBar({
         const { apiGet } = await import('@/utils/api');
         const { getCurrentUserId } = await import('@/utils/auth');
         const userId = getCurrentUserId();
-        
+
         if (!userId) return;
 
         const data = await apiGet<{
@@ -87,7 +87,7 @@ export default function NavigationBar({
           unreadCount?: number;
           count?: number;
         }>('/messages/unread-count');
-        
+
         if (data.success) {
           const count = data.unreadCount ?? data.count ?? 0;
           setMessageCount(count);
@@ -101,20 +101,23 @@ export default function NavigationBar({
 
     // Set up WebSocket connection
     let socket: any = null;
-    let handleNotificationCountUpdate: ((data: { count: number }) => void) | null = null;
+    let handleNotificationCountUpdate:
+      | ((data: { count: number }) => void)
+      | null = null;
     let handleNewNotification: (() => void) | null = null;
-    let handleMessageCountUpdate: ((data: { count: number }) => void) | null = null;
+    let handleMessageCountUpdate: ((data: { count: number }) => void) | null =
+      null;
 
     const setupWebSocket = async () => {
       const { getSocket } = await import('@/utils/useSocket');
       socket = getSocket();
-      
+
       if (socket) {
         // Listen for notification count updates
         handleNotificationCountUpdate = (data: { count: number }) => {
           setNotificationCount(data.count);
         };
-        
+
         handleNewNotification = () => {
           fetchNotificationCount();
         };
@@ -131,11 +134,14 @@ export default function NavigationBar({
     };
 
     setupWebSocket();
-    
+
     return () => {
       if (socket) {
         if (handleNotificationCountUpdate) {
-          socket.off('notification_count_update', handleNotificationCountUpdate);
+          socket.off(
+            'notification_count_update',
+            handleNotificationCountUpdate
+          );
         }
         if (handleNewNotification) {
           socket.off('new_notification', handleNewNotification);

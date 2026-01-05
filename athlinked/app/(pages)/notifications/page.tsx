@@ -114,7 +114,7 @@ export default function NotificationsPage() {
 
     const { getSocket } = require('@/utils/useSocket');
     const socket = getSocket();
-    
+
     if (socket) {
       // Listen for new notifications
       socket.on('new_notification', (notification: Notification) => {
@@ -123,7 +123,9 @@ export default function NotificationsPage() {
 
       // Listen for notification deletion
       socket.on('notification_deleted', (data: { notificationId: string }) => {
-        setNotifications(prev => prev.filter(n => n.id !== data.notificationId));
+        setNotifications(prev =>
+          prev.filter(n => n.id !== data.notificationId)
+        );
       });
 
       return () => {
