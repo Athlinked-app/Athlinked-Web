@@ -33,6 +33,7 @@ interface UserSportProfile {
   id: string;
   sport_name: string;
   position_name: string;
+  full_name?: string | null;
   stats: UserStat[];
 }
 
@@ -288,25 +289,53 @@ export default function StatsPage() {
           message?: string;
         }>(`/positions/${selectedPosition.id}/fields`);
 
-        if (fieldsData.success && fieldsData.fields) {
+        if (fieldsData.success && fieldsData.fields && fieldsData.fields.length > 0) {
           setAvailableFields(fieldsData.fields);
         } else {
-          console.error(
-            'Failed to fetch fields:',
-            fieldsData.message || 'Unknown error'
-          );
-          setAvailableFields([]);
+          // Fallback to hardcoded fields if API returns no fields
+          const fallbackFields = getFieldsForPosition(activeSport, formData.position);
+          if (fallbackFields.length > 0) {
+            // Convert hardcoded field names to field objects that match API format
+            const fieldObjects = fallbackFields.map((fieldLabel, index) => ({
+              field_id: `fallback-${index}`,
+              field_key: fieldLabel.toLowerCase().replace(/\s+/g, '_'),
+              field_label: fieldLabel,
+              field_type: 'text',
+              unit: null,
+              is_required: false,
+            }));
+            setAvailableFields(fieldObjects);
+          } else {
+            console.warn(
+              `No fields found for position "${formData.position}" in sport "${activeSport}"`
+            );
+            setAvailableFields([]);
+          }
         }
       } catch (error) {
         console.error('Error fetching fields:', error);
-        setAvailableFields([]);
+        // Fallback to hardcoded fields on error
+        const fallbackFields = getFieldsForPosition(activeSport, formData.position);
+        if (fallbackFields.length > 0) {
+          const fieldObjects = fallbackFields.map((fieldLabel, index) => ({
+            field_id: `fallback-${index}`,
+            field_key: fieldLabel.toLowerCase().replace(/\s+/g, '_'),
+            field_label: fieldLabel,
+            field_type: 'text',
+            unit: null,
+            is_required: false,
+          }));
+          setAvailableFields(fieldObjects);
+        } else {
+          setAvailableFields([]);
+        }
       } finally {
         setLoadingFields(false);
       }
     };
 
     fetchFields();
-  }, [formData.position, availablePositions]);
+  }, [formData.position, availablePositions, activeSport]);
 
   // Fetch user sport profiles and stats
   useEffect(() => {
@@ -399,7 +428,11 @@ export default function StatsPage() {
       );
     }
 
-    return profiles;
+    // Filter out profiles with no stats or only Year field
+    return profiles.filter(profile => {
+      const statsWithoutYear = profile.stats.filter(s => s.field_label !== 'Year');
+      return statsWithoutYear.length > 0;
+    });
   };
 
   const currentProfiles = getCurrentSportProfiles();
@@ -590,10 +623,9 @@ export default function StatsPage() {
                   <div className="p-6 text-center text-black">
                     Loading stats...
                   </div>
-                ) : currentProfiles.length === 0 ? (
-                  <div className="p-6 text-center text-black">
-                    No stats data available. Click "Add Data" to add your first
-                    stats entry.
+                ) : currentProfiles.length === 0 || allFieldLabels.length === 0 ? (
+                  <div className="p-6 text-center text-gray-600">
+                    No stats data available yet. Use the "Add Data" button above to add your first stats entry.
                   </div>
                 ) : (
                   <table className="w-full">
@@ -601,9 +633,6 @@ export default function StatsPage() {
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">
                           Year
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">
-                          Position
                         </th>
                         {allFieldLabels.map(fieldLabel => (
                           <th
@@ -623,9 +652,6 @@ export default function StatsPage() {
                         >
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
                             {getYearForProfile(profile) || '—'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                            {profile.position_name}
                           </td>
                           {allFieldLabels.map(fieldLabel => (
                             <td
@@ -899,14 +925,46 @@ export default function StatsPage() {
                     }
 
                     // Step 3: Get fields for the position
-                    const fieldsData = await apiGet<{
+                    let fieldsData = await apiGet<{
                       success: boolean;
                       fields?: any[];
                       message?: string;
                     }>(`/positions/${position.id}/fields`);
 
-                    if (!fieldsData.success || !fieldsData.fields) {
-                      throw new Error('Failed to fetch fields');
+                    // If no fields from API, try to use fallback and match with database
+                    if (!fieldsData.success || !fieldsData.fields || fieldsData.fields.length === 0) {
+                      const fallbackFields = getFieldsForPosition(activeSport, formData.position);
+                      if (fallbackFields.length > 0) {
+                        // Re-fetch fields one more time (in case they were just added)
+                        const retryFieldsData = await apiGet<{
+                          success: boolean;
+                          fields?: any[];
+                        }>(`/positions/${position.id}/fields`);
+                        
+                        if (retryFieldsData.success && retryFieldsData.fields && retryFieldsData.fields.length > 0) {
+                          // Match fallback fields with database fields by label
+                          const matchedFields = fallbackFields.map(fallbackLabel => {
+                            const dbField = retryFieldsData.fields?.find(
+                              (f: any) => f.field_label.toLowerCase().trim() === fallbackLabel.toLowerCase().trim()
+                            );
+                            return dbField || null;
+                          }).filter(Boolean);
+                          
+                          if (matchedFields.length > 0) {
+                            fieldsData = { success: true, fields: matchedFields };
+                          } else {
+                            // No matches found - fields don't exist in database
+                            console.warn(`No matching database fields found for position "${formData.position}". Fields need to be added to the database.`);
+                            throw new Error(`No database fields configured for position "${formData.position}". Please contact support to add fields for this position.`);
+                          }
+                        } else {
+                          // No fields in database at all
+                          console.warn(`No database fields found for position "${formData.position}". Fields need to be added to the database.`);
+                          throw new Error(`No database fields configured for position "${formData.position}". Please contact support to add fields for this position.`);
+                        }
+                      } else {
+                        throw new Error(`No fields available for position "${formData.position}"`);
+                      }
                     }
 
                     // Step 4: Create or update user sport profile

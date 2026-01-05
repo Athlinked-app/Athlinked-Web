@@ -13,6 +13,13 @@ const eslintConfig = defineConfig([
     'build/**',
     'next-env.d.ts',
   ]),
+  // Backend uses CommonJS; allow require() there
+  {
+    files: ['backend/**'],
+    rules: {
+      'import/no-commonjs': 'off',
+    },
+  },
 ]);
 
 export default eslintConfig;

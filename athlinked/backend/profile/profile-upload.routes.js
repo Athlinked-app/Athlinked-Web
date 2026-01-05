@@ -45,8 +45,54 @@ const upload = multer({
 const { authenticateToken } = require('../middleware/auth');
 
 /**
- * POST /api/profile/upload
- * Upload profile or cover image
+ * @swagger
+ * /api/profile/upload:
+ *   post:
+ *     summary: Upload profile or cover image
+ *     description: Upload a profile picture or cover image (PNG, JPG, GIF, max 10MB)
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: Image file (PNG, JPG, GIF, max 10MB)
+ *     responses:
+ *       200:
+ *         description: File uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 fileUrl:
+ *                   type: string
+ *                   example: "/uploads/profile/profile-1234567890.jpg"
+ *                 filename:
+ *                   type: string
+ *                   example: "profile-1234567890.jpg"
+ *       400:
+ *         description: Bad request (no file or invalid file type)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 router.post('/upload', authenticateToken, upload.single('file'), (req, res) => {
   try {
