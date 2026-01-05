@@ -1009,6 +1009,9 @@ export default function StatsPage() {
 
                     // Step 5: Map form data to field IDs and prepare stats
                     const stats = [];
+                    if (!fieldsData.fields || fieldsData.fields.length === 0) {
+                      throw new Error('No fields available for this position');
+                    }
                     for (const field of fieldsData.fields) {
                       // Try to find the value in formData using field_key first, then field_label
                       let value = formData[field.field_key];

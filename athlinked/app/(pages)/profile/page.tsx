@@ -2,7 +2,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
-import { apiRequest, apiUpload } from '@/utils/api';
 import RightSideBar from '@/components/RightSideBar';
 import { type PostData } from '@/components/Post';
 import EditProfileModal from '@/components/Profile/EditProfileModel';
@@ -56,13 +55,12 @@ interface ProfileData {
 
 function ProfileContent() {
   const searchParams = useSearchParams();
-  const viewUserId = searchParams.get('userId'); // User ID from URL params
-
+  const viewUserId = searchParams.get('userId'); 
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-  const [viewUser, setViewUser] = useState<CurrentUser | null>(null); // User being viewed
+  const [viewUser, setViewUser] = useState<CurrentUser | null>(null); 
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [activeTab, setActiveTab] = useState<
@@ -265,8 +263,8 @@ function ProfileContent() {
       }>(`/profile/${targetUserId}`);
 
       console.log('Profile data fetched:', data);
+      
 
-      // Process sportsPlayed value
       let processedSportsPlayed: string | null = null;
       if (data.sportsPlayed !== undefined && data.sportsPlayed !== null) {
         if (Array.isArray(data.sportsPlayed)) {
@@ -279,8 +277,7 @@ function ProfileContent() {
           processedSportsPlayed = sportsString;
         }
       }
-
-      // Ensure userId is set from targetUserId if not in response
+      
       setProfileData({
         userId: data.userId || targetUserId || '',
         fullName: data.fullName ?? null,
@@ -589,6 +586,17 @@ function ProfileContent() {
               education: profileData?.education || '',
               city: profileData?.city || '',
             }}
+            profileSections={{
+              bio: userBio || profileData?.bio || '',
+              socialHandles: socialHandles,
+              academicBackgrounds: academicBackgrounds,
+              achievements: achievements,
+              athleticAndPerformance: athleticAndPerformance,
+              competitionAndClubs: competitionAndClubs,
+              characterAndLeadership: characterAndLeadership,
+              healthAndReadiness: healthAndReadiness,
+              videoAndMedia: videoAndMedia,
+            }}
             onSave={async (data: {
               profile_url?: File;
               background_image_url?: File;
@@ -857,7 +865,7 @@ function ProfileContent() {
               )}
             </div>
 
-            <div className="mt-4 space-y-4 overflow-y-auto flex-1 pb-4 px-1 max-h-[400px] lg:max-h-[450px] ">
+            <div className="mt-4 space-y-4 overflow-y-auto flex-1 pb-44 px-1 max-h-[400px] lg:max-h-[450px] ">
               {activeTab === 'profile' && (
                 <>
                   <AboutMe bio={userBio || profileData?.bio || ''} />
