@@ -55,12 +55,12 @@ interface ProfileData {
 
 function ProfileContent() {
   const searchParams = useSearchParams();
-  const viewUserId = searchParams.get('userId'); 
+  const viewUserId = searchParams.get('userId');
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-  const [viewUser, setViewUser] = useState<CurrentUser | null>(null); 
+  const [viewUser, setViewUser] = useState<CurrentUser | null>(null);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [activeTab, setActiveTab] = useState<
@@ -263,7 +263,6 @@ function ProfileContent() {
       }>(`/profile/${targetUserId}`);
 
       console.log('Profile data fetched:', data);
-      
 
       let processedSportsPlayed: string | null = null;
       if (data.sportsPlayed !== undefined && data.sportsPlayed !== null) {
@@ -277,7 +276,7 @@ function ProfileContent() {
           processedSportsPlayed = sportsString;
         }
       }
-      
+
       setProfileData({
         userId: data.userId || targetUserId || '',
         fullName: data.fullName ?? null,

@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { X, Send } from 'lucide-react';
+import { X, Send, Smile } from 'lucide-react';
+import Picker from '@emoji-mart/react';
+import data from '@emoji-mart/data';
 import type { PostData } from '../Post';
 import MentionInputField from '../Mention/MentionInputField';
 
@@ -40,8 +42,10 @@ export default function CommentsPanel({
     {}
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const commentsEndRef = useRef<HTMLDivElement>(null);
   const replyInputRef = useRef<HTMLInputElement>(null);
+  const emojiPickerRef = useRef<HTMLDivElement>(null);
 
   const getInitials = (name: string) => {
     return name
@@ -61,6 +65,29 @@ export default function CommentsPanel({
       commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [comments]);
+
+  // Close emoji picker when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        showEmojiPicker &&
+        emojiPickerRef.current &&
+        !emojiPickerRef.current.contains(event.target as Node) &&
+        !(event.target as HTMLElement).closest(
+          'button[aria-label="Toggle emoji picker"]'
+        )
+      ) {
+        setShowEmojiPicker(false);
+      }
+    };
+
+    if (showEmojiPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showEmojiPicker]);
 
   const loadComments = async () => {
     try {
@@ -179,7 +206,6 @@ export default function CommentsPanel({
       if (commentText.trim() && !isLoading) {
         handleAddComment();
       }
-      return false;
     }
   };
 
@@ -196,7 +222,7 @@ export default function CommentsPanel({
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
+      <div className="flex items-center justify-between p-4 border-b border-gray-200 shrink-0">
         <h2 className="text-xl font-semibold text-gray-900">Comments</h2>
         <button
           type="button"
@@ -228,7 +254,7 @@ export default function CommentsPanel({
                 <div key={comment.id}>
                   {/* Parent Comment */}
                   <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
                       {comment.user_profile_url &&
                       comment.user_profile_url.trim() !== '' ? (
                         <img
@@ -251,7 +277,7 @@ export default function CommentsPanel({
                         <p className="font-semibold text-sm text-gray-900 mb-1">
                           {comment.username}
                         </p>
-                        <p className="text-sm text-gray-700 break-words">
+                        <p className="text-sm text-gray-700 wrap-break-word">
                           {comment.comment}
                         </p>
                       </div>
@@ -283,7 +309,7 @@ export default function CommentsPanel({
                       <div className="ml-11 mt-2 space-y-3 border-l-2 border-gray-200 pl-4">
                         {comment.replies.map(reply => (
                           <div key={reply.id} className="flex gap-3">
-                            <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
+                            <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
                               {reply.user_profile_url &&
                               reply.user_profile_url.trim() !== '' ? (
                                 <img
@@ -306,7 +332,7 @@ export default function CommentsPanel({
                                 <p className="font-semibold text-xs text-gray-900 mb-1">
                                   {reply.username}
                                 </p>
-                                <p className="text-xs text-gray-700 break-words">
+                                <p className="text-xs text-gray-700 wrap-break-word">
                                   {reply.comment}
                                 </p>
                               </div>
@@ -320,7 +346,7 @@ export default function CommentsPanel({
                   {isReplying && (
                     <div className="ml-11 mt-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
+                        <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
                           {currentUserProfileUrl ? (
                             <img
                               src={currentUserProfileUrl}
@@ -390,9 +416,9 @@ export default function CommentsPanel({
       </div>
 
       {/* Add Comment Input */}
-      <div className="border-t border-gray-200 p-4 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
+      <div className="border-t border-gray-200 p-4 shrink-0 w-full">
+        <div className="flex items-center gap-3 w-full min-w-0">
+          <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
             {currentUserProfileUrl ? (
               <img
                 src={currentUserProfileUrl}
@@ -405,44 +431,79 @@ export default function CommentsPanel({
               </span>
             )}
           </div>
-          {currentUserId ? (
-            <MentionInputField
-              value={commentText}
-              onChange={setCommentText}
-              currentUserId={currentUserId}
-              placeholder="Add comment"
-              className="flex-1 px-4 py-2 rounded-full text-sm"
-              type="input"
-              onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (commentText.trim() && !isLoading) {
-                    handleAddComment();
+
+          <div className="flex-1 min-w-0 relative">
+            {currentUserId ? (
+              <MentionInputField
+                value={commentText}
+                onChange={setCommentText}
+                currentUserId={currentUserId}
+                placeholder="Add comment"
+                className="w-full px-4 py-2 rounded-full text-sm"
+                type="input"
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (commentText.trim() && !isLoading) {
+                      handleAddComment();
+                    }
                   }
-                }
-              }}
-              disabled={isLoading}
-            />
-          ) : (
-            <input
-              type="text"
-              value={commentText}
-              onChange={e => setCommentText(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (commentText.trim() && !isLoading) {
-                    handleAddComment();
+                }}
+                disabled={isLoading}
+              />
+            ) : (
+              <input
+                type="text"
+                value={commentText}
+                onChange={e => setCommentText(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (commentText.trim() && !isLoading) {
+                      handleAddComment();
+                    }
                   }
-                }
-              }}
-              placeholder="Add comment"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-sm text-gray-900"
-              disabled={isLoading}
-            />
-          )}
+                }}
+                placeholder="Add comment"
+                className="flex-1 min-w-0 w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-sm text-gray-900"
+                disabled={isLoading}
+              />
+            )}
+
+            {showEmojiPicker && (
+              <div
+                ref={emojiPickerRef}
+                className="absolute bottom-full left-0 mb-2 z-50"
+                onClick={e => e.stopPropagation()}
+              >
+                <Picker
+                  data={data}
+                  onEmojiSelect={(emoji: any) => {
+                    const symbol = emoji?.native || emoji?.unified || '';
+                    if (!symbol) return;
+                    setCommentText(prev => `${prev}${symbol}`);
+                    // Keep picker open - don't close it
+                  }}
+                  onClickOutside={() => {
+                    // This will be handled by our useEffect
+                  }}
+                  theme="light"
+                />
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setShowEmojiPicker(prev => !prev)}
+            className="p-2 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors shrink-0"
+            aria-label="Toggle emoji picker"
+          >
+            <Smile className="w-5 h-5" />
+          </button>
+
           <button
             type="button"
             onClick={e => {
@@ -451,7 +512,7 @@ export default function CommentsPanel({
               handleAddComment();
             }}
             disabled={!commentText.trim() || isLoading}
-            className="p-2 bg-[#CB9729] text-white rounded-full hover:bg-[#b78322] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-2 bg-[#CB9729] text-white rounded-full hover:bg-[#b78322] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
             aria-label="Send comment"
           >
             <Send className="w-5 h-5" />

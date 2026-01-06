@@ -148,7 +148,9 @@ export default function MyAthletesPage() {
             <NavigationBar activeItem="my_athletes" />
           </div>
           <div className="flex-1 flex flex-col px-4 overflow-hidden min-w-0 items-center justify-center">
-            <p className="text-gray-600">This page is only available for parents.</p>
+            <p className="text-gray-600">
+              This page is only available for parents.
+            </p>
           </div>
         </main>
       </div>
@@ -203,7 +205,9 @@ export default function MyAthletesPage() {
                             <div>
                               <p className="text-xs text-gray-500">
                                 {athlete.primary_sport
-                                  ? athlete.primary_sport.charAt(0).toUpperCase() +
+                                  ? athlete.primary_sport
+                                      .charAt(0)
+                                      .toUpperCase() +
                                     athlete.primary_sport.slice(1).toLowerCase()
                                   : 'Athlete'}
                               </p>
@@ -214,7 +218,7 @@ export default function MyAthletesPage() {
                           </div>
                           <button
                             className="text-gray-400 hover:text-gray-600"
-                            onClick={(e) => {
+                            onClick={e => {
                               e.stopPropagation();
                               // Handle menu click
                             }}

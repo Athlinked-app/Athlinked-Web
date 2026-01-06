@@ -167,7 +167,7 @@ export default function Landing() {
           <NavigationBar activeItem="home" />
         </div>
 
-        <div className="flex-1 flex flex-col px-4 gap-4 overflow-hidden min-w-0">
+        <div className="flex-1 flex flex-col  gap-4 overflow-hidden min-w-0">
           <div className="flex-shrink-0">
             <HomeHerosection
               userProfileUrl={getProfileUrl(currentUser?.profile_url)}
@@ -205,7 +205,7 @@ export default function Landing() {
           </div>
         </div>
 
-        <div className="hidden lg:flex">
+        <div className="hidden lg:flex px-3">
           <RightSideBar />
         </div>
       </main>

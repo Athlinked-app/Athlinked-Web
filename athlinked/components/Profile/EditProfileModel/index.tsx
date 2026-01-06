@@ -527,18 +527,51 @@ export default function EditProfileModal({
     // Basic Profile Information (3 sections)
     if (fullName && fullName.trim() !== '') completed++;
     if (profileImagePreview) completed++;
-    if ((location && location.trim() !== '') || (age && age.trim() !== '')) completed++;
+    if ((location && location.trim() !== '') || (age && age.trim() !== ''))
+      completed++;
 
     // Profile Sections (9 sections)
     if (profileSections?.bio && profileSections.bio.trim() !== '') completed++;
-    if (profileSections?.socialHandles && profileSections.socialHandles.length > 0) completed++;
-    if (profileSections?.academicBackgrounds && profileSections.academicBackgrounds.length > 0) completed++;
-    if (profileSections?.achievements && profileSections.achievements.length > 0) completed++;
-    if (profileSections?.athleticAndPerformance && profileSections.athleticAndPerformance.length > 0) completed++;
-    if (profileSections?.competitionAndClubs && profileSections.competitionAndClubs.length > 0) completed++;
-    if (profileSections?.characterAndLeadership && profileSections.characterAndLeadership.length > 0) completed++;
-    if (profileSections?.healthAndReadiness && profileSections.healthAndReadiness.length > 0) completed++;
-    if (profileSections?.videoAndMedia && profileSections.videoAndMedia.length > 0) completed++;
+    if (
+      profileSections?.socialHandles &&
+      profileSections.socialHandles.length > 0
+    )
+      completed++;
+    if (
+      profileSections?.academicBackgrounds &&
+      profileSections.academicBackgrounds.length > 0
+    )
+      completed++;
+    if (
+      profileSections?.achievements &&
+      profileSections.achievements.length > 0
+    )
+      completed++;
+    if (
+      profileSections?.athleticAndPerformance &&
+      profileSections.athleticAndPerformance.length > 0
+    )
+      completed++;
+    if (
+      profileSections?.competitionAndClubs &&
+      profileSections.competitionAndClubs.length > 0
+    )
+      completed++;
+    if (
+      profileSections?.characterAndLeadership &&
+      profileSections.characterAndLeadership.length > 0
+    )
+      completed++;
+    if (
+      profileSections?.healthAndReadiness &&
+      profileSections.healthAndReadiness.length > 0
+    )
+      completed++;
+    if (
+      profileSections?.videoAndMedia &&
+      profileSections.videoAndMedia.length > 0
+    )
+      completed++;
 
     const percentage = Math.min(
       Math.round((completed / totalSections) * 100),
@@ -694,7 +727,11 @@ export default function EditProfileModal({
                     onChange={e => setLocation(e.target.value)}
                     placeholder="Location"
                     className="border-none focus:outline-none focus:ring-0 bg-transparent text-gray-600 placeholder:text-gray-400"
-                    style={{ width: location ? `${Math.max(location.length * 7 + 16, 60)}px` : '60px' }}
+                    style={{
+                      width: location
+                        ? `${Math.max(location.length * 7 + 16, 60)}px`
+                        : '60px',
+                    }}
                   />
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -714,7 +751,11 @@ export default function EditProfileModal({
                     onChange={e => setAge(e.target.value)}
                     placeholder="Age"
                     className="border-none focus:outline-none focus:ring-0 bg-transparent text-gray-600 placeholder:text-gray-400"
-                    style={{ width: age ? `${Math.max(age.length * 7 + 8, 35)}px` : '35px' }}
+                    style={{
+                      width: age
+                        ? `${Math.max(age.length * 7 + 8, 35)}px`
+                        : '35px',
+                    }}
                   />
                 </div>
               </div>
@@ -822,14 +863,18 @@ export default function EditProfileModal({
                         Sports Played
                       </span>
                       <span className="mx-3">:</span>
-                      <span className="text-gray-700">{sportsPlayed || '—'}</span>
+                      <span className="text-gray-700">
+                        {sportsPlayed || '—'}
+                      </span>
                     </div>
                     <div className="text-md flex">
                       <span className="font-semibold text-gray-900 w-40 text-right">
                         Primary Sports
                       </span>
                       <span className="mx-3">:</span>
-                      <span className="text-gray-700">{primarySport || '—'}</span>
+                      <span className="text-gray-700">
+                        {primarySport || '—'}
+                      </span>
                     </div>
                   </div>
                 ) : null;
