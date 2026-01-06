@@ -412,10 +412,18 @@ export default function ManageResourcesPage() {
 
                 formData.append('video_duration', duration.toString());
 
+                // Get authentication token
+                const token = localStorage.getItem('accessToken');
+                const headers: Record<string, string> = {};
+                if (token) {
+                  headers['Authorization'] = `Bearer ${token}`;
+                }
+
                 const response = await fetch(
                   'http://localhost:3001/api/videos',
                   {
                     method: 'POST',
+                    headers,
                     body: formData,
                   }
                 );
@@ -472,10 +480,18 @@ export default function ManageResourcesPage() {
               formData.append('file_type', file.type);
               formData.append('file_size', file.size.toString());
 
+              // Get authentication token
+              const token = localStorage.getItem('accessToken');
+              const headers: Record<string, string> = {};
+              if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+              }
+
               const response = await fetch(
                 'http://localhost:3001/api/templates',
                 {
                   method: 'POST',
+                  headers,
                   body: formData,
                 }
               );
