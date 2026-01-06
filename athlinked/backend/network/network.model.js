@@ -269,17 +269,8 @@ async function sendConnectionRequest(requesterId, receiverId) {
       }
     }
 
-    const checkFollowQuery =
-      'SELECT id FROM user_follows WHERE follower_id = $1 AND following_id = $2';
-    const followCheck = await dbClient.query(checkFollowQuery, [
-      requesterId,
-      receiverId,
-    ]);
-
-    if (followCheck.rows.length > 0) {
-      await dbClient.query('ROLLBACK');
-      return { success: false, message: 'Already following this user' };
-    }
+    // Note: Connection requests are independent of follow status
+    // Users can connect even if they're already following each other
 
     const id = uuidv4();
     const insertQuery = `
@@ -375,41 +366,105 @@ async function acceptConnectionRequest(requestId, receiverId) {
       receiverResult.rows[0].full_name ||
       'User';
 
+    // Create mutual follows only if they don't already exist (for backward compatibility and feed purposes)
+    // Connections are separate from follows, so we don't update follower counts here
     const followId1 = uuidv4();
     const followId2 = uuidv4();
 
-    const insertFollow1 = `
-      INSERT INTO user_follows (id, follower_id, following_id, follower_username, following_username, created_at)
-      VALUES ($1, $2, $3, $4, $5, NOW())
+    // Check if follows already exist before inserting
+    const checkFollow1Query = `
+      SELECT id FROM user_follows 
+      WHERE follower_id = $1 AND following_id = $2
     `;
-    const insertFollow2 = `
-      INSERT INTO user_follows (id, follower_id, following_id, follower_username, following_username, created_at)
-      VALUES ($1, $2, $3, $4, $5, NOW())
+    const checkFollow2Query = `
+      SELECT id FROM user_follows 
+      WHERE follower_id = $1 AND following_id = $2
     `;
 
-    await dbClient.query(insertFollow1, [
-      followId1,
-      requesterId,
-      receiverId,
-      requesterUsername,
-      receiverUsername,
-    ]);
-    await dbClient.query(insertFollow2, [
-      followId2,
-      receiverId,
-      requesterId,
-      receiverUsername,
-      requesterUsername,
+    const [follow1Check, follow2Check] = await Promise.all([
+      dbClient.query(checkFollow1Query, [requesterId, receiverId]),
+      dbClient.query(checkFollow2Query, [receiverId, requesterId]),
     ]);
 
-    await dbClient.query(
-      'UPDATE users SET following = following + 1, followers = followers + 1 WHERE id = $1',
-      [requesterId]
-    );
-    await dbClient.query(
-      'UPDATE users SET following = following + 1, followers = followers + 1 WHERE id = $1',
-      [receiverId]
-    );
+    const follow1Exists = follow1Check.rows.length > 0;
+    const follow2Exists = follow2Check.rows.length > 0;
+
+    // Only insert follows that don't exist
+    if (!follow1Exists) {
+      const insertFollow1 = `
+        INSERT INTO user_follows (id, follower_id, following_id, follower_username, following_username, created_at)
+        VALUES ($1, $2, $3, $4, $5, NOW())
+      `;
+      await dbClient.query(insertFollow1, [
+        followId1,
+        requesterId,
+        receiverId,
+        requesterUsername,
+        receiverUsername,
+      ]);
+      // Only update counts if we created a new follow
+      await dbClient.query(
+        'UPDATE users SET following = following + 1 WHERE id = $1',
+        [requesterId]
+      );
+      await dbClient.query(
+        'UPDATE users SET followers = followers + 1 WHERE id = $1',
+        [receiverId]
+      );
+    }
+
+    if (!follow2Exists) {
+      const insertFollow2 = `
+        INSERT INTO user_follows (id, follower_id, following_id, follower_username, following_username, created_at)
+        VALUES ($1, $2, $3, $4, $5, NOW())
+      `;
+      await dbClient.query(insertFollow2, [
+        followId2,
+        receiverId,
+        requesterId,
+        receiverUsername,
+        requesterUsername,
+      ]);
+      // Only update counts if we created a new follow
+      await dbClient.query(
+        'UPDATE users SET following = following + 1 WHERE id = $1',
+        [receiverId]
+      );
+      await dbClient.query(
+        'UPDATE users SET followers = followers + 1 WHERE id = $1',
+        [requesterId]
+      );
+    }
+
+    // Create connection entry in user_connections table
+    // Normalize order: always store with user_id_1 < user_id_2 (lexicographically)
+    const [normalizedUserId1, normalizedUserId2] = 
+      requesterId < receiverId ? [requesterId, receiverId] : [receiverId, requesterId];
+    
+    // Get full names for both users
+    const normalizedUser1Name = normalizedUserId1 === requesterId 
+      ? requesterResult.rows[0].full_name || requesterUsername
+      : receiverResult.rows[0].full_name || receiverUsername;
+    const normalizedUser2Name = normalizedUserId2 === requesterId 
+      ? requesterResult.rows[0].full_name || requesterUsername
+      : receiverResult.rows[0].full_name || receiverUsername;
+    
+    const connectionId = uuidv4();
+    const insertConnectionQuery = `
+      INSERT INTO user_connections (id, user_id_1, user_id_2, full_name_1, full_name_2, created_at)
+      VALUES ($1, $2, $3, $4, $5, NOW())
+      ON CONFLICT (user_id_1, user_id_2) DO NOTHING
+    `;
+    await dbClient.query(insertConnectionQuery, [
+      connectionId,
+      normalizedUserId1,
+      normalizedUserId2,
+      normalizedUser1Name,
+      normalizedUser2Name,
+    ]);
+
+    // Note: Connection counts are separate from follower counts
+    // Connections don't affect the followers/following counts in the users table
 
     await dbClient.query('COMMIT');
 
@@ -508,6 +563,12 @@ async function getConnectionRequests(userId) {
 
 async function checkConnectionRequestStatus(requesterId, receiverId) {
   try {
+    // First check if they are already connected
+    const isConnectedResult = await isConnected(requesterId, receiverId);
+    if (isConnectedResult) {
+      return { exists: true, status: 'connected' };
+    }
+
     const connectionQuery = `
       SELECT id, status 
       FROM connection_requests 
@@ -520,33 +581,159 @@ async function checkConnectionRequestStatus(requesterId, receiverId) {
 
     if (connectionResult.rows.length > 0) {
       const status = connectionResult.rows[0].status;
-      if (status === 'accepted') {
-        return { exists: true, status: 'connected' };
-      }
       return { exists: true, status: status };
-    }
-
-    const mutualFollowQuery = `
-      SELECT 
-        (SELECT COUNT(*) FROM user_follows WHERE follower_id = $1 AND following_id = $2) as user1_follows_user2,
-        (SELECT COUNT(*) FROM user_follows WHERE follower_id = $2 AND following_id = $1) as user2_follows_user1
-    `;
-    const mutualResult = await pool.query(mutualFollowQuery, [
-      requesterId,
-      receiverId,
-    ]);
-
-    if (mutualResult.rows.length > 0) {
-      const row = mutualResult.rows[0];
-      if (row.user1_follows_user2 > 0 && row.user2_follows_user1 > 0) {
-        return { exists: true, status: 'connected' };
-      }
     }
 
     return { exists: false, status: null };
   } catch (error) {
     console.error('Error checking connection request status:', error);
     throw error;
+  }
+}
+
+/**
+ * Check if two users are connected
+ * @param {string} userId1 - First user ID
+ * @param {string} userId2 - Second user ID
+ * @returns {Promise<boolean>} True if connected, false otherwise
+ */
+async function isConnected(userId1, userId2) {
+  try {
+    const query = `
+      SELECT id 
+      FROM user_connections 
+      WHERE (user_id_1 = $1 AND user_id_2 = $2) 
+         OR (user_id_1 = $2 AND user_id_2 = $1)
+      LIMIT 1
+    `;
+    const result = await pool.query(query, [userId1, userId2]);
+    return result.rows.length > 0;
+  } catch (error) {
+    console.error('Error checking connection:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get list of connected users for a user
+ * @param {string} userId - User ID
+ * @returns {Promise<Array>} Array of connected user data
+ */
+async function getConnections(userId) {
+  const query = `
+    SELECT 
+      u.id,
+      u.username,
+      u.full_name,
+      u.user_type,
+      u.profile_url,
+      uc.created_at
+    FROM users u
+    INNER JOIN user_connections uc ON (
+      (uc.user_id_1 = $1 AND uc.user_id_2 = u.id) OR
+      (uc.user_id_2 = $1 AND uc.user_id_1 = u.id)
+    )
+    WHERE u.id != $1
+    ORDER BY uc.created_at DESC
+  `;
+
+  try {
+    const result = await pool.query(query, [userId]);
+    return result.rows;
+  } catch (error) {
+    console.error('Error fetching connections:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create a connection between two users
+ * @param {string} userId1 - First user ID
+ * @param {string} userId2 - Second user ID
+ * @returns {Promise<boolean>} True if connection was created, false if already connected
+ */
+async function createConnection(userId1, userId2) {
+  const dbClient = await pool.connect();
+  try {
+    await dbClient.query('BEGIN');
+
+    // Check if already connected
+    const checkQuery = `
+      SELECT id 
+      FROM user_connections 
+      WHERE (user_id_1 = $1 AND user_id_2 = $2) 
+         OR (user_id_1 = $2 AND user_id_2 = $1)
+    `;
+    const checkResult = await dbClient.query(checkQuery, [userId1, userId2]);
+
+    if (checkResult.rows.length > 0) {
+      await dbClient.query('ROLLBACK');
+      return false;
+    }
+
+    // Normalize order: always store with user_id_1 < user_id_2 (lexicographically)
+    // This ensures consistent storage and prevents duplicates
+    const [normalizedUserId1, normalizedUserId2] = 
+      userId1 < userId2 ? [userId1, userId2] : [userId2, userId1];
+
+    // Get full names for both users
+    const userQuery = 'SELECT full_name, username FROM users WHERE id = $1';
+    const [user1Result, user2Result] = await Promise.all([
+      dbClient.query(userQuery, [normalizedUserId1]),
+      dbClient.query(userQuery, [normalizedUserId2]),
+    ]);
+
+    const fullName1 = user1Result.rows[0]?.full_name || user1Result.rows[0]?.username || null;
+    const fullName2 = user2Result.rows[0]?.full_name || user2Result.rows[0]?.username || null;
+
+    const id = uuidv4();
+    const insertQuery = `
+      INSERT INTO user_connections (id, user_id_1, user_id_2, full_name_1, full_name_2, created_at)
+      VALUES ($1, $2, $3, $4, $5, NOW())
+    `;
+    await dbClient.query(insertQuery, [id, normalizedUserId1, normalizedUserId2, fullName1, fullName2]);
+
+    await dbClient.query('COMMIT');
+    return true;
+  } catch (error) {
+    await dbClient.query('ROLLBACK');
+    // If it's a unique constraint violation, connection already exists
+    if (error.code === '23505') {
+      return false;
+    }
+    console.error('Error creating connection:', error);
+    throw error;
+  } finally {
+    dbClient.release();
+  }
+}
+
+/**
+ * Remove a connection between two users
+ * @param {string} userId1 - First user ID
+ * @param {string} userId2 - Second user ID
+ * @returns {Promise<boolean>} True if connection was removed, false if not connected
+ */
+async function removeConnection(userId1, userId2) {
+  const dbClient = await pool.connect();
+  try {
+    await dbClient.query('BEGIN');
+
+    const deleteQuery = `
+      DELETE FROM user_connections 
+      WHERE (user_id_1 = $1 AND user_id_2 = $2) 
+         OR (user_id_1 = $2 AND user_id_2 = $1)
+    `;
+    const result = await dbClient.query(deleteQuery, [userId1, userId2]);
+
+    await dbClient.query('COMMIT');
+    return result.rowCount > 0;
+  } catch (error) {
+    await dbClient.query('ROLLBACK');
+    console.error('Error removing connection:', error);
+    throw error;
+  } finally {
+    dbClient.release();
   }
 }
 
@@ -562,4 +749,8 @@ module.exports = {
   rejectConnectionRequest,
   getConnectionRequests,
   checkConnectionRequestStatus,
+  isConnected,
+  getConnections,
+  createConnection,
+  removeConnection,
 };

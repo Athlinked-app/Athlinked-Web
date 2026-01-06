@@ -333,10 +333,45 @@ async function getChildrenByParentEmailService(parentEmail) {
   }
 }
 
+/**
+ * Delete user account
+ * @param {string} userId - User ID to delete
+ * @returns {Promise<object>} Service result
+ */
+async function deleteAccountService(userId) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    // Verify user exists
+    const user = await signupModel.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    // Delete user from database
+    const deleted = await signupModel.deleteUser(userId);
+    
+    if (!deleted) {
+      throw new Error('Failed to delete user account');
+    }
+
+    return {
+      success: true,
+      message: 'Account deleted successfully',
+    };
+  } catch (error) {
+    console.error('Delete account service error:', error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   startSignupService,
   verifyOtpService,
   parentCompleteService,
   getAllUsersService,
   getChildrenByParentEmailService,
+  deleteAccountService,
 };

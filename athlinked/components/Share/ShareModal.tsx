@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import io, { Socket } from 'socket.io-client';
 import type { PostData } from '../Post';
+import { apiPost, apiGet } from '@/utils/api';
 
 export interface UserData {
   id: string;
@@ -114,31 +115,27 @@ export default function ShareModal({
 
     setLoading(true);
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/network/following/${currentUserId}`
-      );
+      const data = await apiGet<{
+        success: boolean;
+        connections?: any[];
+      }>(`/network/connections/${currentUserId}`);
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.following) {
-          const followingUsers: UserData[] = data.following.map(
-            (user: any) => ({
-              id: user.id,
-              name: user.full_name || user.username || 'User',
-              profile_url: user.profile_url || null,
-              username: user.username,
-              full_name: user.full_name,
-            })
-          );
-          setUsers(followingUsers);
-        } else {
-          setUsers([]);
-        }
+      if (data.success && data.connections) {
+        const connectedUsers: UserData[] = data.connections.map(
+          (user: any) => ({
+            id: user.id,
+            name: user.full_name || user.username || 'User',
+            profile_url: user.profile_url || null,
+            username: user.username,
+            full_name: user.full_name,
+          })
+        );
+        setUsers(connectedUsers);
       } else {
         setUsers([]);
       }
     } catch (error) {
-      console.error('Error loading following users:', error);
+      console.error('Error loading connected users:', error);
       setUsers([]);
     } finally {
       setLoading(false);
@@ -234,52 +231,44 @@ export default function ShareModal({
 
       for (const userId of selectedUserIds) {
         try {
-          const response = await fetch(
-            'http://localhost:3001/api/messages/conversations/create',
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                user_id: currentUserId,
-                otherUserId: userId,
-              }),
+          // Use authenticated API call
+          const data = await apiPost<{
+            success: boolean;
+            conversation?: {
+              id?: string;
+              conversation_id?: string;
+            };
+            message?: string;
+          }>('/messages/conversations/create', {
+            otherUserId: userId,
+          });
+
+          if (data.success && data.conversation) {
+            const conversationId =
+              data.conversation.conversation_id || data.conversation.id;
+
+            if (!conversationId) {
+              errors.push(`No conversation ID for user ${userId}`);
+              continue;
             }
-          );
 
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success && data.conversation) {
-              const conversationId =
-                data.conversation.conversation_id || data.conversation.id;
+            if (socketRef.current && socketRef.current.connected) {
+              socketRef.current.emit('send_message', {
+                conversationId: conversationId,
+                receiverId: userId,
+                message: fullMessage,
+                post_data: JSON.stringify(postData),
+                message_type: 'post',
+              });
 
-              if (!conversationId) {
-                errors.push(`No conversation ID for user ${userId}`);
-                continue;
-              }
-
-              if (socketRef.current && socketRef.current.connected) {
-                socketRef.current.emit('send_message', {
-                  conversationId: conversationId,
-                  receiverId: userId,
-                  message: fullMessage,
-                  post_data: JSON.stringify(postData),
-                  message_type: 'post',
-                });
-
-                await new Promise(resolve => setTimeout(resolve, 500));
-                successCount++;
-              } else {
-                errors.push(`Socket not connected for user ${userId}`);
-              }
+              await new Promise(resolve => setTimeout(resolve, 500));
+              successCount++;
             } else {
-              errors.push(`Failed to get conversation for user ${userId}`);
+              errors.push(`Socket not connected for user ${userId}`);
             }
           } else {
-            const errorData = await response.json().catch(() => ({}));
             errors.push(
-              `API error for user ${userId}: ${errorData.message || 'Unknown error'}`
+              `Failed to get conversation for user ${userId}: ${data.message || 'Unknown error'}`
             );
           }
         } catch (error) {
@@ -447,7 +436,7 @@ export default function ShareModal({
         <div className="flex-1 overflow-y-auto">
           <div className="p-4">
             <h3 className="text-sm font-semibold text-gray-700 mb-3">
-              Share with following
+              Share with connections
             </h3>
             {loading ? (
               <div className="text-center py-8 text-gray-500">

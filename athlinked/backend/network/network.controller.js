@@ -381,6 +381,29 @@ async function checkConnectionRequestStatus(req, res) {
   }
 }
 
+async function getConnections(req, res) {
+  try {
+    const userId = req.user?.id || req.params.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
+
+    const result = await networkService.getConnectionsService(userId);
+
+    res.json(result);
+  } catch (error) {
+    console.error('Get connections controller error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 module.exports = {
   followUser,
   unfollowUser,
@@ -393,4 +416,5 @@ module.exports = {
   rejectConnectionRequest,
   getConnectionRequests,
   checkConnectionRequestStatus,
+  getConnections,
 };

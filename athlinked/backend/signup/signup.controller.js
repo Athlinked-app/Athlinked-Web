@@ -290,6 +290,42 @@ async function getMyChildren(req, res) {
   }
 }
 
+/**
+ * Controller to delete user account
+ * @param {object} req - Express request object
+ * @param {object} res - Express response object
+ */
+async function deleteAccount(req, res) {
+  try {
+    const userId = req.user?.id || req.body?.user_id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
+
+    const result = await signupService.deleteAccountService(userId);
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Delete account error:', error);
+    
+    if (error.message === 'User not found') {
+      return res.status(404).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 module.exports = {
   startSignup,
   verifyOtp,
@@ -298,4 +334,5 @@ module.exports = {
   parentComplete,
   getAllUsers,
   getMyChildren,
+  deleteAccount,
 };

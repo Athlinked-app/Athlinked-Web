@@ -32,7 +32,7 @@ import MySaveClips from '@/components/MySave/Clips';
 import MySaveArticle from '@/components/MySave/Article';
 import MySaveOpportunity from '@/components/MySave/Opportunity';
 import Favourites from '@/components/Profile/Favourites';
-import { apiGet, apiPost } from '@/utils/api';
+import { apiGet, apiPost, apiUpload } from '@/utils/api';
 interface CurrentUser {
   id: string;
   full_name: string;

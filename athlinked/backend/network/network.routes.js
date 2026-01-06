@@ -403,4 +403,48 @@ router.get(
   networkController.checkConnectionRequestStatus
 );
 
+/**
+ * @swagger
+ * /api/network/connections/{userId}:
+ *   get:
+ *     summary: Get connections list
+ *     description: Get list of connected users for a specific user
+ *     tags: [Network]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: Connections retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 connections:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get(
+  '/connections/:userId',
+  authenticateToken,
+  networkController.getConnections
+);
+
 module.exports = router;
