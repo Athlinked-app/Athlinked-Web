@@ -136,6 +136,7 @@ function ProfileContent() {
               ? post.user_profile_url
               : null,
           user_id: post.user_id,
+          user_type: post.user_type || 'athlete',
           post_type: post.post_type,
           caption: post.caption,
           media_url: post.media_url,

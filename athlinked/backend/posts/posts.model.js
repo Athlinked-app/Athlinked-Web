@@ -18,12 +18,31 @@ async function createPost(postData, client = null) {
   } = postData;
 
   const id = uuidv4();
+  
+  // Get user_type from users table if not provided
+  let user_type = postData.user_type;
+  if (!user_type && user_id) {
+    try {
+      const userQuery = 'SELECT user_type FROM users WHERE id = $1';
+      const userResult = await (client || pool).query(userQuery, [user_id]);
+      if (userResult.rows.length > 0) {
+        user_type = userResult.rows[0].user_type || 'athlete';
+      } else {
+        user_type = 'athlete';
+      }
+    } catch (error) {
+      console.error('Error fetching user_type:', error);
+      user_type = 'athlete';
+    }
+  }
+  
   const query = `
     INSERT INTO posts (
       id,
       user_id,
       username,
       user_profile_url,
+      user_type,
       post_type,
       caption,
       media_url,
@@ -38,7 +57,7 @@ async function createPost(postData, client = null) {
       save_count,
       is_active,
       created_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW())
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW())
     RETURNING *
   `;
 
@@ -47,6 +66,7 @@ async function createPost(postData, client = null) {
     user_id,
     username,
     user_profile_url,
+    user_type || 'athlete',
     post_type,
     caption || null,
     media_url || null,
@@ -78,7 +98,8 @@ async function getPostsFeed(page = 1, limit = 50) {
     SELECT 
       p.*,
       COALESCE(u.profile_url, p.user_profile_url) as user_profile_url,
-      COALESCE(u.full_name, p.username) as username
+      COALESCE(u.full_name, p.username) as username,
+      COALESCE(p.user_type, u.user_type, 'athlete') as user_type
     FROM posts p
     LEFT JOIN users u ON p.user_id = u.id
     WHERE p.is_active = true
@@ -100,7 +121,8 @@ async function getPostById(postId) {
     SELECT 
       p.*,
       COALESCE(u.profile_url, p.user_profile_url) as user_profile_url,
-      COALESCE(u.full_name, p.username) as username
+      COALESCE(u.full_name, p.username) as username,
+      COALESCE(p.user_type, u.user_type, 'athlete') as user_type
     FROM posts p
     LEFT JOIN users u ON p.user_id = u.id
     WHERE p.id = $1 AND p.is_active = true
