@@ -29,6 +29,7 @@ export interface PostData {
   username: string;
   user_profile_url: string | null;
   user_id?: string;
+  user_type?: string;
   post_type?: 'photo' | 'video' | 'article' | 'event' | 'text';
   caption?: string | null;
   media_url?: string | null;
@@ -423,7 +424,11 @@ export default function Post({
           })()}
         </div>
         <div className="flex-1">
-          <p className="text-sm text-gray-500 font-medium">Athlete</p>
+          <p className="text-sm text-gray-500 font-medium">
+            {post.user_type 
+              ? post.user_type.charAt(0).toUpperCase() + post.user_type.slice(1).toLowerCase()
+              : 'Athlete'}
+          </p>
           <p className="text-base font-semibold text-gray-900">
             {post.username}
           </p>
@@ -805,7 +810,11 @@ export default function Post({
               </div>
               <div>
                 <p className="font-semibold text-gray-900">{post.username}</p>
-                <p className="text-sm text-gray-600">Athlete</p>
+                <p className="text-sm text-gray-600">
+                  {post.user_type 
+                    ? post.user_type.charAt(0).toUpperCase() + post.user_type.slice(1).toLowerCase()
+                    : 'Athlete'}
+                </p>
               </div>
             </div>
 
