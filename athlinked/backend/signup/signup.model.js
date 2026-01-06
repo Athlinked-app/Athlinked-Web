@@ -182,6 +182,17 @@ async function getChildrenByParentEmail(parentEmail) {
   return result.rows;
 }
 
+/**
+ * Delete user from database
+ * @param {string} userId - User ID to delete
+ * @returns {Promise<boolean>} True if user was deleted, false otherwise
+ */
+async function deleteUser(userId) {
+  const query = 'DELETE FROM users WHERE id = $1 RETURNING id';
+  const result = await pool.query(query, [userId]);
+  return result.rows.length > 0;
+}
+
 module.exports = {
   findByEmail,
   findByUsername,
@@ -189,4 +200,5 @@ module.exports = {
   createUser,
   getAllUsers,
   getChildrenByParentEmail,
+  deleteUser,
 };

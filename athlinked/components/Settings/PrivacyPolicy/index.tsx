@@ -8,11 +8,38 @@ export default function PrivacyPolicy() {
 
   const handleDownloadPDF = async () => {
     try {
-      // Dynamically import html2canvas and jspdf
-      const html2canvas = (await import('html2canvas')).default;
-      const jsPDF = (await import('jspdf')).default;
-
       if (!contentRef.current) return;
+
+      // Dynamically import html2canvas and jspdf
+      // Using eval to prevent Next.js from analyzing at build time
+      let html2canvas: any;
+      let jsPDF: any;
+
+      try {
+        // @ts-ignore - Dynamic import that may not be available
+        html2canvas = (await eval('import("html2canvas")')).default;
+      } catch (e: any) {
+        if (e?.code === 'MODULE_NOT_FOUND' || e?.message?.includes('Cannot find module')) {
+          alert('PDF export feature requires html2canvas package. Please install it: npm install html2canvas');
+        } else {
+          console.error('Error loading html2canvas:', e);
+          alert('Failed to load PDF export library. Please try again.');
+        }
+        return;
+      }
+
+      try {
+        // @ts-ignore - Dynamic import that may not be available
+        jsPDF = (await eval('import("jspdf")')).default;
+      } catch (e: any) {
+        if (e?.code === 'MODULE_NOT_FOUND' || e?.message?.includes('Cannot find module')) {
+          alert('PDF export feature requires jspdf package. Please install it: npm install jspdf');
+        } else {
+          console.error('Error loading jspdf:', e);
+          alert('Failed to load PDF export library. Please try again.');
+        }
+        return;
+      }
 
       // Capture the content as canvas
       // Suppress console errors for unsupported CSS color functions during capture

@@ -401,71 +401,33 @@ async function getSenderIdForConversation(conversationId, currentUserId) {
 }
 
 async function searchNetworkUsers(userId, searchQuery) {
-  const followingQuery = `
+  // Only return connected users for messaging and sharing
+  const connectedQuery = `
     SELECT 
       u.id,
       u.username,
       u.full_name,
       u.profile_url,
-      'following' as relationship
+      'connected' as relationship
     FROM users u
-    INNER JOIN user_follows uf ON u.id = uf.following_id
-    WHERE uf.follower_id = $1
-      AND u.id != $1
+    INNER JOIN user_connections uc ON (
+      (uc.user_id_1 = $1 AND uc.user_id_2 = u.id) OR
+      (uc.user_id_2 = $1 AND uc.user_id_1 = u.id)
+    )
+    WHERE u.id != $1
       AND (
         (u.username IS NOT NULL AND LOWER(u.username) LIKE LOWER($2))
         OR (u.full_name IS NOT NULL AND LOWER(u.full_name) LIKE LOWER($2))
       )
-  `;
-
-  const followersQuery = `
-    SELECT 
-      u.id,
-      u.username,
-      u.full_name,
-      u.profile_url,
-      'follower' as relationship
-    FROM users u
-    INNER JOIN user_follows uf ON u.id = uf.follower_id
-    WHERE uf.following_id = $1
-      AND u.id != $1
-      AND (
-        (u.username IS NOT NULL AND LOWER(u.username) LIKE LOWER($2))
-        OR (u.full_name IS NOT NULL AND LOWER(u.full_name) LIKE LOWER($2))
-      )
+    ORDER BY u.full_name, u.username
+    LIMIT 20
   `;
 
   try {
     const searchPattern = `%${searchQuery}%`;
+    const result = await pool.query(connectedQuery, [userId, searchPattern]);
 
-    const [followingResult, followersResult] = await Promise.all([
-      pool.query(followingQuery, [userId, searchPattern]),
-      pool.query(followersQuery, [userId, searchPattern]),
-    ]);
-
-    const allUsers = new Map();
-
-    followingResult.rows.forEach(user => {
-      allUsers.set(user.id, user);
-    });
-
-    followersResult.rows.forEach(user => {
-      if (!allUsers.has(user.id)) {
-        allUsers.set(user.id, user);
-      }
-    });
-
-    const result = Array.from(allUsers.values()).sort((a, b) => {
-      if (a.relationship === 'following' && b.relationship === 'follower')
-        return -1;
-      if (a.relationship === 'follower' && b.relationship === 'following')
-        return 1;
-      const nameA = (a.full_name || a.username || '').toLowerCase();
-      const nameB = (b.full_name || b.username || '').toLowerCase();
-      return nameA.localeCompare(nameB);
-    });
-
-    return result.slice(0, 20);
+    return result.rows;
   } catch (error) {
     console.error('Error in searchNetworkUsers:', error);
     console.error('Error details:', error.message, error.stack);
@@ -492,6 +454,130 @@ async function updateUserNameInMessages(userId, userName) {
   ]);
 }
 
+/**
+ * Delete a single message
+ * @param {string} messageId - Message ID
+ * @param {string} userId - User ID (to verify ownership)
+ * @param {object} client - Optional database client for transactions
+ * @returns {Promise<boolean>} True if message was deleted, false otherwise
+ */
+async function deleteMessage(messageId, userId, client = null) {
+  const dbClient = client || pool;
+  
+  try {
+    // Verify the message belongs to the user
+    const checkQuery = `
+      SELECT id, conversation_id, sender_id 
+      FROM messages 
+      WHERE id = $1 AND sender_id = $2
+    `;
+    const checkResult = await dbClient.query(checkQuery, [messageId, userId]);
+    
+    if (checkResult.rows.length === 0) {
+      return false;
+    }
+
+    const conversationId = checkResult.rows[0].conversation_id;
+
+    // Delete the message
+    const deleteQuery = `
+      DELETE FROM messages 
+      WHERE id = $1 AND sender_id = $2
+    `;
+    await dbClient.query(deleteQuery, [messageId, userId]);
+
+    // Update conversation last message if this was the last message
+    const lastMessageQuery = `
+      SELECT id, message, created_at 
+      FROM messages 
+      WHERE conversation_id = $1 
+      ORDER BY created_at DESC 
+      LIMIT 1
+    `;
+    const lastMessageResult = await dbClient.query(lastMessageQuery, [conversationId]);
+    
+    if (lastMessageResult.rows.length > 0) {
+      const lastMessage = lastMessageResult.rows[0].message || '';
+      await updateConversationLastMessage(conversationId, lastMessage, dbClient);
+    } else {
+      // No messages left, clear last message
+      await updateConversationLastMessage(conversationId, null, dbClient);
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete entire conversation and all its messages
+ * @param {string} conversationId - Conversation ID
+ * @param {string} userId - User ID (to verify participation)
+ * @param {object} client - Optional database client for transactions
+ * @returns {Promise<boolean>} True if conversation was deleted, false otherwise
+ */
+async function deleteConversation(conversationId, userId, client = null) {
+  const dbClient = client || pool;
+  
+  try {
+    // Verify the user is a participant in this conversation
+    const checkQuery = `
+      SELECT id 
+      FROM conversation_participants 
+      WHERE conversation_id = $1 AND user_id = $2
+    `;
+    const checkResult = await dbClient.query(checkQuery, [conversationId, userId]);
+    
+    if (checkResult.rows.length === 0) {
+      return false;
+    }
+
+    // Get all message IDs first before deleting messages
+    const getMessageIdsQuery = `
+      SELECT id FROM messages WHERE conversation_id = $1
+    `;
+    const messageIdsResult = await dbClient.query(getMessageIdsQuery, [conversationId]);
+    const messageIds = messageIdsResult.rows.map(row => row.id);
+
+    // Delete all message reads if there are messages
+    if (messageIds.length > 0) {
+      const deleteReadsQuery = `
+        DELETE FROM message_reads 
+        WHERE message_id = ANY($1::uuid[])
+      `;
+      await dbClient.query(deleteReadsQuery, [messageIds]);
+    }
+
+    // Delete all messages in the conversation
+    const deleteMessagesQuery = `
+      DELETE FROM messages 
+      WHERE conversation_id = $1
+    `;
+    await dbClient.query(deleteMessagesQuery, [conversationId]);
+
+    // Delete all participants
+    const deleteParticipantsQuery = `
+      DELETE FROM conversation_participants 
+      WHERE conversation_id = $1
+    `;
+    await dbClient.query(deleteParticipantsQuery, [conversationId]);
+
+    // Delete the conversation
+    const deleteConversationQuery = `
+      DELETE FROM conversations 
+      WHERE id = $1
+    `;
+    await dbClient.query(deleteConversationQuery, [conversationId]);
+
+    return true;
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   getOrCreateConversation,
   createMessage,
@@ -503,4 +589,6 @@ module.exports = {
   getSenderIdForConversation,
   searchNetworkUsers,
   updateUserNameInMessages,
+  deleteMessage,
+  deleteConversation,
 };

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import NavigationBar from '@/components/NavigationBar';
-import { Search, CheckCheck, Check, X } from 'lucide-react';
+import { Search, CheckCheck, Check, X, MoreVertical, Trash2 } from 'lucide-react';
 import io, { Socket } from 'socket.io-client';
 import EmojiPicker from '@/components/Message/EmojiPicker';
 import GIFPicker from '@/components/Message/GIFPicker';
@@ -64,9 +64,14 @@ function MessagesPageContent() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedGIF, setSelectedGIF] = useState<string | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [showConversationMenu, setShowConversationMenu] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const conversationMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -412,6 +417,83 @@ function MessagesPageContent() {
       console.error('Error marking messages as read:', error);
     }
   };
+
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!currentUser?.id || !selectedConversation) return;
+
+    if (!confirm('Are you sure you want to delete this message?')) {
+      return;
+    }
+
+    try {
+      const { apiDelete } = await import('@/utils/api');
+      const response = await apiDelete<{ success: boolean; message?: string }>(
+        `/messages/message/${messageId}`
+      );
+
+      if (response.success) {
+        // Remove message from local state
+        setMessages(prev => prev.filter(msg => msg.message_id !== messageId));
+        setOpenMenuId(null);
+        // Refresh conversations to update last message
+        fetchConversations();
+      } else {
+        alert(response.message || 'Failed to delete message');
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      alert('Failed to delete message. Please try again.');
+    }
+  };
+
+  const handleDeleteConversation = async () => {
+    if (!currentUser?.id || !selectedConversation) return;
+
+    if (!confirm('Are you sure you want to delete this conversation? This will delete all messages and cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const { apiDelete } = await import('@/utils/api');
+      const response = await apiDelete<{ success: boolean; message?: string }>(
+        `/messages/conversation/${selectedConversation.conversation_id}`
+      );
+
+      if (response.success) {
+        // Clear selected conversation and messages
+        setSelectedConversation(null);
+        setMessages([]);
+        setShowConversationMenu(false);
+        // Refresh conversations list
+        fetchConversations();
+      } else {
+        alert(response.message || 'Failed to delete conversation');
+      }
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      alert('Failed to delete conversation. Please try again.');
+    }
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+      if (conversationMenuRef.current && !conversationMenuRef.current.contains(event.target as Node)) {
+        setShowConversationMenu(false);
+      }
+    };
+
+    if (openMenuId || showConversationMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openMenuId, showConversationMenu]);
 
   const searchUsers = async (query: string) => {
     if (!query.trim() || !currentUser?.id) {
@@ -944,27 +1026,49 @@ function MessagesPageContent() {
           <div className="flex-1 bg-white rounded-lg border border-gray-200 flex flex-col overflow-hidden">
             {selectedConversation ? (
               <>
-                <div className="p-4 border-b border-gray-200 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center">
-                    {selectedConversation.other_user_profile_image ? (
-                      <img
-                        src={
-                          getProfileUrl(
-                            selectedConversation.other_user_profile_image
-                          ) || ''
-                        }
-                        alt={selectedConversation.other_user_username}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-black font-semibold text-xs">
-                        {getInitials(selectedConversation.other_user_username)}
-                      </span>
+                <div className="p-4 border-b border-gray-200 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center">
+                      {selectedConversation.other_user_profile_image ? (
+                        <img
+                          src={
+                            getProfileUrl(
+                              selectedConversation.other_user_profile_image
+                            ) || ''
+                          }
+                          alt={selectedConversation.other_user_username}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-black font-semibold text-xs">
+                          {getInitials(selectedConversation.other_user_username)}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-lg font-semibold text-black">
+                      {selectedConversation.other_user_username}
+                    </span>
+                  </div>
+                  <div className="relative" ref={conversationMenuRef}>
+                    <button
+                      onClick={() => setShowConversationMenu(!showConversationMenu)}
+                      className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                      aria-label="Conversation options"
+                    >
+                      <MoreVertical size={20} className="text-gray-600" />
+                    </button>
+                    {showConversationMenu && (
+                      <div className="absolute right-0 top-12 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[150px]">
+                        <button
+                          onClick={handleDeleteConversation}
+                          className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={16} />
+                          Delete Chat
+                        </button>
+                      </div>
                     )}
                   </div>
-                  <span className="text-lg font-semibold text-black">
-                    {selectedConversation.other_user_username}
-                  </span>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -985,7 +1089,9 @@ function MessagesPageContent() {
                         <div
                           className={`flex gap-3 ${
                             isOwnMessage ? 'flex-row-reverse' : 'flex-row'
-                          }`}
+                          } group`}
+                          onMouseEnter={() => isOwnMessage && setHoveredMessageId(msg.message_id)}
+                          onMouseLeave={() => setHoveredMessageId(null)}
                         >
                           {!isOwnMessage && (
                             <div className="w-8 h-8 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center flex-shrink-0">
@@ -1008,13 +1114,14 @@ function MessagesPageContent() {
                               )}
                             </div>
                           )}
-                          <div
-                            className={`max-w-xs lg:max-w-md rounded-lg overflow-hidden ${
-                              isOwnMessage
-                                ? 'bg-white border border-gray-200'
-                                : 'bg-gray-100'
-                            }`}
-                          >
+                          <div className="relative flex items-start gap-2">
+                            <div
+                              className={`max-w-xs lg:max-w-md rounded-lg overflow-hidden ${
+                                isOwnMessage
+                                  ? 'bg-white border border-gray-200'
+                                  : 'bg-gray-100'
+                              }`}
+                            >
                             {msg.post_data && msg.message_type === 'post' ? (
                               <div className="w-full border border-gray-200 rounded-lg overflow-hidden bg-white max-w-md">
                                 <div className="p-3 border-b border-gray-200 flex items-center gap-2">
@@ -1133,8 +1240,7 @@ function MessagesPageContent() {
                                   )}
                                 </div>
                               </div>
-                            ) : (
-                              msg.media_url &&
+                            ) : msg.media_url ? (
                               (() => {
                                 const mediaUrl = msg.media_url.startsWith(
                                   'http'
@@ -1204,7 +1310,7 @@ function MessagesPageContent() {
                                   );
                                 }
                               })()
-                            )}
+                            ) : null}
 
                             {msg.message && (
                               <p
@@ -1244,6 +1350,29 @@ function MessagesPageContent() {
                                 </div>
                               )}
                             </div>
+                          </div>
+                          {isOwnMessage && hoveredMessageId === msg.message_id && (
+                            <div className="relative" ref={menuRef}>
+                              <button
+                                onClick={() => setOpenMenuId(openMenuId === msg.message_id ? null : msg.message_id)}
+                                className="p-1 rounded-full hover:bg-gray-200 transition-colors"
+                                aria-label="Message options"
+                              >
+                                <MoreVertical size={18} className="text-gray-600" />
+                              </button>
+                              {openMenuId === msg.message_id && (
+                                <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[120px]">
+                                  <button
+                                    onClick={() => handleDeleteMessage(msg.message_id)}
+                                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-lg transition-colors"
+                                  >
+                                    <Trash2 size={16} />
+                                    Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          )}
                           </div>
                         </div>
                       </div>

@@ -645,25 +645,6 @@ export default function StatsPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {currentProfiles.map(profile => (
-                        <tr
-                          key={profile.id}
-                          className="hover:bg-gray-50 transition-colors"
-                        >
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
-                            {getYearForProfile(profile) || '—'}
-                          </td>
-                          {allFieldLabels.map(fieldLabel => (
-                            <th
-                              key={fieldLabel}
-                              className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider"
-                            >
-                              {fieldLabel}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
                         {currentProfiles.map(profile => (
                           <tr
                             key={profile.id}

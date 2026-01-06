@@ -244,6 +244,66 @@ router.get(
 
 /**
  * @swagger
+ * /api/messages/message/{messageId}:
+ *   delete:
+ *     summary: Delete a message
+ *     description: Delete a single message (only the sender can delete)
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: messageId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Message ID
+ *     responses:
+ *       200:
+ *         description: Message deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Message not found or no permission
+ */
+router.delete(
+  '/message/:messageId',
+  authenticateToken,
+  messagesController.deleteMessage
+);
+
+/**
+ * @swagger
+ * /api/messages/conversation/{conversationId}:
+ *   delete:
+ *     summary: Delete a conversation
+ *     description: Delete entire conversation and all its messages
+ *     tags: [Messages]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: conversationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Conversation ID
+ *     responses:
+ *       200:
+ *         description: Conversation deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Conversation not found or no permission
+ */
+router.delete(
+  '/conversation/:conversationId',
+  authenticateToken,
+  messagesController.deleteConversation
+);
+
+/**
+ * @swagger
  * /api/messages/{conversationId}:
  *   get:
  *     summary: Get messages

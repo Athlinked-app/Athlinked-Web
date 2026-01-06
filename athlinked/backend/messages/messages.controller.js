@@ -282,6 +282,106 @@ async function getUnreadCount(req, res) {
   }
 }
 
+async function deleteMessage(req, res) {
+  try {
+    const userId = req.user?.id;
+    const { messageId } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
+
+    if (!messageId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message ID is required',
+      });
+    }
+
+    const result = await messagesService.deleteMessage(messageId, userId);
+
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: 'Message not found or you do not have permission to delete it',
+      });
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      // Emit message deleted event to both users in the conversation
+      io.emit('message_deleted', {
+        messageId,
+        deletedBy: userId,
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Message deleted successfully',
+    });
+  } catch (error) {
+    console.error('Error deleting message:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
+async function deleteConversation(req, res) {
+  try {
+    const userId = req.user?.id;
+    const { conversationId } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
+
+    if (!conversationId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Conversation ID is required',
+      });
+    }
+
+    const result = await messagesService.deleteConversation(conversationId, userId);
+
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: 'Conversation not found or you do not have permission to delete it',
+      });
+    }
+
+    const io = req.app.get('io');
+    if (io) {
+      // Emit conversation deleted event
+      io.emit('conversation_deleted', {
+        conversationId,
+        deletedBy: userId,
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Conversation deleted successfully',
+    });
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 module.exports = {
   getConversations,
   getMessages,
@@ -290,4 +390,6 @@ module.exports = {
   getOrCreateConversation,
   uploadMessageFile,
   getUnreadCount,
+  deleteMessage,
+  deleteConversation,
 };
