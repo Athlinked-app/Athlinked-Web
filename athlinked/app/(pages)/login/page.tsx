@@ -147,6 +147,25 @@ export default function LoginPage() {
     }
   };
 
+  // Show loading state while checking authentication
+  if (checkingAuth) {
+    return (
+      <div className="flex min-h-screen flex-col md:flex-row">
+        <SignupHero />
+        <div className="w-full md:w-1/2 xl:w-2/5 flex items-center justify-center bg-gray-100 p-4 sm:p-6 md:p-8 md:min-h-screen">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-6 sm:p-8 lg:p-10 xl:p-12 my-6 md:my-0">
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mb-4"></div>
+                <p className="text-black">Checking authentication...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       {/* Left Side - Hero Image */}
