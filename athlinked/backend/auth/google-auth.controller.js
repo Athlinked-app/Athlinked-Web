@@ -8,8 +8,13 @@ class GoogleAuthController {
    * POST /api/auth/google
    */
   async googleSignIn(req, res) {
+        console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
+console.log('JWT_REFRESH_SECRET exists:', !!process.env.JWT_REFRESH_SECRET);
+
+
     try {
-      const { google_id, email, full_name, profile_picture, email_verified } = req.body;
+      const { google_id, email, full_name, profile_picture, email_verified } =
+        req.body;
 
       // Validate required fields
       if (!google_id || !email) {
@@ -44,7 +49,7 @@ class GoogleAuthController {
 
         const refreshToken = jwt.sign(
           { userId: user.id },
-          process.env.REFRESH_TOKEN_SECRET,
+          process.env.JWT_REFRESH_SECRET,
           { expiresIn: '7d' }
         );
 
@@ -99,7 +104,7 @@ class GoogleAuthController {
 
         const refreshToken = jwt.sign(
           { userId: user.id },
-          process.env.REFRESH_TOKEN_SECRET,
+          process.env.JWT_REFRESH_SECRET,
           { expiresIn: '7d' }
         );
 
@@ -139,7 +144,6 @@ class GoogleAuthController {
         full_name: user.full_name,
         profile_picture: user.profile_picture,
       });
-
     } catch (error) {
       console.error('Google sign-in error:', error);
       return res.status(500).json({
@@ -149,6 +153,8 @@ class GoogleAuthController {
       });
     }
   }
+
+  
 
   /**
    * Complete Google OAuth signup by setting user_type
@@ -194,7 +200,7 @@ class GoogleAuthController {
 
       const refreshToken = jwt.sign(
         { userId: user.id },
-        process.env.REFRESH_TOKEN_SECRET,
+        process.env.JWT_REFRESH_SECRET,
         { expiresIn: '7d' }
       );
 
@@ -214,7 +220,6 @@ class GoogleAuthController {
           google_id: user.google_id,
         },
       });
-
     } catch (error) {
       console.error('Complete Google signup error:', error);
       return res.status(500).json({

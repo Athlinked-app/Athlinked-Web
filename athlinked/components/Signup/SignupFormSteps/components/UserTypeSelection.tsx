@@ -21,7 +21,7 @@ export default function UserTypeSelection({
   // NEW - Handle Google Sign-In success
   const handleGoogleSuccess = (userData: any) => {
     console.log('Google sign-in response:', userData);
-    
+
     if (userData.needs_user_type) {
       setGoogleUserData(userData);
       setShowGoogleUserTypeModal(true);
@@ -33,19 +33,22 @@ export default function UserTypeSelection({
   // NEW - Handle user type selection for Google users
   const handleGoogleUserTypeSubmit = async (userType: string) => {
     try {
-      const response = await fetch('http://localhost:3001/api/auth/google/complete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          google_id: googleUserData.google_id,
-          user_type: userType,
-        }),
-      });
+      const response = await fetch(
+        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/auth/google/complete',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            google_id: googleUserData.google_id,
+            user_type: userType,
+          }),
+        }
+      );
 
       const data = await response.json();
-      
+
       if (data.success) {
         setShowGoogleUserTypeModal(false);
         onGoogleSignIn?.(data);
@@ -77,7 +80,7 @@ export default function UserTypeSelection({
           <div className="mb-6">
             <GoogleSignInButton
               onSuccess={handleGoogleSuccess}
-              onError={(error) => console.error('Google sign-in error:', error)}
+              onError={error => console.error('Google sign-in error:', error)}
             />
           </div>
 
@@ -87,7 +90,9 @@ export default function UserTypeSelection({
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-xs sm:text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with email</span>
+              <span className="px-2 bg-white text-gray-500">
+                Or continue with email
+              </span>
             </div>
           </div>
         </>
@@ -202,7 +207,7 @@ export default function UserTypeSelection({
             <p className="text-gray-600 mb-6">
               Please select your account type to get started
             </p>
-            
+
             <div className="space-y-3 mb-6">
               <button
                 onClick={() => handleGoogleUserTypeSubmit('athlete')}
@@ -213,24 +218,27 @@ export default function UserTypeSelection({
                   Chase your dreams, push your limits, and showcase your talent
                 </div>
               </button>
-              
+
               <button
                 onClick={() => handleGoogleUserTypeSubmit('coach')}
                 className="w-full p-4 rounded-lg border-2 border-gray-200 hover:border-yellow-500 hover:bg-yellow-50 text-left transition-all"
               >
-                <div className="font-semibold text-gray-900">Coach/Recruiter</div>
+                <div className="font-semibold text-gray-900">
+                  Coach/Recruiter
+                </div>
                 <div className="text-sm text-gray-600 mt-1">
                   Inspire athletes, shape champions, and leave a lasting impact
                 </div>
               </button>
-              
+
               <button
                 onClick={() => handleGoogleUserTypeSubmit('organization')}
                 className="w-full p-4 rounded-lg border-2 border-gray-200 hover:border-yellow-500 hover:bg-yellow-50 text-left transition-all"
               >
                 <div className="font-semibold text-gray-900">Organization</div>
                 <div className="text-sm text-gray-600 mt-1">
-                  Empower teams, discover rising stars, and build a legacy of success
+                  Empower teams, discover rising stars, and build a legacy of
+                  success
                 </div>
               </button>
             </div>

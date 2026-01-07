@@ -41,11 +41,11 @@
 //         );
 
 //         const userInfo = await userInfoResponse.json();
-        
+
 //         console.log('Google User Info:', userInfo);
-        
+
 //         // Send to your backend
-//         const response = await fetch('http://localhost:3001/api/auth/google', {
+//         const response = await fetch('https://qd9ngjg1-3001.inc1.devtunnels.ms/api/auth/google', {
 //           method: 'POST',
 //           headers: {
 //             'Content-Type': 'application/json',
@@ -140,7 +140,7 @@ export default function GoogleSignInButton({
   const [isLoading, setIsLoading] = useState(false);
 
   const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
+    onSuccess: async tokenResponse => {
       setIsLoading(true);
       try {
         const userInfoResponse = await fetch(
@@ -153,21 +153,24 @@ export default function GoogleSignInButton({
         );
 
         const userInfo = await userInfoResponse.json();
-        
-        const response = await fetch('http://localhost:3001/api/auth/google', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            google_id: userInfo.sub,
-            email: userInfo.email,
-            full_name: userInfo.name,
-            profile_picture: userInfo.picture,
-            email_verified: userInfo.email_verified,
-            access_token: tokenResponse.access_token,
-          }),
-        });
+
+        const response = await fetch(
+          'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/auth/google',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              google_id: userInfo.sub,
+              email: userInfo.email,
+              full_name: userInfo.name,
+              profile_picture: userInfo.picture,
+              email_verified: userInfo.email_verified,
+              access_token: tokenResponse.access_token,
+            }),
+          }
+        );
 
         const data = await response.json();
 
@@ -185,7 +188,7 @@ export default function GoogleSignInButton({
         setIsLoading(false);
       }
     },
-    onError: (error) => {
+    onError: error => {
       console.error('Google login failed:', error);
       onError?.(error);
       alert('Google login failed. Please try again.');

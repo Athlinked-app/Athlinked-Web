@@ -151,11 +151,11 @@ export default function EditProfileModal({
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -179,13 +179,13 @@ export default function EditProfileModal({
             if (data.user.profile_url) {
               const profileUrl = data.user.profile_url.startsWith('http')
                 ? data.user.profile_url
-                : `http://localhost:3001${data.user.profile_url}`;
+                : `https://qd9ngjg1-3001.inc1.devtunnels.ms${data.user.profile_url}`;
               setProfileImagePreview(profileUrl);
             }
             if (data.user.background_image_url) {
               const bgUrl = data.user.background_image_url.startsWith('http')
                 ? data.user.background_image_url
-                : `http://localhost:3001${data.user.background_image_url}`;
+                : `https://qd9ngjg1-3001.inc1.devtunnels.ms${data.user.background_image_url}`;
               setBackgroundImagePreview(bgUrl);
             }
             if (data.user.sports_played) {
@@ -229,13 +229,13 @@ export default function EditProfileModal({
             if (profileData.profileImage) {
               const profileUrl = profileData.profileImage.startsWith('http')
                 ? profileData.profileImage
-                : `http://localhost:3001${profileData.profileImage}`;
+                : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.profileImage}`;
               setProfileImagePreview(profileUrl);
             }
             if (profileData.coverImage) {
               const bgUrl = profileData.coverImage.startsWith('http')
                 ? profileData.coverImage
-                : `http://localhost:3001${profileData.coverImage}`;
+                : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.coverImage}`;
               setBackgroundImagePreview(bgUrl);
             }
             if (profileData.primarySport) {
@@ -287,11 +287,11 @@ export default function EditProfileModal({
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -364,7 +364,7 @@ export default function EditProfileModal({
         const profileUrl = userData.profile_url
           ? userData.profile_url.startsWith('http')
             ? userData.profile_url
-            : `http://localhost:3001${userData.profile_url}`
+            : `https://qd9ngjg1-3001.inc1.devtunnels.ms${userData.profile_url}`
           : null;
         setProfileImagePreview(profileUrl);
       }
@@ -373,7 +373,7 @@ export default function EditProfileModal({
         const bgUrl = userData.background_image_url
           ? userData.background_image_url.startsWith('http')
             ? userData.background_image_url
-            : `http://localhost:3001${userData.background_image_url}`
+            : `https://qd9ngjg1-3001.inc1.devtunnels.ms${userData.background_image_url}`
           : null;
         setBackgroundImagePreview(bgUrl);
       }

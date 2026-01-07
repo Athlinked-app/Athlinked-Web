@@ -507,7 +507,7 @@ function ProfileContent() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };
@@ -549,14 +549,14 @@ function ProfileContent() {
               profile_url: profileData?.profileImage
                 ? profileData.profileImage.startsWith('http')
                   ? profileData.profileImage
-                  : `http://localhost:3001${profileData.profileImage}`
+                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.profileImage}`
                 : viewUserId
                   ? viewUser?.profile_url || null
                   : currentUser?.profile_url || null,
               background_image_url: profileData?.coverImage
                 ? profileData.coverImage.startsWith('http')
                   ? profileData.coverImage
-                  : `http://localhost:3001${profileData.coverImage}`
+                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.coverImage}`
                 : null,
               user_type: viewUserId
                 ? viewUser?.user_type || 'athlete'

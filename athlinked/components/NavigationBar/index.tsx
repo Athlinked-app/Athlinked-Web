@@ -170,11 +170,11 @@ export default function NavigationBar({
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -239,7 +239,7 @@ export default function NavigationBar({
       ? rawProfileUrl.startsWith('http')
         ? rawProfileUrl
         : rawProfileUrl.startsWith('/') && !rawProfileUrl.startsWith('/assets')
-          ? `http://localhost:3001${rawProfileUrl}`
+          ? `https://qd9ngjg1-3001.inc1.devtunnels.ms${rawProfileUrl}`
           : rawProfileUrl
       : null;
 

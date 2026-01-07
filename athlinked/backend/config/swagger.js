@@ -14,7 +14,7 @@ const options = {
     },
     servers: [
       {
-        url: process.env.API_URL || 'http://localhost:3001',
+        url: process.env.API_URL || 'https://qd9ngjg1-3001.inc1.devtunnels.ms',
         description: 'Development server',
       },
       {

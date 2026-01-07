@@ -47,13 +47,13 @@ export default function SignupPage() {
   // GOOGLE SIGN-IN HANDLER - NEW
   const handleGoogleSignIn = (userData: any) => {
     console.log('Google sign-in successful:', userData);
-    
+
     // Store authentication token
     if (userData.token) {
       localStorage.setItem('auth_token', userData.token);
       localStorage.setItem('user', JSON.stringify(userData.user));
     }
-    
+
     // Redirect to dashboard
     router.push('/dashboard');
   };
@@ -106,13 +106,16 @@ export default function SignupPage() {
         };
 
         // Call backend to send OTP via email
-        const response = await fetch('http://localhost:3001/api/signup/start', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(signupData),
-        });
+        const response = await fetch(
+          'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/start',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(signupData),
+          }
+        );
 
         const data = await response.json();
 

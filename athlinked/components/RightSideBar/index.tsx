@@ -31,7 +31,7 @@
 //     if (!profileUrl || profileUrl.trim() === '') return null;
 //     if (profileUrl.startsWith('http')) return profileUrl;
 //     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-//       return `http://localhost:3001${profileUrl}`;
+//       return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
 //     }
 //     return profileUrl;
 //   };
@@ -292,7 +292,7 @@ export default function RightSideBar({ searchResults }: RightSideBarProps) {
     if (!profileUrl || profileUrl.trim() === '') return null;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };

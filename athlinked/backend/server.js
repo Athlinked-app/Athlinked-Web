@@ -1,3 +1,6 @@
+
+console.log('ENV CHECK - JWT_SECRET:', process.env.JWT_SECRET);
+console.log('ENV CHECK - JWT_REFRESH_SECRET:', process.env.JWT_REFRESH_SECRET);
 const app = require('./app');
 const { Server } = require('socket.io');
 const http = require('http');
