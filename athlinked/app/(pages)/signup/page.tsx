@@ -44,24 +44,101 @@ export default function SignupPage() {
   const currentSteps =
     selectedUserType === 'athlete' ? athleteSteps : otherSteps;
 
-  // GOOGLE SIGN-IN HANDLER - NEW
+  // GOOGLE SIGN-IN HANDLER - UPDATED
   const handleGoogleSignIn = (userData: any) => {
-    console.log('Google sign-in successful:', userData);
+    console.log('Google sign-in data received:', userData);
 
-    // Store authentication token
-    if (userData.token) {
-      localStorage.setItem('auth_token', userData.token);
-      localStorage.setItem('user', JSON.stringify(userData.user));
-    }
+    // Pre-fill form with Google data
+    setFormData(prev => ({
+      ...prev,
+      fullName: userData.user?.full_name || '',
+      email: userData.user?.email || '',
+    }));
 
-    // Redirect to dashboard
-    router.push('/dashboard');
+    // Store Google data temporarily (we'll use it later)
+    localStorage.setItem('google_temp_data', JSON.stringify({
+      google_id: userData.user?.google_id,
+      profile_picture: userData.user?.profile_picture,
+      user_type: userData.user?.user_type,
+    }));
+
+    // Set the user type
+    setSelectedUserType(userData.user?.user_type || '');
+
+    // Move to Personal Details step (step 1)
+    setCurrentStep(1);
   };
 
   const handleContinue = async () => {
+    // Check if this is a Google user completing their profile
+    const googleDataStr = localStorage.getItem('google_temp_data');
+    const isGoogleUser = !!googleDataStr;
+
     // Determine OTP step based on user type
     const otpStep = selectedUserType === 'athlete' ? 3 : 2;
 
+    // If on Personal Details step and is Google user
+    if (currentStep === 1 && isGoogleUser) {
+      const googleData = JSON.parse(googleDataStr);
+      const { google_id, user_type } = googleData;
+
+      try {
+        const profileData: any = {
+          google_id,
+        };
+
+        // Add user-type specific data
+        if (user_type === 'coach') {
+          if (!formData.sportsPlayed || !formData.primarySport) {
+            alert('Please fill in all required fields');
+            return;
+          }
+          profileData.sports_played = formData.sportsPlayed
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+          profileData.primary_sport = formData.primarySport;
+        } else if (user_type === 'organization') {
+          if (!formData.companyName || !formData.designation) {
+            alert('Please fill in all required fields');
+            return;
+          }
+          profileData.company_name = formData.companyName;
+          profileData.designation = formData.designation;
+        }
+
+        const response = await fetch(
+          'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/auth/google/complete-profile',
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(profileData),
+          }
+        );
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Store token
+          localStorage.setItem('auth_token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          localStorage.removeItem('google_temp_data');
+
+          // Redirect to home
+          router.push('/home');
+          return;
+        } else {
+          alert(data.message || 'Failed to complete profile');
+          return;
+        }
+      } catch (error) {
+        console.error('Error completing Google profile:', error);
+        alert('Failed to complete profile. Please try again.');
+        return;
+      }
+    }
+
+    // NORMAL SIGNUP FLOW (non-Google users)
     // If moving to OTP step, call backend to send OTP via email
     if (
       (selectedUserType === 'athlete' && currentStep === 2) ||
@@ -81,7 +158,6 @@ export default function SignupPage() {
 
       setIsLoadingOTP(true);
       try {
-        // Prepare signup data for OTP request
         // Parse sports_played string into array
         const sportsArray = formData.sportsPlayed
           ? formData.sportsPlayed

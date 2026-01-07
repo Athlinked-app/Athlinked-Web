@@ -1,5 +1,4 @@
 const pool = require('../db/pool');
-const bcrypt = require('bcrypt');
 
 class GoogleAuthService {
   /**
@@ -101,14 +100,60 @@ class GoogleAuthService {
   }
 
   /**
+   * Update user profile with additional information
+   */
+  async updateUserProfile(googleId, profileData) {
+    try {
+      const setClauses = [];
+      const values = [];
+      let paramIndex = 1;
+
+      // Add dynamic fields based on what's provided
+      if (profileData.sports_played !== undefined) {
+        setClauses.push(`sports_played = $${paramIndex++}`);
+        values.push(profileData.sports_played);
+      }
+      if (profileData.primary_sport !== undefined) {
+        setClauses.push(`primary_sport = $${paramIndex++}`);
+        values.push(profileData.primary_sport);
+      }
+      if (profileData.company_name !== undefined) {
+        setClauses.push(`company_name = $${paramIndex++}`);
+        values.push(profileData.company_name);
+      }
+      if (profileData.designation !== undefined) {
+        setClauses.push(`designation = $${paramIndex++}`);
+        values.push(profileData.designation);
+      }
+
+      // Always update the updated_at timestamp
+      setClauses.push(`updated_at = NOW()`);
+      
+      // Add google_id as the last parameter
+      values.push(googleId);
+
+      const query = `
+        UPDATE users 
+        SET ${setClauses.join(', ')}
+        WHERE google_id = $${paramIndex}
+        RETURNING *
+      `;
+
+      const result = await pool.query(query, values);
+      return result.rows[0];
+    } catch (error) {
+      console.error('Error updating user profile:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get user by ID
    */
   async getUserById(userId) {
     try {
       const result = await pool.query(
-        `SELECT id, email, full_name, user_type, profile_picture, google_id, created_at 
-         FROM users 
-         WHERE id = $1`,
+        `SELECT * FROM users WHERE id = $1`,
         [userId]
       );
       return result.rows[0] || null;

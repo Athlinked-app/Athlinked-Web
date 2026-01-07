@@ -1,22 +1,13 @@
 const jwt = require('jsonwebtoken');
 const googleAuthService = require('./google-auth.service');
-const refreshTokensService = require('./refresh-tokens.service');
 
 class GoogleAuthController {
-  /**
-   * Handle Google OAuth sign-in
-   * POST /api/auth/google
-   */
   async googleSignIn(req, res) {
-        console.log('JWT_SECRET exists:', !!process.env.JWT_SECRET);
-console.log('JWT_REFRESH_SECRET exists:', !!process.env.JWT_REFRESH_SECRET);
-
-
+    console.log('=== NEW GOOGLE SIGN IN CALLED ===');
+    
     try {
-      const { google_id, email, full_name, profile_picture, email_verified } =
-        req.body;
+      const { google_id, email, full_name, profile_picture, email_verified } = req.body;
 
-      // Validate required fields
       if (!google_id || !email) {
         return res.status(400).json({
           success: false,
@@ -24,11 +15,9 @@ console.log('JWT_REFRESH_SECRET exists:', !!process.env.JWT_REFRESH_SECRET);
         });
       }
 
-      // Check if user exists by Google ID
       let user = await googleAuthService.findUserByGoogleId(google_id);
 
       if (user) {
-        // Existing Google user - check if they have a user_type
         if (!user.user_type) {
           return res.json({
             success: true,
@@ -40,27 +29,16 @@ console.log('JWT_REFRESH_SECRET exists:', !!process.env.JWT_REFRESH_SECRET);
           });
         }
 
-        // User exists and has user_type - generate tokens and log them in
         const accessToken = jwt.sign(
           { userId: user.id, email: user.email },
           process.env.JWT_SECRET,
           { expiresIn: '1h' }
         );
 
-        const refreshToken = jwt.sign(
-          { userId: user.id },
-          process.env.JWT_REFRESH_SECRET,
-          { expiresIn: '7d' }
-        );
-
-        // Store refresh token
-        await refreshTokensService.createRefreshToken(user.id, refreshToken);
-
         return res.json({
           success: true,
           needs_user_type: false,
           token: accessToken,
-          refreshToken: refreshToken,
           user: {
             id: user.id,
             email: user.email,
@@ -72,18 +50,15 @@ console.log('JWT_REFRESH_SECRET exists:', !!process.env.JWT_REFRESH_SECRET);
         });
       }
 
-      // Check if user exists with this email (non-Google account)
       const existingUser = await googleAuthService.findUserByEmail(email);
 
       if (existingUser) {
-        // Link Google account to existing user
         user = await googleAuthService.linkGoogleAccount(
           existingUser.id,
           google_id,
           profile_picture
         );
 
-        // Check if they have user_type
         if (!user.user_type) {
           return res.json({
             success: true,
@@ -95,26 +70,16 @@ console.log('JWT_REFRESH_SECRET exists:', !!process.env.JWT_REFRESH_SECRET);
           });
         }
 
-        // Generate tokens
         const accessToken = jwt.sign(
           { userId: user.id, email: user.email },
           process.env.JWT_SECRET,
           { expiresIn: '1h' }
         );
 
-        const refreshToken = jwt.sign(
-          { userId: user.id },
-          process.env.JWT_REFRESH_SECRET,
-          { expiresIn: '7d' }
-        );
-
-        await refreshTokensService.createRefreshToken(user.id, refreshToken);
-
         return res.json({
           success: true,
           needs_user_type: false,
           token: accessToken,
-          refreshToken: refreshToken,
           user: {
             id: user.id,
             email: user.email,
@@ -126,7 +91,6 @@ console.log('JWT_REFRESH_SECRET exists:', !!process.env.JWT_REFRESH_SECRET);
         });
       }
 
-      // New user - create account
       user = await googleAuthService.createGoogleUser(
         google_id,
         email,
@@ -135,7 +99,6 @@ console.log('JWT_REFRESH_SECRET exists:', !!process.env.JWT_REFRESH_SECRET);
         email_verified
       );
 
-      // New user needs to select user_type
       return res.json({
         success: true,
         needs_user_type: true,
@@ -154,17 +117,13 @@ console.log('JWT_REFRESH_SECRET exists:', !!process.env.JWT_REFRESH_SECRET);
     }
   }
 
-  
-
-  /**
-   * Complete Google OAuth signup by setting user_type
-   * POST /api/auth/google/complete
-   */
   async completeGoogleSignup(req, res) {
+    console.log('=== COMPLETE GOOGLE SIGNUP (User Type) CALLED ===');
+    console.log('Request body:', req.body);
+    
     try {
       const { google_id, user_type } = req.body;
 
-      // Validate required fields
       if (!google_id || !user_type) {
         return res.status(400).json({
           success: false,
@@ -172,7 +131,6 @@ console.log('JWT_REFRESH_SECRET exists:', !!process.env.JWT_REFRESH_SECRET);
         });
       }
 
-      // Validate user_type
       const validUserTypes = ['athlete', 'coach', 'organization'];
       if (!validUserTypes.includes(user_type)) {
         return res.status(400).json({
@@ -181,7 +139,6 @@ console.log('JWT_REFRESH_SECRET exists:', !!process.env.JWT_REFRESH_SECRET);
         });
       }
 
-      // Update user with selected user_type
       const user = await googleAuthService.updateUserType(google_id, user_type);
 
       if (!user) {
@@ -191,26 +148,10 @@ console.log('JWT_REFRESH_SECRET exists:', !!process.env.JWT_REFRESH_SECRET);
         });
       }
 
-      // Generate tokens
-      const accessToken = jwt.sign(
-        { userId: user.id, email: user.email },
-        process.env.JWT_SECRET,
-        { expiresIn: '1h' }
-      );
-
-      const refreshToken = jwt.sign(
-        { userId: user.id },
-        process.env.JWT_REFRESH_SECRET,
-        { expiresIn: '7d' }
-      );
-
-      // Store refresh token
-      await refreshTokensService.createRefreshToken(user.id, refreshToken);
-
+      // DON'T generate token yet - user still needs to complete profile
       return res.json({
         success: true,
-        token: accessToken,
-        refreshToken: refreshToken,
+        needs_profile_completion: true,
         user: {
           id: user.id,
           email: user.email,
@@ -225,6 +166,89 @@ console.log('JWT_REFRESH_SECRET exists:', !!process.env.JWT_REFRESH_SECRET);
       return res.status(500).json({
         success: false,
         message: 'Failed to complete Google signup',
+        error: error.message,
+      });
+    }
+  }
+
+  async completeGoogleProfile(req, res) {
+    console.log('=== COMPLETE GOOGLE PROFILE CALLED ===');
+    console.log('Request body:', req.body);
+    
+    try {
+      const {
+        google_id,
+        sports_played,
+        primary_sport,
+        company_name,
+        designation,
+      } = req.body;
+
+      if (!google_id) {
+        return res.status(400).json({
+          success: false,
+          message: 'Google ID is required',
+        });
+      }
+
+      const user = await googleAuthService.findUserByGoogleId(google_id);
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found',
+        });
+      }
+
+      // Update user profile based on user_type
+      let updateData = {};
+      
+      if (user.user_type === 'coach') {
+        updateData = { 
+          sports_played: sports_played || null, 
+          primary_sport: primary_sport || null 
+        };
+      } else if (user.user_type === 'organization') {
+        updateData = { 
+          company_name: company_name || null, 
+          designation: designation || null 
+        };
+      }
+
+      // Update the user profile
+      const updatedUser = await googleAuthService.updateUserProfile(
+        google_id,
+        updateData
+      );
+
+      // NOW generate the token after profile is complete
+      const accessToken = jwt.sign(
+        { userId: updatedUser.id, email: updatedUser.email },
+        process.env.JWT_SECRET,
+        { expiresIn: '1h' }
+      );
+
+      return res.json({
+        success: true,
+        token: accessToken,
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          full_name: updatedUser.full_name,
+          user_type: updatedUser.user_type,
+          profile_picture: updatedUser.profile_picture,
+          google_id: updatedUser.google_id,
+          sports_played: updatedUser.sports_played,
+          primary_sport: updatedUser.primary_sport,
+          company_name: updatedUser.company_name,
+          designation: updatedUser.designation,
+        },
+      });
+    } catch (error) {
+      console.error('Complete Google profile error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to complete profile',
         error: error.message,
       });
     }

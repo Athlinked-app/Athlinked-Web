@@ -1,90 +1,136 @@
 const refreshTokensModel = require('./refresh-tokens.model');
-const { generateAccessToken, generateRefreshToken } = require('../utils/jwt');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
-/**
- * Create and store a refresh token for a user
- * @param {object} user - User object
- * @param {string} deviceInfo - Optional device information
- * @param {string} ipAddress - Optional IP address
- * @returns {Promise<object>} Object with accessToken and refreshToken
- */
-async function createTokenPair(user, deviceInfo = null, ipAddress = null) {
-  const accessToken = generateAccessToken(user);
-  const refreshToken = generateRefreshToken(user);
+class RefreshTokensService {
+  /**
+   * Create access and refresh token pair
+   */
+  async createTokenPair(userData, userAgent = null, ipAddress = null) {
+    try {
+      // Generate access token (JWT)
+      const accessToken = jwt.sign(
+        {
+          id: userData.id,
+          email: userData.email || null,
+          username: userData.username || null,
+          user_type: userData.user_type || null,
+          type: 'access',
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || '15m' }
+      );
 
-  // Calculate expiration (7 days from now)
-  const expiresAt = new Date();
-  expiresAt.setDate(expiresAt.getDate() + 7);
+      // Generate refresh token (random string)
+      const refreshToken = crypto.randomBytes(64).toString('hex');
 
-  // Store refresh token in database
-  await refreshTokensModel.storeRefreshToken(
-    user.id,
-    refreshToken,
-    expiresAt,
-    deviceInfo,
-    ipAddress
-  );
+      // Calculate expiration date
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // 7 days from now
 
-  return {
-    accessToken,
-    refreshToken,
-  };
-}
+      // Store refresh token in database using model
+      await refreshTokensModel.storeRefreshToken(
+        userData.id,
+        refreshToken,
+        expiresAt,
+        userAgent,
+        ipAddress
+      );
 
-/**
- * Refresh access token using refresh token
- * @param {string} refreshTokenString - Refresh token string
- * @param {object} user - User object from database
- * @returns {Promise<object>} New access token and optionally new refresh token
- */
-async function refreshAccessToken(refreshTokenString, user) {
-  // Verify refresh token exists and is valid
-  const storedToken =
-    await refreshTokensModel.findRefreshToken(refreshTokenString);
-
-  if (!storedToken) {
-    throw new Error('Invalid or expired refresh token');
+      return { accessToken, refreshToken };
+    } catch (error) {
+      console.error('Error creating token pair:', error);
+      throw error;
+    }
   }
 
-  // Verify token belongs to the user
-  if (storedToken.user_id !== user.id) {
-    throw new Error('Refresh token does not belong to user');
+  /**
+   * Create/store refresh token for user (for backward compatibility with Google OAuth)
+   */
+  async createRefreshToken(userId, token) {
+    try {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+
+      const result = await refreshTokensModel.storeRefreshToken(
+        userId,
+        token,
+        expiresAt
+      );
+      return result;
+    } catch (error) {
+      console.error('Error creating refresh token:', error);
+      throw error;
+    }
   }
 
-  // Generate new access token
-  const accessToken = generateAccessToken(user);
+  /**
+   * Refresh access token using refresh token
+   */
+  async refreshAccessToken(refreshToken, userData) {
+    try {
+      // Verify token exists and is valid using model
+      const storedToken = await refreshTokensModel.findRefreshToken(refreshToken);
 
-  // Optionally rotate refresh token (for better security)
-  // For now, we'll keep the same refresh token
-  // You can implement token rotation if needed
+      if (!storedToken) {
+        throw new Error('Invalid or expired refresh token');
+      }
 
-  return {
-    accessToken,
-    refreshToken: refreshTokenString, // Keep same refresh token
-  };
+      // Generate new access token
+      const accessToken = jwt.sign(
+        {
+          id: userData.id,
+          email: userData.email || null,
+          username: userData.username || null,
+          user_type: userData.user_type || null,
+          type: 'access',
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN || '15m' }
+      );
+
+      return { accessToken };
+    } catch (error) {
+      console.error('Error refreshing access token:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Revoke refresh token
+   */
+  async revokeToken(token) {
+    try {
+      await refreshTokensModel.revokeRefreshToken(token);
+    } catch (error) {
+      console.error('Error revoking token:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Revoke all tokens for a user
+   */
+  async revokeAllUserTokens(userId) {
+    try {
+      await refreshTokensModel.revokeAllUserTokens(userId);
+    } catch (error) {
+      console.error('Error revoking all user tokens:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Find refresh token
+   */
+  async findRefreshToken(token) {
+    try {
+      return await refreshTokensModel.findRefreshToken(token);
+    } catch (error) {
+      console.error('Error finding refresh token:', error);
+      throw error;
+    }
+  }
 }
 
-/**
- * Revoke a refresh token (logout)
- * @param {string} refreshTokenString - Refresh token string
- * @returns {Promise<boolean>} True if token was revoked
- */
-async function revokeToken(refreshTokenString) {
-  return await refreshTokensModel.revokeRefreshToken(refreshTokenString);
-}
-
-/**
- * Revoke all tokens for a user (logout from all devices)
- * @param {string} userId - User ID
- * @returns {Promise<number>} Number of tokens revoked
- */
-async function revokeAllUserTokens(userId) {
-  return await refreshTokensModel.revokeAllUserTokens(userId);
-}
-
-module.exports = {
-  createTokenPair,
-  refreshAccessToken,
-  revokeToken,
-  revokeAllUserTokens,
-};
+module.exports = new RefreshTokensService();

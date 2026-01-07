@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const refreshTokensController = require('./refresh-tokens.controller');
-const googleAuthController = require('./google-auth.controller'); // NEW
+const googleAuthController = require('./google-auth-new.controller');
 
 /**
  * @swagger
@@ -41,13 +41,13 @@ const googleAuthController = require('./google-auth.controller'); // NEW
  *       200:
  *         description: Google sign-in successful
  */
-router.post('/google', googleAuthController.googleSignIn); // NEW
+router.post('/google', googleAuthController.googleSignIn);
 
 /**
  * @swagger
  * /api/auth/google/complete:
  *   post:
- *     summary: Complete Google OAuth signup
+ *     summary: Complete Google OAuth signup - Set user type
  *     description: Set user type after Google sign-in
  *     tags: [Authentication]
  *     security: []
@@ -70,9 +70,49 @@ router.post('/google', googleAuthController.googleSignIn); // NEW
  *                 example: "athlete"
  *     responses:
  *       200:
- *         description: Signup completed successfully
+ *         description: User type set successfully
  */
-router.post('/google/complete', googleAuthController.completeGoogleSignup); // NEW
+router.post('/google/complete', googleAuthController.completeGoogleSignup);
+
+/**
+ * @swagger
+ * /api/auth/google/complete-profile:
+ *   post:
+ *     summary: Complete Google OAuth profile
+ *     description: Add additional profile information after user type selection
+ *     tags: [Authentication]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - google_id
+ *             properties:
+ *               google_id:
+ *                 type: string
+ *                 example: "1234567890"
+ *               sports_played:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["Basketball", "Football"]
+ *               primary_sport:
+ *                 type: string
+ *                 example: "Basketball"
+ *               company_name:
+ *                 type: string
+ *                 example: "Sports Academy Inc"
+ *               designation:
+ *                 type: string
+ *                 example: "Director"
+ *     responses:
+ *       200:
+ *         description: Profile completed successfully, returns JWT token
+ */
+router.post('/google/complete-profile', googleAuthController.completeGoogleProfile);
 
 router.post('/refresh', refreshTokensController.refreshToken);
 router.post('/logout', refreshTokensController.logout);

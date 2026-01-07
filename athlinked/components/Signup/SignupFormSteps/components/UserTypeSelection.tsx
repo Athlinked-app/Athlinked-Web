@@ -5,32 +5,31 @@ interface UserTypeSelectionProps {
   selectedUserType: string;
   onUserTypeSelect: (type: string) => void;
   onContinue: () => void;
-  onGoogleSignIn?: (userData: any) => void; // NEW
+  onGoogleSignIn?: (userData: any) => void;
 }
 
 export default function UserTypeSelection({
   selectedUserType,
   onUserTypeSelect,
   onContinue,
-  onGoogleSignIn, // NEW
+  onGoogleSignIn,
 }: UserTypeSelectionProps) {
-  // NEW - Google Sign-In state
   const [showGoogleUserTypeModal, setShowGoogleUserTypeModal] = useState(false);
   const [googleUserData, setGoogleUserData] = useState<any>(null);
 
-  // NEW - Handle Google Sign-In success
-  const handleGoogleSuccess = (userData: any) => {
-    console.log('Google sign-in response:', userData);
+  const handleGoogleSuccess = (data: any) => {
+    console.log('Google sign-in response:', data);
 
-    if (userData.needs_user_type) {
-      setGoogleUserData(userData);
+    if (data.needs_user_type) {
+      // Show modal to select user type
+      setGoogleUserData(data);
       setShowGoogleUserTypeModal(true);
     } else {
-      onGoogleSignIn?.(userData);
+      // User already has type, pass to parent
+      onGoogleSignIn?.(data);
     }
   };
 
-  // NEW - Handle user type selection for Google users
   const handleGoogleUserTypeSubmit = async (userType: string) => {
     try {
       const response = await fetch(
@@ -51,7 +50,15 @@ export default function UserTypeSelection({
 
       if (data.success) {
         setShowGoogleUserTypeModal(false);
-        onGoogleSignIn?.(data);
+
+        // Pass data to parent WITHOUT redirecting
+        onGoogleSignIn?.({
+          ...data,
+          user: {
+            ...data.user,
+            user_type: userType,
+          }
+        });
       } else {
         alert(data.message || 'Failed to complete signup');
       }
@@ -62,196 +69,196 @@ export default function UserTypeSelection({
   };
 
   return (
-    <>
-      {!selectedUserType && (
-        <>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-            Let's Get Started!
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">
-            Join AthLinked for free and start showcasing your talent today!
-          </p>
-        </>
-      )}
+    <div>
+      <div className="mb-6">
+        <h2 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-900">
+          Join as
+        </h2>
+        <p className="text-sm sm:text-base text-gray-600">
+          Choose your role to get started
+        </p>
+      </div>
 
-      {/* NEW - Google Sign-In Button (only show when no user type selected) */}
-      {!selectedUserType && (
-        <>
-          <div className="mb-6">
-            <GoogleSignInButton
-              onSuccess={handleGoogleSuccess}
-              onError={error => console.error('Google sign-in error:', error)}
-            />
-          </div>
-
-          {/* Divider */}
-          <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-xs sm:text-sm">
-              <span className="px-2 bg-white text-gray-500">
-                Or continue with email
-              </span>
-            </div>
-          </div>
-        </>
-      )}
-
-      <div className="space-y-3 sm:space-y-4 mb-6 sm:mb-8">
-        <label
-          className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 border-2 rounded-xl cursor-pointer transition-colors ${
+      <div className="space-y-3 mb-6">
+        {/* Athlete Card */}
+        <div
+          onClick={() => onUserTypeSelect('athlete')}
+          className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
             selectedUserType === 'athlete'
-              ? 'border-yellow-500 bg-yellow-50'
-              : 'border-gray-200 hover:border-gray-300'
+              ? 'border-[#CB9729] bg-[#FFF8E7]'
+              : 'border-gray-200 hover:border-[#CB9729] hover:bg-gray-50'
           }`}
         >
-          <input
-            type="radio"
-            name="userType"
-            value="athlete"
-            checked={selectedUserType === 'athlete'}
-            onChange={e => onUserTypeSelect(e.target.value)}
-            className="mt-1 w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 focus:ring-yellow-500"
-          />
-          <div>
-            <div className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">
-              Athlete
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-1">
+              <svg
+                className="w-6 h-6 text-[#CB9729]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
             </div>
-            <div className="text-xs sm:text-sm text-gray-600">
-              Chase your dreams, push your limits, and showcase your talent
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-900 mb-1">
+                I'm an Athlete
+              </h3>
+              <p className="text-sm text-gray-600">
+                Showcase your skills, connect with coaches, and grow your sports
+                career
+              </p>
             </div>
           </div>
-        </label>
+        </div>
 
-        <label
-          className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 border-2 rounded-xl cursor-pointer transition-colors ${
+        {/* Coach Card */}
+        <div
+          onClick={() => onUserTypeSelect('coach')}
+          className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
             selectedUserType === 'coach'
-              ? 'border-yellow-500 bg-yellow-50'
-              : 'border-gray-200 hover:border-gray-300'
+              ? 'border-[#CB9729] bg-[#FFF8E7]'
+              : 'border-gray-200 hover:border-[#CB9729] hover:bg-gray-50'
           }`}
         >
-          <input
-            type="radio"
-            name="userType"
-            value="coach"
-            checked={selectedUserType === 'coach'}
-            onChange={e => onUserTypeSelect(e.target.value)}
-            className="mt-1 w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 focus:ring-yellow-500"
-          />
-          <div>
-            <div className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">
-              Coach/Recruiter
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-1">
+              <svg
+                className="w-6 h-6 text-[#CB9729]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+                />
+              </svg>
             </div>
-            <div className="text-xs sm:text-sm text-gray-600">
-              Inspire athletes, shape champions, and leave a lasting impact.
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-900 mb-1">I'm a Coach</h3>
+              <p className="text-sm text-gray-600">
+                Find talented athletes, manage your team, and build your coaching
+                network
+              </p>
             </div>
           </div>
-        </label>
+        </div>
 
-        <label
-          className={`flex items-start gap-3 sm:gap-4 p-3 sm:p-4 border-2 rounded-xl cursor-pointer transition-colors ${
+        {/* Organization Card */}
+        <div
+          onClick={() => onUserTypeSelect('organization')}
+          className={`p-4 border-2 rounded-xl cursor-pointer transition-all ${
             selectedUserType === 'organization'
-              ? 'border-yellow-500 bg-yellow-50'
-              : 'border-gray-200 hover:border-gray-300'
+              ? 'border-[#CB9729] bg-[#FFF8E7]'
+              : 'border-gray-200 hover:border-[#CB9729] hover:bg-gray-50'
           }`}
         >
-          <input
-            type="radio"
-            name="userType"
-            value="organization"
-            checked={selectedUserType === 'organization'}
-            onChange={e => onUserTypeSelect(e.target.value)}
-            className="mt-1 w-4 h-4 sm:w-5 sm:h-5 text-yellow-500 focus:ring-yellow-500"
-          />
-          <div>
-            <div className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">
-              Organization
+          <div className="flex items-start gap-3">
+            <div className="flex-shrink-0 mt-1">
+              <svg
+                className="w-6 h-6 text-[#CB9729]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                />
+              </svg>
             </div>
-            <div className="text-xs sm:text-sm text-gray-600">
-              Empower teams, discover rising stars, and build a legacy of
-              success.
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-900 mb-1">
+                I'm an Organization
+              </h3>
+              <p className="text-sm text-gray-600">
+                Connect with athletes and coaches, organize events, and expand
+                your reach
+              </p>
             </div>
           </div>
-        </label>
+        </div>
       </div>
 
       <button
         onClick={onContinue}
         disabled={!selectedUserType}
-        className="w-full bg-[#CB9729] text-gray-800 font-medium py-3 rounded-lg transition-all mb-4 sm:mb-6 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full bg-[#CB9729] text-white py-3 rounded-lg font-medium hover:bg-[#B8861F] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed mb-4"
       >
         Continue
       </button>
 
-      {!selectedUserType && (
-        <>
-          <div className="text-center text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
-            Or
-          </div>
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-gray-300"></div>
+        </div>
+        <div className="relative flex justify-center text-sm">
+          <span className="px-2 bg-white text-gray-500">Or</span>
+        </div>
+      </div>
 
-          <div className="text-center text-xs sm:text-sm text-gray-600">
-            <span className="text-gray-700">Already have an account? </span>
-            <a href="#" className="text-[#CB9729] font-medium hover:underline">
-              Sign in
-            </a>
-          </div>
-        </>
-      )}
+      <GoogleSignInButton
+        onSuccess={handleGoogleSuccess}
+        buttonText="Continue with Google"
+      />
 
-      {/* NEW - Google User Type Selection Modal */}
+      {/* Google User Type Selection Modal */}
       {showGoogleUserTypeModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold mb-2">Welcome to AthLinked!</h3>
+            <h3 className="text-xl font-bold mb-4 text-gray-900">
+              Select Your Role
+            </h3>
             <p className="text-gray-600 mb-6">
-              Please select your account type to get started
+              To complete your signup, please select your role:
             </p>
 
-            <div className="space-y-3 mb-6">
+            <div className="space-y-3">
               <button
                 onClick={() => handleGoogleUserTypeSubmit('athlete')}
-                className="w-full p-4 rounded-lg border-2 border-gray-200 hover:border-yellow-500 hover:bg-yellow-50 text-left transition-all"
+                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-[#CB9729] hover:bg-[#FFF8E7] transition-all text-left"
               >
-                <div className="font-semibold text-gray-900">Athlete</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Chase your dreams, push your limits, and showcase your talent
+                <div className="font-semibold text-gray-900 mb-1">Athlete</div>
+                <div className="text-sm text-gray-600">
+                  Showcase skills and connect with coaches
                 </div>
               </button>
 
               <button
                 onClick={() => handleGoogleUserTypeSubmit('coach')}
-                className="w-full p-4 rounded-lg border-2 border-gray-200 hover:border-yellow-500 hover:bg-yellow-50 text-left transition-all"
+                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-[#CB9729] hover:bg-[#FFF8E7] transition-all text-left"
               >
-                <div className="font-semibold text-gray-900">
-                  Coach/Recruiter
-                </div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Inspire athletes, shape champions, and leave a lasting impact
+                <div className="font-semibold text-gray-900 mb-1">Coach</div>
+                <div className="text-sm text-gray-600">
+                  Find athletes and manage your team
                 </div>
               </button>
 
               <button
                 onClick={() => handleGoogleUserTypeSubmit('organization')}
-                className="w-full p-4 rounded-lg border-2 border-gray-200 hover:border-yellow-500 hover:bg-yellow-50 text-left transition-all"
+                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-[#CB9729] hover:bg-[#FFF8E7] transition-all text-left"
               >
-                <div className="font-semibold text-gray-900">Organization</div>
-                <div className="text-sm text-gray-600 mt-1">
-                  Empower teams, discover rising stars, and build a legacy of
-                  success
+                <div className="font-semibold text-gray-900 mb-1">
+                  Organization
+                </div>
+                <div className="text-sm text-gray-600">
+                  Connect with athletes and organize events
                 </div>
               </button>
             </div>
-
-            <button
-              onClick={() => setShowGoogleUserTypeModal(false)}
-              className="w-full text-gray-600 text-sm hover:text-gray-800"
-            >
-              Cancel
-            </button>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
