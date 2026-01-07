@@ -1,16 +1,26 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import SignupHero from '@/components/Signup/SignupHero';
 import ProgressStepper from '@/components/Signup/ProgressStepper';
 import SignupFormSteps from '@/components/Signup/SignupFormSteps';
+import { isAuthenticated } from '@/utils/auth';
 
 export default function SignupPage() {
+  const router = useRouter();
   const [selectedUserType, setSelectedUserType] = useState<string>('');
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoadingOTP, setIsLoadingOTP] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated()) {
+      router.push('/home');
+    }
+  }, [router]);
 
   // Form data
   const [formData, setFormData] = useState({
@@ -41,6 +51,20 @@ export default function SignupPage() {
   // Get current steps based on selection
   const currentSteps =
     selectedUserType === 'athlete' ? athleteSteps : otherSteps;
+
+  // GOOGLE SIGN-IN HANDLER - NEW
+  const handleGoogleSignIn = (userData: any) => {
+    console.log('Google sign-in successful:', userData);
+    
+    // Store authentication token
+    if (userData.token) {
+      localStorage.setItem('auth_token', userData.token);
+      localStorage.setItem('user', JSON.stringify(userData.user));
+    }
+    
+    // Redirect to dashboard
+    router.push('/dashboard');
+  };
 
   const handleContinue = async () => {
     // Determine OTP step based on user type
@@ -164,6 +188,7 @@ export default function SignupPage() {
             onToggleConfirmPassword={() =>
               setShowConfirmPassword(!showConfirmPassword)
             }
+            onGoogleSignIn={handleGoogleSignIn}
           />
         </div>
       </div>

@@ -136,6 +136,3 @@ export default function Event({
     </>
   );
 }
-
-
-

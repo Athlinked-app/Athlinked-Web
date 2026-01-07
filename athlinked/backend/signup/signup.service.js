@@ -350,6 +350,21 @@ async function deleteAccountService(userId) {
       throw new Error('User not found');
     }
 
+    // Store deleted account information before deletion
+    const deletedAccountsModel = require('./deleted-accounts.model');
+    try {
+      await deletedAccountsModel.storeDeletedAccount({
+        email: user.email,
+        username: user.username,
+        full_name: user.full_name,
+        user_type: user.user_type,
+        deleted_at: new Date(),
+      });
+    } catch (storeError) {
+      console.error('Error storing deleted account data:', storeError);
+      // Continue with deletion even if storing fails
+    }
+
     // Delete user from database
     const deleted = await signupModel.deleteUser(userId);
     

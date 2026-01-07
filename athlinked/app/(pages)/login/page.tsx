@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import SignupHero from '@/components/Signup/SignupHero';
-import { getToken, getRefreshToken, refreshAccessToken } from '@/utils/api';
+import { isAuthenticated } from '@/utils/auth';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,140 +13,100 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [passwordError, setPasswordError] = useState('');
+  const [showDeletedAccountToast, setShowDeletedAccountToast] = useState(false);
 
-  // Check if user is already logged in on component mount
+  // Redirect if already authenticated (unless just logged out)
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Check if we just logged out - if so, clear the flag and show login form
-        // This prevents auto-redirect after logout
-        if (typeof window !== 'undefined') {
-          const justLoggedOut = localStorage.getItem('justLoggedOut');
-          if (justLoggedOut === 'true') {
-            localStorage.removeItem('justLoggedOut');
-            // Clear any remaining tokens just to be safe
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            setCheckingAuth(false);
-            return; // Show login form, don't try to redirect or refresh
-          }
-        }
+    const justLoggedOut = localStorage.getItem('justLoggedOut');
+    if (justLoggedOut) {
+      localStorage.removeItem('justLoggedOut');
+      return; // Don't redirect if user just logged out
+    }
 
-        const token = getToken();
-        const refreshToken = getRefreshToken();
-
-        // If no tokens at all, user is not logged in - show login form
-        if (!token && !refreshToken) {
-          setCheckingAuth(false);
-          return;
-        }
-
-        // If access token exists, check if it's valid
-        if (token) {
-          try {
-            const decoded = JSON.parse(atob(token.split('.')[1]));
-            const currentTime = Math.floor(Date.now() / 1000);
-            
-            // Only redirect if token is valid and not expired
-            if (decoded.exp && decoded.exp > currentTime) {
-              // Token is valid, redirect to home
-              router.push('/home');
-              return;
-            }
-          } catch (error) {
-            // Token decode failed, treat as invalid
-            console.log('Token decode failed, showing login form');
-            setCheckingAuth(false);
-            return;
-          }
-        }
-
-        // If access token is expired or doesn't exist, but refresh token exists
-        // Only try to refresh if we have a refresh token AND no valid access token
-        if (refreshToken) {
-          // Check if access token is expired or missing
-          let shouldRefresh = true;
-          if (token) {
-            try {
-              const decoded = JSON.parse(atob(token.split('.')[1]));
-              const currentTime = Math.floor(Date.now() / 1000);
-              // If token is still valid, don't refresh
-              if (decoded.exp && decoded.exp > currentTime) {
-                shouldRefresh = false;
-                router.push('/home');
-                return;
-              }
-            } catch (error) {
-              // Token decode failed, proceed with refresh attempt
-            }
-          }
-
-          if (shouldRefresh) {
-            try {
-              // Try to refresh the token
-              const newToken = await refreshAccessToken();
-              if (newToken) {
-                // Successfully refreshed, redirect to home
-                router.push('/home');
-                return;
-              } else {
-                // Refresh returned null - token was invalid or expired
-                // Clear any remaining tokens and show login form
-                if (typeof window !== 'undefined') {
-                  localStorage.removeItem('accessToken');
-                  localStorage.removeItem('refreshToken');
-                }
-                setCheckingAuth(false);
-                return;
-              }
-            } catch (error) {
-              // Refresh failed with an error - clear tokens and show login form
-              console.log('Token refresh error, clearing tokens and showing login form');
-              if (typeof window !== 'undefined') {
-                localStorage.removeItem('accessToken');
-                localStorage.removeItem('refreshToken');
-              }
-              setCheckingAuth(false);
-              return;
-            }
-          }
-        }
-
-        // If we get here, no valid tokens - show login form
-        setCheckingAuth(false);
-      } catch (error) {
-        console.error('Error checking authentication:', error);
-        // On error, show login form instead of redirecting
-        setCheckingAuth(false);
-      }
-    };
-
-    // Add a small delay to ensure localStorage is updated after logout
-    const timer = setTimeout(() => {
-      checkAuth();
-    }, 100);
-
-    return () => clearTimeout(timer);
+    if (isAuthenticated()) {
+      router.push('/home');
+    }
   }, [router]);
+
+  const validatePassword = (password: string): string => {
+    if (!password) {
+      return 'Password is required';
+    }
+    
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters';
+    }
+    if (password.length > 12) {
+      return 'Password must be no more than 12 characters';
+    }
+
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+    const missingRequirements = [];
+    if (!hasUpperCase) missingRequirements.push('1 uppercase letter');
+    if (!hasLowerCase) missingRequirements.push('1 lowercase letter');
+    if (!hasNumber) missingRequirements.push('1 number');
+    if (!hasSpecialChar) missingRequirements.push('1 special character');
+
+    if (missingRequirements.length > 0) {
+      return `Password must contain: ${missingRequirements.join(', ')}`;
+    }
+
+    return '';
+  };
+
+  const handlePasswordChange = (value: string) => {
+    setPassword(value);
+    if (value) {
+      setPasswordError(validatePassword(value));
+    } else {
+      setPasswordError('');
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    
+    // Validate password before submitting
+    const passwordValidationError = validatePassword(password);
+    if (passwordValidationError) {
+      setPasswordError(passwordValidationError);
+      return;
+    }
+    
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: identifier, password }), // Backend still expects 'email' field
-      });
+      const response = await fetch(
+        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/login',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email: identifier, password }), // Backend still expects 'email' field
+        }
+      );
 
       const data = await response.json();
 
       if (!data.success) {
+        // Check if account was recently deleted
+        if (data.message === 'ACCOUNT_DELETED_RECENTLY' || data.error?.includes('deleted recently')) {
+          setShowDeletedAccountToast(true);
+          setLoading(false);
+          // Auto-hide toast after 5 seconds
+          setTimeout(() => {
+            setShowDeletedAccountToast(false);
+          }, 5000);
+          return;
+        }
+        
         setError(
           data.message || 'Login failed. Please check your credentials.'
         );
@@ -271,9 +231,13 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={e => setPassword(e.target.value)}
+                  onChange={e => handlePasswordChange(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent pr-12 text-black"
+                  className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent pr-12 text-black ${
+                    passwordError
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
+                  }`}
                   placeholder="Enter your password"
                   disabled={loading}
                 />
@@ -290,6 +254,9 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+              {passwordError && (
+                <p className="mt-1 text-xs text-red-600">{passwordError}</p>
+              )}
             </div>
 
             {/* Submit Button */}
@@ -326,6 +293,50 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+
+      {/* Deleted Account Toast */}
+      {showDeletedAccountToast && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top-2">
+          <div className="bg-red-50 border border-red-200 rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 min-w-[300px] max-w-md">
+            <div className="flex-shrink-0">
+              <svg
+                className="w-5 h-5 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+            <p className="text-sm font-medium text-red-800 flex-1">
+              This account was deleted recently. Please create a new account to continue.
+            </p>
+            <button
+              onClick={() => setShowDeletedAccountToast(false)}
+              className="flex-shrink-0 text-red-600 hover:text-red-800"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
