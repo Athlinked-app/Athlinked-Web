@@ -133,4 +133,13 @@ class RefreshTokensService {
   }
 }
 
-module.exports = new RefreshTokensService();
+const refreshTokensServiceInstance = new RefreshTokensService();
+
+// Export the instance and also attach bound methods to ensure compatibility
+module.exports = refreshTokensServiceInstance;
+module.exports.createRefreshToken = refreshTokensServiceInstance.createRefreshToken.bind(refreshTokensServiceInstance);
+module.exports.createTokenPair = refreshTokensServiceInstance.createTokenPair.bind(refreshTokensServiceInstance);
+module.exports.refreshAccessToken = refreshTokensServiceInstance.refreshAccessToken.bind(refreshTokensServiceInstance);
+module.exports.revokeToken = refreshTokensServiceInstance.revokeToken.bind(refreshTokensServiceInstance);
+module.exports.revokeAllUserTokens = refreshTokensServiceInstance.revokeAllUserTokens.bind(refreshTokensServiceInstance);
+module.exports.findRefreshToken = refreshTokensServiceInstance.findRefreshToken.bind(refreshTokensServiceInstance);
