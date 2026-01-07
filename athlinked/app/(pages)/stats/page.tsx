@@ -303,11 +303,18 @@ export default function StatsPage() {
           message?: string;
         }>(`/positions/${selectedPosition.id}/fields`);
 
-        if (fieldsData.success && fieldsData.fields && fieldsData.fields.length > 0) {
+        if (
+          fieldsData.success &&
+          fieldsData.fields &&
+          fieldsData.fields.length > 0
+        ) {
           setAvailableFields(fieldsData.fields);
         } else {
           // Fallback to hardcoded fields if API returns no fields
-          const fallbackFields = getFieldsForPosition(activeSport, formData.position);
+          const fallbackFields = getFieldsForPosition(
+            activeSport,
+            formData.position
+          );
           if (fallbackFields.length > 0) {
             // Convert hardcoded field names to field objects that match API format
             const fieldObjects = fallbackFields.map((fieldLabel, index) => ({
@@ -329,7 +336,10 @@ export default function StatsPage() {
       } catch (error) {
         console.error('Error fetching fields:', error);
         // Fallback to hardcoded fields on error
-        const fallbackFields = getFieldsForPosition(activeSport, formData.position);
+        const fallbackFields = getFieldsForPosition(
+          activeSport,
+          formData.position
+        );
         if (fallbackFields.length > 0) {
           const fieldObjects = fallbackFields.map((fieldLabel, index) => ({
             field_id: `fallback-${index}`,
@@ -484,7 +494,9 @@ export default function StatsPage() {
 
     // Filter out profiles with no stats or only Year field
     return profiles.filter(profile => {
-      const statsWithoutYear = profile.stats.filter(s => s.field_label !== 'Year');
+      const statsWithoutYear = profile.stats.filter(
+        s => s.field_label !== 'Year'
+      );
       return statsWithoutYear.length > 0;
     });
   };
@@ -1191,38 +1203,66 @@ export default function StatsPage() {
                     }>(`/positions/${position.id}/fields`);
 
                     // If no fields from API, try to use fallback and match with database
-                    if (!fieldsData.success || !fieldsData.fields || fieldsData.fields.length === 0) {
-                      const fallbackFields = getFieldsForPosition(activeSport, formData.position);
+                    if (
+                      !fieldsData.success ||
+                      !fieldsData.fields ||
+                      fieldsData.fields.length === 0
+                    ) {
+                      const fallbackFields = getFieldsForPosition(
+                        activeSport,
+                        formData.position
+                      );
                       if (fallbackFields.length > 0) {
                         // Re-fetch fields one more time (in case they were just added)
                         const retryFieldsData = await apiGet<{
                           success: boolean;
                           fields?: any[];
                         }>(`/positions/${position.id}/fields`);
-                        
-                        if (retryFieldsData.success && retryFieldsData.fields && retryFieldsData.fields.length > 0) {
+
+                        if (
+                          retryFieldsData.success &&
+                          retryFieldsData.fields &&
+                          retryFieldsData.fields.length > 0
+                        ) {
                           // Match fallback fields with database fields by label
-                          const matchedFields = fallbackFields.map(fallbackLabel => {
-                            const dbField = retryFieldsData.fields?.find(
-                              (f: any) => f.field_label.toLowerCase().trim() === fallbackLabel.toLowerCase().trim()
-                            );
-                            return dbField || null;
-                          }).filter(Boolean);
-                          
+                          const matchedFields = fallbackFields
+                            .map(fallbackLabel => {
+                              const dbField = retryFieldsData.fields?.find(
+                                (f: any) =>
+                                  f.field_label.toLowerCase().trim() ===
+                                  fallbackLabel.toLowerCase().trim()
+                              );
+                              return dbField || null;
+                            })
+                            .filter(Boolean);
+
                           if (matchedFields.length > 0) {
-                            fieldsData = { success: true, fields: matchedFields };
+                            fieldsData = {
+                              success: true,
+                              fields: matchedFields,
+                            };
                           } else {
                             // No matches found - fields don't exist in database
-                            console.warn(`No matching database fields found for position "${formData.position}". Fields need to be added to the database.`);
-                            throw new Error(`No database fields configured for position "${formData.position}". Please contact support to add fields for this position.`);
+                            console.warn(
+                              `No matching database fields found for position "${formData.position}". Fields need to be added to the database.`
+                            );
+                            throw new Error(
+                              `No database fields configured for position "${formData.position}". Please contact support to add fields for this position.`
+                            );
                           }
                         } else {
                           // No fields in database at all
-                          console.warn(`No database fields found for position "${formData.position}". Fields need to be added to the database.`);
-                          throw new Error(`No database fields configured for position "${formData.position}". Please contact support to add fields for this position.`);
+                          console.warn(
+                            `No database fields found for position "${formData.position}". Fields need to be added to the database.`
+                          );
+                          throw new Error(
+                            `No database fields configured for position "${formData.position}". Please contact support to add fields for this position.`
+                          );
                         }
                       } else {
-                        throw new Error(`No fields available for position "${formData.position}"`);
+                        throw new Error(
+                          `No fields available for position "${formData.position}"`
+                        );
                       }
                     }
 
