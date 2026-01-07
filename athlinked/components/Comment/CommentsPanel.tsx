@@ -119,7 +119,14 @@ export default function CommentsPanel({
     return comments.filter(c => c.parent_comment_id === commentId).length;
   };
 
-  const handleAddComment = async () => {
+  const handleAddComment = async (
+    e?: React.MouseEvent | React.KeyboardEvent
+  ) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     if (!commentText.trim()) return;
 
     setIsLoading(true);
@@ -141,11 +148,16 @@ export default function CommentsPanel({
           onCommentAdded();
         }
       } else {
+        console.error('Comment failed:', result.message);
         alert(result.message || 'Failed to add comment');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding comment:', error);
-      alert('Failed to add comment. Please try again.');
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to add comment. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -159,7 +171,15 @@ export default function CommentsPanel({
     }, 100);
   };
 
-  const handleAddReply = async (parentCommentId: string) => {
+  const handleAddReply = async (
+    parentCommentId: string,
+    e?: React.MouseEvent | React.KeyboardEvent
+  ) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     if (!replyText.trim()) return;
 
     setIsLoading(true);
@@ -167,11 +187,18 @@ export default function CommentsPanel({
     try {
       const { apiPost } = await import('@/utils/api');
 
+      const requestBody: any = {
+        comment: replyText.trim(),
+      };
+
+      // Add user_id if available (some backends might need it)
+      if (currentUserId) {
+        requestBody.user_id = currentUserId;
+      }
+
       const response = await apiPost<{ success: boolean; message?: string }>(
         `/posts/comments/${parentCommentId}/reply`,
-        {
-          comment: replyText.trim(),
-        }
+        requestBody
       );
 
       if (response.success) {
@@ -182,11 +209,16 @@ export default function CommentsPanel({
           onCommentAdded();
         }
       } else {
+        console.error('Reply failed:', response.message);
         alert(response.message || 'Failed to add reply');
       }
     } catch (error: any) {
       console.error('Error adding reply:', error);
-      alert(error.message || 'Failed to add reply. Please try again.');
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to add reply. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -215,7 +247,8 @@ export default function CommentsPanel({
   ) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleAddReply(parentCommentId);
+      e.stopPropagation();
+      handleAddReply(parentCommentId, e);
     }
   };
 
@@ -344,7 +377,11 @@ export default function CommentsPanel({
 
                   {/* Reply Input */}
                   {isReplying && (
-                    <div className="ml-11 mt-2">
+                    <div
+                      className="ml-11 mt-2"
+                      onClick={e => e.stopPropagation()}
+                      onKeyDown={e => e.stopPropagation()}
+                    >
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
                           {currentUserProfileUrl ? (
@@ -370,7 +407,8 @@ export default function CommentsPanel({
                             onKeyDown={e => {
                               if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
-                                handleAddReply(comment.id);
+                                e.stopPropagation();
+                                handleAddReply(comment.id, e);
                               }
                             }}
                             disabled={isLoading}
@@ -380,15 +418,20 @@ export default function CommentsPanel({
                             ref={replyInputRef}
                             type="text"
                             value={replyText}
-                            onChange={e => setReplyText(e.target.value)}
-                            onKeyPress={e => handleReplyKeyPress(e, comment.id)}
+                            onChange={e => {
+                              e.stopPropagation();
+                              setReplyText(e.target.value);
+                            }}
+                            onKeyDown={e => handleReplyKeyPress(e, comment.id)}
                             placeholder={`Reply to ${comment.username}...`}
                             className="flex-1 px-3 py-1.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-xs text-gray-900"
                             disabled={isLoading}
+                            onClick={e => e.stopPropagation()}
                           />
                         )}
                         <button
-                          onClick={() => handleAddReply(comment.id)}
+                          type="button"
+                          onClick={e => handleAddReply(comment.id, e)}
                           disabled={!replyText.trim() || isLoading}
                           className="p-1.5 bg-[#CB9729] text-white rounded-full hover:bg-[#b78322] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           aria-label="Send reply"
@@ -396,7 +439,10 @@ export default function CommentsPanel({
                           <Send className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => {
+                          type="button"
+                          onClick={e => {
+                            e.preventDefault();
+                            e.stopPropagation();
                             setReplyingTo(null);
                             setReplyText('');
                           }}
@@ -416,7 +462,11 @@ export default function CommentsPanel({
       </div>
 
       {/* Add Comment Input */}
-      <div className="border-t border-gray-200 p-4 shrink-0 w-full">
+      <div
+        className="border-t border-gray-200 p-4 shrink-0 w-full"
+        onClick={e => e.stopPropagation()}
+        onKeyDown={e => e.stopPropagation()}
+      >
         <div className="flex items-center gap-3 w-full min-w-0">
           <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
             {currentUserProfileUrl ? (
@@ -446,7 +496,7 @@ export default function CommentsPanel({
                     e.preventDefault();
                     e.stopPropagation();
                     if (commentText.trim() && !isLoading) {
-                      handleAddComment();
+                      handleAddComment(e);
                     }
                   }
                 }}
@@ -462,7 +512,7 @@ export default function CommentsPanel({
                     e.preventDefault();
                     e.stopPropagation();
                     if (commentText.trim() && !isLoading) {
-                      handleAddComment();
+                      handleAddComment(e);
                     }
                   }
                 }}
@@ -506,11 +556,7 @@ export default function CommentsPanel({
 
           <button
             type="button"
-            onClick={e => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleAddComment();
-            }}
+            onClick={e => handleAddComment(e)}
             disabled={!commentText.trim() || isLoading}
             className="p-2 bg-[#CB9729] text-white rounded-full hover:bg-[#b78322] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
             aria-label="Send comment"
