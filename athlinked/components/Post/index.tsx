@@ -425,8 +425,9 @@ export default function Post({
         </div>
         <div className="flex-1">
           <p className="text-sm text-gray-500 font-medium">
-            {post.user_type 
-              ? post.user_type.charAt(0).toUpperCase() + post.user_type.slice(1).toLowerCase()
+            {post.user_type
+              ? post.user_type.charAt(0).toUpperCase() +
+                post.user_type.slice(1).toLowerCase()
               : 'Athlete'}
           </p>
           <p className="text-base font-semibold text-gray-900">
@@ -811,8 +812,9 @@ export default function Post({
               <div>
                 <p className="font-semibold text-gray-900">{post.username}</p>
                 <p className="text-sm text-gray-600">
-                  {post.user_type 
-                    ? post.user_type.charAt(0).toUpperCase() + post.user_type.slice(1).toLowerCase()
+                  {post.user_type
+                    ? post.user_type.charAt(0).toUpperCase() +
+                      post.user_type.slice(1).toLowerCase()
                     : 'Athlete'}
                 </p>
               </div>

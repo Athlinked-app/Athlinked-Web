@@ -15,6 +15,7 @@ interface SignupFormStepsProps {
   onContinue: () => void;
   onTogglePassword: () => void;
   onToggleConfirmPassword: () => void;
+  onGoogleSignIn?: (userData: any) => void; // NEW - Added this prop
 }
 
 export default function SignupFormSteps({
@@ -29,6 +30,7 @@ export default function SignupFormSteps({
   onContinue,
   onTogglePassword,
   onToggleConfirmPassword,
+  onGoogleSignIn, // NEW - Added this prop
 }: SignupFormStepsProps) {
   // Step 0: Join as - User Type Selection
   if (currentStep === 0) {
@@ -37,6 +39,7 @@ export default function SignupFormSteps({
         selectedUserType={selectedUserType}
         onUserTypeSelect={onUserTypeSelect}
         onContinue={onContinue}
+        onGoogleSignIn={onGoogleSignIn} // NEW - Pass it down
       />
     );
   }
