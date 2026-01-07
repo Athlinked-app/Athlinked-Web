@@ -17,7 +17,29 @@ export default function PostUploadModal({
   onFileSelect,
 }: PostUploadModalProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
+
+  const validateFile = (file: File): string | null => {
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      return `File size (${fileSizeMB} MB) exceeds the maximum limit of 50 MB. Please choose a smaller file.`;
+    }
+
+    // Check file type
+    if (postType === 'photo' && !file.type.startsWith('image/')) {
+      return 'Please select a valid image file (JPEG, PNG, GIF).';
+    }
+
+    if (postType === 'video' && !file.type.startsWith('video/')) {
+      return 'Please select a valid video file (MP4, MOV).';
+    }
+
+    return null;
+  };
 
   if (!open) return null;
 
@@ -56,21 +78,33 @@ export default function PostUploadModal({
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
+    setError(null);
 
     const droppedFiles = e.dataTransfer.files;
     if (droppedFiles && droppedFiles.length > 0) {
       const file = droppedFiles[0];
-      if (postType === 'photo' && file.type.startsWith('image/')) {
-        onFileSelect(file);
-      } else if (postType === 'video' && file.type.startsWith('video/')) {
-        onFileSelect(file);
+      const validationError = validateFile(file);
+      if (validationError) {
+        setError(validationError);
+        return;
       }
+      onFileSelect(file);
     }
   };
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setError(null);
     const file = event.target.files?.[0];
     if (file) {
+      const validationError = validateFile(file);
+      if (validationError) {
+        setError(validationError);
+        // Reset the input so user can try again
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+        return;
+      }
       onFileSelect(file);
     }
   };
@@ -146,6 +180,12 @@ export default function PostUploadModal({
         <p className="text-xs text-gray-500 mt-4">
           Supported formats: {getFileExtensions()}
         </p>
+
+        {error && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-600 font-medium">{error}</p>
+          </div>
+        )}
       </div>
     </div>
   );

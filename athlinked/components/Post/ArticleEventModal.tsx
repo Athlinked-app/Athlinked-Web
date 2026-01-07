@@ -48,6 +48,7 @@ type ArticleEventModalProps = {
     image?: File;
     eventType?: EventType;
   }) => void;
+  isUploading?: boolean;
 };
 
 const eventTypes: {
@@ -76,6 +77,7 @@ export default function ArticleEventModal({
   currentUserId,
   onClose,
   onSubmit,
+  isUploading = false,
 }: ArticleEventModalProps) {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -670,7 +672,8 @@ export default function ArticleEventModal({
             <button
               type="button"
               onClick={handleBack}
-              className="px-5 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+              disabled={isUploading}
+              className="px-5 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Back
             </button>
@@ -678,7 +681,8 @@ export default function ArticleEventModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+            disabled={isUploading}
+            className="px-5 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
@@ -686,13 +690,25 @@ export default function ArticleEventModal({
             type="button"
             onClick={handleSubmit}
             disabled={
+              isUploading ||
               !title.trim() ||
               (postType === 'article' && !body.trim()) ||
               (postType === 'event' && !date)
             }
-            className="px-6 py-2 rounded-md bg-[#CB9729] text-white font-semibold hover:bg-[#b78322] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`px-6 py-2 rounded-md font-semibold transition-colors disabled:cursor-not-allowed flex items-center gap-2 ${
+              isUploading
+                ? 'bg-white border-2 border-[#CB9729] text-[#CB9729]'
+                : 'bg-[#CB9729] text-white hover:bg-[#b78322] disabled:opacity-50'
+            }`}
           >
-            Post
+            {isUploading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-[#CB9729] border-t-transparent rounded-full animate-spin"></div>
+                <span>Posting...</span>
+              </>
+            ) : (
+              'Post'
+            )}
           </button>
         </div>
       </div>

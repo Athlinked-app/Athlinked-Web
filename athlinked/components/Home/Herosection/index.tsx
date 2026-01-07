@@ -123,6 +123,16 @@ export default function HomeHerosection({
   const handleMediaPost = async () => {
     if (!selectedFile) return;
 
+    // Validate file size before upload
+    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
+    if (selectedFile.size > MAX_FILE_SIZE) {
+      const fileSizeMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
+      alert(
+        `File size (${fileSizeMB} MB) exceeds the maximum limit of 50 MB. Please choose a smaller file.`
+      );
+      return;
+    }
+
     setIsUploading(true);
     try {
       const formData = new FormData();
@@ -142,11 +152,31 @@ export default function HomeHerosection({
           onPostCreated();
         }
       } else {
-        alert(data.message || 'Failed to create post');
+        const errorMessage =
+          data.message ||
+          'Failed to create post. Please check your file size and try again.';
+        alert(errorMessage);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating media post:', error);
-      alert('Failed to create post. Please try again.');
+      let errorMessage = 'Failed to create post. Please try again.';
+
+      // Check for specific error types
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.message) {
+        if (
+          error.message.includes('File too large') ||
+          error.message.includes('LIMIT_FILE_SIZE')
+        ) {
+          errorMessage =
+            'File size exceeds the maximum limit of 50 MB. Please choose a smaller file.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      alert(errorMessage);
     } finally {
       setIsUploading(false);
     }
@@ -257,9 +287,9 @@ export default function HomeHerosection({
 
   return (
     <div className="w-full">
-      <div className="w-full bg-white border border-gray-200 rounded-xl shadow-sm p-4 md:p-5">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex items-center justify-center">
+      <div className="w-full bg-white border border-gray-200 rounded-lg sm:rounded-xl shadow-sm p-2 sm:p-3 md:p-4">
+        <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex items-center justify-center shrink-0">
             {userProfileUrl && userProfileUrl.trim() !== '' ? (
               <img
                 src={userProfileUrl}
@@ -267,25 +297,25 @@ export default function HomeHerosection({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-gray-600 font-semibold text-sm md:text-base">
+              <span className="text-gray-600 font-semibold text-xs sm:text-sm md:text-base">
                 {getInitials(username)}
               </span>
             )}
           </div>
 
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             {currentUserId ? (
               <MentionInput
                 value={postText}
                 onChange={setPostText}
                 placeholder="What's on your mind?"
                 currentUserId={currentUserId}
-                className="text-gray-700 placeholder:text-gray-400"
+                className="text-sm sm:text-base text-gray-700 placeholder:text-gray-400"
                 disabled={isUploading}
               />
             ) : (
-              <div className="flex items-center w-full border border-gray-200 rounded-lg px-3 py-2 bg-white">
-                <Search className="w-5 h-5 text-gray-500 mr-3" />
+              <div className="flex items-center w-full border border-gray-200 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 bg-white">
+                <Search className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 mr-2 sm:mr-3 shrink-0" />
                 <input
                   type="text"
                   placeholder="What's on your mind?"
@@ -296,7 +326,7 @@ export default function HomeHerosection({
                       handleTextPost();
                     }
                   }}
-                  className="w-full text-gray-700 placeholder:text-gray-400 focus:outline-none"
+                  className="w-full text-sm sm:text-base text-gray-700 placeholder:text-gray-400 focus:outline-none"
                   disabled={isUploading}
                 />
               </div>
@@ -306,24 +336,26 @@ export default function HomeHerosection({
           <button
             onClick={handleTextPost}
             disabled={!postText.trim() || isUploading}
-            className="px-8 py-2 bg-[#CB9729] text-white font-semibold rounded-md hover:bg-[#b78322] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 sm:px-4 md:px-6 lg:px-8 py-1.5 sm:py-2 text-xs sm:text-sm md:text-base bg-[#CB9729] text-white font-semibold rounded-md hover:bg-[#b78322] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
           >
             {isUploading ? 'Posting...' : 'Post'}
           </button>
         </div>
 
-        <div className="mt-4 border-t border-gray-200 pt-3">
-          <div className="grid grid-cols-4 divide-x divide-gray-200">
+        <div className="mt-2 sm:mt-3 md:mt-4 border-t border-gray-200 pt-2 sm:pt-2.5 md:pt-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-gray-200">
             <button
               type="button"
               onClick={() => {
                 setSelectedPostType('photo');
                 setShowUpload(true);
               }}
-              className="flex items-center justify-center gap-2 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-center gap-1 sm:gap-1.5 md:gap-2 py-1.5 sm:py-2 text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              <ImageIcon className="w-5 h-5 text-gray-500" />
-              <span className="text-md font-medium">Photos</span>
+              <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 shrink-0" />
+              <span className="text-xs sm:text-sm md:text-base font-medium truncate">
+                Photos
+              </span>
             </button>
             <button
               type="button"
@@ -331,10 +363,12 @@ export default function HomeHerosection({
                 setSelectedPostType('video');
                 setShowUpload(true);
               }}
-              className="flex items-center justify-center gap-2 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-center gap-1 sm:gap-1.5 md:gap-2 py-1.5 sm:py-2 text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              <Video className="w-5 h-5 text-gray-500" />
-              <span className="text-md font-medium">Videos</span>
+              <Video className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 shrink-0" />
+              <span className="text-xs sm:text-sm md:text-base font-medium truncate">
+                Videos
+              </span>
             </button>
             <button
               type="button"
@@ -342,10 +376,12 @@ export default function HomeHerosection({
                 setSelectedPostType('event');
                 setShowArticleEvent(true);
               }}
-              className="flex items-center justify-center gap-2 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-center gap-1 sm:gap-1.5 md:gap-2 py-1.5 sm:py-2 text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              <CalendarDays className="w-5 h-5 text-gray-500" />
-              <span className="text-md font-medium">Events</span>
+              <CalendarDays className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 shrink-0" />
+              <span className="text-xs sm:text-sm md:text-base font-medium truncate">
+                Events
+              </span>
             </button>
             <button
               type="button"
@@ -353,10 +389,12 @@ export default function HomeHerosection({
                 setSelectedPostType('article');
                 setShowArticleEvent(true);
               }}
-              className="flex items-center justify-center gap-2 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-center gap-1 sm:gap-1.5 md:gap-2 py-1.5 sm:py-2 text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              <Newspaper className="w-5 h-5 text-gray-500" />
-              <span className="text-md font-medium">Article</span>
+              <Newspaper className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 shrink-0" />
+              <span className="text-xs sm:text-sm md:text-base font-medium truncate">
+                Article
+              </span>
             </button>
           </div>
         </div>
@@ -385,6 +423,7 @@ export default function HomeHerosection({
             onPost={handleMediaPost}
             onRemoveFile={resetFileState}
             currentUserId={currentUserId}
+            isUploading={isUploading}
           />
         )}
 

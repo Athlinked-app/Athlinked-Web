@@ -184,15 +184,15 @@ export default function SocialHandles({
 
   return (
     <>
-      <div className="w-full bg-white rounded-lg p-6 mt-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">Social Handles</h2>
+      <div className="w-full bg-white rounded-lg px-6 mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-base font-bold text-gray-900">Social Handles</h2>
           {isOwnProfile && (
             <button
               onClick={() => setShowPopup(true)}
               className="p-2 rounded-full hover:bg-gray-100 transition-colors"
             >
-              <Plus className="w-6 h-6 text-gray-900" />
+              <Plus className="w-5 h-5 text-gray-900" />
             </button>
           )}
         </div>
@@ -200,7 +200,7 @@ export default function SocialHandles({
         {loading ? (
           <p className="text-gray-500 italic">Loading...</p>
         ) : socialHandles.length === 0 ? (
-          <p className="text-gray-500 italic">
+          <p className="text-gray-500 italic text-sm">
             {isOwnProfile
               ? 'No social handles added yet. Click the + button to add one.'
               : 'No social handles added yet.'}
