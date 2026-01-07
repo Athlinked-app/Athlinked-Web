@@ -56,6 +56,14 @@ interface ProfileData {
 function ProfileContent() {
   const searchParams = useSearchParams();
   const viewUserId = searchParams.get('userId');
+  
+  // Protect this route - check authentication
+  useEffect(() => {
+    const { isAuthenticated } = require('@/utils/auth');
+    if (!isAuthenticated() && typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+  }, []); 
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -136,6 +144,7 @@ function ProfileContent() {
               ? post.user_profile_url
               : null,
           user_id: post.user_id,
+          user_type: post.user_type || 'athlete',
           post_type: post.post_type,
           caption: post.caption,
           media_url: post.media_url,

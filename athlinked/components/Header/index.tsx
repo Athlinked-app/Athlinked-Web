@@ -134,24 +134,9 @@ export default function Header({
   }, [showPopup]);
 
   const handleLogout = async () => {
-    // Revoke refresh token on server
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (refreshToken) {
-      try {
-        const { apiPost } = await import('@/utils/api');
-        await apiPost('/auth/logout', { refreshToken });
-      } catch (error) {
-        console.error('Error revoking token:', error);
-      }
-    }
-
-    // Remove tokens and old userEmail
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('userEmail');
-    }
-    router.push('/login');
+    // Use the proper logout function from auth utils
+    const { logout } = await import('@/utils/auth');
+    await logout();
   };
 
   const userRole = userData?.user_type

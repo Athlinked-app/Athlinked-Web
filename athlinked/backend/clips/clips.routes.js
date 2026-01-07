@@ -198,6 +198,66 @@ router.get('/:clipId/comments', clipsController.getClipComments);
 
 /**
  * @swagger
+ * /api/clips/comments/{commentId}/reply:
+ *   post:
+ *     summary: Reply to a comment
+ *     description: Add a reply to an existing comment on a clip
+ *     tags: [Clips]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: commentId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Comment ID to reply to
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - comment
+ *             properties:
+ *               comment:
+ *                 type: string
+ *                 example: "Great point!"
+ *     responses:
+ *       201:
+ *         description: Reply added successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 comment:
+ *                   type: object
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *       404:
+ *         description: Parent comment not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post(
+  '/comments/:commentId/reply',
+  authenticateToken,
+  clipsController.replyToComment
+);
+
+/**
+ * @swagger
  * /api/clips/{clipId}:
  *   delete:
  *     summary: Delete a clip

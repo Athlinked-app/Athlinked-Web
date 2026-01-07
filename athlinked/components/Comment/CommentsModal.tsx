@@ -12,6 +12,8 @@ export interface CommentData {
   comment: string;
   created_at: string;
   parent_comment_id?: string | null;
+  parent_username?: string | null;
+  replies?: CommentData[];
 }
 
 interface CommentsModalProps {
@@ -63,82 +65,64 @@ export default function CommentsModal({
     }
   }, [comments]);
 
-  const loadComments = () => {
-    const storedComments = localStorage.getItem(
-      `athlinked_comments_${post.id}`
-    );
-    if (storedComments) {
-      try {
-        const parsedComments = JSON.parse(storedComments);
-        setComments(parsedComments);
-      } catch (error) {
-        console.error('Error parsing comments:', error);
-        setComments([]);
+  const loadComments = async () => {
+    try {
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        success: boolean;
+        comments?: CommentData[];
+      }>(`/posts/${post.id}/comments`);
+      if (data.success && data.comments) {
+        // Backend already returns comments with nested replies
+        setComments(data.comments);
       }
-    } else {
+    } catch (error) {
+      console.error('Error loading comments:', error);
       setComments([]);
     }
   };
 
   const organizeComments = (allComments: CommentData[]) => {
-    const parentComments = allComments.filter(c => !c.parent_comment_id);
-    const replies = allComments.filter(c => c.parent_comment_id);
-
-    return parentComments.map(parent => ({
-      ...parent,
-      replies: replies.filter(r => r.parent_comment_id === parent.id),
-    }));
+    // Backend already returns comments with nested replies structure
+    // Just return them as-is
+    return allComments;
   };
 
   const getRepliesCount = (commentId: string) => {
-    return comments.filter(c => c.parent_comment_id === commentId).length;
+    // Find the comment and count its nested replies
+    const comment = comments.find(c => c.id === commentId);
+    return comment?.replies?.length || 0;
   };
 
-  const handleAddComment = () => {
+  const handleAddComment = async () => {
     if (!commentText.trim()) return;
 
     setIsLoading(true);
 
-    const newComment: CommentData = {
-      id: `comment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      post_id: post.id,
-      username: currentUsername,
-      user_profile_url: currentUserProfileUrl || null,
-      comment: commentText.trim(),
-      created_at: new Date().toISOString(),
-      parent_comment_id: null,
-    };
+    try {
+      const { apiPost } = await import('@/utils/api');
 
-    const existingComments = JSON.parse(
-      localStorage.getItem(`athlinked_comments_${post.id}`) || '[]'
-    );
+      const result = await apiPost<{ success: boolean; message?: string }>(
+        `/posts/${post.id}/comments`,
+        {
+          comment: commentText.trim(),
+        }
+      );
 
-    const updatedComments = [...existingComments, newComment];
-
-    localStorage.setItem(
-      `athlinked_comments_${post.id}`,
-      JSON.stringify(updatedComments)
-    );
-
-    setComments(updatedComments);
-    setCommentText('');
-
-    const parentCommentsCount = updatedComments.filter(
-      c => !c.parent_comment_id
-    ).length;
-    const posts = JSON.parse(localStorage.getItem('athlinked_posts') || '[]');
-    const updatedPosts = posts.map((p: PostData) => {
-      if (p.id === post.id) {
-        return { ...p, comment_count: parentCommentsCount };
+      if (result.success) {
+        setCommentText('');
+        await loadComments();
+        if (onCommentAdded) {
+          onCommentAdded();
+        }
+      } else {
+        alert(result.message || 'Failed to add comment');
       }
-      return p;
-    });
-    localStorage.setItem('athlinked_posts', JSON.stringify(updatedPosts));
-
-    setIsLoading(false);
-
-    if (onCommentAdded) {
-      onCommentAdded();
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      alert('Failed to add comment. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -150,40 +134,36 @@ export default function CommentsModal({
     }, 100);
   };
 
-  const handleAddReply = (parentCommentId: string) => {
+  const handleAddReply = async (parentCommentId: string) => {
     if (!replyText.trim()) return;
 
     setIsLoading(true);
 
-    const newReply: CommentData = {
-      id: `comment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      post_id: post.id,
-      username: currentUsername,
-      user_profile_url: currentUserProfileUrl || null,
-      comment: replyText.trim(),
-      created_at: new Date().toISOString(),
-      parent_comment_id: parentCommentId,
-    };
+    try {
+      const { apiPost } = await import('@/utils/api');
 
-    const existingComments = JSON.parse(
-      localStorage.getItem(`athlinked_comments_${post.id}`) || '[]'
-    );
+      const response = await apiPost<{ success: boolean; message?: string }>(
+        `/posts/comments/${parentCommentId}/reply`,
+        {
+          comment: replyText.trim(),
+        }
+      );
 
-    const updatedComments = [...existingComments, newReply];
-
-    localStorage.setItem(
-      `athlinked_comments_${post.id}`,
-      JSON.stringify(updatedComments)
-    );
-
-    setComments(updatedComments);
-    setReplyText('');
-    setReplyingTo(null);
-
-    setIsLoading(false);
-
-    if (onCommentAdded) {
-      onCommentAdded();
+      if (response.success) {
+        setReplyText('');
+        setReplyingTo(null);
+        await loadComments();
+        if (onCommentAdded) {
+          onCommentAdded();
+        }
+      } else {
+        alert(response.message || 'Failed to add reply');
+      }
+    } catch (error: any) {
+      console.error('Error adding reply:', error);
+      alert(error.message || 'Failed to add reply. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -347,9 +327,21 @@ export default function CommentsModal({
                                   </div>
                                   <div className="flex-1">
                                     <div className="bg-gray-50 rounded-lg p-2">
-                                      <p className="font-semibold text-xs text-gray-900 mb-1">
-                                        {reply.username}
-                                      </p>
+                                      <div className="flex items-center gap-1 mb-1">
+                                        <p className="font-semibold text-xs text-gray-900">
+                                          {reply.username}
+                                        </p>
+                                        {reply.parent_username && (
+                                          <>
+                                            <span className="text-xs text-gray-500">
+                                              replying to
+                                            </span>
+                                            <p className="font-semibold text-xs text-[#CB9729]">
+                                              {reply.parent_username}
+                                            </p>
+                                          </>
+                                        )}
+                                      </div>
                                       <p className="text-xs text-gray-700">
                                         {reply.comment}
                                       </p>

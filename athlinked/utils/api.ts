@@ -61,7 +61,7 @@ let refreshPromise: Promise<string | null> | null = null;
 /**
  * Refresh access token using refresh token
  */
-async function refreshAccessToken(): Promise<string | null> {
+export async function refreshAccessToken(): Promise<string | null> {
   // If refresh is already in progress, wait for it
   if (refreshPromise) {
     return refreshPromise;
