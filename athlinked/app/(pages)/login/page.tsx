@@ -15,17 +15,21 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [showDeletedAccountToast, setShowDeletedAccountToast] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   // Redirect if already authenticated (unless just logged out)
   useEffect(() => {
     const justLoggedOut = localStorage.getItem('justLoggedOut');
     if (justLoggedOut) {
       localStorage.removeItem('justLoggedOut');
+      setCheckingAuth(false);
       return; // Don't redirect if user just logged out
     }
 
     if (isAuthenticated()) {
       router.push('/home');
+    } else {
+      setCheckingAuth(false);
     }
   }, [router]);
 
