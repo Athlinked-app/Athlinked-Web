@@ -7,6 +7,7 @@ import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import HomeHerosection from '@/components/Home/Herosection';
 import Post, { type PostData } from '@/components/Post';
+import HomePopup from '@/components/Home/Homepopup';
 import { isAuthenticated } from '@/utils/auth';
 
 interface CurrentUser {
@@ -23,12 +24,13 @@ export default function Landing() {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [profileCompletion, setProfileCompletion] = useState(20);
 
   const fetchPosts = async () => {
     try {
       setLoading(true);
       const response = await fetch(
-        'http://localhost:3001/api/posts?page=1&limit=50'
+        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts?page=1&limit=50'
       );
 
       if (!response.ok) {
@@ -116,11 +118,11 @@ export default function Landing() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         response = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -137,9 +139,156 @@ export default function Landing() {
           profile_url: data.user.profile_url,
           username: data.user.username,
         });
+
+        // Fetch profile data to calculate completion
+        await calculateProfileCompletion(data.user.id);
       }
     } catch (error) {
       console.error('Error fetching current user:', error);
+    }
+  };
+
+  const calculateProfileCompletion = async (userId: string) => {
+    try {
+      const { apiGet } = await import('@/utils/api');
+      let completed = 0;
+      const totalSections = 12;
+
+      // Fetch profile data - API returns data directly, not wrapped in success/profile
+      const profileData = await apiGet<{
+        userId?: string;
+        fullName?: string | null;
+        profileImage?: string | null;
+        city?: string | null;
+        dob?: string | null;
+        bio?: string | null;
+      }>(`/profile/${userId}`);
+
+      // Basic Profile Information (3 sections) - matching EditProfileModel logic
+      // EditProfileModel uses: fullName, profileImagePreview, location/age
+      if (profileData.fullName && profileData.fullName.trim() !== '')
+        completed++;
+      if (profileData.profileImage) completed++;
+      if (
+        (profileData.city && profileData.city.trim() !== '') ||
+        profileData.dob
+      )
+        completed++;
+
+      // Fetch all profile sections individually
+      const [
+        socialHandlesRes,
+        academicBackgroundsRes,
+        achievementsRes,
+        athleticAndPerformanceRes,
+        competitionAndClubsRes,
+        characterAndLeadershipRes,
+        healthAndReadinessRes,
+        videoAndMediaRes,
+      ] = await Promise.allSettled([
+        apiGet<{ success: boolean; data?: any[] }>(
+          `/profile/${userId}/social-handles`
+        ),
+        apiGet<{ success: boolean; data?: any[] }>(
+          `/profile/${userId}/academic-backgrounds`
+        ),
+        apiGet<{ success: boolean; data?: any[] }>(
+          `/profile/${userId}/achievements`
+        ),
+        apiGet<{ success: boolean; data?: any[] }>(
+          `/profile/${userId}/athletic-performance`
+        ),
+        apiGet<{ success: boolean; data?: any[] }>(
+          `/profile/${userId}/competition-clubs`
+        ),
+        apiGet<{ success: boolean; data?: any[] }>(
+          `/profile/${userId}/character-leadership`
+        ),
+        apiGet<{ success: boolean; data?: any[] }>(
+          `/profile/${userId}/health-readiness`
+        ),
+        apiGet<{ success: boolean; data?: any[] }>(
+          `/profile/${userId}/video-media`
+        ),
+      ]);
+
+      // Check bio from profile data
+      if (profileData.bio && profileData.bio.trim() !== '') completed++;
+
+      // Check each section (9 sections) - all use `data` property
+      if (
+        socialHandlesRes.status === 'fulfilled' &&
+        socialHandlesRes.value.success &&
+        socialHandlesRes.value.data &&
+        socialHandlesRes.value.data.length > 0
+      )
+        completed++;
+
+      if (
+        academicBackgroundsRes.status === 'fulfilled' &&
+        academicBackgroundsRes.value.success &&
+        academicBackgroundsRes.value.data &&
+        academicBackgroundsRes.value.data.length > 0
+      )
+        completed++;
+
+      if (
+        achievementsRes.status === 'fulfilled' &&
+        achievementsRes.value.success &&
+        achievementsRes.value.data &&
+        achievementsRes.value.data.length > 0
+      )
+        completed++;
+
+      if (
+        athleticAndPerformanceRes.status === 'fulfilled' &&
+        athleticAndPerformanceRes.value.success &&
+        athleticAndPerformanceRes.value.data &&
+        athleticAndPerformanceRes.value.data.length > 0
+      )
+        completed++;
+
+      if (
+        competitionAndClubsRes.status === 'fulfilled' &&
+        competitionAndClubsRes.value.success &&
+        competitionAndClubsRes.value.data &&
+        competitionAndClubsRes.value.data.length > 0
+      )
+        completed++;
+
+      if (
+        characterAndLeadershipRes.status === 'fulfilled' &&
+        characterAndLeadershipRes.value.success &&
+        characterAndLeadershipRes.value.data &&
+        characterAndLeadershipRes.value.data.length > 0
+      )
+        completed++;
+
+      if (
+        healthAndReadinessRes.status === 'fulfilled' &&
+        healthAndReadinessRes.value.success &&
+        healthAndReadinessRes.value.data &&
+        healthAndReadinessRes.value.data.length > 0
+      )
+        completed++;
+
+      if (
+        videoAndMediaRes.status === 'fulfilled' &&
+        videoAndMediaRes.value.success &&
+        videoAndMediaRes.value.data &&
+        videoAndMediaRes.value.data.length > 0
+      )
+        completed++;
+
+      const percentage = Math.min(
+        Math.round((completed / totalSections) * 100),
+        100
+      );
+      setProfileCompletion(percentage);
+    } catch (error) {
+      console.error('Error calculating profile completion:', error);
+      // Default to 20% if calculation fails
+      setProfileCompletion(20);
     }
   };
 
@@ -152,7 +301,7 @@ export default function Landing() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };
@@ -182,6 +331,11 @@ export default function Landing() {
 
   return (
     <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
+      <HomePopup
+        profileCompletion={profileCompletion}
+        onCompleteProfile={() => router.push('/profile')}
+        userId={currentUserId}
+      />
       <Header
         userName={currentUser?.full_name}
         userProfileUrl={getProfileUrl(currentUser?.profile_url)}
@@ -193,7 +347,7 @@ export default function Landing() {
         </div>
 
         <div className="flex-1 flex flex-col  gap-4 overflow-hidden min-w-0">
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <HomeHerosection
               userProfileUrl={getProfileUrl(currentUser?.profile_url)}
               username={currentUser?.full_name || 'User'}

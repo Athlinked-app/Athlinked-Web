@@ -307,7 +307,7 @@ export default function EditProfilePopup({
           {/* Sports Section */}
           <div className="relative" ref={sportsDropdownRef}>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Sports
+              Sports Played
             </label>
             <div className="relative">
               <input

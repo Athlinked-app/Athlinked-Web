@@ -279,11 +279,11 @@ export default function SearchPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         response = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -312,7 +312,7 @@ export default function SearchPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };
@@ -330,7 +330,7 @@ export default function SearchPage() {
 
     setIsSearching(true);
     const searchLower = query.toLowerCase();
-    const baseUrl = 'http://localhost:3001';
+    const baseUrl = 'https://qd9ngjg1-3001.inc1.devtunnels.ms';
 
     try {
       // Fetch all content types in parallel
@@ -527,8 +527,8 @@ export default function SearchPage() {
 
     try {
       const endpoint = isCurrentlyFollowing
-        ? `http://localhost:3001/api/network/unfollow/${userId}`
-        : `http://localhost:3001/api/network/follow/${userId}`;
+        ? `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/unfollow/${userId}`
+        : `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/network/follow/${userId}`;
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -821,7 +821,7 @@ export default function SearchPage() {
                 {searchClips.map(clip => {
                   const videoUrl = clip.video_url?.startsWith('http')
                     ? clip.video_url
-                    : `http://localhost:3001${clip.video_url}`;
+                    : `https://qd9ngjg1-3001.inc1.devtunnels.ms${clip.video_url}`;
 
                   return (
                     <div
@@ -938,7 +938,7 @@ export default function SearchPage() {
           {searchClips.map(clip => {
             const videoUrl = clip.video_url?.startsWith('http')
               ? clip.video_url
-              : `http://localhost:3001${clip.video_url}`;
+              : `https://qd9ngjg1-3001.inc1.devtunnels.ms${clip.video_url}`;
 
             return (
               <div

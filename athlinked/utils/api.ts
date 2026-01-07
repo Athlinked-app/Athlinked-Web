@@ -3,7 +3,7 @@
  */
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  process.env.NEXT_PUBLIC_API_URL || 'https://qd9ngjg1-3001.inc1.devtunnels.ms/api';
 
 /**
  * Get the access token from localStorage

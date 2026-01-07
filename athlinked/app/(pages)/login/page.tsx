@@ -47,7 +47,7 @@ export default function LoginPage() {
           try {
             const decoded = JSON.parse(atob(token.split('.')[1]));
             const currentTime = Math.floor(Date.now() / 1000);
-            
+
             // Only redirect if token is valid and not expired
             if (decoded.exp && decoded.exp > currentTime) {
               // Token is valid, redirect to home
@@ -102,7 +102,9 @@ export default function LoginPage() {
               }
             } catch (error) {
               // Refresh failed with an error - clear tokens and show login form
-              console.log('Token refresh error, clearing tokens and showing login form');
+              console.log(
+                'Token refresh error, clearing tokens and showing login form'
+              );
               if (typeof window !== 'undefined') {
                 localStorage.removeItem('accessToken');
                 localStorage.removeItem('refreshToken');
@@ -136,13 +138,16 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email: identifier, password }), // Backend still expects 'email' field
-      });
+      const response = await fetch(
+        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/login',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email: identifier, password }), // Backend still expects 'email' field
+        }
+      );
 
       const data = await response.json();
 

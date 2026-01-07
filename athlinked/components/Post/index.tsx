@@ -84,9 +84,9 @@ export default function Post({
       if (profileUrl.startsWith('/assets')) {
         return profileUrl;
       }
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
-    return `http://localhost:3001/${profileUrl}`;
+    return `https://qd9ngjg1-3001.inc1.devtunnels.ms/${profileUrl}`;
   };
 
   const getEventTypeIcon = (eventType: string | null | undefined) => {
@@ -426,8 +426,9 @@ export default function Post({
         </div>
         <div className="flex-1">
           <p className="text-sm text-gray-500 font-medium">
-            {post.user_type 
-              ? post.user_type.charAt(0).toUpperCase() + post.user_type.slice(1).toLowerCase()
+            {post.user_type
+              ? post.user_type.charAt(0).toUpperCase() +
+                post.user_type.slice(1).toLowerCase()
               : 'Athlete'}
           </p>
           <p className="text-base font-semibold text-gray-900">
@@ -472,7 +473,7 @@ export default function Post({
                 src={
                   post.media_url && post.media_url.startsWith('http')
                     ? post.media_url
-                    : `http://localhost:3001${post.media_url || post.image_url || ''}`
+                    : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
                 }
                 alt={post.article_title || 'Article image'}
                 className="w-full h-auto object-cover rounded-lg sm:rounded-none"
@@ -481,7 +482,7 @@ export default function Post({
                     const attemptedUrl =
                       post.media_url && post.media_url.startsWith('http')
                         ? post.media_url
-                        : `http://localhost:3001${post.media_url || post.image_url || ''}`;
+                        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`;
                     console.warn('Image failed to load:', attemptedUrl);
                   }
                   e.currentTarget.style.display = 'none';
@@ -556,7 +557,7 @@ export default function Post({
                   src={
                     post.media_url && post.media_url.startsWith('http')
                       ? post.media_url
-                      : `http://localhost:3001${post.media_url || post.image_url || ''}`
+                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
                   }
                   controls
                   className="w-full h-auto object-cover"
@@ -566,7 +567,7 @@ export default function Post({
                   src={
                     post.media_url && post.media_url.startsWith('http')
                       ? post.media_url
-                      : `http://localhost:3001${post.media_url || post.image_url || ''}`
+                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
                   }
                   alt={post.event_title || 'Event image'}
                   className="w-full h-auto object-cover"
@@ -575,7 +576,7 @@ export default function Post({
                       const attemptedUrl =
                         post.media_url && post.media_url.startsWith('http')
                           ? post.media_url
-                          : `http://localhost:3001${post.media_url || post.image_url || ''}`;
+                          : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`;
                       console.warn('Image failed to load:', attemptedUrl);
                     }
                     e.currentTarget.style.display = 'none';
@@ -662,7 +663,7 @@ export default function Post({
                   src={
                     post.media_url && post.media_url.startsWith('http')
                       ? post.media_url
-                      : `http://localhost:3001${post.media_url || post.image_url || ''}`
+                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
                   }
                   controls
                   className="w-full h-auto object-cover"
@@ -672,7 +673,7 @@ export default function Post({
                   src={
                     post.media_url && post.media_url.startsWith('http')
                       ? post.media_url
-                      : `http://localhost:3001${post.media_url || post.image_url || ''}`
+                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
                   }
                   alt={post.caption || post.description || 'Post media'}
                   className="w-full h-auto object-cover"
@@ -682,7 +683,7 @@ export default function Post({
                       const attemptedUrl =
                         post.media_url && post.media_url.startsWith('http')
                           ? post.media_url
-                          : `http://localhost:3001${post.media_url || post.image_url || ''}`;
+                          : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`;
                       console.warn('Image failed to load:', attemptedUrl);
                     }
                     e.currentTarget.style.display = 'none';
@@ -835,8 +836,9 @@ export default function Post({
               <div>
                 <p className="font-semibold text-gray-900">{post.username}</p>
                 <p className="text-sm text-gray-600">
-                  {post.user_type 
-                    ? post.user_type.charAt(0).toUpperCase() + post.user_type.slice(1).toLowerCase()
+                  {post.user_type
+                    ? post.user_type.charAt(0).toUpperCase() +
+                      post.user_type.slice(1).toLowerCase()
                     : 'Athlete'}
                 </p>
               </div>
@@ -848,7 +850,7 @@ export default function Post({
                   src={
                     post.media_url && post.media_url.startsWith('http')
                       ? post.media_url
-                      : `http://localhost:3001${post.media_url || post.image_url || ''}`
+                      : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
                   }
                   alt={post.article_title || 'Article image'}
                   className="w-full h-auto object-cover"
@@ -908,7 +910,7 @@ export default function Post({
                     src={
                       post.media_url && post.media_url.startsWith('http')
                         ? post.media_url
-                        : `http://localhost:3001${post.media_url || post.image_url || ''}`
+                        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
                     }
                     controls
                     className="w-full h-full object-contain"
@@ -918,7 +920,7 @@ export default function Post({
                     src={
                       post.media_url && post.media_url.startsWith('http')
                         ? post.media_url
-                        : `http://localhost:3001${post.media_url || post.image_url || ''}`
+                        : `https://qd9ngjg1-3001.inc1.devtunnels.ms${post.media_url || post.image_url || ''}`
                     }
                     alt={post.caption || post.description || 'Post media'}
                     className="w-full h-full object-contain"

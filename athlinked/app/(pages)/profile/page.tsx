@@ -56,14 +56,14 @@ interface ProfileData {
 function ProfileContent() {
   const searchParams = useSearchParams();
   const viewUserId = searchParams.get('userId');
-  
+
   // Protect this route - check authentication
   useEffect(() => {
     const { isAuthenticated } = require('@/utils/auth');
     if (!isAuthenticated() && typeof window !== 'undefined') {
       window.location.href = '/login';
     }
-  }, []); 
+  }, []);
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -515,7 +515,7 @@ function ProfileContent() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };
@@ -557,14 +557,14 @@ function ProfileContent() {
               profile_url: profileData?.profileImage
                 ? profileData.profileImage.startsWith('http')
                   ? profileData.profileImage
-                  : `http://localhost:3001${profileData.profileImage}`
+                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.profileImage}`
                 : viewUserId
                   ? viewUser?.profile_url || null
                   : currentUser?.profile_url || null,
               background_image_url: profileData?.coverImage
                 ? profileData.coverImage.startsWith('http')
                   ? profileData.coverImage
-                  : `http://localhost:3001${profileData.coverImage}`
+                  : `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileData.coverImage}`
                 : null,
               user_type: viewUserId
                 ? viewUser?.user_type || 'athlete'
@@ -804,11 +804,11 @@ function ProfileContent() {
               }
             }}
           />
-          <div className="bg-white mt-4 rounded-lg flex flex-col flex-1 min-h-0">
+          <div className="bg-white mt-2 rounded-lg flex flex-col flex-1 min-h-0">
             <div className="flex items-center border-b border-gray-200 flex-shrink-0">
               <button
                 onClick={() => setActiveTab('profile')}
-                className={`px-6 py-3 font-medium text-xl transition-colors relative ${
+                className={`px-6 py-3 font-medium text-sm transition-colors relative ${
                   activeTab === 'profile'
                     ? 'text-[#CB9729]'
                     : 'text-gray-500 hover:text-gray-700'
@@ -825,7 +825,7 @@ function ProfileContent() {
                   <div className="h-6 w-px bg-gray-200"></div>
                   <button
                     onClick={() => setActiveTab('activity')}
-                    className={`px-6 py-3 font-medium text-xl transition-colors relative ${
+                    className={`px-6 py-3 font-medium text-sm transition-colors relative ${
                       activeTab === 'activity'
                         ? 'text-[#CB9729]'
                         : 'text-gray-500 hover:text-gray-700'
@@ -833,13 +833,13 @@ function ProfileContent() {
                   >
                     Activity
                     {activeTab === 'activity' && (
-                      <div className="absolute bottom-0 text-xl  left-0 right-0 h-0.5 bg-[#CB9729]"></div>
+                      <div className="absolute bottom-0 text-sm  left-0 right-0 h-0.5 bg-[#CB9729]"></div>
                     )}
                   </button>
                   <div className="h-6 w-px bg-gray-200"></div>
                   <button
                     onClick={() => setActiveTab('mysave')}
-                    className={`px-6 py-3 font-medium text-xl  transition-colors relative ${
+                    className={`px-6 py-3 font-medium text-sm  transition-colors relative ${
                       activeTab === 'mysave'
                         ? 'text-[#CB9729]'
                         : 'text-gray-500 hover:text-gray-700'

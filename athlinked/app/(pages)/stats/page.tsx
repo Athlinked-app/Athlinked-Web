@@ -73,9 +73,12 @@ export default function StatsPage() {
     year: '',
     position: '',
   });
-  const [editingProfile, setEditingProfile] = useState<UserSportProfile | null>(null);
+  const [editingProfile, setEditingProfile] = useState<UserSportProfile | null>(
+    null
+  );
   const [editingYear, setEditingYear] = useState<string>('');
-  const [athleticPerformance, setAthleticPerformance] = useState<AthleticPerformance | null>(null);
+  const [athleticPerformance, setAthleticPerformance] =
+    useState<AthleticPerformance | null>(null);
 
   // Get initials for placeholder
   const getInitials = (name?: string) => {
@@ -93,7 +96,7 @@ export default function StatsPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return `https://qd9ngjg1-3001.inc1.devtunnels.ms${profileUrl}`;
     }
     return profileUrl;
   };
@@ -375,17 +378,18 @@ export default function StatsPage() {
         if (data.success && data.data && data.data.length > 0) {
           // Get the most recent entry, or match by active sport if available
           let selectedPerformance = data.data[0]; // Default to most recent
-          
+
           // Try to find performance data matching the active sport
           const sportMatch = data.data.find(
-            (perf: AthleticPerformance) => 
-              perf.sport && perf.sport.toLowerCase() === activeSport.toLowerCase()
+            (perf: AthleticPerformance) =>
+              perf.sport &&
+              perf.sport.toLowerCase() === activeSport.toLowerCase()
           );
-          
+
           if (sportMatch) {
             selectedPerformance = sportMatch;
           }
-          
+
           setAthleticPerformance(selectedPerformance);
         } else {
           setAthleticPerformance(null);
@@ -513,12 +517,12 @@ export default function StatsPage() {
         }
       });
     });
-    
+
     // Add Jersey Number if it exists in athletic performance data
     if (athleticPerformance?.jerseyNumber) {
       fieldLabels.add('Jersey Number');
     }
-    
+
     return Array.from(fieldLabels).sort();
   };
 
@@ -539,7 +543,7 @@ export default function StatsPage() {
     if (fieldLabel === 'Jersey Number' && athleticPerformance?.jerseyNumber) {
       return athleticPerformance.jerseyNumber;
     }
-    
+
     const stat = profile.stats.find(s => s.field_label === fieldLabel);
     if (!stat) return '';
     return stat.value + (stat.unit ? ` ${stat.unit}` : '');
@@ -559,11 +563,11 @@ export default function StatsPage() {
   const handleEditProfile = async (profile: UserSportProfile, year: string) => {
     setEditingProfile(profile);
     setEditingYear(year);
-    
+
     // Set the active sport to match the profile's sport
     const sportKey = profile.sport_name.toLowerCase().replace(/\s+/g, '');
     setActiveSport(sportKey);
-    
+
     // Wait for positions to load, then set position and load fields
     try {
       // Get all sports first
@@ -590,7 +594,7 @@ export default function StatsPage() {
           if (positionsData.success && positionsData.positions) {
             setAvailablePositions(positionsData.positions);
             setSelectedPosition(profile.position_name);
-            
+
             // Find the position and load fields
             const position = positionsData.positions.find(
               (p: any) => p.name === profile.position_name
@@ -603,11 +607,18 @@ export default function StatsPage() {
                 fields?: any[];
               }>(`/positions/${position.id}/fields`);
 
-              if (fieldsData.success && fieldsData.fields && fieldsData.fields.length > 0) {
+              if (
+                fieldsData.success &&
+                fieldsData.fields &&
+                fieldsData.fields.length > 0
+              ) {
                 loadedFields = fieldsData.fields;
               } else {
                 // Fallback to hardcoded fields
-                const fallbackFields = getFieldsForPosition(sportKey, profile.position_name);
+                const fallbackFields = getFieldsForPosition(
+                  sportKey,
+                  profile.position_name
+                );
                 if (fallbackFields.length > 0) {
                   loadedFields = fallbackFields.map((fieldLabel, index) => ({
                     field_id: `fallback-${index}`,
@@ -620,7 +631,7 @@ export default function StatsPage() {
                 }
               }
             }
-            
+
             setAvailableFields(loadedFields);
 
             // Pre-populate form data with existing values AFTER fields are loaded
@@ -637,16 +648,32 @@ export default function StatsPage() {
                   (f: any) => f.field_label === stat.field_label
                 );
                 if (field) {
-                  const key = field.field_key || field.field_label.toLowerCase().replace(/\s+/g, '_');
+                  const key =
+                    field.field_key ||
+                    field.field_label.toLowerCase().replace(/\s+/g, '_');
                   // Remove unit from value if present
-                  const unitPattern = stat.unit ? new RegExp(`\\s*${stat.unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`) : null;
-                  const rawValue = unitPattern ? stat.value.replace(unitPattern, '').trim() : stat.value.trim();
+                  const unitPattern = stat.unit
+                    ? new RegExp(
+                        `\\s*${stat.unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`
+                      )
+                    : null;
+                  const rawValue = unitPattern
+                    ? stat.value.replace(unitPattern, '').trim()
+                    : stat.value.trim();
                   prefillData[key] = rawValue;
                 } else {
                   // Fallback: use field_label as key
-                  const key = stat.field_label.toLowerCase().replace(/\s+/g, '_');
-                  const unitPattern = stat.unit ? new RegExp(`\\s*${stat.unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`) : null;
-                  const rawValue = unitPattern ? stat.value.replace(unitPattern, '').trim() : stat.value.trim();
+                  const key = stat.field_label
+                    .toLowerCase()
+                    .replace(/\s+/g, '_');
+                  const unitPattern = stat.unit
+                    ? new RegExp(
+                        `\\s*${stat.unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`
+                      )
+                    : null;
+                  const rawValue = unitPattern
+                    ? stat.value.replace(unitPattern, '').trim()
+                    : stat.value.trim();
                   prefillData[key] = rawValue;
                 }
               }
@@ -714,22 +741,31 @@ export default function StatsPage() {
                     </h1>
                     <p className="text-white text-base">
                       {primarySport}
-                      {athleticPerformance?.jerseyNumber && ` • #${athleticPerformance.jerseyNumber}`}
+                      {athleticPerformance?.jerseyNumber &&
+                        ` • #${athleticPerformance.jerseyNumber}`}
                     </p>
                   </div>
                 </div>
                 <div className="text-white space-y-1.5 text-right">
                   {athleticPerformance?.height && (
-                    <div className="text-sm">Height: {athleticPerformance.height}</div>
+                    <div className="text-sm">
+                      Height: {athleticPerformance.height}
+                    </div>
                   )}
                   {athleticPerformance?.weight && (
-                    <div className="text-sm">Weight: {athleticPerformance.weight}</div>
+                    <div className="text-sm">
+                      Weight: {athleticPerformance.weight}
+                    </div>
                   )}
                   {athleticPerformance?.hand && (
-                    <div className="text-sm">Hand: {athleticPerformance.hand}</div>
+                    <div className="text-sm">
+                      Hand: {athleticPerformance.hand}
+                    </div>
                   )}
                   {athleticPerformance?.arm && (
-                    <div className="text-sm">Arm: {athleticPerformance.arm}</div>
+                    <div className="text-sm">
+                      Arm: {athleticPerformance.arm}
+                    </div>
                   )}
                   {!athleticPerformance && (
                     <>
@@ -817,7 +853,7 @@ export default function StatsPage() {
                         size={20}
                       />
                     </div>
-                    <button 
+                    <button
                       onClick={() => {
                         // If there are profiles, allow editing the first one (or selected one)
                         if (currentProfiles.length > 0) {
@@ -825,7 +861,9 @@ export default function StatsPage() {
                           const year = getYearForProfile(firstProfile);
                           handleEditProfile(firstProfile, year);
                         } else {
-                          alert('No stats data to edit. Please add data first.');
+                          alert(
+                            'No stats data to edit. Please add data first.'
+                          );
                         }
                       }}
                       className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-black"
@@ -849,74 +887,82 @@ export default function StatsPage() {
                   </div>
                 </div>
 
-              {/* Statistics Table */}
-              <div className="overflow-x-auto">
-                {loadingStats ? (
-                  <div className="p-6 text-center text-black">
-                    Loading stats...
-                  </div>
-                ) : currentProfiles.length === 0 || allFieldLabels.length === 0 ? (
-                  <div className="p-6 text-center text-gray-600">
-                    No stats data available yet. Use the "Add Data" button above to add your first stats entry.
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
-                            Year
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
-                            Position
-                          </th>
-                          {allFieldLabels.map(fieldLabel => (
-                            <th
-                              key={fieldLabel}
-                              className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap min-w-[150px]"
-                            >
-                              {fieldLabel}
+                {/* Statistics Table */}
+                <div className="overflow-x-auto">
+                  {loadingStats ? (
+                    <div className="p-6 text-center text-black">
+                      Loading stats...
+                    </div>
+                  ) : currentProfiles.length === 0 ||
+                    allFieldLabels.length === 0 ? (
+                    <div className="p-6 text-center text-gray-600">
+                      No stats data available yet. Use the "Add Data" button
+                      above to add your first stats entry.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
+                              Year
                             </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {currentProfiles.map(profile => {
-                          const year = getYearForProfile(profile);
-                          return (
-                            <tr
-                              key={`${profile.id}-${year}`}
-                              className="hover:bg-gray-50 transition-colors"
-                            >
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
-                                {year || '—'}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                <div className="flex items-center gap-2">
-                                  <span>{profile.position_name}</span>
-                                  <button
-                                    onClick={() => handleEditProfile(profile, year)}
-                                    className="p-1 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
-                                    title="Edit this row"
-                                  >
-                                    <Edit size={14} className="text-gray-600" />
-                                  </button>
-                                </div>
-                              </td>
-                              {allFieldLabels.map(fieldLabel => (
-                                <td
-                                  key={fieldLabel}
-                                  className="px-6 py-4 whitespace-nowrap text-sm text-black"
-                                >
-                                  {getValueForField(profile, fieldLabel) || '—'}
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
+                              Position
+                            </th>
+                            {allFieldLabels.map(fieldLabel => (
+                              <th
+                                key={fieldLabel}
+                                className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap min-w-[150px]"
+                              >
+                                {fieldLabel}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {currentProfiles.map(profile => {
+                            const year = getYearForProfile(profile);
+                            return (
+                              <tr
+                                key={`${profile.id}-${year}`}
+                                className="hover:bg-gray-50 transition-colors"
+                              >
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
+                                  {year || '—'}
                                 </td>
-                              ))}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                                  <div className="flex items-center gap-2">
+                                    <span>{profile.position_name}</span>
+                                    <button
+                                      onClick={() =>
+                                        handleEditProfile(profile, year)
+                                      }
+                                      className="p-1 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
+                                      title="Edit this row"
+                                    >
+                                      <Edit
+                                        size={14}
+                                        className="text-gray-600"
+                                      />
+                                    </button>
+                                  </div>
+                                </td>
+                                {allFieldLabels.map(fieldLabel => (
+                                  <td
+                                    key={fieldLabel}
+                                    className="px-6 py-4 whitespace-nowrap text-sm text-black"
+                                  >
+                                    {getValueForField(profile, fieldLabel) ||
+                                      '—'}
+                                  </td>
+                                ))}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
               </div>
@@ -936,9 +982,9 @@ export default function StatsPage() {
               setEditingYear('');
             }}
           />
-          <div 
+          <div
             className="relative z-10 w-full max-w-md bg-white h-full shadow-2xl overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
+            onClick={e => e.stopPropagation()}
           >
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between">
@@ -1272,21 +1318,30 @@ export default function StatsPage() {
                     if (editingProfile) {
                       // The backend creates entry IDs like "profileId_year", so we need to extract the original profile ID
                       // Check if editingProfile has the original profile ID stored, or extract it from the id
-                      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-                      
+                      const uuidRegex =
+                        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
                       // Try to use user_sport_profile_id if available (original profile ID)
-                      if (editingProfile.user_sport_profile_id && uuidRegex.test(editingProfile.user_sport_profile_id)) {
-                        userSportProfileId = editingProfile.user_sport_profile_id;
+                      if (
+                        editingProfile.user_sport_profile_id &&
+                        uuidRegex.test(editingProfile.user_sport_profile_id)
+                      ) {
+                        userSportProfileId =
+                          editingProfile.user_sport_profile_id;
                       } else if (uuidRegex.test(editingProfile.id)) {
                         // If id is a valid UUID, use it
                         userSportProfileId = editingProfile.id;
                       } else {
                         // If id has format "uuid_year", extract just the UUID part
-                        const uuidMatch = editingProfile.id.match(/^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+                        const uuidMatch = editingProfile.id.match(
+                          /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i
+                        );
                         if (uuidMatch && uuidMatch[1]) {
                           userSportProfileId = uuidMatch[1];
                         } else {
-                          throw new Error(`Invalid profile ID format: ${editingProfile.id}. Cannot extract valid UUID.`);
+                          throw new Error(
+                            `Invalid profile ID format: ${editingProfile.id}. Cannot extract valid UUID.`
+                          );
                         }
                       }
                     } else {
@@ -1306,7 +1361,10 @@ export default function StatsPage() {
                           profileData.message || 'Failed to create profile'
                         );
                       }
-                      userSportProfileId = profileData.user_sport_profile_id || profileData.profileId || '';
+                      userSportProfileId =
+                        profileData.user_sport_profile_id ||
+                        profileData.profileId ||
+                        '';
                     }
 
                     // Step 5: Map form data to field IDs and prepare stats
@@ -1314,37 +1372,44 @@ export default function StatsPage() {
                     if (!fieldsData.fields || fieldsData.fields.length === 0) {
                       throw new Error('No fields available for this position');
                     }
-                    
+
                     // Filter out fallback fields - only use fields with valid UUID field IDs from database
                     const validFields = fieldsData.fields.filter((f: any) => {
                       // Check if field_id is a valid UUID (not a fallback ID)
-                      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                      const uuidRegex =
+                        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
                       return f.field_id && uuidRegex.test(f.field_id);
                     });
-                    
+
                     if (validFields.length === 0) {
-                      throw new Error('No valid database fields found for this position. Please contact support.');
+                      throw new Error(
+                        'No valid database fields found for this position. Please contact support.'
+                      );
                     }
-                    
+
                     // First, find the Year field and add it first (important for backend update logic)
                     const yearField = validFields.find(
-                      (f: any) => f.field_label === 'Year' || f.field_key === 'year'
+                      (f: any) =>
+                        f.field_label === 'Year' || f.field_key === 'year'
                     );
-                    
+
                     if (yearField && formData.year) {
                       stats.push({
                         fieldId: yearField.field_id,
                         value: String(formData.year),
                       });
                     }
-                    
+
                     // Then add all other fields
                     for (const field of validFields) {
                       // Skip Year field as we already added it
-                      if (field.field_label === 'Year' || field.field_key === 'year') {
+                      if (
+                        field.field_label === 'Year' ||
+                        field.field_key === 'year'
+                      ) {
                         continue;
                       }
-                      
+
                       // Try to find the value in formData using field_key first, then field_label
                       let value = formData[field.field_key];
 
@@ -1383,7 +1448,7 @@ export default function StatsPage() {
                         });
                       }
                     }
-                    
+
                     // Ensure Year field is included if it wasn't in fieldsData but exists in form
                     if (!yearField && formData.year) {
                       // Try to find Year field in position fields
@@ -1392,10 +1457,11 @@ export default function StatsPage() {
                           success: boolean;
                           fields?: any[];
                         }>(`/positions/${position.id}/fields`);
-                        
+
                         if (yearFieldsData.success && yearFieldsData.fields) {
                           const yearFieldFromDb = yearFieldsData.fields.find(
-                            (f: any) => f.field_label === 'Year' || f.field_key === 'year'
+                            (f: any) =>
+                              f.field_label === 'Year' || f.field_key === 'year'
                           );
                           if (yearFieldFromDb) {
                             // Insert Year at the beginning
@@ -1406,34 +1472,45 @@ export default function StatsPage() {
                           }
                         }
                       } catch (error) {
-                        console.warn('Could not fetch Year field separately:', error);
+                        console.warn(
+                          'Could not fetch Year field separately:',
+                          error
+                        );
                       }
                     }
 
                     // Step 6: Save position stats (this will update if year matches existing entry)
                     if (stats.length > 0) {
                       // Validate userSportProfileId is a valid UUID
-                      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                      const uuidRegex =
+                        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
                       if (!uuidRegex.test(userSportProfileId)) {
-                        console.error('Invalid userSportProfileId:', userSportProfileId);
-                        throw new Error(`Invalid userSportProfileId format: ${userSportProfileId}`);
+                        console.error(
+                          'Invalid userSportProfileId:',
+                          userSportProfileId
+                        );
+                        throw new Error(
+                          `Invalid userSportProfileId format: ${userSportProfileId}`
+                        );
                       }
-                      
+
                       // Validate all fieldIds are valid UUIDs
                       for (const stat of stats) {
                         if (!uuidRegex.test(stat.fieldId)) {
                           console.error('Invalid fieldId found:', stat);
-                          throw new Error(`Invalid fieldId format: ${stat.fieldId}. Field may not exist in database. Please ensure all fields are properly configured.`);
+                          throw new Error(
+                            `Invalid fieldId format: ${stat.fieldId}. Field may not exist in database. Please ensure all fields are properly configured.`
+                          );
                         }
                       }
-                      
+
                       // Debug: Log the data being sent
                       console.log('Saving stats with:', {
                         userSportProfileId,
                         statsCount: stats.length,
                         fieldIds: stats.map(s => s.fieldId),
                       });
-                      
+
                       const statsData = await apiPost<{
                         success: boolean;
                         message?: string;
@@ -1450,7 +1527,11 @@ export default function StatsPage() {
                       }
                     }
 
-                    alert(editingProfile ? 'Stats updated successfully!' : 'Stats saved successfully!');
+                    alert(
+                      editingProfile
+                        ? 'Stats updated successfully!'
+                        : 'Stats saved successfully!'
+                    );
                     setShowAddStatsModal(false);
                     // Reset form after save
                     setFormData({
