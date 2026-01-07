@@ -94,7 +94,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={manrope.className}>
         <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}>
-          {children}
+          <AuthProvider>
+            {children}
+          </AuthProvider>
         </GoogleOAuthProvider>
       </body>
     </html>
