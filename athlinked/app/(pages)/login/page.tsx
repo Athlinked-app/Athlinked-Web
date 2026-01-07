@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import SignupHero from '@/components/Signup/SignupHero';
+import { getToken, getRefreshToken, refreshAccessToken } from '@/utils/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,6 +13,122 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Check if user is already logged in on component mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        // Check if we just logged out - if so, clear the flag and show login form
+        // This prevents auto-redirect after logout
+        if (typeof window !== 'undefined') {
+          const justLoggedOut = localStorage.getItem('justLoggedOut');
+          if (justLoggedOut === 'true') {
+            localStorage.removeItem('justLoggedOut');
+            // Clear any remaining tokens just to be safe
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            setCheckingAuth(false);
+            return; // Show login form, don't try to redirect or refresh
+          }
+        }
+
+        const token = getToken();
+        const refreshToken = getRefreshToken();
+
+        // If no tokens at all, user is not logged in - show login form
+        if (!token && !refreshToken) {
+          setCheckingAuth(false);
+          return;
+        }
+
+        // If access token exists, check if it's valid
+        if (token) {
+          try {
+            const decoded = JSON.parse(atob(token.split('.')[1]));
+            const currentTime = Math.floor(Date.now() / 1000);
+            
+            // Only redirect if token is valid and not expired
+            if (decoded.exp && decoded.exp > currentTime) {
+              // Token is valid, redirect to home
+              router.push('/home');
+              return;
+            }
+          } catch (error) {
+            // Token decode failed, treat as invalid
+            console.log('Token decode failed, showing login form');
+            setCheckingAuth(false);
+            return;
+          }
+        }
+
+        // If access token is expired or doesn't exist, but refresh token exists
+        // Only try to refresh if we have a refresh token AND no valid access token
+        if (refreshToken) {
+          // Check if access token is expired or missing
+          let shouldRefresh = true;
+          if (token) {
+            try {
+              const decoded = JSON.parse(atob(token.split('.')[1]));
+              const currentTime = Math.floor(Date.now() / 1000);
+              // If token is still valid, don't refresh
+              if (decoded.exp && decoded.exp > currentTime) {
+                shouldRefresh = false;
+                router.push('/home');
+                return;
+              }
+            } catch (error) {
+              // Token decode failed, proceed with refresh attempt
+            }
+          }
+
+          if (shouldRefresh) {
+            try {
+              // Try to refresh the token
+              const newToken = await refreshAccessToken();
+              if (newToken) {
+                // Successfully refreshed, redirect to home
+                router.push('/home');
+                return;
+              } else {
+                // Refresh returned null - token was invalid or expired
+                // Clear any remaining tokens and show login form
+                if (typeof window !== 'undefined') {
+                  localStorage.removeItem('accessToken');
+                  localStorage.removeItem('refreshToken');
+                }
+                setCheckingAuth(false);
+                return;
+              }
+            } catch (error) {
+              // Refresh failed with an error - clear tokens and show login form
+              console.log('Token refresh error, clearing tokens and showing login form');
+              if (typeof window !== 'undefined') {
+                localStorage.removeItem('accessToken');
+                localStorage.removeItem('refreshToken');
+              }
+              setCheckingAuth(false);
+              return;
+            }
+          }
+        }
+
+        // If we get here, no valid tokens - show login form
+        setCheckingAuth(false);
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+        // On error, show login form instead of redirecting
+        setCheckingAuth(false);
+      }
+    };
+
+    // Add a small delay to ensure localStorage is updated after logout
+    const timer = setTimeout(() => {
+      checkAuth();
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,6 +186,25 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
+  // Show loading state while checking authentication
+  if (checkingAuth) {
+    return (
+      <div className="flex min-h-screen flex-col md:flex-row">
+        <SignupHero />
+        <div className="w-full md:w-1/2 xl:w-2/5 flex items-center justify-center bg-gray-100 p-4 sm:p-6 md:p-8 md:min-h-screen">
+          <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-6 sm:p-8 lg:p-10 xl:p-12 my-6 md:my-0">
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mb-4"></div>
+                <p className="text-black">Checking authentication...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col md:flex-row">

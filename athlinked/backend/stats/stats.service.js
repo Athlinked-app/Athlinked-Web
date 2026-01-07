@@ -200,6 +200,7 @@ async function getAllUserSportProfilesService(userId) {
       success: true,
       profiles: profiles.map(profile => ({
         id: profile.id,
+        user_sport_profile_id: profile.user_sport_profile_id || profile.id, // Include original profile ID
         sport_id: profile.sport_id,
         sport_name: profile.sport_name,
         position_id: profile.position_id,
