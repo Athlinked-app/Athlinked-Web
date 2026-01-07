@@ -39,7 +39,7 @@ export default function Clips({
       try {
         setLoading(true);
         const response = await fetch(
-          'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/clips?page=1&limit=50'
+          'http://localhost:3001/api/clips?page=1&limit=50'
         );
 
         if (!response.ok) {
@@ -68,7 +68,7 @@ export default function Clips({
             id: clip.id,
             videoUrl: clip.video_url?.startsWith('http')
               ? clip.video_url
-              : `https://qd9ngjg1-3001.inc1.devtunnels.ms${clip.video_url}`,
+              : `http://localhost:3001${clip.video_url}`,
             author: clip.username || fallbackName,
             authorAvatar: clip.user_profile_url || null,
             caption: clip.description || '',

@@ -50,7 +50,7 @@ export default function OTPVerification({
 
       // Call backend to verify OTP and create user
       const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/signup/verify-otp',
+        'http://localhost:3001/api/signup/verify-otp',
         {
           method: 'POST',
           headers: {
