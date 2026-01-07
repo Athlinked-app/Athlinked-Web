@@ -20,6 +20,8 @@ export default function OTPVerification({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [verificationMessage, setVerificationMessage] = useState<string>('');
   const [isVerified, setIsVerified] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string>('');
 
   const handleContinue = async () => {
     // Validate OTP
@@ -140,6 +142,66 @@ export default function OTPVerification({
       setIsSubmitting(false);
     }
   };
+
+  const handleResendOTP = async () => {
+    setIsResending(true);
+    setResendMessage('');
+    setVerificationMessage('');
+
+    try {
+      // Prepare signup data for OTP request (same as initial signup)
+      const sportsArray = formData.sportsPlayed
+        ? formData.sportsPlayed
+            .split(',')
+            .map((s: string) => s.trim())
+            .filter(Boolean)
+        : [];
+
+      const signupData = {
+        email: formData.email,
+        user_type: selectedUserType,
+        full_name: formData.fullName,
+        dob: formData.dateOfBirth,
+        sports_played: sportsArray,
+        primary_sport:
+          formData.primarySport ||
+          (sportsArray.length > 0 ? sportsArray[0] : null),
+        password: formData.password,
+        parent_name: formData.parentName || null,
+        parent_email: formData.parentEmail || null,
+        parent_dob: formData.parentDOB || null,
+      };
+
+      // Call backend to resend OTP
+      const response = await fetch('http://localhost:3001/api/signup/start', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(signupData),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setResendMessage('OTP has been resent successfully!');
+        // Clear the OTP input field
+        onFormDataChange({ ...formData, otp: '' });
+        // Clear success message after 3 seconds
+        setTimeout(() => {
+          setResendMessage('');
+        }, 3000);
+      } else {
+        setResendMessage(data.message || 'Failed to resend OTP. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error resending OTP:', error);
+      setResendMessage('Failed to resend OTP. Please try again.');
+    } finally {
+      setIsResending(false);
+    }
+  };
+
   return (
     <>
       <div className="space-y-6 mb-6">
@@ -168,10 +230,26 @@ export default function OTPVerification({
         )}
 
         <div className="text-center">
-          <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
-            Resend...
+          <button
+            type="button"
+            onClick={handleResendOTP}
+            disabled={isResending || isVerified}
+            className="text-blue-600 hover:text-blue-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isResending ? 'Resending...' : 'Resend OTP'}
           </button>
         </div>
+        {resendMessage && (
+          <div
+            className={`mt-2 p-2 rounded-lg text-sm text-center ${
+              resendMessage.includes('successfully')
+                ? 'bg-green-50 border border-green-200 text-green-700'
+                : 'bg-red-50 border border-red-200 text-red-700'
+            }`}
+          >
+            {resendMessage}
+          </div>
+        )}
       </div>
 
       {/* Verification Message */}

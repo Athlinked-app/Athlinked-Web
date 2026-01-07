@@ -2,13 +2,14 @@ const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const refreshTokensController = require('./refresh-tokens.controller');
+const googleAuthController = require('./google-auth.controller'); // NEW
 
 /**
  * @swagger
- * /api/auth/refresh:
+ * /api/auth/google:
  *   post:
- *     summary: Refresh access token
- *     description: Refresh access token using refresh token
+ *     summary: Google OAuth sign-in
+ *     description: Sign in or sign up using Google OAuth
  *     tags: [Authentication]
  *     security: []
  *     requestBody:
@@ -18,99 +19,63 @@ const refreshTokensController = require('./refresh-tokens.controller');
  *           schema:
  *             type: object
  *             required:
- *               - refreshToken
+ *               - google_id
+ *               - email
  *             properties:
- *               refreshToken:
+ *               google_id:
  *                 type: string
- *                 description: The refresh token
- *                 example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+ *                 example: "1234567890"
+ *               email:
+ *                 type: string
+ *                 example: "user@example.com"
+ *               full_name:
+ *                 type: string
+ *                 example: "John Doe"
+ *               profile_picture:
+ *                 type: string
+ *                 example: "https://..."
+ *               email_verified:
+ *                 type: boolean
+ *                 example: true
  *     responses:
  *       200:
- *         description: Token refreshed successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 accessToken:
- *                   type: string
- *                   example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *       401:
- *         description: Invalid or expired refresh token
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         description: Google sign-in successful
  */
+router.post('/google', googleAuthController.googleSignIn); // NEW
+
+/**
+ * @swagger
+ * /api/auth/google/complete:
+ *   post:
+ *     summary: Complete Google OAuth signup
+ *     description: Set user type after Google sign-in
+ *     tags: [Authentication]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - google_id
+ *               - user_type
+ *             properties:
+ *               google_id:
+ *                 type: string
+ *                 example: "1234567890"
+ *               user_type:
+ *                 type: string
+ *                 enum: [athlete, coach, organization]
+ *                 example: "athlete"
+ *     responses:
+ *       200:
+ *         description: Signup completed successfully
+ */
+router.post('/google/complete', googleAuthController.completeGoogleSignup); // NEW
+
 router.post('/refresh', refreshTokensController.refreshToken);
-
-/**
- * @swagger
- * /api/auth/logout:
- *   post:
- *     summary: Logout user
- *     description: Revoke refresh token (logout)
- *     tags: [Authentication]
- *     security: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - refreshToken
- *             properties:
- *               refreshToken:
- *                 type: string
- *                 description: The refresh token to revoke
- *                 example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *     responses:
- *       200:
- *         description: Logout successful
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Success'
- *       400:
- *         description: Bad request
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
 router.post('/logout', refreshTokensController.logout);
-
-/**
- * @swagger
- * /api/auth/logout-all:
- *   post:
- *     summary: Logout from all devices
- *     description: Revoke all refresh tokens for current user (logout from all devices)
- *     tags: [Authentication]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Logout from all devices successful
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Success'
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
-router.post(
-  '/logout-all',
-  authenticateToken,
-  refreshTokensController.logoutAll
-);
+router.post('/logout-all', authenticateToken, refreshTokensController.logoutAll);
 
 module.exports = router;
