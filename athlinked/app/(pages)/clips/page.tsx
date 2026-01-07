@@ -33,6 +33,8 @@ interface Comment {
   authorAvatar: string | null;
   text: string;
   hasReplies?: boolean;
+  replies?: Comment[];
+  parent_username?: string | null;
 }
 
 interface Reel {
@@ -71,6 +73,13 @@ export default function ClipsPage() {
   );
   const [isUploading, setIsUploading] = useState(false);
   const [commentTexts, setCommentTexts] = useState<{ [key: string]: string }>(
+    {}
+  );
+  const [replyTexts, setReplyTexts] = useState<{ [key: string]: string }>({});
+  const [showReplies, setShowReplies] = useState<{ [key: string]: boolean }>(
+    {}
+  );
+  const [replyingTo, setReplyingTo] = useState<{ [key: string]: string | null }>(
     {}
   );
   const [showDeleteMenu, setShowDeleteMenu] = useState<{
@@ -220,6 +229,18 @@ export default function ClipsPage() {
     mutedReels,
     userHasInteracted,
   ]);
+
+  // Fetch comments when selectedReelId changes
+  useEffect(() => {
+    if (selectedReelId && reels.length > 0) {
+      const reel = reels.find(r => r.id === selectedReelId);
+      // Only fetch if comments haven't been loaded yet or if comments array doesn't exist
+      if (reel && (!reel.comments || reel.comments.length === 0)) {
+        fetchComments(selectedReelId);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedReelId, reels.length]);
 
   // Enable audio on any page interaction (makes it feel automatic)
   useEffect(() => {
@@ -581,8 +602,33 @@ export default function ClipsPage() {
                 : null,
             text: comment.comment,
             hasReplies: comment.replies && comment.replies.length > 0,
+            replies: comment.replies
+              ? comment.replies.map((reply: any) => ({
+                  id: reply.id,
+                  author:
+                    reply.username ||
+                    userData?.full_name?.split(' ')[0] ||
+                    'User',
+                  authorAvatar:
+                    reply.user_profile_url &&
+                    reply.user_profile_url.trim() !== ''
+                      ? reply.user_profile_url
+                      : null,
+                  text: reply.comment,
+                  parent_username: reply.parent_username || null,
+                }))
+              : [],
           })
         );
+
+        // Show all replies by default
+        const newShowReplies: { [key: string]: boolean } = {};
+        transformedComments.forEach(comment => {
+          if (comment.hasReplies && comment.replies && comment.replies.length > 0) {
+            newShowReplies[comment.id] = true;
+          }
+        });
+        setShowReplies(prev => ({ ...prev, ...newShowReplies }));
 
         // Count total comments including replies for the count
         const totalCount = data.comments.reduce(
@@ -604,9 +650,35 @@ export default function ClipsPage() {
             return reel;
           })
         );
+      } else if (data.success && (!data.comments || data.comments.length === 0)) {
+        // If no comments, ensure comments array is set to empty array
+        setReels(prev =>
+          prev.map(reel => {
+            if (reel.id === clipId) {
+              return {
+                ...reel,
+                comments: [],
+                commentCount: 0,
+              };
+            }
+            return reel;
+          })
+        );
       }
     } catch (error) {
       console.error('Error fetching comments:', error);
+      // On error, ensure comments array exists
+      setReels(prev =>
+        prev.map(reel => {
+          if (reel.id === clipId) {
+            return {
+              ...reel,
+              comments: reel.comments || [],
+            };
+          }
+          return reel;
+        })
+      );
     }
   };
 
@@ -635,6 +707,50 @@ export default function ClipsPage() {
       console.error('Error adding comment:', error);
       alert(error instanceof Error ? error.message : 'Failed to add comment');
     }
+  };
+
+  const handleAddReply = async (reelId: string, commentId: string) => {
+    const text = replyTexts[`${reelId}-${commentId}`] || '';
+    if (!text.trim()) {
+      return;
+    }
+
+    try {
+      const { apiPost } = await import('@/utils/api');
+      const result = await apiPost<{ success: boolean; message?: string }>(
+        `/clips/comments/${commentId}/reply`,
+        {
+          comment: text.trim(),
+        }
+      );
+
+      if (!result.success) {
+        throw new Error(result.message || 'Failed to add reply');
+      }
+
+      setReplyTexts(prev => {
+        const newState = { ...prev };
+        delete newState[`${reelId}-${commentId}`];
+        return newState;
+      });
+      setReplyingTo(prev => ({ ...prev, [reelId]: null }));
+      await fetchComments(reelId);
+    } catch (error) {
+      console.error('Error adding reply:', error);
+      alert(error instanceof Error ? error.message : 'Failed to add reply');
+    }
+  };
+
+  const toggleReplies = (commentId: string) => {
+    setShowReplies(prev => ({
+      ...prev,
+      [commentId]: !prev[commentId],
+    }));
+  };
+
+  const handleReplyClick = (reelId: string, commentId: string) => {
+    setReplyingTo(prev => ({ ...prev, [reelId]: commentId }));
+    setShowReplies(prev => ({ ...prev, [commentId]: true }));
   };
 
   const fetchClips = async () => {
@@ -1068,9 +1184,10 @@ export default function ClipsPage() {
 
             {/* Comments List */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 relative">
-              {selectedReel && selectedReel.comments.length > 0 ? (
-                <>
-                  {selectedReel.comments.map(comment => (
+              {selectedReel ? (
+                selectedReel.comments && Array.isArray(selectedReel.comments) && selectedReel.comments.length > 0 ? (
+                  <>
+                    {selectedReel.comments.map(comment => (
                     <div key={comment.id} className="flex gap-3">
                       <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden flex-shrink-0 flex items-center justify-center">
                         {comment.authorAvatar ? (
@@ -1100,22 +1217,165 @@ export default function ClipsPage() {
                           {comment.text}
                         </p>
                         <div className="flex items-center gap-4 text-xs text-black">
-                          <button className="hover:text-black">Reply</button>
+                          <button
+                            onClick={() =>
+                              selectedReel &&
+                              handleReplyClick(selectedReel.id, comment.id)
+                            }
+                            className="hover:text-black"
+                          >
+                            Reply
+                          </button>
                           {comment.hasReplies && (
-                            <button className="hover:text-black">
-                              View replies
+                            <button
+                              onClick={() => toggleReplies(comment.id)}
+                              className="hover:text-black"
+                            >
+                              {showReplies[comment.id]
+                                ? `Hide replies (${comment.replies?.length || 0})`
+                                : `View replies (${comment.replies?.length || 0})`}
                             </button>
                           )}
                         </div>
+
+                        {/* Replies */}
+                        {showReplies[comment.id] &&
+                          comment.replies &&
+                          comment.replies.length > 0 && (
+                            <div className="mt-3 ml-4 space-y-3 border-l-2 border-gray-300 pl-4">
+                              {comment.replies.map(reply => (
+                                <div key={reply.id} className="flex gap-2">
+                                  <div className="w-8 h-8 rounded-full bg-gray-300 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                    {reply.authorAvatar ? (
+                                      <img
+                                        src={reply.authorAvatar}
+                                        alt={reply.author}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    ) : (
+                                      <span className="text-black font-semibold text-xs">
+                                        {reply.author
+                                          .split(' ')
+                                          .map(word => word[0])
+                                          .join('')
+                                          .toUpperCase()
+                                          .slice(0, 2)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="mb-1 flex items-center gap-1">
+                                      <span className="font-semibold text-black text-xs">
+                                        {reply.author}
+                                      </span>
+                                      {reply.parent_username && (
+                                        <>
+                                          <span className="text-gray-500 text-xs">
+                                            replying to
+                                          </span>
+                                          <span className="font-semibold text-[#CB9729] text-xs">
+                                            {reply.parent_username}
+                                          </span>
+                                        </>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-black">
+                                      {reply.text}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                        {/* Reply Input */}
+                        {selectedReel &&
+                          replyingTo[selectedReel.id] === comment.id && (
+                            <div className="mt-3 ml-4 flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-gray-300 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                {userData?.full_name ? (
+                                  <span className="text-black font-semibold text-xs">
+                                    {userData.full_name
+                                      .split(' ')
+                                      .map(word => word[0])
+                                      .join('')
+                                      .toUpperCase()
+                                      .slice(0, 2)}
+                                  </span>
+                                ) : (
+                                  <span className="text-black font-semibold text-xs">
+                                    U
+                                  </span>
+                                )}
+                              </div>
+                              <input
+                                type="text"
+                                placeholder={`Reply to ${comment.author}...`}
+                                value={
+                                  replyTexts[
+                                    `${selectedReel.id}-${comment.id}`
+                                  ] || ''
+                                }
+                                onChange={e =>
+                                  setReplyTexts(prev => ({
+                                    ...prev,
+                                    [`${selectedReel.id}-${comment.id}`]:
+                                      e.target.value,
+                                  }))
+                                }
+                                className="flex-1 px-3 py-1.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 text-xs text-black"
+                                onKeyPress={e => {
+                                  if (e.key === 'Enter' && selectedReel) {
+                                    handleAddReply(selectedReel.id, comment.id);
+                                  }
+                                }}
+                              />
+                              <button
+                                onClick={() =>
+                                  selectedReel &&
+                                  handleAddReply(selectedReel.id, comment.id)
+                                }
+                                className="p-1.5 bg-[#CB9729] text-white rounded-full hover:bg-yellow-600 transition-colors"
+                              >
+                                <Send size={14} />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (selectedReel) {
+                                    setReplyingTo(prev => ({
+                                      ...prev,
+                                      [selectedReel.id]: null,
+                                    }));
+                                    setReplyTexts(prev => {
+                                      const newState = { ...prev };
+                                      delete newState[
+                                        `${selectedReel.id}-${comment.id}`
+                                      ];
+                                      return newState;
+                                    });
+                                  }
+                                }}
+                                className="text-xs text-gray-500 hover:text-black px-2"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          )}
                       </div>
                     </div>
-                  ))}
-                </>
+                    ))}
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-black">
+                    <MessageSquare size={48} className="mb-4 opacity-50" />
+                    <p className="text-sm">No comments yet</p>
+                    <p className="text-xs mt-1">Be the first to comment!</p>
+                  </div>
+                )
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-black">
                   <MessageSquare size={48} className="mb-4 opacity-50" />
-                  <p className="text-sm">No comments yet</p>
-                  <p className="text-xs mt-1">Be the first to comment!</p>
+                  <p className="text-sm">Select a clip to view comments</p>
                 </div>
               )}
             </div>

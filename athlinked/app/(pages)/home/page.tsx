@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import HomeHerosection from '@/components/Home/Herosection';
 import Post, { type PostData } from '@/components/Post';
+import { isAuthenticated } from '@/utils/auth';
 
 interface CurrentUser {
   id: string;
@@ -15,10 +17,12 @@ interface CurrentUser {
 }
 
 export default function Landing() {
+  const router = useRouter();
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [checkingAuth, setCheckingAuth] = useState(true);
 
   const fetchPosts = async () => {
     try {
@@ -89,9 +93,17 @@ export default function Landing() {
   };
 
   useEffect(() => {
+    // Check authentication first - use hard redirect for security
+    if (!isAuthenticated()) {
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login';
+      }
+      return;
+    }
+    setCheckingAuth(false);
     fetchPosts();
     fetchCurrentUser();
-  }, []);
+  }, [router]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -155,6 +167,18 @@ export default function Landing() {
       .toUpperCase()
       .slice(0, 2);
   };
+
+  // Show loading state while checking authentication
+  if (checkingAuth) {
+    return (
+      <div className="h-screen bg-[#D4D4D4] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mb-4"></div>
+          <p className="text-black">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">

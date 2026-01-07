@@ -304,9 +304,12 @@ async function getCommentsByPostId(postId) {
     SELECT 
       pc.*,
       COALESCE(u.full_name, 'User') as username,
-      u.profile_url as user_profile_url
+      u.profile_url as user_profile_url,
+      COALESCE(parent_u.full_name, 'User') as parent_username
     FROM post_comments pc
     LEFT JOIN users u ON pc.user_id = u.id
+    LEFT JOIN post_comments parent_pc ON pc.parent_comment_id = parent_pc.id
+    LEFT JOIN users parent_u ON parent_pc.user_id = parent_u.id
     WHERE pc.post_id = $1 AND pc.parent_comment_id = $2
     ORDER BY pc.created_at ASC
   `;

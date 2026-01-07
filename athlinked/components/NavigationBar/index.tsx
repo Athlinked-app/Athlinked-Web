@@ -205,9 +205,10 @@ export default function NavigationBar({
     };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('userEmail');
-    router.push('/login');
+  const handleLogout = async () => {
+    // Use the proper logout function from auth utils
+    const { logout } = await import('@/utils/auth');
+    await logout();
   };
   const menuItems = [
     { id: 'search', icon: Search, label: 'Search' },

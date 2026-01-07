@@ -13,6 +13,8 @@ export interface CommentData {
   comment: string;
   created_at: string;
   parent_comment_id?: string | null;
+  parent_username?: string | null;
+  replies?: CommentData[];
 }
 
 interface CommentsPanelProps {
@@ -64,14 +66,14 @@ export default function CommentsPanel({
 
   const loadComments = async () => {
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/posts/${post.id}/comments`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && data.comments) {
-          setComments(data.comments);
-        }
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{
+        success: boolean;
+        comments?: CommentData[];
+      }>(`/posts/${post.id}/comments`);
+      if (data.success && data.comments) {
+        // Backend already returns comments with nested replies
+        setComments(data.comments);
       }
     } catch (error) {
       console.error('Error loading comments:', error);
@@ -79,17 +81,15 @@ export default function CommentsPanel({
   };
 
   const organizeComments = (allComments: CommentData[]) => {
-    const parentComments = allComments.filter(c => !c.parent_comment_id);
-    const replies = allComments.filter(c => c.parent_comment_id);
-
-    return parentComments.map(parent => ({
-      ...parent,
-      replies: replies.filter(r => r.parent_comment_id === parent.id),
-    }));
+    // Backend already returns comments with nested replies structure
+    // Just return them as-is
+    return allComments;
   };
 
   const getRepliesCount = (commentId: string) => {
-    return comments.filter(c => c.parent_comment_id === commentId).length;
+    // Find the comment and count its nested replies
+    const comment = comments.find(c => c.id === commentId);
+    return comment?.replies?.length || 0;
   };
 
   const handleAddComment = async () => {
@@ -303,9 +303,21 @@ export default function CommentsPanel({
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="bg-gray-50 rounded-lg p-2">
-                                <p className="font-semibold text-xs text-gray-900 mb-1">
-                                  {reply.username}
-                                </p>
+                                <div className="flex items-center gap-1 mb-1">
+                                  <p className="font-semibold text-xs text-gray-900">
+                                    {reply.username}
+                                  </p>
+                                  {reply.parent_username && (
+                                    <>
+                                      <span className="text-xs text-gray-500">
+                                        replying to
+                                      </span>
+                                      <p className="font-semibold text-xs text-[#CB9729]">
+                                        {reply.parent_username}
+                                      </p>
+                                    </>
+                                  )}
+                                </div>
                                 <p className="text-xs text-gray-700 break-words">
                                   {reply.comment}
                                 </p>

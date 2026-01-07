@@ -55,7 +55,15 @@ interface ProfileData {
 
 function ProfileContent() {
   const searchParams = useSearchParams();
-  const viewUserId = searchParams.get('userId'); 
+  const viewUserId = searchParams.get('userId');
+  
+  // Protect this route - check authentication
+  useEffect(() => {
+    const { isAuthenticated } = require('@/utils/auth');
+    if (!isAuthenticated() && typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+  }, []); 
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
