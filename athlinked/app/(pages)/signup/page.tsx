@@ -68,7 +68,7 @@ export default function SignupPage() {
 
   const handleContinue = async () => {
     // Determine OTP step based on user type
-    const otpStep = selectedUserType === 'athlete' ? 3 : 2;
+    const _otpStep = selectedUserType === 'athlete' ? 3 : 2;
 
     // If moving to OTP step, call backend to send OTP via email
     if (

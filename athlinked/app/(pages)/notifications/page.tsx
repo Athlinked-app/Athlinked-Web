@@ -138,7 +138,7 @@ export default function NotificationsPage() {
   // Fetch notifications on mount and when userId changes
   useEffect(() => {
     fetchNotifications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [currentUserId]);
 
   // Refresh notifications when tab changes
@@ -146,7 +146,7 @@ export default function NotificationsPage() {
     if (currentUserId) {
       fetchNotifications();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [activeTab]);
 
   // Filter notifications based on active tab

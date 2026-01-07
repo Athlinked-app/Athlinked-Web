@@ -303,7 +303,7 @@ export default function ManageResourcesPage() {
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
 
-      let title =
+      const title =
         doc
           .querySelector('meta[property="og:title"]')
           ?.getAttribute('content') ||

@@ -240,7 +240,7 @@ export default function ClipsPage() {
         fetchComments(selectedReelId);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [selectedReelId, reels.length]);
 
   // Enable audio on any page interaction (makes it feel automatic)
@@ -379,7 +379,7 @@ export default function ClipsPage() {
   }, []);
 
   // Get display name
-  const displayName = userData?.full_name?.split(' ')[0] || 'User';
+  const _displayName = userData?.full_name?.split(' ')[0] || 'User';
 
   // Check saved clips status on mount and when reels change
   useEffect(() => {
@@ -579,7 +579,7 @@ export default function ClipsPage() {
     }
   };
 
-  const handleComment = async (reelId: string) => {
+  const _handleComment = async (reelId: string) => {
     // Just fetch comments when comment button is clicked
     await fetchComments(reelId);
   };

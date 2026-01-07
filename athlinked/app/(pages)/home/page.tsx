@@ -307,7 +307,7 @@ export default function Landing() {
   };
 
   // Get initials for placeholder
-  const getInitials = (name?: string) => {
+  const _getInitials = (name?: string) => {
     if (!name) return 'U';
     return name
       .split(' ')

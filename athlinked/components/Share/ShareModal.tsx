@@ -321,7 +321,7 @@ export default function ShareModal({
     });
   };
 
-  const handleSend = () => {
+  const _handleSend = () => {
     if (selectedUsers.size === 0) return;
 
     const selectedUserIds = Array.from(selectedUsers);

@@ -62,7 +62,7 @@ export default function HomeHerosection({
     setShowDetails(false);
   };
 
-  const getUserData = async () => {
+  const _getUserData = async () => {
     const userIdentifier = localStorage.getItem('userEmail');
     if (!userIdentifier) {
       throw new Error('User not logged in');

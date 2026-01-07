@@ -166,26 +166,22 @@ export default function NavigationBar({
           return;
         }
 
-        let response;
+        const { apiGet } = await import('@/utils/api');
+        let data;
+
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
-          response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-          );
+          data = await apiGet<{
+            success: boolean;
+            user?: UserData;
+          }>(`/signup/user-by-username/${encodeURIComponent(username)}`);
         } else {
-          response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-          );
+          data = await apiGet<{
+            success: boolean;
+            user?: UserData;
+          }>(`/signup/user/${encodeURIComponent(userIdentifier)}`);
         }
 
-        if (!response.ok) {
-          if (isMounted) {
-            setLoading(false);
-          }
-          return;
-        }
-
-        const data = await response.json();
         if (data.success && data.user && isMounted) {
           setUserData(data.user);
         }

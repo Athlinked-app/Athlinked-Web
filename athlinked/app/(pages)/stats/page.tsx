@@ -550,7 +550,7 @@ export default function StatsPage() {
   };
 
   // Get raw value for a field (without unit) - used for editing
-  const getRawValueForField = (
+  const _getRawValueForField = (
     profile: UserSportProfile,
     fieldLabel: string
   ): string => {
@@ -1122,7 +1122,7 @@ export default function StatsPage() {
                   .filter((field: any) => field.field_label !== 'Year') // Year is already shown above
                   .map((field: any) => {
                     // Use field_key as the key, fallback to field_id
-                    const fieldKey = field.field_key || field.field_id;
+                    const _fieldKey = field.field_key || field.field_id;
                     // Use field_key for form data, or create from field_label
                     const displayKey =
                       field.field_key ||

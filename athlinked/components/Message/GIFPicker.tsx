@@ -7,8 +7,8 @@ interface GIFPickerProps {
   onGIFSelect: (gifUrl: string) => void;
 }
 
-const GIPHY_API_KEY = 'r9acJyFZnOSfyH1XrOx2QlqrVJtxwjUi';
-const GIPHY_BASE_URL = 'https://api.giphy.com/v1/gifs';
+const _GIPHY_API_KEY = 'r9acJyFZnOSfyH1XrOx2QlqrVJtxwjUi';
+const _GIPHY_BASE_URL = 'https://api.giphy.com/v1/gifs';
 
 interface GIF {
   id: string;

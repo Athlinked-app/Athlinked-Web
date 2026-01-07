@@ -463,7 +463,7 @@ function ProfileContent() {
     }
   };
 
-  const handlePostCreated = () => {
+  const _handlePostCreated = () => {
     fetchPosts();
   };
 
@@ -519,7 +519,7 @@ function ProfileContent() {
     }
     return profileUrl;
   };
-  const getInitials = (name?: string) => {
+  const _getInitials = (name?: string) => {
     if (!name) return 'U';
     return name
       .split(' ')

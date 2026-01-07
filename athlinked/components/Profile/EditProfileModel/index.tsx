@@ -259,7 +259,7 @@ export default function EditProfileModal({
     if (open) {
       fetchUserData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [open, viewedUserId, currentUserId]);
 
   // Check favorite status when viewing an athlete profile as a coach
@@ -408,11 +408,11 @@ export default function EditProfileModal({
     }
   };
 
-  const handleProfileImageClick = () => {
+  const _handleProfileImageClick = () => {
     profileImageInputRef.current?.click();
   };
 
-  const handleBackgroundImageClick = () => {
+  const _handleBackgroundImageClick = () => {
     backgroundImageInputRef.current?.click();
   };
 
@@ -450,7 +450,7 @@ export default function EditProfileModal({
     }
   };
 
-  const handleSave = () => {
+  const _handleSave = () => {
     if (onSave) {
       onSave({
         full_name: fullName,
