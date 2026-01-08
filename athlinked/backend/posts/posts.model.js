@@ -18,7 +18,7 @@ async function createPost(postData, client = null) {
   } = postData;
 
   const id = uuidv4();
-  
+
   // Get user_type from users table if not provided
   let user_type = postData.user_type;
   if (!user_type && user_id) {
@@ -35,7 +35,7 @@ async function createPost(postData, client = null) {
       user_type = 'athlete';
     }
   }
-  
+
   const query = `
     INSERT INTO posts (
       id,

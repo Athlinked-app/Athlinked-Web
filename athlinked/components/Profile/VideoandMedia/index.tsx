@@ -251,7 +251,7 @@ export default function VideoAndMediaComponent({
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={e => e.stopPropagation()}
                         >
                           {data.highlightVideoLink}
                           <ExternalLink className="w-3 h-3" />
@@ -274,7 +274,10 @@ export default function VideoAndMediaComponent({
                     )}
                   </div>
                   {isOwnProfile && (
-                    <div className="flex items-center gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      className="flex items-center gap-2 ml-4"
+                      onClick={e => e.stopPropagation()}
+                    >
                       <button
                         onClick={() => handleEdit(index)}
                         className="p-2 rounded-full hover:bg-blue-50 transition-colors"

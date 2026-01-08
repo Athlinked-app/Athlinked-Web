@@ -47,7 +47,8 @@ async function getMentionedUsers(actorUserId, mentionedNames) {
 
 async function createPostService(postData, userId) {
   try {
-    const userQuery = 'SELECT full_name, profile_url, user_type FROM users WHERE id = $1';
+    const userQuery =
+      'SELECT full_name, profile_url, user_type FROM users WHERE id = $1';
     const userResult = await pool.query(userQuery, [userId]);
 
     if (userResult.rows.length === 0) {

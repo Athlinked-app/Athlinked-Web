@@ -303,7 +303,10 @@ export default function Achievements({
                     )}
                   </div>
                   {isOwnProfile && (
-                    <div className="flex items-center gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      className="flex items-center gap-2 ml-4"
+                      onClick={e => e.stopPropagation()}
+                    >
                       <button
                         onClick={() => handleEdit(index)}
                         className="p-2 rounded-full hover:bg-blue-50 transition-colors"
@@ -456,7 +459,9 @@ function ViewAchievementPopup({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Description
               </label>
-              <p className="text-gray-900 whitespace-pre-wrap">{data.description}</p>
+              <p className="text-gray-900 whitespace-pre-wrap">
+                {data.description}
+              </p>
             </div>
           )}
 

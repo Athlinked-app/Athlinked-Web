@@ -76,7 +76,7 @@ async function getSportAndPositionNames(sportId, positionId) {
  * Always creates a new profile entry to allow multiple entries per sport/position combination.
  * If a unique constraint violation occurs on (user_id, sport_id), we check for existing profiles
  * and either return an existing one with the same position or handle it appropriately.
- * 
+ *
  * Note: To fully support multiple entries, the database constraint should ideally be on
  * (user_id, sport_id, position_id) or removed entirely. This function works with the
  * current constraint by always attempting to create new entries.
@@ -96,7 +96,7 @@ async function getOrCreateUserSportProfile(
     // Always try to create a new profile entry
     // This allows multiple entries for the same sport/position (e.g., different years/seasons)
     const id = uuidv4();
-    
+
     // Check if full_name column exists in the table
     // Try to insert with full_name, if it fails due to column not existing, try without it
     let insertQuery = `
@@ -121,7 +121,7 @@ async function getOrCreateUserSportProfile(
       positionName,
       fullName,
     ];
-    
+
     try {
       const insertResult = await client.query(insertQuery, insertValues);
       await client.query('COMMIT');
@@ -129,22 +129,23 @@ async function getOrCreateUserSportProfile(
     } catch (firstError) {
       // Rollback the failed transaction
       await client.query('ROLLBACK');
-      
+
       // Handle unique constraint violation
       if (firstError.code === '23505') {
         const constraintName = firstError.constraint || '';
         const errorMessage = firstError.message || '';
-        
+
         // If constraint is on (user_id, sport_id)
-        if (constraintName.includes('user_id_sport_id') || 
-            constraintName === 'user_sport_profiles_user_id_sport_id_key' ||
-            constraintName.includes('user_sport_profiles') ||
-            errorMessage.includes('user_sport_profiles_user_id_sport_id_key') ||
-            errorMessage.includes('user_id_sport_id')) {
-          
+        if (
+          constraintName.includes('user_id_sport_id') ||
+          constraintName === 'user_sport_profiles_user_id_sport_id_key' ||
+          constraintName.includes('user_sport_profiles') ||
+          errorMessage.includes('user_sport_profiles_user_id_sport_id_key') ||
+          errorMessage.includes('user_id_sport_id')
+        ) {
           // Start a new transaction to check for existing profiles
           await client.query('BEGIN');
-          
+
           try {
             // Get all existing profiles for this user and sport
             const checkQuery = `
@@ -153,14 +154,17 @@ async function getOrCreateUserSportProfile(
               WHERE user_id = $1 AND sport_id = $2
               ORDER BY created_at DESC
             `;
-            const checkResult = await client.query(checkQuery, [userId, sportId]);
-            
+            const checkResult = await client.query(checkQuery, [
+              userId,
+              sportId,
+            ]);
+
             if (checkResult.rows.length > 0) {
               // Check if any existing profile has the same position
               const samePositionProfile = checkResult.rows.find(
                 p => p.position_id === positionId
               );
-              
+
               if (samePositionProfile) {
                 // Profile with same position exists - return it to allow adding stats to it
                 // This allows multiple stats entries for the same position
@@ -177,7 +181,7 @@ async function getOrCreateUserSportProfile(
                       position_name = $2
                 `;
                 let updateValues = [positionId, positionName];
-                
+
                 // Try to update full_name if column exists
                 if (fullName) {
                   updateQuery = `
@@ -188,7 +192,13 @@ async function getOrCreateUserSportProfile(
                     WHERE user_id = $4 AND sport_id = $5
                     RETURNING id
                   `;
-                  updateValues = [positionId, positionName, fullName, userId, sportId];
+                  updateValues = [
+                    positionId,
+                    positionName,
+                    fullName,
+                    userId,
+                    sportId,
+                  ];
                 } else {
                   updateQuery = `
                     UPDATE user_sport_profiles
@@ -199,14 +209,21 @@ async function getOrCreateUserSportProfile(
                   `;
                   updateValues = [positionId, positionName, userId, sportId];
                 }
-                
+
                 try {
-                  const updateResult = await client.query(updateQuery, updateValues);
+                  const updateResult = await client.query(
+                    updateQuery,
+                    updateValues
+                  );
                   await client.query('COMMIT');
                   return updateResult.rows[0].id;
                 } catch (updateError) {
                   // If full_name column doesn't exist, try without it
-                  if (updateError.code === '42703' || (updateError.message.includes('column') && updateError.message.includes('does not exist'))) {
+                  if (
+                    updateError.code === '42703' ||
+                    (updateError.message.includes('column') &&
+                      updateError.message.includes('does not exist'))
+                  ) {
                     updateQuery = `
                       UPDATE user_sport_profiles
                       SET position_id = $1,
@@ -215,7 +232,10 @@ async function getOrCreateUserSportProfile(
                       RETURNING id
                     `;
                     updateValues = [positionId, positionName, userId, sportId];
-                    const updateResult = await client.query(updateQuery, updateValues);
+                    const updateResult = await client.query(
+                      updateQuery,
+                      updateValues
+                    );
                     await client.query('COMMIT');
                     return updateResult.rows[0].id;
                   }
@@ -235,10 +255,14 @@ async function getOrCreateUserSportProfile(
           // Re-throw if we can't handle this constraint
           throw firstError;
         }
-      } else if (firstError.code === '42703' || (firstError.message.includes('column') && firstError.message.includes('does not exist'))) {
+      } else if (
+        firstError.code === '42703' ||
+        (firstError.message.includes('column') &&
+          firstError.message.includes('does not exist'))
+      ) {
         // If column doesn't exist, try without full_name
         await client.query('BEGIN');
-        
+
         insertQuery = `
           INSERT INTO user_sport_profiles (
             id,
@@ -259,7 +283,7 @@ async function getOrCreateUserSportProfile(
           positionId,
           positionName,
         ];
-        
+
         try {
           const insertResult = await client.query(insertQuery, insertValues);
           await client.query('COMMIT');
@@ -267,22 +291,25 @@ async function getOrCreateUserSportProfile(
         } catch (insertError) {
           // Rollback the failed transaction before handling the error
           await client.query('ROLLBACK');
-          
+
           // Handle unique constraint violation
           if (insertError.code === '23505') {
             const constraintName = insertError.constraint || '';
             const errorMessage = insertError.message || '';
-            
+
             // If constraint is on (user_id, sport_id)
-            if (constraintName.includes('user_id_sport_id') || 
-                constraintName === 'user_sport_profiles_user_id_sport_id_key' ||
-                constraintName.includes('user_sport_profiles') ||
-                errorMessage.includes('user_sport_profiles_user_id_sport_id_key') ||
-                errorMessage.includes('user_id_sport_id')) {
-              
+            if (
+              constraintName.includes('user_id_sport_id') ||
+              constraintName === 'user_sport_profiles_user_id_sport_id_key' ||
+              constraintName.includes('user_sport_profiles') ||
+              errorMessage.includes(
+                'user_sport_profiles_user_id_sport_id_key'
+              ) ||
+              errorMessage.includes('user_id_sport_id')
+            ) {
               // Start a new transaction to check for existing profiles
               await client.query('BEGIN');
-              
+
               try {
                 // Get all existing profiles for this user and sport
                 const checkQuery = `
@@ -291,14 +318,17 @@ async function getOrCreateUserSportProfile(
                   WHERE user_id = $1 AND sport_id = $2
                   ORDER BY created_at DESC
                 `;
-                const checkResult = await client.query(checkQuery, [userId, sportId]);
-                
+                const checkResult = await client.query(checkQuery, [
+                  userId,
+                  sportId,
+                ]);
+
                 if (checkResult.rows.length > 0) {
                   // Check if any existing profile has the same position
                   const samePositionProfile = checkResult.rows.find(
                     p => p.position_id === positionId
                   );
-                  
+
                   if (samePositionProfile) {
                     // Profile with same position exists - return it to allow adding stats to it
                     // This allows multiple stats entries for the same position
@@ -315,7 +345,7 @@ async function getOrCreateUserSportProfile(
                           position_name = $2
                     `;
                     let updateValues = [positionId, positionName];
-                    
+
                     // Try to update full_name if column exists
                     if (fullName) {
                       updateQuery = `
@@ -326,7 +356,13 @@ async function getOrCreateUserSportProfile(
                         WHERE user_id = $4 AND sport_id = $5
                         RETURNING id
                       `;
-                      updateValues = [positionId, positionName, fullName, userId, sportId];
+                      updateValues = [
+                        positionId,
+                        positionName,
+                        fullName,
+                        userId,
+                        sportId,
+                      ];
                     } else {
                       updateQuery = `
                         UPDATE user_sport_profiles
@@ -335,16 +371,28 @@ async function getOrCreateUserSportProfile(
                         WHERE user_id = $3 AND sport_id = $4
                         RETURNING id
                       `;
-                      updateValues = [positionId, positionName, userId, sportId];
+                      updateValues = [
+                        positionId,
+                        positionName,
+                        userId,
+                        sportId,
+                      ];
                     }
-                    
+
                     try {
-                      const updateResult = await client.query(updateQuery, updateValues);
+                      const updateResult = await client.query(
+                        updateQuery,
+                        updateValues
+                      );
                       await client.query('COMMIT');
                       return updateResult.rows[0].id;
                     } catch (updateError) {
                       // If full_name column doesn't exist, try without it
-                      if (updateError.code === '42703' || (updateError.message.includes('column') && updateError.message.includes('does not exist'))) {
+                      if (
+                        updateError.code === '42703' ||
+                        (updateError.message.includes('column') &&
+                          updateError.message.includes('does not exist'))
+                      ) {
                         updateQuery = `
                           UPDATE user_sport_profiles
                           SET position_id = $1,
@@ -352,8 +400,16 @@ async function getOrCreateUserSportProfile(
                           WHERE user_id = $3 AND sport_id = $4
                           RETURNING id
                         `;
-                        updateValues = [positionId, positionName, userId, sportId];
-                        const updateResult = await client.query(updateQuery, updateValues);
+                        updateValues = [
+                          positionId,
+                          positionName,
+                          userId,
+                          sportId,
+                        ];
+                        const updateResult = await client.query(
+                          updateQuery,
+                          updateValues
+                        );
                         await client.query('COMMIT');
                         return updateResult.rows[0].id;
                       }
@@ -412,7 +468,10 @@ async function upsertUserPositionStats(userSportProfileId, stats, fieldData) {
     let yearFieldIndex = -1;
     for (let i = 0; i < stats.length; i++) {
       const fieldInfo = fieldData[i];
-      if (fieldInfo && (fieldInfo.field_label === 'Year' || fieldInfo.field_key === 'year')) {
+      if (
+        fieldInfo &&
+        (fieldInfo.field_label === 'Year' || fieldInfo.field_key === 'year')
+      ) {
         yearValue = stats[i].value;
         yearFieldIndex = i;
         break;
@@ -432,8 +491,11 @@ async function upsertUserPositionStats(userSportProfileId, stats, fieldData) {
         ORDER BY created_at DESC
         LIMIT 1
       `;
-      const yearStatResult = await client.query(yearStatQuery, [userSportProfileId, yearValue]);
-      
+      const yearStatResult = await client.query(yearStatQuery, [
+        userSportProfileId,
+        yearValue,
+      ]);
+
       if (yearStatResult.rows.length > 0) {
         // Year entry exists - delete all stats created at the same time (within 5 seconds)
         const yearCreatedAt = yearStatResult.rows[0].created_at;
@@ -442,7 +504,10 @@ async function upsertUserPositionStats(userSportProfileId, stats, fieldData) {
           WHERE user_sport_profile_id = $1
           AND ABS(EXTRACT(EPOCH FROM (created_at - $2::timestamp))) < 5
         `;
-        await client.query(deleteYearEntryQuery, [userSportProfileId, yearCreatedAt]);
+        await client.query(deleteYearEntryQuery, [
+          userSportProfileId,
+          yearCreatedAt,
+        ]);
       }
     } else {
       // No year provided - just append new stats (allows multiple entries)
@@ -548,13 +613,17 @@ async function getAllUserSportProfiles(userId) {
     WHERE usp.user_id = $1
     ORDER BY usp.created_at DESC
   `;
-  
+
   let profilesResult;
   try {
     profilesResult = await pool.query(profilesQuery, [userId]);
   } catch (error) {
     // If full_name column doesn't exist in user_sport_profiles, use only users table
-    if (error.code === '42703' || (error.message.includes('column') && error.message.includes('does not exist'))) {
+    if (
+      error.code === '42703' ||
+      (error.message.includes('column') &&
+        error.message.includes('does not exist'))
+    ) {
       const fallbackQuery = `
         SELECT 
           usp.id,
@@ -594,41 +663,46 @@ async function getAllUserSportProfiles(userId) {
       // Stats created at the same time (within 5 seconds) belong to the same entry
       const entries = [];
       const processedIndices = new Set();
-      
+
       for (let i = 0; i < statsResult.rows.length; i++) {
         if (processedIndices.has(i)) continue;
-        
+
         const stat = statsResult.rows[i];
-        
+
         // Find the year stat for this entry (if exists)
         let yearStat = null;
         let yearStatIndex = -1;
         for (let j = 0; j < statsResult.rows.length; j++) {
           const s = statsResult.rows[j];
-          if (s.field_label === 'Year' && 
-              Math.abs(new Date(s.created_at) - new Date(stat.created_at)) < 5000 &&
-              !processedIndices.has(j)) {
+          if (
+            s.field_label === 'Year' &&
+            Math.abs(new Date(s.created_at) - new Date(stat.created_at)) <
+              5000 &&
+            !processedIndices.has(j)
+          ) {
             yearStat = s;
             yearStatIndex = j;
             break;
           }
         }
-        
+
         const entryCreatedAt = yearStat ? yearStat.created_at : stat.created_at;
         const yearValue = yearStat ? yearStat.value : null;
-        
+
         // Get all stats created at the same time (within 5 seconds)
         const entryStats = [];
         for (let j = 0; j < statsResult.rows.length; j++) {
           if (processedIndices.has(j)) continue;
           const s = statsResult.rows[j];
-          const timeDiff = Math.abs(new Date(s.created_at) - new Date(entryCreatedAt));
+          const timeDiff = Math.abs(
+            new Date(s.created_at) - new Date(entryCreatedAt)
+          );
           if (timeDiff < 5000) {
             entryStats.push(s);
             processedIndices.add(j);
           }
         }
-        
+
         if (entryStats.length > 0) {
           entries.push({
             id: `${profile.id}_${yearValue || entryCreatedAt}`, // Unique ID for this entry
@@ -642,21 +716,23 @@ async function getAllUserSportProfiles(userId) {
           });
         }
       }
-      
+
       // If no entries were created (shouldn't happen), return the profile with all stats
       if (entries.length === 0) {
-        return [{
-          id: profile.id,
-          sport_id: profile.sport_id,
-          sport_name: profile.sport_name,
-          position_id: profile.position_id,
-          position_name: profile.position_name,
-          full_name: profile.full_name || null,
-          created_at: profile.created_at,
-          stats: statsResult.rows,
-        }];
+        return [
+          {
+            id: profile.id,
+            sport_id: profile.sport_id,
+            sport_name: profile.sport_name,
+            position_id: profile.position_id,
+            position_name: profile.position_name,
+            full_name: profile.full_name || null,
+            created_at: profile.created_at,
+            stats: statsResult.rows,
+          },
+        ];
       }
-      
+
       return entries;
     })
   );

@@ -54,7 +54,7 @@ router.post(
   '/',
   authenticateToken,
   (req, res, next) => {
-    upload.single('video')(req, res, (err) => {
+    upload.single('video')(req, res, err => {
       if (err) {
         // Handle multer errors
         if (err.code === 'LIMIT_FILE_SIZE') {

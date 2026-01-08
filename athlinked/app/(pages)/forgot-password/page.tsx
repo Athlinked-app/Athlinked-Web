@@ -25,7 +25,7 @@ function ForgotPasswordContent() {
 
     try {
       const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/forgot-password/request',
+        'http://localhost:3001/api/forgot-password/request',
         {
           method: 'POST',
           headers: {
@@ -60,7 +60,7 @@ function ForgotPasswordContent() {
 
     try {
       const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/forgot-password/verify-otp',
+        'http://localhost:3001/api/forgot-password/verify-otp',
         {
           method: 'POST',
           headers: {
@@ -108,7 +108,7 @@ function ForgotPasswordContent() {
 
     try {
       const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/forgot-password/reset',
+        'http://localhost:3001/api/forgot-password/reset',
         {
           method: 'POST',
           headers: {

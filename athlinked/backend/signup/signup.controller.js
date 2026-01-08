@@ -276,9 +276,8 @@ async function getMyChildren(req, res) {
       });
     }
 
-    const result = await signupService.getChildrenByParentEmailService(
-      parentEmail
-    );
+    const result =
+      await signupService.getChildrenByParentEmailService(parentEmail);
 
     return res.status(200).json(result);
   } catch (error) {
@@ -311,7 +310,7 @@ async function deleteAccount(req, res) {
     return res.status(200).json(result);
   } catch (error) {
     console.error('Delete account error:', error);
-    
+
     if (error.message === 'User not found') {
       return res.status(404).json({
         success: false,

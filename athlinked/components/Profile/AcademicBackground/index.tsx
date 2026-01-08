@@ -250,9 +250,7 @@ export default function AcademicBackgrounds({
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-3 text-xs font-semibold text-gray-800 uppercase">
-                      <h3 className="text-sm text-gray-600">
-                        {bg.school}
-                      </h3>
+                      <h3 className="text-sm text-gray-600">{bg.school}</h3>
                       {bg.degree && (
                         <span className="text-sm text-gray-600">
                           - {bg.degree}
@@ -339,7 +337,9 @@ export default function AcademicBackgrounds({
                         </p>
                         {bg.graduationYear && (
                           <p className="text-sm text-gray-600">
-                            <span className="font-medium">Graduation Year:</span>{' '}
+                            <span className="font-medium">
+                              Graduation Year:
+                            </span>{' '}
                             {bg.graduationYear}
                           </p>
                         )}
@@ -377,7 +377,10 @@ export default function AcademicBackgrounds({
                     )}
                   </div>
                   {isOwnProfile && (
-                    <div className="flex items-center gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      className="flex items-center gap-2 ml-4"
+                      onClick={e => e.stopPropagation()}
+                    >
                       <button
                         onClick={() => handleEdit(index)}
                         className="p-2 rounded-full hover:bg-blue-50 transition-colors"
@@ -567,7 +570,9 @@ function ViewAcademicBackgroundPopup({
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       College Eligibility Status
                     </label>
-                    <p className="text-gray-900">{data.collegeEligibilityStatus}</p>
+                    <p className="text-gray-900">
+                      {data.collegeEligibilityStatus}
+                    </p>
                   </div>
                 )}
               </div>
@@ -608,7 +613,9 @@ function ViewAcademicBackgroundPopup({
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Preferred College Regions
                     </label>
-                    <p className="text-gray-900">{data.preferredCollegeRegions}</p>
+                    <p className="text-gray-900">
+                      {data.preferredCollegeRegions}
+                    </p>
                   </div>
                 )}
 
@@ -617,7 +624,9 @@ function ViewAcademicBackgroundPopup({
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Willingness to Relocate
                     </label>
-                    <p className="text-gray-900">{data.willingnessToRelocate}</p>
+                    <p className="text-gray-900">
+                      {data.willingnessToRelocate}
+                    </p>
                   </div>
                 )}
 

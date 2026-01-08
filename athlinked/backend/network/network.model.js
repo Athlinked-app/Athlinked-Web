@@ -438,17 +438,21 @@ async function acceptConnectionRequest(requestId, receiverId) {
 
     // Create connection entry in user_connections table
     // Normalize order: always store with user_id_1 < user_id_2 (lexicographically)
-    const [normalizedUserId1, normalizedUserId2] = 
-      requesterId < receiverId ? [requesterId, receiverId] : [receiverId, requesterId];
-    
+    const [normalizedUserId1, normalizedUserId2] =
+      requesterId < receiverId
+        ? [requesterId, receiverId]
+        : [receiverId, requesterId];
+
     // Get full names for both users
-    const normalizedUser1Name = normalizedUserId1 === requesterId 
-      ? requesterResult.rows[0].full_name || requesterUsername
-      : receiverResult.rows[0].full_name || receiverUsername;
-    const normalizedUser2Name = normalizedUserId2 === requesterId 
-      ? requesterResult.rows[0].full_name || requesterUsername
-      : receiverResult.rows[0].full_name || receiverUsername;
-    
+    const normalizedUser1Name =
+      normalizedUserId1 === requesterId
+        ? requesterResult.rows[0].full_name || requesterUsername
+        : receiverResult.rows[0].full_name || receiverUsername;
+    const normalizedUser2Name =
+      normalizedUserId2 === requesterId
+        ? requesterResult.rows[0].full_name || requesterUsername
+        : receiverResult.rows[0].full_name || receiverUsername;
+
     const connectionId = uuidv4();
     const insertConnectionQuery = `
       INSERT INTO user_connections (id, user_id_1, user_id_2, full_name_1, full_name_2, created_at)
@@ -673,7 +677,7 @@ async function createConnection(userId1, userId2) {
 
     // Normalize order: always store with user_id_1 < user_id_2 (lexicographically)
     // This ensures consistent storage and prevents duplicates
-    const [normalizedUserId1, normalizedUserId2] = 
+    const [normalizedUserId1, normalizedUserId2] =
       userId1 < userId2 ? [userId1, userId2] : [userId2, userId1];
 
     // Get full names for both users
@@ -683,15 +687,23 @@ async function createConnection(userId1, userId2) {
       dbClient.query(userQuery, [normalizedUserId2]),
     ]);
 
-    const fullName1 = user1Result.rows[0]?.full_name || user1Result.rows[0]?.username || null;
-    const fullName2 = user2Result.rows[0]?.full_name || user2Result.rows[0]?.username || null;
+    const fullName1 =
+      user1Result.rows[0]?.full_name || user1Result.rows[0]?.username || null;
+    const fullName2 =
+      user2Result.rows[0]?.full_name || user2Result.rows[0]?.username || null;
 
     const id = uuidv4();
     const insertQuery = `
       INSERT INTO user_connections (id, user_id_1, user_id_2, full_name_1, full_name_2, created_at)
       VALUES ($1, $2, $3, $4, $5, NOW())
     `;
-    await dbClient.query(insertQuery, [id, normalizedUserId1, normalizedUserId2, fullName1, fullName2]);
+    await dbClient.query(insertQuery, [
+      id,
+      normalizedUserId1,
+      normalizedUserId2,
+      fullName1,
+      fullName2,
+    ]);
 
     await dbClient.query('COMMIT');
     return true;

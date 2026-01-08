@@ -302,11 +302,7 @@ router.get('/users', signupController.getAllUsers);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get(
-  '/my-children',
-  authenticateToken,
-  signupController.getMyChildren
-);
+router.get('/my-children', authenticateToken, signupController.getMyChildren);
 
 /**
  * @swagger

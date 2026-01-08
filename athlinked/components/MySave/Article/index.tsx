@@ -38,7 +38,7 @@ export default function MySaveArticle({
         setLoadingSaved(true);
         try {
           const response = await fetch(
-            `https://qd9ngjg1-3001.inc1.devtunnels.ms/api/posts/saved/${viewedUserId}`
+            `http://localhost:3001/api/posts/saved/${viewedUserId}`
           );
           if (response.ok) {
             const data = await response.json();
@@ -112,7 +112,7 @@ export default function MySaveArticle({
     if (mediaUrl.startsWith('http')) return mediaUrl;
 
     // Otherwise, prepend the base URL
-    return `https://qd9ngjg1-3001.inc1.devtunnels.ms${mediaUrl}`;
+    return `http://localhost:3001${mediaUrl}`;
   };
 
   if (loading || loadingSaved) {

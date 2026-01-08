@@ -3,7 +3,7 @@
  */
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'https://qd9ngjg1-3001.inc1.devtunnels.ms/api';
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 /**
  * Get the access token from localStorage
@@ -254,7 +254,7 @@ export async function apiUpload<T = any>(
     method: 'POST',
     body: formData,
   });
-  
+
   // Check if response is ok before parsing JSON
   if (!response.ok) {
     let errorMessage = 'Failed to upload file';
@@ -267,6 +267,6 @@ export async function apiUpload<T = any>(
     }
     throw new Error(errorMessage);
   }
-  
+
   return response.json();
 }

@@ -352,7 +352,7 @@ async function deleteAccountService(userId) {
 
     // Delete user from database
     const deleted = await signupModel.deleteUser(userId);
-    
+
     if (!deleted) {
       throw new Error('Failed to delete user account');
     }

@@ -24,7 +24,10 @@ async function addFavorite(req, res) {
       });
     }
 
-    const result = await favoritesService.addFavoriteService(coachId, athleteId);
+    const result = await favoritesService.addFavoriteService(
+      coachId,
+      athleteId
+    );
     return res.status(200).json(result);
   } catch (error) {
     console.error('Add favorite controller error:', error);
@@ -153,4 +156,3 @@ module.exports = {
   checkFavoriteStatus,
   getFavorites,
 };
-

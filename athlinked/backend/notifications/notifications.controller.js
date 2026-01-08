@@ -105,7 +105,8 @@ async function markAsRead(req, res) {
       const io = app.get('io');
       if (io) {
         const notificationModel = require('./notifications.model');
-        const unreadCount = await notificationModel.getUnreadCount(recipientUserId);
+        const unreadCount =
+          await notificationModel.getUnreadCount(recipientUserId);
         io.to(`user:${recipientUserId}`).emit('notification_count_update', {
           count: unreadCount,
         });
@@ -193,7 +194,8 @@ async function deleteNotification(req, res) {
       const io = app.get('io');
       if (io) {
         const notificationModel = require('./notifications.model');
-        const unreadCount = await notificationModel.getUnreadCount(recipientUserId);
+        const unreadCount =
+          await notificationModel.getUnreadCount(recipientUserId);
         io.to(`user:${recipientUserId}`).emit('notification_deleted', {
           notificationId,
         });

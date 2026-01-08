@@ -463,7 +463,7 @@ async function updateUserNameInMessages(userId, userName) {
  */
 async function deleteMessage(messageId, userId, client = null) {
   const dbClient = client || pool;
-  
+
   try {
     // Verify the message belongs to the user
     const checkQuery = `
@@ -472,7 +472,7 @@ async function deleteMessage(messageId, userId, client = null) {
       WHERE id = $1 AND sender_id = $2
     `;
     const checkResult = await dbClient.query(checkQuery, [messageId, userId]);
-    
+
     if (checkResult.rows.length === 0) {
       return false;
     }
@@ -494,11 +494,17 @@ async function deleteMessage(messageId, userId, client = null) {
       ORDER BY created_at DESC 
       LIMIT 1
     `;
-    const lastMessageResult = await dbClient.query(lastMessageQuery, [conversationId]);
-    
+    const lastMessageResult = await dbClient.query(lastMessageQuery, [
+      conversationId,
+    ]);
+
     if (lastMessageResult.rows.length > 0) {
       const lastMessage = lastMessageResult.rows[0].message || '';
-      await updateConversationLastMessage(conversationId, lastMessage, dbClient);
+      await updateConversationLastMessage(
+        conversationId,
+        lastMessage,
+        dbClient
+      );
     } else {
       // No messages left, clear last message
       await updateConversationLastMessage(conversationId, null, dbClient);
@@ -520,7 +526,7 @@ async function deleteMessage(messageId, userId, client = null) {
  */
 async function deleteConversation(conversationId, userId, client = null) {
   const dbClient = client || pool;
-  
+
   try {
     // Verify the user is a participant in this conversation
     const checkQuery = `
@@ -528,8 +534,11 @@ async function deleteConversation(conversationId, userId, client = null) {
       FROM conversation_participants 
       WHERE conversation_id = $1 AND user_id = $2
     `;
-    const checkResult = await dbClient.query(checkQuery, [conversationId, userId]);
-    
+    const checkResult = await dbClient.query(checkQuery, [
+      conversationId,
+      userId,
+    ]);
+
     if (checkResult.rows.length === 0) {
       return false;
     }
@@ -538,7 +547,9 @@ async function deleteConversation(conversationId, userId, client = null) {
     const getMessageIdsQuery = `
       SELECT id FROM messages WHERE conversation_id = $1
     `;
-    const messageIdsResult = await dbClient.query(getMessageIdsQuery, [conversationId]);
+    const messageIdsResult = await dbClient.query(getMessageIdsQuery, [
+      conversationId,
+    ]);
     const messageIds = messageIdsResult.rows.map(row => row.id);
 
     // Delete all message reads if there are messages

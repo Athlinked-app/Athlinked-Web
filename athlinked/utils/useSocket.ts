@@ -6,7 +6,8 @@ import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { getCurrentUserId } from './auth';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'https://qd9ngjg1-3001.inc1.devtunnels.ms';
+const SOCKET_URL =
+  process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
 
 let globalSocket: Socket | null = null;
 let socketListeners: Map<string, Set<Function>> = new Map();
@@ -171,4 +172,3 @@ export function useSocket() {
     emit,
   };
 }
-

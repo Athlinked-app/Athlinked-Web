@@ -81,7 +81,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'AthLinked - Connect with Athletes',
-  description: 'Sports networking platform for athletes, coaches, and businesses',
+  description:
+    'Sports networking platform for athletes, coaches, and businesses',
 };
 
 export default function RootLayout({
@@ -89,12 +90,20 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+  console.log('abc', clientId);
+
   return (
     <html lang="en">
       <body className={manrope.className}>
-        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ''}>
-          {children}
-        </GoogleOAuthProvider>
+        {clientId ? (
+          <GoogleOAuthProvider clientId={clientId}>
+            {children}
+          </GoogleOAuthProvider>
+        ) : (
+          // Render children without Google provider when client id is not configured
+          children
+        )}
       </body>
     </html>
   );

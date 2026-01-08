@@ -174,7 +174,10 @@ async function deleteMessage(messageId, userId) {
 
 async function deleteConversation(conversationId, userId) {
   try {
-    const result = await messagesModel.deleteConversation(conversationId, userId);
+    const result = await messagesModel.deleteConversation(
+      conversationId,
+      userId
+    );
     return result;
   } catch (error) {
     console.error('Error deleting conversation in service:', error);

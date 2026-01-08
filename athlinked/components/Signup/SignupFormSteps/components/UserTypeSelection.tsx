@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import GoogleSignInButton from '../../GoogleSignInButton';
 
 interface UserTypeSelectionProps {
@@ -14,26 +15,58 @@ export default function UserTypeSelection({
   onContinue,
   onGoogleSignIn,
 }: UserTypeSelectionProps) {
+  const router = useRouter();
   const [showGoogleUserTypeModal, setShowGoogleUserTypeModal] = useState(false);
   const [googleUserData, setGoogleUserData] = useState<any>(null);
 
-  const handleGoogleSuccess = (data: any) => {
+  const handleGoogleSuccess = async (data: any) => {
     console.log('Google sign-in response:', data);
 
+    // Case 1: User already has complete profile (returning user)
+    if (!data.needs_user_type && data.token) {
+      // Store tokens and user data
+      if (data.accessToken) {
+        localStorage.setItem('accessToken', data.accessToken);
+      } else if (data.token) {
+        localStorage.setItem('accessToken', data.token);
+      }
+
+      if (data.refreshToken) {
+        localStorage.setItem('refreshToken', data.refreshToken);
+      }
+
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('userEmail', data.user.email);
+      }
+
+      // Clean up any temp data
+      localStorage.removeItem('google_temp_data');
+
+      // Redirect directly to home
+      router.push('/home');
+      return;
+    }
+
+    // Case 2: New user or user without user_type - needs to complete signup
     if (data.needs_user_type) {
       // Show modal to select user type
       setGoogleUserData(data);
       setShowGoogleUserTypeModal(true);
-    } else {
-      // User already has type, pass to parent
+      return;
+    }
+
+    // Case 3: User has type but needs profile completion
+    if (data.needs_profile_completion) {
       onGoogleSignIn?.(data);
+      return;
     }
   };
 
   const handleGoogleUserTypeSubmit = async (userType: string) => {
     try {
       const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/auth/google/complete',
+        'http://localhost:3001/api/auth/google/complete',
         {
           method: 'POST',
           headers: {
@@ -51,13 +84,13 @@ export default function UserTypeSelection({
       if (data.success) {
         setShowGoogleUserTypeModal(false);
 
-        // Pass data to parent WITHOUT redirecting
+        // Pass data to parent to continue with profile completion
         onGoogleSignIn?.({
           ...data,
           user: {
             ...data.user,
             user_type: userType,
-          }
+          },
         });
       } else {
         alert(data.message || 'Failed to complete signup');
@@ -145,8 +178,8 @@ export default function UserTypeSelection({
             <div className="flex-1">
               <h3 className="font-semibold text-gray-900 mb-1">I'm a Coach</h3>
               <p className="text-sm text-gray-600">
-                Find talented athletes, manage your team, and build your coaching
-                network
+                Find talented athletes, manage your team, and build your
+                coaching network
               </p>
             </div>
           </div>

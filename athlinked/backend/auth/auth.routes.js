@@ -112,10 +112,93 @@ router.post('/google/complete', googleAuthController.completeGoogleSignup);
  *       200:
  *         description: Profile completed successfully, returns JWT token
  */
-router.post('/google/complete-profile', googleAuthController.completeGoogleProfile);
+router.post(
+  '/google/complete-profile',
+  googleAuthController.completeGoogleProfile
+);
+
+/**
+ * @swagger
+ * /api/auth/google/send-athlete-emails:
+ *   post:
+ *     summary: Send OTP to athlete and parent signup link
+ *     description: Sends verification OTP to athlete's email and signup link to parent's email
+ *     tags: [Authentication]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - athlete_email
+ *               - parent_email
+ *               - google_id
+ *             properties:
+ *               athlete_email:
+ *                 type: string
+ *                 example: "athlete@example.com"
+ *               athlete_name:
+ *                 type: string
+ *                 example: "John Doe"
+ *               parent_email:
+ *                 type: string
+ *                 example: "parent@example.com"
+ *               parent_name:
+ *                 type: string
+ *                 example: "Jane Doe"
+ *               google_id:
+ *                 type: string
+ *                 example: "1234567890"
+ *     responses:
+ *       200:
+ *         description: Verification emails sent successfully
+ */
+router.post(
+  '/google/send-athlete-emails',
+  googleAuthController.sendAthleteEmails
+);
+
+/**
+ * @swagger
+ * /api/auth/google/verify-athlete-otp:
+ *   post:
+ *     summary: Verify OTP for Google athlete signup
+ *     description: Verifies the OTP sent to athlete's email during Google signup
+ *     tags: [Authentication]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - google_id
+ *               - otp
+ *             properties:
+ *               google_id:
+ *                 type: string
+ *                 example: "1234567890"
+ *               otp:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: OTP verified successfully
+ */
+router.post(
+  '/google/verify-athlete-otp',
+  googleAuthController.verifyAthleteOtp
+);
 
 router.post('/refresh', refreshTokensController.refreshToken);
 router.post('/logout', refreshTokensController.logout);
-router.post('/logout-all', authenticateToken, refreshTokensController.logoutAll);
+router.post(
+  '/logout-all',
+  authenticateToken,
+  refreshTokensController.logoutAll
+);
 
 module.exports = router;

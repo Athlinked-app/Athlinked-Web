@@ -22,10 +22,9 @@ class GoogleAuthService {
    */
   async findUserByEmail(email) {
     try {
-      const result = await pool.query(
-        'SELECT * FROM users WHERE email = $1',
-        [email]
-      );
+      const result = await pool.query('SELECT * FROM users WHERE email = $1', [
+        email,
+      ]);
       return result.rows[0] || null;
     } catch (error) {
       console.error('Error finding user by email:', error);
@@ -36,7 +35,13 @@ class GoogleAuthService {
   /**
    * Create new user from Google OAuth
    */
-  async createGoogleUser(googleId, email, fullName, profilePicture, emailVerified) {
+  async createGoogleUser(
+    googleId,
+    email,
+    fullName,
+    profilePicture,
+    emailVerified
+  ) {
     try {
       const result = await pool.query(
         `INSERT INTO users (
@@ -109,6 +114,10 @@ class GoogleAuthService {
       let paramIndex = 1;
 
       // Add dynamic fields based on what's provided
+      if (profileData.dob !== undefined) {
+        setClauses.push(`dob = $${paramIndex++}`);
+        values.push(profileData.dob);
+      }
       if (profileData.sports_played !== undefined) {
         setClauses.push(`sports_played = $${paramIndex++}`);
         values.push(profileData.sports_played);
@@ -125,10 +134,22 @@ class GoogleAuthService {
         setClauses.push(`designation = $${paramIndex++}`);
         values.push(profileData.designation);
       }
+      if (profileData.parent_name !== undefined) {
+        setClauses.push(`parent_name = $${paramIndex++}`);
+        values.push(profileData.parent_name);
+      }
+      if (profileData.parent_email !== undefined) {
+        setClauses.push(`parent_email = $${paramIndex++}`);
+        values.push(profileData.parent_email);
+      }
+      if (profileData.parent_dob !== undefined) {
+        setClauses.push(`parent_dob = $${paramIndex++}`);
+        values.push(profileData.parent_dob);
+      }
 
       // Always update the updated_at timestamp
       setClauses.push(`updated_at = NOW()`);
-      
+
       // Add google_id as the last parameter
       values.push(googleId);
 
@@ -152,10 +173,9 @@ class GoogleAuthService {
    */
   async getUserById(userId) {
     try {
-      const result = await pool.query(
-        `SELECT * FROM users WHERE id = $1`,
-        [userId]
-      );
+      const result = await pool.query(`SELECT * FROM users WHERE id = $1`, [
+        userId,
+      ]);
       return result.rows[0] || null;
     } catch (error) {
       console.error('Error getting user by ID:', error);

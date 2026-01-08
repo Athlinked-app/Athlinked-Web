@@ -119,7 +119,7 @@ async function likePost(req, res) {
     }
 
     const result = await postsService.likePostService(postId, userId);
-    
+
     // Emit WebSocket event for real-time like update
     try {
       const app = require('../app');
@@ -145,7 +145,7 @@ async function likePost(req, res) {
     } catch (error) {
       console.error('Error emitting like WebSocket event:', error);
     }
-    
+
     return res.status(200).json(result);
   } catch (error) {
     console.error('Like post controller error:', error);
@@ -175,7 +175,7 @@ async function unlikePost(req, res) {
     }
 
     const result = await postsService.unlikePostService(postId, userId);
-    
+
     // Emit WebSocket event for real-time unlike update
     try {
       const app = require('../app');
@@ -190,7 +190,7 @@ async function unlikePost(req, res) {
     } catch (error) {
       console.error('Error emitting unlike WebSocket event:', error);
     }
-    
+
     return res.status(200).json(result);
   } catch (error) {
     console.error('Unlike post controller error:', error);
@@ -226,7 +226,7 @@ async function addComment(req, res) {
       userId,
       comment.trim()
     );
-    
+
     // Emit WebSocket event for real-time comment update
     try {
       const app = require('../app');
@@ -252,7 +252,7 @@ async function addComment(req, res) {
     } catch (error) {
       console.error('Error emitting comment WebSocket event:', error);
     }
-    
+
     return res.status(201).json(result);
   } catch (error) {
     console.error('Add comment controller error:', error);

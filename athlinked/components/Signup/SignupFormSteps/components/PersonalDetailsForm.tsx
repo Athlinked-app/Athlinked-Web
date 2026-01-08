@@ -49,7 +49,10 @@ export default function PersonalDetailsForm({
   );
   const [showSportsDropdown, setShowSportsDropdown] = useState(false);
   const sportsDropdownRef = useRef<HTMLDivElement>(null);
-  
+
+  // Check if user is signing up with Google
+  const [isGoogleUser, setIsGoogleUser] = useState(false);
+
   // Validation error states
   const [errors, setErrors] = useState({
     fullName: '',
@@ -62,6 +65,10 @@ export default function PersonalDetailsForm({
     if (selectedUserType === 'athlete') {
       fetchSports();
     }
+
+    // Check if this is a Google user
+    const googleData = localStorage.getItem('google_temp_data');
+    setIsGoogleUser(!!googleData);
   }, [selectedUserType]);
 
   // Sync selectedSports with formData when it changes externally
@@ -163,7 +170,7 @@ export default function PersonalDetailsForm({
     if (!dob) {
       return 'Date of birth is required';
     }
-    
+
     // Check format MM/DD/YYYY
     const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
     if (!dateRegex.test(dob)) {
@@ -218,7 +225,7 @@ export default function PersonalDetailsForm({
     if (!password) {
       return 'Password is required';
     }
-    
+
     if (password.length < 8) {
       return 'Password must be at least 8 characters';
     }
@@ -229,7 +236,9 @@ export default function PersonalDetailsForm({
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumber = /[0-9]/.test(password);
-    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(
+      password
+    );
 
     const missingRequirements = [];
     if (!hasUpperCase) missingRequirements.push('1 uppercase letter');
@@ -244,7 +253,10 @@ export default function PersonalDetailsForm({
     return '';
   };
 
-  const validateConfirmPassword = (confirmPassword: string, password: string): string => {
+  const validateConfirmPassword = (
+    confirmPassword: string,
+    password: string
+  ): string => {
     if (!confirmPassword) {
       return 'Please confirm your password';
     }
@@ -267,11 +279,11 @@ export default function PersonalDetailsForm({
   const handleDOBChange = (value: string) => {
     // Auto-format as user types (MM/DD/YYYY)
     let formatted = value.replace(/\D/g, ''); // Remove non-digits
-    
+
     if (formatted.length > 8) {
       formatted = formatted.slice(0, 8);
     }
-    
+
     if (formatted.length > 2) {
       formatted = formatted.slice(0, 2) + '/' + formatted.slice(2);
     }
@@ -295,7 +307,10 @@ export default function PersonalDetailsForm({
       if (formData.confirmPassword) {
         setErrors(prev => ({
           ...prev,
-          confirmPassword: validateConfirmPassword(formData.confirmPassword, value),
+          confirmPassword: validateConfirmPassword(
+            formData.confirmPassword,
+            value
+          ),
         }));
       }
     } else {
@@ -319,11 +334,14 @@ export default function PersonalDetailsForm({
   const handleContinueClick = () => {
     const nameError = validateName(formData.fullName);
     const dobError = validateDOB(formData.dateOfBirth);
-    const passwordError = validatePassword(formData.password);
-    const confirmPasswordError = validateConfirmPassword(
-      formData.confirmPassword,
-      formData.password
-    );
+
+    // Only validate passwords for non-Google users
+    const passwordError = isGoogleUser
+      ? ''
+      : validatePassword(formData.password);
+    const confirmPasswordError = isGoogleUser
+      ? ''
+      : validateConfirmPassword(formData.confirmPassword, formData.password);
 
     setErrors({
       fullName: nameError,
@@ -338,6 +356,7 @@ export default function PersonalDetailsForm({
 
     onContinue();
   };
+
   return (
     <>
       <div className="space-y-4 mb-6">
@@ -550,10 +569,10 @@ export default function PersonalDetailsForm({
           </>
         )}
 
-        {/* Email/Username */}
+        {/* Email - Show for all users, read-only for Google users */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email/Username
+            {isGoogleUser ? 'Email' : 'Email/Username'}
           </label>
           <div className="relative">
             <input
@@ -562,12 +581,18 @@ export default function PersonalDetailsForm({
               onChange={e =>
                 onFormDataChange({ ...formData, email: e.target.value })
               }
-              className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
-              placeholder="Enter email or username (min 6 characters)"
+              disabled={isGoogleUser}
+              className={`w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
+                isGoogleUser ? 'bg-gray-50 cursor-not-allowed' : ''
+              }`}
+              placeholder={
+                isGoogleUser ? '' : 'Enter email or username (min 6 characters)'
+              }
             />
             <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           </div>
-          {formData.email &&
+          {!isGoogleUser &&
+            formData.email &&
             !formData.email.includes('@') &&
             formData.email.length < 6 && (
               <p className="mt-1 text-xs text-red-600">
@@ -576,73 +601,78 @@ export default function PersonalDetailsForm({
             )}
         </div>
 
-        {/* Create Password */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Create Password
-          </label>
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              value={formData.password}
-              onChange={e => handlePasswordChange(e.target.value)}
-              className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
-                errors.password
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300'
-              }`}
-            />
-            <button
-              type="button"
-              onClick={onTogglePassword}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-            >
-              {showPassword ? (
-                <EyeOff className="w-5 h-5 text-gray-400" />
-              ) : (
-                <Eye className="w-5 h-5 text-gray-400" />
+        {/* Password fields - Only show for non-Google users */}
+        {!isGoogleUser && (
+          <>
+            {/* Create Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Create Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={e => handlePasswordChange(e.target.value)}
+                  className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
+                    errors.password
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={onTogglePassword}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5 text-gray-400" />
+                  ) : (
+                    <Eye className="w-5 h-5 text-gray-400" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="mt-1 text-xs text-red-600">{errors.password}</p>
               )}
-            </button>
-          </div>
-          {errors.password && (
-            <p className="mt-1 text-xs text-red-600">{errors.password}</p>
-          )}
-        </div>
+            </div>
 
-        {/* Confirm Password */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Confirm Password*
-          </label>
-          <div className="relative">
-            <input
-              type={showConfirmPassword ? 'text' : 'password'}
-              value={formData.confirmPassword}
-              onChange={e => handleConfirmPasswordChange(e.target.value)}
-              className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
-                errors.confirmPassword
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300'
-              }`}
-            />
-            <button
-              type="button"
-              onClick={onToggleConfirmPassword}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-            >
-              {showConfirmPassword ? (
-                <EyeOff className="w-5 h-5 text-gray-400" />
-              ) : (
-                <Eye className="w-5 h-5 text-gray-400" />
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirm Password*
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={formData.confirmPassword}
+                  onChange={e => handleConfirmPasswordChange(e.target.value)}
+                  className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
+                    errors.confirmPassword
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={onToggleConfirmPassword}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5 text-gray-400" />
+                  ) : (
+                    <Eye className="w-5 h-5 text-gray-400" />
+                  )}
+                </button>
+              </div>
+              {errors.confirmPassword && (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.confirmPassword}
+                </p>
               )}
-            </button>
-          </div>
-          {errors.confirmPassword && (
-            <p className="mt-1 text-xs text-red-600">
-              {errors.confirmPassword}
-            </p>
-          )}
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
       <button
