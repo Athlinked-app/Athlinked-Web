@@ -132,7 +132,8 @@ interface GoogleSignInButtonProps {
   buttonText?: string;
 }
 
-export default function GoogleSignInButton({
+// Internal component that uses the hook - only rendered when clientId exists
+function GoogleSignInButtonInternal({
   onSuccess,
   onError,
   buttonText = 'Continue with Google',
@@ -192,6 +193,15 @@ export default function GoogleSignInButton({
     },
   });
 
+  // If clientId is not set, show error message instead of button
+  if (!clientId || clientId.trim() === '') {
+    return (
+      <div className="w-full p-3 border border-red-300 rounded-lg bg-red-50 text-red-700 text-sm text-center">
+        Google Sign-In is not configured. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID in your .env.local file.
+      </div>
+    );
+  }
+
   return (
     <button
       onClick={() => googleLogin()}
@@ -225,7 +235,24 @@ export default function GoogleSignInButton({
             {buttonText}
           </span>
         </>
-      )}
+      )      }
     </button>
   );
+}
+
+// Wrapper component that checks for clientId before rendering the internal component
+export default function GoogleSignInButton(props: GoogleSignInButtonProps) {
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+  // If clientId is not set, show error message instead of button
+  if (!clientId || clientId.trim() === '') {
+    return (
+      <div className="w-full p-3 border border-red-300 rounded-lg bg-red-50 text-red-700 text-sm text-center">
+        Google Sign-In is not configured. Please set NEXT_PUBLIC_GOOGLE_CLIENT_ID in your .env.local file.
+      </div>
+    );
+  }
+
+  // Only render the component that uses the hook when clientId exists
+  return <GoogleSignInButtonInternal {...props} />;
 }

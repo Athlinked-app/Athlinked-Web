@@ -71,8 +71,8 @@ export default function UserTypeSelection({
         </>
       )}
 
-      {/* NEW - Google Sign-In Button (only show when no user type selected) */}
-      {!selectedUserType && (
+      {/* NEW - Google Sign-In Button (only show when no user type selected and clientId is configured) */}
+      {!selectedUserType && process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
         <>
           <div className="mb-6">
             <GoogleSignInButton

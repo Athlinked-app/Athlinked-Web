@@ -286,12 +286,18 @@ async function sendConnectionRequest(requesterId, receiverId) {
       receiverId,
     ]);
 
-    await dbClient.query('COMMIT');
-
+    // Get requester name before committing
     const requesterQuery = 'SELECT full_name FROM users WHERE id = $1';
-    const requesterResult = await pool.query(requesterQuery, [requesterId]);
+    const requesterResult = await dbClient.query(requesterQuery, [requesterId]);
     const requesterName = requesterResult.rows[0]?.full_name || 'Someone';
 
+    // Commit the transaction first
+    await dbClient.query('COMMIT');
+    
+    // Release the client before creating notification (uses separate connection)
+    dbClient.release();
+
+    // Create notification after successful commit using separate connection
     try {
       await createNotification({
         recipientUserId: receiverId,
@@ -304,18 +310,37 @@ async function sendConnectionRequest(requesterId, receiverId) {
       });
     } catch (notifError) {
       console.error('Error creating notification:', notifError);
+      // Don't fail the request if notification fails
     }
 
     return { success: true, request: result.rows[0] };
   } catch (error) {
-    await dbClient.query('ROLLBACK');
+    try {
+      await dbClient.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error during rollback:', rollbackError);
+    }
+    
     if (error.code === '23505') {
+      dbClient.release();
       return { success: false, message: 'Connection request already exists' };
     }
+    
+    // Handle foreign key constraint violations
+    if (error.code === '23503') {
+      dbClient.release();
+      if (error.constraint === 'connection_requests_requester_id_fkey') {
+        throw new Error(`Requester user with ID ${requesterId} does not exist`);
+      }
+      if (error.constraint === 'connection_requests_receiver_id_fkey') {
+        throw new Error(`Receiver user with ID ${receiverId} does not exist`);
+      }
+      throw new Error('Invalid user ID provided');
+    }
+    
     console.error('Error sending connection request:', error);
-    throw error;
-  } finally {
     dbClient.release();
+    throw error;
   }
 }
 
