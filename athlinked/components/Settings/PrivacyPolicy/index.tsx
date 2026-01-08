@@ -16,7 +16,6 @@ export default function PrivacyPolicy() {
       let jsPDF: any;
 
       try {
-        // @ts-expect-error - Dynamic import that may not be available at build time
         html2canvas = (await import('html2canvas')).default;
       } catch (e: any) {
         if (e?.code === 'MODULE_NOT_FOUND' || e?.message?.includes('Cannot find module')) {
@@ -29,7 +28,6 @@ export default function PrivacyPolicy() {
       }
 
       try {
-        // @ts-expect-error - Dynamic import that may not be available at build time
         jsPDF = (await import('jspdf')).default;
       } catch (e: any) {
         if (e?.code === 'MODULE_NOT_FOUND' || e?.message?.includes('Cannot find module')) {

@@ -258,12 +258,10 @@ export default function ManageResourcesPage() {
         endpoint = `http://localhost:3001/api/templates/${resourceToDelete}`;
       }
 
-      // Send DELETE request with user_id in body (same pattern as Post component)
-      const response = await fetch(endpoint, {
+      // Use apiRequest to perform DELETE so token refresh is handled automatically
+      const { apiRequest } = await import('@/utils/api');
+      const response = await apiRequest(endpoint, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           user_id: userData.user.id,
         }),
@@ -294,11 +292,25 @@ export default function ManageResourcesPage() {
   };
 
   const scrapeArticleMetadata = async (url: string) => {
+    // First try server-side scraping to avoid CORS / network issues from the browser
     try {
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-      const response = await fetch(proxyUrl);
-      const data = await response.json();
-      const html = data.contents;
+      const res = await fetch(`/api/scrape-url?url=${encodeURIComponent(url)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success && data.title) {
+          return { title: data.title };
+        }
+      }
+    } catch (e) {
+      console.warn('Server-side scrape failed, falling back to client proxy', e);
+    }
+
+    // Fallback: try AllOrigins raw endpoint, then last-resort default
+    try {
+      const proxyRaw = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
+      const response = await fetch(proxyRaw);
+      if (!response.ok) throw new Error('Proxy fetch failed');
+      const html = await response.text();
 
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
