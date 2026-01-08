@@ -649,7 +649,7 @@ function MessagesPageContent() {
     if (userIdFromUrl && currentUser?.id && conversations.length > 0) {
       handleUserIdFromUrl();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [userIdFromUrl, currentUser?.id, conversations.length]);
 
   useEffect(() => {

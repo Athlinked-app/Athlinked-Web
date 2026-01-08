@@ -31,6 +31,7 @@ interface UserStat {
 
 interface UserSportProfile {
   id: string;
+  user_sport_profile_id?: string; // Original profile ID (without year suffix)
   sport_name: string;
   position_name: string;
   full_name?: string | null;
@@ -41,6 +42,16 @@ interface Position {
   id: string;
   name: string;
   sport_name: string;
+}
+
+interface AthleticPerformance {
+  id?: string;
+  height?: string;
+  weight?: string;
+  hand?: string;
+  arm?: string;
+  jerseyNumber?: string;
+  sport?: string;
 }
 
 export default function StatsPage() {
@@ -62,6 +73,12 @@ export default function StatsPage() {
     year: '',
     position: '',
   });
+  const [editingProfile, setEditingProfile] = useState<UserSportProfile | null>(
+    null
+  );
+  const [editingYear, setEditingYear] = useState<string>('');
+  const [athleticPerformance, setAthleticPerformance] =
+    useState<AthleticPerformance | null>(null);
 
   // Get initials for placeholder
   const getInitials = (name?: string) => {
@@ -347,6 +364,47 @@ export default function StatsPage() {
     fetchFields();
   }, [formData.position, availablePositions, activeSport]);
 
+  // Fetch athletic performance data
+  useEffect(() => {
+    const fetchAthleticPerformance = async () => {
+      if (!userId) return;
+
+      try {
+        const data = await apiGet<{
+          success: boolean;
+          data?: AthleticPerformance[];
+        }>(`/profile/${userId}/athletic-performance`);
+
+        if (data.success && data.data && data.data.length > 0) {
+          // Get the most recent entry, or match by active sport if available
+          let selectedPerformance = data.data[0]; // Default to most recent
+
+          // Try to find performance data matching the active sport
+          const sportMatch = data.data.find(
+            (perf: AthleticPerformance) =>
+              perf.sport &&
+              perf.sport.toLowerCase() === activeSport.toLowerCase()
+          );
+
+          if (sportMatch) {
+            selectedPerformance = sportMatch;
+          }
+
+          setAthleticPerformance(selectedPerformance);
+        } else {
+          setAthleticPerformance(null);
+        }
+      } catch (error) {
+        console.error('Error fetching athletic performance:', error);
+        setAthleticPerformance(null);
+      }
+    };
+
+    if (userId) {
+      fetchAthleticPerformance();
+    }
+  }, [userId, activeSport]);
+
   // Fetch user sport profiles and stats
   useEffect(() => {
     const fetchUserStats = async () => {
@@ -459,6 +517,12 @@ export default function StatsPage() {
         }
       });
     });
+
+    // Add Jersey Number if it exists in athletic performance data
+    if (athleticPerformance?.jerseyNumber) {
+      fieldLabels.add('Jersey Number');
+    }
+
     return Array.from(fieldLabels).sort();
   };
 
@@ -475,9 +539,155 @@ export default function StatsPage() {
     profile: UserSportProfile,
     fieldLabel: string
   ): string => {
+    // Check if it's Jersey Number from athletic performance
+    if (fieldLabel === 'Jersey Number' && athleticPerformance?.jerseyNumber) {
+      return athleticPerformance.jerseyNumber;
+    }
+
     const stat = profile.stats.find(s => s.field_label === fieldLabel);
     if (!stat) return '';
     return stat.value + (stat.unit ? ` ${stat.unit}` : '');
+  };
+
+  // Get raw value for a field (without unit) - used for editing
+  const _getRawValueForField = (
+    profile: UserSportProfile,
+    fieldLabel: string
+  ): string => {
+    const stat = profile.stats.find(s => s.field_label === fieldLabel);
+    if (!stat) return '';
+    return stat.value;
+  };
+
+  // Handle edit profile
+  const handleEditProfile = async (profile: UserSportProfile, year: string) => {
+    setEditingProfile(profile);
+    setEditingYear(year);
+
+    // Set the active sport to match the profile's sport
+    const sportKey = profile.sport_name.toLowerCase().replace(/\s+/g, '');
+    setActiveSport(sportKey);
+
+    // Wait for positions to load, then set position and load fields
+    try {
+      // Get all sports first
+      const sportsData = await apiGet<{
+        success: boolean;
+        sports?: any[];
+      }>('/sports');
+
+      if (sportsData.success && sportsData.sports) {
+        const sportName = profile.sport_name;
+        const normalizedSportName = sportName.toLowerCase().replace(/\s+/g, '');
+        const sport = sportsData.sports.find((s: any) => {
+          const normalizedSName = s.name.toLowerCase().replace(/\s+/g, '');
+          return normalizedSName === normalizedSportName;
+        });
+
+        if (sport) {
+          // Get positions for this sport
+          const positionsData = await apiGet<{
+            success: boolean;
+            positions?: any[];
+          }>(`/sports/${sport.id}/positions`);
+
+          if (positionsData.success && positionsData.positions) {
+            setAvailablePositions(positionsData.positions);
+            setSelectedPosition(profile.position_name);
+
+            // Find the position and load fields
+            const position = positionsData.positions.find(
+              (p: any) => p.name === profile.position_name
+            );
+
+            let loadedFields: any[] = [];
+            if (position) {
+              const fieldsData = await apiGet<{
+                success: boolean;
+                fields?: any[];
+              }>(`/positions/${position.id}/fields`);
+
+              if (
+                fieldsData.success &&
+                fieldsData.fields &&
+                fieldsData.fields.length > 0
+              ) {
+                loadedFields = fieldsData.fields;
+              } else {
+                // Fallback to hardcoded fields
+                const fallbackFields = getFieldsForPosition(
+                  sportKey,
+                  profile.position_name
+                );
+                if (fallbackFields.length > 0) {
+                  loadedFields = fallbackFields.map((fieldLabel, index) => ({
+                    field_id: `fallback-${index}`,
+                    field_key: fieldLabel.toLowerCase().replace(/\s+/g, '_'),
+                    field_label: fieldLabel,
+                    field_type: 'text',
+                    unit: null,
+                    is_required: false,
+                  }));
+                }
+              }
+            }
+
+            setAvailableFields(loadedFields);
+
+            // Pre-populate form data with existing values AFTER fields are loaded
+            const prefillData: Record<string, string> = {
+              year: year || '',
+              position: profile.position_name || '',
+            };
+
+            // Add all stat values to form data
+            profile.stats.forEach(stat => {
+              if (stat.field_label !== 'Year') {
+                // Try to find the field key from loaded fields
+                const field = loadedFields.find(
+                  (f: any) => f.field_label === stat.field_label
+                );
+                if (field) {
+                  const key =
+                    field.field_key ||
+                    field.field_label.toLowerCase().replace(/\s+/g, '_');
+                  // Remove unit from value if present
+                  const unitPattern = stat.unit
+                    ? new RegExp(
+                        `\\s*${stat.unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`
+                      )
+                    : null;
+                  const rawValue = unitPattern
+                    ? stat.value.replace(unitPattern, '').trim()
+                    : stat.value.trim();
+                  prefillData[key] = rawValue;
+                } else {
+                  // Fallback: use field_label as key
+                  const key = stat.field_label
+                    .toLowerCase()
+                    .replace(/\s+/g, '_');
+                  const unitPattern = stat.unit
+                    ? new RegExp(
+                        `\\s*${stat.unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`
+                      )
+                    : null;
+                  const rawValue = unitPattern
+                    ? stat.value.replace(unitPattern, '').trim()
+                    : stat.value.trim();
+                  prefillData[key] = rawValue;
+                }
+              }
+            });
+
+            setFormData(prefillData);
+            setShowAddStatsModal(true);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading edit data:', error);
+      alert('Error loading edit data. Please try again.');
+    }
   };
 
   if (loading) {
@@ -529,14 +739,42 @@ export default function StatsPage() {
                     <h1 className="text-3xl font-bold text-white mb-1">
                       {displayName}
                     </h1>
-                    <p className="text-white text-base">{primarySport} • #45</p>
+                    <p className="text-white text-base">
+                      {primarySport}
+                      {athleticPerformance?.jerseyNumber &&
+                        ` • #${athleticPerformance.jerseyNumber}`}
+                    </p>
                   </div>
                 </div>
                 <div className="text-white space-y-1.5 text-right">
-                  <div className="text-sm">Height: 6'2.75"</div>
-                  <div className="text-sm">Weight: 221.3 pounds</div>
-                  <div className="text-sm">Hand: 9.6"</div>
-                  <div className="text-sm">Arm: 31.9"</div>
+                  {athleticPerformance?.height && (
+                    <div className="text-sm">
+                      Height: {athleticPerformance.height}
+                    </div>
+                  )}
+                  {athleticPerformance?.weight && (
+                    <div className="text-sm">
+                      Weight: {athleticPerformance.weight}
+                    </div>
+                  )}
+                  {athleticPerformance?.hand && (
+                    <div className="text-sm">
+                      Hand: {athleticPerformance.hand}
+                    </div>
+                  )}
+                  {athleticPerformance?.arm && (
+                    <div className="text-sm">
+                      Arm: {athleticPerformance.arm}
+                    </div>
+                  )}
+                  {!athleticPerformance && (
+                    <>
+                      <div className="text-sm text-gray-300">Height: —</div>
+                      <div className="text-sm text-gray-300">Weight: —</div>
+                      <div className="text-sm text-gray-300">Hand: —</div>
+                      <div className="text-sm text-gray-300">Arm: —</div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -615,12 +853,32 @@ export default function StatsPage() {
                         size={20}
                       />
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <button
+                      onClick={() => {
+                        // If there are profiles, allow editing the first one (or selected one)
+                        if (currentProfiles.length > 0) {
+                          const firstProfile = currentProfiles[0];
+                          const year = getYearForProfile(firstProfile);
+                          handleEditProfile(firstProfile, year);
+                        } else {
+                          alert(
+                            'No stats data to edit. Please add data first.'
+                          );
+                        }
+                      }}
+                      className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-black"
+                    >
                       <Edit size={18} />
                       <span>Edit</span>
                     </button>
                     <button
-                      onClick={() => setShowAddStatsModal(true)}
+                      onClick={() => {
+                        setEditingProfile(null);
+                        setEditingYear('');
+                        setFormData({ year: '', position: '' });
+                        setAvailableFields([]);
+                        setShowAddStatsModal(true);
+                      }}
                       className="flex items-center gap-2 px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-yellow-600 transition-colors"
                     >
                       <Plus size={18} />
@@ -642,46 +900,69 @@ export default function StatsPage() {
                       above to add your first stats entry.
                     </div>
                   ) : (
-                    <table className="w-full">
-                      <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider">
-                            Year
-                          </th>
-                          {allFieldLabels.map(fieldLabel => (
-                            <th
-                              key={fieldLabel}
-                              className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider"
-                            >
-                              {fieldLabel}
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
+                              Year
                             </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {currentProfiles.map(profile => (
-                          <tr
-                            key={profile.id}
-                            className="hover:bg-gray-50 transition-colors"
-                          >
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
-                              {getYearForProfile(profile) || '—'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                              {profile.position_name}
-                            </td>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
+                              Position
+                            </th>
                             {allFieldLabels.map(fieldLabel => (
-                              <td
+                              <th
                                 key={fieldLabel}
-                                className="px-6 py-4 whitespace-nowrap text-sm text-black"
+                                className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap min-w-[150px]"
                               >
-                                {getValueForField(profile, fieldLabel) || '—'}
-                              </td>
+                                {fieldLabel}
+                              </th>
                             ))}
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {currentProfiles.map(profile => {
+                            const year = getYearForProfile(profile);
+                            return (
+                              <tr
+                                key={`${profile.id}-${year}`}
+                                className="hover:bg-gray-50 transition-colors"
+                              >
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
+                                  {year || '—'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                                  <div className="flex items-center gap-2">
+                                    <span>{profile.position_name}</span>
+                                    <button
+                                      onClick={() =>
+                                        handleEditProfile(profile, year)
+                                      }
+                                      className="p-1 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
+                                      title="Edit this row"
+                                    >
+                                      <Edit
+                                        size={14}
+                                        className="text-gray-600"
+                                      />
+                                    </button>
+                                  </div>
+                                </td>
+                                {allFieldLabels.map(fieldLabel => (
+                                  <td
+                                    key={fieldLabel}
+                                    className="px-6 py-4 whitespace-nowrap text-sm text-black"
+                                  >
+                                    {getValueForField(profile, fieldLabel) ||
+                                      '—'}
+                                  </td>
+                                ))}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
               </div>
@@ -695,12 +976,21 @@ export default function StatsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-end">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowAddStatsModal(false)}
+            onClick={() => {
+              setShowAddStatsModal(false);
+              setEditingProfile(null);
+              setEditingYear('');
+            }}
           />
-          <div className="relative z-10 w-full max-w-md bg-white h-full shadow-2xl overflow-y-auto">
+          <div
+            className="relative z-10 w-full max-w-md bg-white h-full shadow-2xl overflow-y-auto"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-black">Add Stats</h2>
+                <h2 className="text-xl font-semibold text-black">
+                  {editingProfile ? 'Edit Stats' : 'Add Stats'}
+                </h2>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => {
@@ -709,6 +999,8 @@ export default function StatsPage() {
                         position: '',
                       });
                       setAvailableFields([]);
+                      setEditingProfile(null);
+                      setEditingYear('');
                     }}
                     className="flex items-center gap-2 px-3 py-1.5 text-sm text-black hover:text-black hover:bg-gray-100 rounded-lg transition-colors"
                   >
@@ -723,6 +1015,8 @@ export default function StatsPage() {
                         position: '',
                       });
                       setAvailableFields([]);
+                      setEditingProfile(null);
+                      setEditingYear('');
                     }}
                     className="p-2 rounded-full hover:bg-gray-100 transition-colors"
                   >
@@ -769,14 +1063,20 @@ export default function StatsPage() {
                     value={formData.position || ''}
                     onChange={e => {
                       const newPosition = e.target.value;
-                      // Reset form data except year and position when position changes
-                      const newFormData: Record<string, string> = {
-                        year: formData.year || '',
-                        position: newPosition,
-                      };
-                      setFormData(newFormData);
+                      if (editingProfile) {
+                        // When editing, just update position without resetting other fields
+                        setFormData({ ...formData, position: newPosition });
+                      } else {
+                        // When adding new, reset form data except year and position when position changes
+                        const newFormData: Record<string, string> = {
+                          year: formData.year || '',
+                          position: newPosition,
+                        };
+                        setFormData(newFormData);
+                      }
                     }}
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black appearance-none bg-white"
+                    disabled={editingProfile !== null}
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black appearance-none bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="" className="text-black">
                       {loadingPositions
@@ -822,7 +1122,7 @@ export default function StatsPage() {
                   .filter((field: any) => field.field_label !== 'Year') // Year is already shown above
                   .map((field: any) => {
                     // Use field_key as the key, fallback to field_id
-                    const fieldKey = field.field_key || field.field_id;
+                    const _fieldKey = field.field_key || field.field_id;
                     // Use field_key for form data, or create from field_label
                     const displayKey =
                       field.field_key ||
@@ -1013,21 +1313,58 @@ export default function StatsPage() {
                     }
 
                     // Step 4: Create or update user sport profile
-                    const profileData = await apiPost<{
-                      success: boolean;
-                      profileId?: string;
-                      user_sport_profile_id?: string;
-                      message?: string;
-                    }>('/user-sport-profile', {
-                      user_id: userId,
-                      sportId: sport.id,
-                      positionId: position.id,
-                    });
+                    // If editing, use existing profile ID, otherwise create new
+                    let userSportProfileId: string;
+                    if (editingProfile) {
+                      // The backend creates entry IDs like "profileId_year", so we need to extract the original profile ID
+                      // Check if editingProfile has the original profile ID stored, or extract it from the id
+                      const uuidRegex =
+                        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-                    if (!profileData.success) {
-                      throw new Error(
-                        profileData.message || 'Failed to create profile'
-                      );
+                      // Try to use user_sport_profile_id if available (original profile ID)
+                      if (
+                        editingProfile.user_sport_profile_id &&
+                        uuidRegex.test(editingProfile.user_sport_profile_id)
+                      ) {
+                        userSportProfileId =
+                          editingProfile.user_sport_profile_id;
+                      } else if (uuidRegex.test(editingProfile.id)) {
+                        // If id is a valid UUID, use it
+                        userSportProfileId = editingProfile.id;
+                      } else {
+                        // If id has format "uuid_year", extract just the UUID part
+                        const uuidMatch = editingProfile.id.match(
+                          /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i
+                        );
+                        if (uuidMatch && uuidMatch[1]) {
+                          userSportProfileId = uuidMatch[1];
+                        } else {
+                          throw new Error(
+                            `Invalid profile ID format: ${editingProfile.id}. Cannot extract valid UUID.`
+                          );
+                        }
+                      }
+                    } else {
+                      const profileData = await apiPost<{
+                        success: boolean;
+                        profileId?: string;
+                        user_sport_profile_id?: string;
+                        message?: string;
+                      }>('/user-sport-profile', {
+                        user_id: userId,
+                        sportId: sport.id,
+                        positionId: position.id,
+                      });
+
+                      if (!profileData.success) {
+                        throw new Error(
+                          profileData.message || 'Failed to create profile'
+                        );
+                      }
+                      userSportProfileId =
+                        profileData.user_sport_profile_id ||
+                        profileData.profileId ||
+                        '';
                     }
 
                     // Step 5: Map form data to field IDs and prepare stats
@@ -1035,7 +1372,44 @@ export default function StatsPage() {
                     if (!fieldsData.fields || fieldsData.fields.length === 0) {
                       throw new Error('No fields available for this position');
                     }
-                    for (const field of fieldsData.fields) {
+
+                    // Filter out fallback fields - only use fields with valid UUID field IDs from database
+                    const validFields = fieldsData.fields.filter((f: any) => {
+                      // Check if field_id is a valid UUID (not a fallback ID)
+                      const uuidRegex =
+                        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                      return f.field_id && uuidRegex.test(f.field_id);
+                    });
+
+                    if (validFields.length === 0) {
+                      throw new Error(
+                        'No valid database fields found for this position. Please contact support.'
+                      );
+                    }
+
+                    // First, find the Year field and add it first (important for backend update logic)
+                    const yearField = validFields.find(
+                      (f: any) =>
+                        f.field_label === 'Year' || f.field_key === 'year'
+                    );
+
+                    if (yearField && formData.year) {
+                      stats.push({
+                        fieldId: yearField.field_id,
+                        value: String(formData.year),
+                      });
+                    }
+
+                    // Then add all other fields
+                    for (const field of validFields) {
+                      // Skip Year field as we already added it
+                      if (
+                        field.field_label === 'Year' ||
+                        field.field_key === 'year'
+                      ) {
+                        continue;
+                      }
+
                       // Try to find the value in formData using field_key first, then field_label
                       let value = formData[field.field_key];
 
@@ -1075,17 +1449,74 @@ export default function StatsPage() {
                       }
                     }
 
-                    // Step 6: Save position stats
+                    // Ensure Year field is included if it wasn't in fieldsData but exists in form
+                    if (!yearField && formData.year) {
+                      // Try to find Year field in position fields
+                      try {
+                        const yearFieldsData = await apiGet<{
+                          success: boolean;
+                          fields?: any[];
+                        }>(`/positions/${position.id}/fields`);
+
+                        if (yearFieldsData.success && yearFieldsData.fields) {
+                          const yearFieldFromDb = yearFieldsData.fields.find(
+                            (f: any) =>
+                              f.field_label === 'Year' || f.field_key === 'year'
+                          );
+                          if (yearFieldFromDb) {
+                            // Insert Year at the beginning
+                            stats.unshift({
+                              fieldId: yearFieldFromDb.field_id,
+                              value: String(formData.year),
+                            });
+                          }
+                        }
+                      } catch (error) {
+                        console.warn(
+                          'Could not fetch Year field separately:',
+                          error
+                        );
+                      }
+                    }
+
+                    // Step 6: Save position stats (this will update if year matches existing entry)
                     if (stats.length > 0) {
+                      // Validate userSportProfileId is a valid UUID
+                      const uuidRegex =
+                        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                      if (!uuidRegex.test(userSportProfileId)) {
+                        console.error(
+                          'Invalid userSportProfileId:',
+                          userSportProfileId
+                        );
+                        throw new Error(
+                          `Invalid userSportProfileId format: ${userSportProfileId}`
+                        );
+                      }
+
+                      // Validate all fieldIds are valid UUIDs
+                      for (const stat of stats) {
+                        if (!uuidRegex.test(stat.fieldId)) {
+                          console.error('Invalid fieldId found:', stat);
+                          throw new Error(
+                            `Invalid fieldId format: ${stat.fieldId}. Field may not exist in database. Please ensure all fields are properly configured.`
+                          );
+                        }
+                      }
+
+                      // Debug: Log the data being sent
+                      console.log('Saving stats with:', {
+                        userSportProfileId,
+                        statsCount: stats.length,
+                        fieldIds: stats.map(s => s.fieldId),
+                      });
+
                       const statsData = await apiPost<{
                         success: boolean;
                         message?: string;
                       }>('/user/position-stats', {
                         user_id: userId,
-                        userSportProfileId:
-                          profileData.user_sport_profile_id ||
-                          profileData.profileId ||
-                          '',
+                        userSportProfileId: userSportProfileId,
                         stats: stats,
                       });
 
@@ -1096,7 +1527,11 @@ export default function StatsPage() {
                       }
                     }
 
-                    alert('Stats saved successfully!');
+                    alert(
+                      editingProfile
+                        ? 'Stats updated successfully!'
+                        : 'Stats saved successfully!'
+                    );
                     setShowAddStatsModal(false);
                     // Reset form after save
                     setFormData({
@@ -1104,6 +1539,8 @@ export default function StatsPage() {
                       position: '',
                     });
                     setAvailableFields([]);
+                    setEditingProfile(null);
+                    setEditingYear('');
                     // Refresh stats data
                     const refreshData = await apiGet<{
                       success: boolean;

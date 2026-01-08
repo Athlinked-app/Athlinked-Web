@@ -23,11 +23,43 @@ export default function MyAthletesPage() {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  async function fetchChildren() {
+    try {
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        console.error('No access token found');
+        setLoading(false);
+        return;
+      }
 
-  const fetchData = async () => {
+      const data = await apiGet<{
+        success: boolean;
+        children?: any[];
+      }>('/signup/my-children');
+
+      if (data.success && data.children) {
+        // Transform children data to match Athlete interface
+        const children = data.children.map((child: any) => ({
+          id: child.id,
+          name: child.full_name || child.username || 'Unknown',
+          profileUrl: child.profile_url || null,
+          username: child.username,
+          email: child.email,
+          primary_sport: child.primary_sport,
+        }));
+        setMyAthletes(children);
+      } else {
+        setMyAthletes([]);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching children:', error);
+      setMyAthletes([]);
+      setLoading(false);
+    }
+  }
+
+  async function fetchData() {
     try {
       // Fetch current user
       const userIdentifier = localStorage.getItem('userEmail');
@@ -67,43 +99,13 @@ export default function MyAthletesPage() {
       console.error('Error fetching data:', error);
       setLoading(false);
     }
-  };
+  }
 
-  const fetchChildren = async () => {
-    try {
-      const accessToken = localStorage.getItem('accessToken');
-      if (!accessToken) {
-        console.error('No access token found');
-        setLoading(false);
-        return;
-      }
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-      const data = await apiGet<{
-        success: boolean;
-        children?: any[];
-      }>('/signup/my-children');
-
-      if (data.success && data.children) {
-        // Transform children data to match Athlete interface
-        const children = data.children.map((child: any) => ({
-          id: child.id,
-          name: child.full_name || child.username || 'Unknown',
-          profileUrl: child.profile_url || null,
-          username: child.username,
-          email: child.email,
-          primary_sport: child.primary_sport,
-        }));
-        setMyAthletes(children);
-      } else {
-        setMyAthletes([]);
-      }
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching children:', error);
-      setMyAthletes([]);
-      setLoading(false);
-    }
-  };
+  
 
   const getInitials = (name: string) => {
     return name

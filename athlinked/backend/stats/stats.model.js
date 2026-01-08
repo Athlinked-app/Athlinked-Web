@@ -705,7 +705,8 @@ async function getAllUserSportProfiles(userId) {
 
         if (entryStats.length > 0) {
           entries.push({
-            id: `${profile.id}_${yearValue || entryCreatedAt}`, // Unique ID for this entry
+            id: `${profile.id}_${yearValue || entryCreatedAt}`, // Unique ID for this entry (for frontend display)
+            user_sport_profile_id: profile.id, // Original profile ID (valid UUID) for updates
             sport_id: profile.sport_id,
             sport_name: profile.sport_name,
             position_id: profile.position_id,

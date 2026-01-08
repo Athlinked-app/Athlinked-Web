@@ -71,7 +71,7 @@ io.on('connection', socket => {
       const isReceiverOnline = receiverSockets.length > 0;
 
       // Get updated conversation data for both users
-      const messagesModel = require('./messages/messages.model');
+      const _messagesModel = require('./messages/messages.model');
       const conversationsService = require('./messages/messages.service');
 
       // Get updated conversations for receiver

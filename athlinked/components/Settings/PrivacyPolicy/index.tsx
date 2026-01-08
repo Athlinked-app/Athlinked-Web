@@ -16,8 +16,8 @@ export default function PrivacyPolicy() {
       let jsPDF: any;
 
       try {
-        // @ts-ignore - Dynamic import that may not be available
-        html2canvas = (await eval('import("html2canvas")')).default;
+        // @ts-expect-error - Dynamic import that may not be available at build time
+        html2canvas = (await import('html2canvas')).default;
       } catch (e: any) {
         if (
           e?.code === 'MODULE_NOT_FOUND' ||
@@ -34,8 +34,8 @@ export default function PrivacyPolicy() {
       }
 
       try {
-        // @ts-ignore - Dynamic import that may not be available
-        jsPDF = (await eval('import("jspdf")')).default;
+        // @ts-expect-error - Dynamic import that may not be available at build time
+        jsPDF = (await import('jspdf')).default;
       } catch (e: any) {
         if (
           e?.code === 'MODULE_NOT_FOUND' ||

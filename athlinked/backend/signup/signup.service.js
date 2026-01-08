@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-require-imports */
+ 
 const signupModel = require('./signup.model');
 const { hashPassword } = require('../utils/hash');
 const { startOTPFlow, verifyOTP } = require('./otp.service');
@@ -348,6 +348,21 @@ async function deleteAccountService(userId) {
     const user = await signupModel.findById(userId);
     if (!user) {
       throw new Error('User not found');
+    }
+
+    // Store deleted account information before deletion
+    const deletedAccountsModel = require('./deleted-accounts.model');
+    try {
+      await deletedAccountsModel.storeDeletedAccount({
+        email: user.email,
+        username: user.username,
+        full_name: user.full_name,
+        user_type: user.user_type,
+        deleted_at: new Date(),
+      });
+    } catch (storeError) {
+      console.error('Error storing deleted account data:', storeError);
+      // Continue with deletion even if storing fails
     }
 
     // Delete user from database

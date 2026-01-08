@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import SignupHero from '@/components/Signup/SignupHero';
 import ProgressStepper from '@/components/Signup/ProgressStepper';
 import SignupFormSteps from '@/components/Signup/SignupFormSteps';
+import { isAuthenticated } from '@/utils/auth';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -14,6 +15,13 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoadingOTP, setIsLoadingOTP] = useState(false);
   const [isGoogleUser, setIsGoogleUser] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated()) {
+      router.push('/home');
+    }
+  }, [router]);
 
   // Form data
   const [formData, setFormData] = useState({
@@ -105,7 +113,7 @@ export default function SignupPage() {
     const isGoogleUser = !!googleDataStr;
 
     // Determine OTP step based on user type
-    const otpStep = selectedUserType === 'athlete' ? 3 : 2;
+    const _otpStep = selectedUserType === 'athlete' ? 3 : 2;
 
     // If on Personal Details step and is Google user
     if (currentStep === 1 && isGoogleUser) {
