@@ -16,8 +16,6 @@ export default function UserTypeSelection({
   onGoogleSignIn,
 }: UserTypeSelectionProps) {
   const router = useRouter();
-  const [showGoogleUserTypeModal, setShowGoogleUserTypeModal] = useState(false);
-  const [googleUserData, setGoogleUserData] = useState<any>(null);
 
   const handleGoogleSuccess = async (data: any) => {
     console.log('Google sign-in response:', data);
@@ -48,11 +46,42 @@ export default function UserTypeSelection({
       return;
     }
 
-    // Case 2: New user or user without user_type - needs to complete signup
+    // Case 2: New user needs to set user type and complete profile
     if (data.needs_user_type) {
-      // Show modal to select user type
-      setGoogleUserData(data);
-      setShowGoogleUserTypeModal(true);
+      // Set the user type that was already selected
+      try {
+        const response = await fetch(
+          'http://localhost:3001/api/auth/google/complete',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              google_id: data.google_id,
+              user_type: selectedUserType,
+            }),
+          }
+        );
+
+        const result = await response.json();
+
+        if (result.success) {
+          // Pass data to parent to continue with profile completion
+          onGoogleSignIn?.({
+            ...result,
+            user: {
+              ...result.user,
+              user_type: selectedUserType,
+            },
+          });
+        } else {
+          alert(result.message || 'Failed to complete signup');
+        }
+      } catch (error) {
+        console.error('Error completing Google signup:', error);
+        alert('Failed to complete signup. Please try again.');
+      }
       return;
     }
 
@@ -60,44 +89,6 @@ export default function UserTypeSelection({
     if (data.needs_profile_completion) {
       onGoogleSignIn?.(data);
       return;
-    }
-  };
-
-  const handleGoogleUserTypeSubmit = async (userType: string) => {
-    try {
-      const response = await fetch(
-        'http://localhost:3001/api/auth/google/complete',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            google_id: googleUserData.google_id,
-            user_type: userType,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.success) {
-        setShowGoogleUserTypeModal(false);
-
-        // Pass data to parent to continue with profile completion
-        onGoogleSignIn?.({
-          ...data,
-          user: {
-            ...data.user,
-            user_type: userType,
-          },
-        });
-      } else {
-        alert(data.message || 'Failed to complete signup');
-      }
-    } catch (error) {
-      console.error('Error completing Google signup:', error);
-      alert('Failed to complete signup. Please try again.');
     }
   };
 
@@ -223,75 +214,40 @@ export default function UserTypeSelection({
         </div>
       </div>
 
-      <button
-        onClick={onContinue}
-        disabled={!selectedUserType}
-        className="w-full bg-[#CB9729] text-white py-3 rounded-lg font-medium hover:bg-[#B8861F] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed mb-4"
-      >
-        Continue
-      </button>
+      {/* Show Continue button AND Google button when user type is selected */}
+      {selectedUserType ? (
+        <>
+          <button
+            onClick={onContinue}
+            className="w-full bg-[#CB9729] text-white py-3 rounded-lg font-medium hover:bg-[#B8861F] transition-colors mb-4"
+          >
+            Continue
+          </button>
 
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-300"></div>
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="px-2 bg-white text-gray-500">Or</span>
-        </div>
-      </div>
-
-      <GoogleSignInButton
-        onSuccess={handleGoogleSuccess}
-        buttonText="Continue with Google"
-      />
-
-      {/* Google User Type Selection Modal */}
-      {showGoogleUserTypeModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-            <h3 className="text-xl font-bold mb-4 text-gray-900">
-              Select Your Role
-            </h3>
-            <p className="text-gray-600 mb-6">
-              To complete your signup, please select your role:
-            </p>
-
-            <div className="space-y-3">
-              <button
-                onClick={() => handleGoogleUserTypeSubmit('athlete')}
-                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-[#CB9729] hover:bg-[#FFF8E7] transition-all text-left"
-              >
-                <div className="font-semibold text-gray-900 mb-1">Athlete</div>
-                <div className="text-sm text-gray-600">
-                  Showcase skills and connect with coaches
-                </div>
-              </button>
-
-              <button
-                onClick={() => handleGoogleUserTypeSubmit('coach')}
-                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-[#CB9729] hover:bg-[#FFF8E7] transition-all text-left"
-              >
-                <div className="font-semibold text-gray-900 mb-1">Coach</div>
-                <div className="text-sm text-gray-600">
-                  Find athletes and manage your team
-                </div>
-              </button>
-
-              <button
-                onClick={() => handleGoogleUserTypeSubmit('organization')}
-                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-[#CB9729] hover:bg-[#FFF8E7] transition-all text-left"
-              >
-                <div className="font-semibold text-gray-900 mb-1">
-                  Organization
-                </div>
-                <div className="text-sm text-gray-600">
-                  Connect with athletes and organize events
-                </div>
-              </button>
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">Or</span>
             </div>
           </div>
-        </div>
+
+          <GoogleSignInButton
+            onSuccess={handleGoogleSuccess}
+            buttonText="Continue with Google"
+          />
+        </>
+      ) : (
+        <p className="text-center text-sm text-gray-500 py-3"></p>
       )}
+
+      <div className="text-center text-xs sm:text-sm text-gray-600 mt-4">
+        <span className="text-gray-700">Already have an account? </span>
+        <a href="#" className="text-[#CB9729] font-medium hover:underline">
+          Sign in
+        </a>
+      </div>
     </div>
   );
 }
