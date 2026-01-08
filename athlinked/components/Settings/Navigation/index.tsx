@@ -102,7 +102,7 @@ export default function SettingsNavigation({
   const handleConfirmDelete = async () => {
     // Validate email input
     const inputEmail = emailInput.trim().toLowerCase();
-    
+
     if (!inputEmail) {
       setEmailError('Please enter your email address');
       return;
@@ -121,7 +121,7 @@ export default function SettingsNavigation({
     // Clear any previous errors
     setEmailError('');
     setIsDeleting(true);
-    
+
     try {
       // Call delete account API
       const result = await apiDelete<{
@@ -132,7 +132,7 @@ export default function SettingsNavigation({
       if (result.success) {
         // Logout user and clear tokens
         await logout();
-        
+
         // Redirect to login page
         router.push('/login');
       } else {
@@ -171,7 +171,7 @@ export default function SettingsNavigation({
 
       {/* Menu Items */}
       <div className="flex-1 overflow-y-auto">
-        {menuItems.map((item) => {
+        {menuItems.map(item => {
           const Icon = item.icon;
           const isActive = activeItem === item.id; // Highlight based on activeItem prop
 
@@ -187,17 +187,11 @@ export default function SettingsNavigation({
             >
               <Icon
                 size={20}
-                className={
-                  isActive
-                    ? 'text-[#CB9729]'
-                    : 'text-gray-600'
-                }
+                className={isActive ? 'text-[#CB9729]' : 'text-gray-600'}
               />
               <span
                 className={`text-base font-medium ${
-                  isActive
-                    ? 'text-[#CB9729]'
-                    : 'text-gray-900'
+                  isActive ? 'text-[#CB9729]' : 'text-gray-900'
                 }`}
               >
                 {item.label}
@@ -224,7 +218,9 @@ export default function SettingsNavigation({
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900">Delete Account</h2>
+              <h2 className="text-xl font-semibold text-gray-900">
+                Delete Account
+              </h2>
               <button
                 onClick={handleCancelDelete}
                 className="p-1 hover:bg-gray-100 rounded-full transition-colors"
@@ -236,9 +232,10 @@ export default function SettingsNavigation({
             {/* Modal Body */}
             <div className="p-4 space-y-4">
               <p className="text-gray-700">
-                Are you sure you want to delete your account? This action cannot be undone.
+                Are you sure you want to delete your account? This action cannot
+                be undone.
               </p>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   To confirm, please type your email address: {currentUserEmail && <span className="font-bold">{currentUserEmail}</span>}
@@ -309,4 +306,3 @@ export default function SettingsNavigation({
     </div>
   );
 }
-

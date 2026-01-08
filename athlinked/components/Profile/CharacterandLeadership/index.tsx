@@ -278,7 +278,10 @@ export default function CharacterAndLeadershipComponent({
                     )}
                   </div>
                   {isOwnProfile && (
-                    <div className="flex items-center gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      className="flex items-center gap-2 ml-4"
+                      onClick={e => e.stopPropagation()}
+                    >
                       <button
                         onClick={() => handleEdit(index)}
                         className="p-2 rounded-full hover:bg-blue-50 transition-colors"
@@ -388,7 +391,9 @@ function ViewCharacterAndLeadershipPopup({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Community Service
               </label>
-              <p className="text-gray-900 whitespace-pre-wrap">{data.communityService}</p>
+              <p className="text-gray-900 whitespace-pre-wrap">
+                {data.communityService}
+              </p>
             </div>
           )}
         </div>

@@ -14,7 +14,8 @@ async function searchUsers(req, res) {
       collegeSchool: req.query.collegeSchool || req.query.education || '',
       location: req.query.location || req.query.city || '',
       achievements: req.query.achievements || '',
-      sportSpecialization: req.query.sportSpecialization || req.query.sport || '',
+      sportSpecialization:
+        req.query.sportSpecialization || req.query.sport || '',
       gender: req.query.gender || '',
       teamLevel: req.query.teamLevel || '',
       teamCaptain: req.query.teamCaptain || '',
@@ -48,7 +49,7 @@ async function getUserById(req, res) {
     }
 
     const result = await searchService.getUserByIdService(userId);
-    
+
     if (!result.success) {
       return res.status(404).json(result);
     }
@@ -71,7 +72,7 @@ async function getUserById(req, res) {
 async function getAllUsers(req, res) {
   try {
     const limit = parseInt(req.query.limit) || 100;
-    
+
     const result = await searchService.getAllUsersService(limit);
     return res.status(200).json(result);
   } catch (error) {

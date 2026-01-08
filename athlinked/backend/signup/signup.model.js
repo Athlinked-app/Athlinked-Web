@@ -177,7 +177,7 @@ async function getChildrenByParentEmail(parentEmail) {
     WHERE parent_email = $1 AND user_type != 'parent'
     ORDER BY created_at DESC
   `;
-  
+
   const result = await pool.query(query, [parentEmail.toLowerCase().trim()]);
   return result.rows;
 }

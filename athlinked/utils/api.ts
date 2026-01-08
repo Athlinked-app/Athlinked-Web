@@ -254,7 +254,7 @@ export async function apiUpload<T = any>(
     method: 'POST',
     body: formData,
   });
-  
+
   // Check if response is ok before parsing JSON
   if (!response.ok) {
     let errorMessage = 'Failed to upload file';
@@ -267,6 +267,6 @@ export async function apiUpload<T = any>(
     }
     throw new Error(errorMessage);
   }
-  
+
   return response.json();
 }

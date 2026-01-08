@@ -26,7 +26,7 @@ async function searchUsers(filters) {
       FROM users
       WHERE 1=1
     `;
-    
+
     const queryParams = [];
     let paramIndex = 1;
 
@@ -59,7 +59,10 @@ async function searchUsers(filters) {
     }
 
     // Filter by sport specialization (primary_sport or sports_played)
-    if (filters.sportSpecialization && filters.sportSpecialization.trim() !== '') {
+    if (
+      filters.sportSpecialization &&
+      filters.sportSpecialization.trim() !== ''
+    ) {
       query += ` AND (LOWER(primary_sport) = $${paramIndex} OR LOWER(sports_played)::text LIKE $${paramIndex + 1})`;
       queryParams.push(filters.sportSpecialization.toLowerCase());
       queryParams.push(`%${filters.sportSpecialization.toLowerCase()}%`);
@@ -129,7 +132,7 @@ async function getUserById(userId) {
       FROM users
       WHERE id = $1
     `;
-    
+
     const result = await pool.query(query, [userId]);
     return result.rows[0] || null;
   } catch (error) {
@@ -164,7 +167,7 @@ async function getAllUsers(limit = 100) {
       ORDER BY created_at DESC
       LIMIT $1
     `;
-    
+
     const result = await pool.query(query, [limit]);
     return result.rows;
   } catch (error) {

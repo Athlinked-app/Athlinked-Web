@@ -270,7 +270,10 @@ export default function HealthAndReadinessComponent({
                     )}
                   </div>
                   {isOwnProfile && (
-                    <div className="flex items-center gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      className="flex items-center gap-2 ml-4"
+                      onClick={e => e.stopPropagation()}
+                    >
                       <button
                         onClick={() => handleEdit(index)}
                         className="p-2 rounded-full hover:bg-blue-50 transition-colors"

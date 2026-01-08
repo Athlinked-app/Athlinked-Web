@@ -96,9 +96,10 @@ async function markAsRead(req, res) {
       }
 
       // Get updated conversation for the reader
-      const updatedConversations = await messagesService.getConversations(userId);
+      const updatedConversations =
+        await messagesService.getConversations(userId);
       const updatedConv = updatedConversations.find(
-        (c) => c.conversation_id === conversationId
+        c => c.conversation_id === conversationId
       );
 
       // Emit conversation update to reader
@@ -351,12 +352,16 @@ async function deleteConversation(req, res) {
       });
     }
 
-    const result = await messagesService.deleteConversation(conversationId, userId);
+    const result = await messagesService.deleteConversation(
+      conversationId,
+      userId
+    );
 
     if (!result) {
       return res.status(404).json({
         success: false,
-        message: 'Conversation not found or you do not have permission to delete it',
+        message:
+          'Conversation not found or you do not have permission to delete it',
       });
     }
 

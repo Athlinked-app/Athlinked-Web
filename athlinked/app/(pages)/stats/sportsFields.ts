@@ -248,13 +248,7 @@ export const getFieldsForPosition = (
         ];
       default:
         // Fallback for any other football positions
-        return [
-          'Year',
-          'Games Played',
-          'Tackles',
-          'Sacks',
-          'Interceptions',
-        ];
+        return ['Year', 'Games Played', 'Tackles', 'Sacks', 'Interceptions'];
     }
   } else if (sport === 'golf') {
     switch (position) {

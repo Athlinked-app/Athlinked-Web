@@ -32,10 +32,14 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static('public/uploads'));
 
 // Swagger documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: 'AthLinked API Documentation',
-}));
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'AthLinked API Documentation',
+  })
+);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });

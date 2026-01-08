@@ -17,8 +17,10 @@ async function addFavorite(coachId, athleteId) {
     }
 
     // Verify coach and athlete exist and get their info
-    const coachQuery = 'SELECT username, full_name, user_type, favourites FROM users WHERE id = $1';
-    const athleteQuery = 'SELECT username, full_name, user_type FROM users WHERE id = $1';
+    const coachQuery =
+      'SELECT username, full_name, user_type, favourites FROM users WHERE id = $1';
+    const athleteQuery =
+      'SELECT username, full_name, user_type FROM users WHERE id = $1';
 
     const [coachResult, athleteResult] = await Promise.all([
       dbClient.query(coachQuery, [coachId]),
@@ -194,7 +196,7 @@ async function getFavorites(coachId) {
 
   try {
     const result = await pool.query(query, [coachId]);
-    
+
     // Map results and add favorited_at (we'll use current timestamp as approximation)
     // Note: Since we're using an array, we don't have individual timestamps per favorite
     return result.rows.map(row => ({

@@ -298,13 +298,17 @@ export default function AthleticAndPerformanceComponent({
                     )}
                     {data.multiSportAthlete && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Multi-Sport Athlete:</span>{' '}
+                        <span className="font-medium">
+                          Multi-Sport Athlete:
+                        </span>{' '}
                         {data.multiSportAthlete}
                       </p>
                     )}
                     {data.coachVerifiedProfile && (
                       <p className="text-sm text-gray-600 mb-1">
-                        <span className="font-medium">Coach Verified Profile:</span>{' '}
+                        <span className="font-medium">
+                          Coach Verified Profile:
+                        </span>{' '}
                         {data.coachVerifiedProfile}
                       </p>
                     )}
@@ -318,15 +322,17 @@ export default function AthleticAndPerformanceComponent({
                         )}
                         {data.arm && (
                           <p className="text-sm text-gray-600 mb-1">
-                            <span className="font-medium">Arm:</span>{' '}
-                            {data.arm}
+                            <span className="font-medium">Arm:</span> {data.arm}
                           </p>
                         )}
                       </div>
                     )}
                   </div>
                   {isOwnProfile && (
-                    <div className="flex items-center gap-2 ml-4" onClick={(e) => e.stopPropagation()}>
+                    <div
+                      className="flex items-center gap-2 ml-4"
+                      onClick={e => e.stopPropagation()}
+                    >
                       <button
                         onClick={() => handleEdit(index)}
                         className="p-2 rounded-full hover:bg-blue-50 transition-colors"
