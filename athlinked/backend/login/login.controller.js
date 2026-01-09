@@ -32,9 +32,12 @@ async function login(req, res) {
     }
 
     if (error.message === 'Invalid email or password' || error.message === 'Invalid email/username or password') {
+      const passwordChangedRecently = error.passwordChangedRecently === true;
+      console.log('Login error - passwordChangedRecently flag:', passwordChangedRecently);
       return res.status(401).json({
         success: false,
         message: error.message,
+        passwordChangedRecently: passwordChangedRecently,
       });
     }
 

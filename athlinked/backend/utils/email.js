@@ -153,7 +153,68 @@ async function sendParentSignupLink(to, username, signupLink) {
   }
 }
 
+/**
+ * Send password reset link email
+ * @param {string} to - Recipient email address
+ * @param {string} resetLink - Password reset link with token
+ * @returns {Promise<object>} Email send result
+ */
+async function sendPasswordResetLink(to, resetLink) {
+  try {
+    const smtpPass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
+    const smtpUser = process.env.SMTP_USER;
+
+    if (!smtpUser || !smtpPass) {
+      const errorMsg =
+        'SMTP credentials not configured. Please set SMTP_USER and SMTP_PASS (or SMTP_PASSWORD) in .env';
+      console.error('❌', errorMsg);
+      throw new Error(errorMsg);
+    }
+
+    const transporter = createTransporter();
+
+    await new Promise((resolve, reject) => {
+      transporter.verify((error, success) => {
+        if (error) {
+          console.error('❌ SMTP verification failed:', error.message);
+          reject(new Error(`SMTP verification failed: ${error.message}`));
+        } else {
+          resolve(success);
+        }
+      });
+    });
+
+    const mailOptions = {
+      from: process.env.SMTP_FROM || smtpUser,
+      to,
+      subject: 'Password Reset - AthLinked',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Password Reset Request</h2>
+          <p>You requested to reset your password for your AthLinked account.</p>
+          <p>Click the button below to reset your password:</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetLink}" style="background-color: #CB9729; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">Reset Password</a>
+          </div>
+          <p>Or copy and paste this link into your browser:</p>
+          <p style="word-break: break-all; color: #666; font-size: 12px;">${resetLink}</p>
+          <p style="color: #666; font-size: 14px; margin-top: 20px;">This link will expire in 1 hour.</p>
+          <p style="color: #666; font-size: 14px;">If you didn't request this password reset, please ignore this email.</p>
+        </div>
+      `,
+      text: `You requested to reset your password. Click this link to reset it: ${resetLink}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this password reset, please ignore this email.`,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('❌ Failed to send password reset link email:', error);
+    throw new Error(`Failed to send email: ${error.message}`);
+  }
+}
+
 module.exports = {
   sendOTPEmail,
   sendParentSignupLink,
+  sendPasswordResetLink,
 };
