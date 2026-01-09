@@ -137,8 +137,63 @@ async function updateProfileImagesService(userId, imageData) {
   }
 }
 
+async function getCurrentUserProfileService(userId) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const user = await profileModel.getCurrentUserProfile(userId);
+
+    if (!user) {
+      return {
+        success: false,
+        message: 'User not found',
+      };
+    }
+
+    // Format sports played similar to getUserProfileService
+    let sportsPlayed = null;
+    if (user.sports_played) {
+      if (Array.isArray(user.sports_played)) {
+        sportsPlayed = user.sports_played.join(', ');
+      } else if (typeof user.sports_played === 'string') {
+        let sportsString = user.sports_played;
+        if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+          sportsString = sportsString.slice(1, -1);
+        }
+        sportsString = sportsString.replace(/["']/g, '');
+        sportsPlayed = sportsString;
+      }
+    }
+
+    return {
+      success: true,
+      user: {
+        id: user.id,
+        email: user.email || null,
+        username: user.username || null,
+        full_name: user.full_name || null,
+        profile_url: user.profile_url || null,
+        cover_url: user.cover_url || null,
+        bio: user.bio || null,
+        education: user.education || null,
+        city: user.city || null,
+        primary_sport: user.primary_sport || null,
+        sports_played: sportsPlayed,
+        dob: user.dob || null,
+        user_type: user.user_type || null,
+      },
+    };
+  } catch (error) {
+    console.error('Get current user profile service error:', error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   getUserProfileService,
   upsertUserProfileService,
   updateProfileImagesService,
+  getCurrentUserProfileService,
 };

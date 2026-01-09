@@ -181,10 +181,11 @@ function ProfileContent() {
 
   useEffect(() => {
     fetchCurrentUser();
-    if (viewUserId) {
+    // Only fetch view user if viewing another user's profile (not your own)
+    if (viewUserId && viewUserId !== currentUserId) {
       fetchViewUser();
     }
-  }, [viewUserId]);
+  }, [viewUserId, currentUserId]);
 
   useEffect(() => {
     if (targetUserId) {
@@ -196,9 +197,11 @@ function ProfileContent() {
     setUserBio('');
 
     if (targetUserId) {
+      // Always fetch profile data first (it has the most complete data)
       fetchProfileData();
       fetchFollowCounts();
-      if (viewUserId) {
+      // Only fetch view user if viewing another user's profile (not your own)
+      if (viewUserId && viewUserId !== currentUserId) {
         fetchViewUser();
       }
     }
@@ -232,18 +235,30 @@ function ProfileContent() {
             username: user.username,
             user_type: user.user_type,
           });
-          if (user.sports_played) {
-            let sportsString = user.sports_played;
-            if (typeof sportsString === 'string') {
-              if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
-                sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
+          // Only update sports_played if:
+          // 1. The user object has sports_played data
+          // 2. We're viewing another user's profile (not our own)
+          // 3. We don't already have sports data from profile API
+          // This prevents overwriting correct profile data with incomplete data from /signup/users
+          if (user.sports_played && viewUserId !== currentUserId) {
+            setSportsPlayed(prevSports => {
+              // If we already have sports data from profile API, don't overwrite it
+              // The /signup/users endpoint doesn't reliably return sports_played
+              if (prevSports && prevSports.trim() !== '') {
+                return prevSports;
               }
-              setSportsPlayed(sportsString);
-            } else if (Array.isArray(sportsString)) {
-              setSportsPlayed(sportsString.join(', '));
-            } else {
-              setSportsPlayed('');
-            }
+              
+              let sportsString = user.sports_played;
+              if (typeof sportsString === 'string') {
+                if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+                  sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
+                }
+                return sportsString;
+              } else if (Array.isArray(sportsString)) {
+                return sportsString.join(', ');
+              }
+              return '';
+            });
           }
         }
       }
@@ -299,7 +314,23 @@ function ProfileContent() {
         dob: data.dob ?? null,
       });
       setUserBio(data.bio || '');
-      setSportsPlayed(processedSportsPlayed || '');
+      // Update sportsPlayed from profile data
+      // Profile data is ALWAYS the authoritative source - it comes directly from the database
+      // When profile data is fetched, it should always be used, even if it overwrites existing data
+      // This ensures consistency after page refresh
+      if (processedSportsPlayed !== null && processedSportsPlayed !== undefined) {
+        // Always use profile data if it exists (even if empty string)
+        // This ensures that after refresh, we show what's actually in the database
+        if (processedSportsPlayed.trim() !== '') {
+          setSportsPlayed(processedSportsPlayed);
+        } else {
+          // Profile data says no sports, so clear it
+          setSportsPlayed('');
+        }
+      } else {
+        // Profile data returned null/undefined for sports, which means no sports in database
+        setSportsPlayed('');
+      }
     } catch (error) {
       console.error('Error fetching profile data:', error);
       setProfileData(null);
@@ -720,6 +751,17 @@ function ProfileContent() {
 
                 console.log('Profile saved successfully:', result);
 
+                // Refresh profile data from server FIRST to get latest values from database
+                // This ensures we have the most up-to-date data including sports_played
+                if (targetUserId) {
+                  await fetchProfileData();
+                }
+
+                // Also update local state immediately for better UX
+                if (data.sports_played !== undefined) {
+                  setSportsPlayed(data.sports_played || '');
+                }
+
                 if (data.bio !== undefined) {
                   setUserBio(data.bio || '');
                 }
@@ -750,8 +792,8 @@ function ProfileContent() {
                           profileData.city !== undefined
                             ? profileData.city
                             : null,
-                        primarySport: null,
-                        sportsPlayed: null,
+                        primarySport: profileData.primarySport || null,
+                        sportsPlayed: profileData.sportsPlayed || null,
                         dob: null,
                       };
                     }
@@ -777,6 +819,8 @@ function ProfileContent() {
                         profileData.city !== undefined
                           ? profileData.city
                           : prev.city,
+                      primarySport: profileData.primarySport || prev.primarySport,
+                      sportsPlayed: profileData.sportsPlayed || prev.sportsPlayed,
                     };
                   });
                 }
@@ -873,7 +917,7 @@ function ProfileContent() {
               )}
             </div>
 
-            <div className="mt-4 space-y-4 overflow-y-auto flex-1 pb-44 px-1 max-h-[400px] lg:max-h-[450px] ">
+            <div className="mt-4 space-y-4 overflow-y-auto flex-1 pb-8 px-1">
               {activeTab === 'profile' && (
                 <>
                   <AboutMe bio={userBio || profileData?.bio || ''} />

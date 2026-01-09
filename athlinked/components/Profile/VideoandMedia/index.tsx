@@ -203,9 +203,9 @@ export default function VideoAndMediaComponent({
 
   return (
     <>
-      <div className="w-full bg-white rounded-lg p-6 mt-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">Video and Media</h2>
+      <div className="w-full bg-white rounded-lg px-6 py-5">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold text-gray-900">Video and Media</h2>
           {isOwnProfile && (
             <button
               onClick={() => {
@@ -226,9 +226,9 @@ export default function VideoAndMediaComponent({
         </div>
 
         {loading ? (
-          <p className="text-gray-500 italic">Loading...</p>
+          <p className="text-gray-500 italic text-base">Loading...</p>
         ) : videoAndMediaList.length === 0 ? (
-          <p className="text-gray-500 italic">
+          <p className="text-gray-500 italic text-base">
             No video and media added yet. Click the + button to add one.
           </p>
         ) : (

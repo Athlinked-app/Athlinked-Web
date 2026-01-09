@@ -103,8 +103,32 @@ async function updateProfileImages(req, res) {
   }
 }
 
+async function getCurrentUserProfile(req, res) {
+  try {
+    // Use userId from JWT token (set by authenticateToken middleware)
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
+
+    const result = await profileService.getCurrentUserProfileService(userId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Get current user profile controller error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 module.exports = {
   getUserProfile,
   upsertUserProfile,
   updateProfileImages,
+  getCurrentUserProfile,
 };
