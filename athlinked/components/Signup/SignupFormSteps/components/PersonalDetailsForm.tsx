@@ -15,6 +15,7 @@ interface PersonalDetailsFormProps {
   showPassword: boolean;
   showConfirmPassword: boolean;
   isLoadingOTP?: boolean;
+  isGoogleUser?: boolean;
   onFormDataChange: (data: any) => void;
   onContinue: () => void;
   onTogglePassword: () => void;
@@ -32,6 +33,7 @@ export default function PersonalDetailsForm({
   showPassword,
   showConfirmPassword,
   isLoadingOTP = false,
+  isGoogleUser: propIsGoogleUser,
   onFormDataChange,
   onContinue,
   onTogglePassword,
@@ -50,8 +52,9 @@ export default function PersonalDetailsForm({
   const [showSportsDropdown, setShowSportsDropdown] = useState(false);
   const sportsDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Check if user is signing up with Google
-  const [isGoogleUser, setIsGoogleUser] = useState(false);
+  // Check if user is signing up with Google - use prop if provided, otherwise check localStorage
+  const [isGoogleUserState, setIsGoogleUserState] = useState(false);
+  const isGoogleUser = propIsGoogleUser ?? isGoogleUserState;
 
   // Validation error states
   const [errors, setErrors] = useState({
@@ -66,9 +69,11 @@ export default function PersonalDetailsForm({
       fetchSports();
     }
 
-    // Check if this is a Google user
-    const googleData = localStorage.getItem('google_temp_data');
-    setIsGoogleUser(!!googleData);
+    // Check if this is a Google user (only if prop not provided)
+    if (propIsGoogleUser === undefined) {
+      const googleData = localStorage.getItem('google_temp_data');
+      setIsGoogleUserState(!!googleData);
+    }
   }, [selectedUserType]);
 
   // Sync selectedSports with formData when it changes externally
