@@ -209,9 +209,9 @@ export default function AcademicBackgrounds({
 
   return (
     <>
-      <div className="w-full bg-white rounded-lg px-6 mt-4">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-base font-bold text-gray-900">
+      <div className="w-full bg-white rounded-lg px-6 py-5">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold text-gray-900">
             Academic Background
           </h2>
           {isOwnProfile && (
@@ -234,9 +234,9 @@ export default function AcademicBackgrounds({
         </div>
 
         {loading ? (
-          <p className="text-gray-500 italic">Loading...</p>
+          <p className="text-gray-500 italic text-base">Loading...</p>
         ) : academicBackgrounds.length === 0 ? (
-          <p className="text-gray-500 italic text-sm">
+          <p className="text-gray-500 italic text-base">
             No academic background added yet. Click the + button to add one.
           </p>
         ) : (

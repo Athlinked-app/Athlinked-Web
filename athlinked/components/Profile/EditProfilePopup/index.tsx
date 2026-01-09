@@ -51,14 +51,16 @@ export default function EditProfilePopup({
   const [city, setCity] = useState(userData?.city || '');
   const [bio, setBio] = useState(userData?.bio || '');
   const [showSportsDropdown, setShowSportsDropdown] = useState(false);
+  // Initialize selectedSports from userData, handling different formats
   const [selectedSports, setSelectedSports] = useState<string[]>(() => {
     if (userData?.sports_played) {
       // Remove curly brackets and quotes if present
       const cleaned = userData.sports_played.replace(/[{}"']/g, '');
-      return cleaned
+      const sports = cleaned
         .split(',')
         .map(s => s.trim())
         .filter(Boolean);
+      return sports;
     }
     return [];
   });
@@ -76,25 +78,29 @@ export default function EditProfilePopup({
     }
   }, [open]);
 
-  // Update selectedSports when userData changes
+  // Update selectedSports when userData changes or popup opens
+  // This ensures sports are always synced with the latest userData
   useEffect(() => {
-    if (userData?.sports_played !== undefined) {
-      // Handle empty string - clear sports
-      if (!userData.sports_played || userData.sports_played.trim() === '') {
-        setSelectedSports([]);
-        setSportsPlayed('');
-      } else {
-        // Remove curly brackets and quotes if present
-        const cleaned = userData.sports_played.replace(/[{}"']/g, '');
-        const sportsArray = cleaned
-          .split(',')
-          .map(s => s.trim())
-          .filter(Boolean);
-        setSelectedSports(sportsArray);
-        setSportsPlayed(sportsArray.join(', '));
+    if (open) {
+      if (userData?.sports_played !== undefined) {
+        // Handle empty string - clear sports
+        if (!userData.sports_played || userData.sports_played.trim() === '') {
+          setSelectedSports([]);
+          setSportsPlayed('');
+        } else {
+          // Remove curly brackets and quotes if present
+          const cleaned = userData.sports_played.replace(/[{}"']/g, '');
+          const sportsArray = cleaned
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+          // Always update both states to ensure consistency
+          setSelectedSports(sportsArray);
+          setSportsPlayed(sportsArray.join(', '));
+        }
       }
     }
-  }, [userData?.sports_played]);
+  }, [open, userData?.sports_played]);
 
   // Update city, education, and bio when userData changes
   useEffect(() => {

@@ -204,9 +204,9 @@ export default function CompetitionAndClub({
 
   return (
     <>
-      <div className="w-full bg-white rounded-lg p-6 mt-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">
+      <div className="w-full bg-white rounded-lg px-6 py-5">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold text-gray-900">
             Competition and Club Information
           </h2>
           {isOwnProfile && (
@@ -229,9 +229,9 @@ export default function CompetitionAndClub({
         </div>
 
         {loading ? (
-          <p className="text-gray-500 italic">Loading...</p>
+          <p className="text-gray-500 italic text-base">Loading...</p>
         ) : clubsList.length === 0 ? (
-          <p className="text-gray-500 italic">
+          <p className="text-gray-500 italic text-base">
             No competition and club information added yet. Click the + button to
             add one.
           </p>

@@ -112,6 +112,37 @@ router.post(
 router.post('/', authenticateToken, profileController.upsertUserProfile);
 
 /**
+ * @swagger
+ * /api/profile:
+ *   get:
+ *     summary: Get current user profile
+ *     description: Retrieve the authenticated user's profile information
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Profile retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 user:
+ *                   type: object
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.get('/', authenticateToken, profileController.getCurrentUserProfile);
+
+/**
  * Social Handles Routes
  * These must be before /:userId route to avoid matching conflicts
  */

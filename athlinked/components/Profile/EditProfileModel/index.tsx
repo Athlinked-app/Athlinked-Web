@@ -101,7 +101,7 @@ export default function EditProfileModal({
   const [loading, setLoading] = useState(true);
   const [fullName, setFullName] = useState(userData?.full_name || '');
   const [username, setUsername] = useState(userData?.username || '');
-  const [location, setLocation] = useState(userData?.location || '');
+  const [location, setLocation] = useState(userData?.city || userData?.location || '');
   const [age, setAge] = useState(userData?.age?.toString() || '');
   const [sportsPlayed, setSportsPlayed] = useState(
     userData?.sports_played || ''
@@ -707,21 +707,14 @@ export default function EditProfileModal({
               </p>
 
               <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 md:gap-7 text-gray-600">
-                <div className="flex items-center gap-1 sm:gap-1.5">
-                  <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 shrink-0" />
-                  <input
-                    type="text"
-                    value={location}
-                    onChange={e => setLocation(e.target.value)}
-                    placeholder="Location"
-                    className="border-none focus:outline-none focus:ring-0 bg-transparent text-xs sm:text-xs md:text-sm text-gray-600 placeholder:text-gray-400"
-                    style={{
-                      width: location
-                        ? `${Math.max(location.length * 6 + 12, 50)}px`
-                        : '80px',
-                    }}
-                  />
-                </div>
+                {(location || userData?.city) && (
+                  <div className="flex items-center gap-1 sm:gap-1.5">
+                    <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 shrink-0" />
+                    <span className="whitespace-nowrap text-xs sm:text-xs md:text-sm">
+                      {location || userData?.city || ''}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1 sm:gap-1.5">
                   <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 shrink-0" />
                   <span className="whitespace-nowrap text-xs sm:text-xs md:text-sm">
@@ -731,21 +724,14 @@ export default function EditProfileModal({
                     followers
                   </span>
                 </div>
-                <div className="flex items-center gap-1 sm:gap-1.5">
-                  <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 shrink-0" />
-                  <input
-                    type="number"
-                    value={age}
-                    onChange={e => setAge(e.target.value)}
-                    placeholder="Age"
-                    className="border-none focus:outline-none focus:ring-0 bg-transparent text-xs sm:text-xs md:text-sm text-gray-600 placeholder:text-gray-400"
-                    style={{
-                      width: age
-                        ? `${Math.max(age.length * 6 + 8, 30)}px`
-                        : '30px',
-                    }}
-                  />
-                </div>
+                {(age || userData?.age) && (
+                  <div className="flex items-center gap-1 sm:gap-1.5">
+                    <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 shrink-0" />
+                    <span className="whitespace-nowrap text-xs sm:text-xs md:text-sm">
+                      {age || userData?.age || ''}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
