@@ -1,24 +1,33 @@
 'use client';
 
-import { useState, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import SignupHero from '@/components/Signup/SignupHero';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 
 function ForgotPasswordContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [identifier, setIdentifier] = useState('');
-  const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [step, setStep] = useState<'request' | 'verify' | 'reset'>('request');
+  const [step, setStep] = useState<'request' | 'reset'>('request');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
+  const [resetToken, setResetToken] = useState<string | null>(null);
 
-  const handleRequestOTP = async (e: React.FormEvent) => {
+  // Check if token exists in URL
+  useEffect(() => {
+    const token = searchParams.get('token');
+    if (token) {
+      setResetToken(token);
+      setStep('reset');
+    }
+  }, [searchParams]);
+
+  const handleRequestResetLink = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -38,54 +47,18 @@ function ForgotPasswordContent() {
       const data = await response.json();
 
       if (!data.success) {
-        setError(data.message || 'Failed to send OTP. Please try again.');
+        setError(data.message || 'Failed to send reset link. Please try again.');
         setLoading(false);
         return;
       }
 
-      setUserEmail(data.email || identifier);
-      setStep('verify');
+      // Show success message
+      setError('');
+      alert('Password reset link has been sent to your email. Please check your inbox and click the link to reset your password.');
       setLoading(false);
     } catch (error) {
-      console.error('Error requesting OTP:', error);
+      console.error('Error requesting reset link:', error);
       setError('Failed to connect to server. Please try again.');
-      setLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      const response = await fetch(
-        'http://localhost:3001/api/forgot-password/verify-otp',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            emailOrUsername: identifier,
-            otp: otp,
-          }),
-        }
-      );
-
-      const data = await response.json();
-
-      if (!data.success) {
-        setError(data.message || 'Invalid OTP. Please try again.');
-        setLoading(false);
-        return;
-      }
-
-      setStep('reset');
-      setLoading(false);
-    } catch (error) {
-      console.error('Error verifying OTP:', error);
-      setError('Failed to verify OTP. Please try again.');
       setLoading(false);
     }
   };
@@ -93,6 +66,11 @@ function ForgotPasswordContent() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!resetToken) {
+      setError('Reset token is missing. Please use the link from your email.');
+      return;
+    }
 
     if (newPassword !== confirmPassword) {
       setError('Passwords do not match');
@@ -115,8 +93,7 @@ function ForgotPasswordContent() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            emailOrUsername: identifier,
-            otp: otp,
+            token: resetToken,
             newPassword: newPassword,
           }),
         }
@@ -130,6 +107,7 @@ function ForgotPasswordContent() {
         return;
       }
 
+      alert('Password reset successfully! Redirecting to login...');
       router.push('/login');
     } catch (error) {
       console.error('Error resetting password:', error);
@@ -164,13 +142,11 @@ function ForgotPasswordContent() {
           {/* Title */}
           <h1 className="text-2xl sm:text-3xl font-bold text-black mb-2">
             {step === 'request' && 'Forgot Password'}
-            {step === 'verify' && 'Verify OTP'}
             {step === 'reset' && 'Reset Password'}
           </h1>
           <p className="text-black mb-8">
             {step === 'request' &&
-              'Enter your email or username to receive a reset code'}
-            {step === 'verify' && `Enter the OTP sent to ${userEmail}`}
+              'Enter your email or username to receive a password reset link'}
             {step === 'reset' && 'Enter your new password'}
           </p>
 
@@ -181,9 +157,9 @@ function ForgotPasswordContent() {
             </div>
           )}
 
-          {/* Step 1: Request OTP */}
+          {/* Step 1: Request Reset Link */}
           {step === 'request' && (
-            <form onSubmit={handleRequestOTP} className="space-y-6">
+            <form onSubmit={handleRequestResetLink} className="space-y-6">
               <div>
                 <label
                   htmlFor="identifier"
@@ -208,47 +184,12 @@ function ForgotPasswordContent() {
                 disabled={loading}
                 className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Sending OTP...' : 'Send OTP'}
+                {loading ? 'Sending Reset Link...' : 'Send Reset Link'}
               </button>
             </form>
           )}
 
-          {/* Step 2: Verify OTP */}
-          {step === 'verify' && (
-            <form onSubmit={handleVerifyOTP} className="space-y-6">
-              <div>
-                <label
-                  htmlFor="otp"
-                  className="block text-sm font-medium text-black mb-2"
-                >
-                  Enter OTP
-                </label>
-                <input
-                  id="otp"
-                  type="text"
-                  value={otp}
-                  onChange={e =>
-                    setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))
-                  }
-                  required
-                  maxLength={6}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-center text-lg tracking-widest text-black"
-                  placeholder="000000"
-                  disabled={loading}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Verifying...' : 'Verify OTP'}
-              </button>
-            </form>
-          )}
-
-          {/* Step 3: Reset Password */}
+          {/* Step 2: Reset Password */}
           {step === 'reset' && (
             <form onSubmit={handleResetPassword} className="space-y-6">
               <div>

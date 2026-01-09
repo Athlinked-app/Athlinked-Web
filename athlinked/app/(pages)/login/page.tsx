@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [showDeletedAccountToast, setShowDeletedAccountToast] = useState(false);
+  const [showPasswordChangedToast, setShowPasswordChangedToast] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   // Redirect if already authenticated (unless just logged out)
@@ -75,6 +76,8 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setShowPasswordChangedToast(false); // Reset toast state
+    setShowDeletedAccountToast(false); // Reset deleted account toast
     
     // Validate password before submitting
     const passwordValidationError = validatePassword(password);
@@ -98,6 +101,7 @@ export default function LoginPage() {
       );
 
       const data = await response.json();
+      console.log('Login response:', data); // Debug log
 
       if (!data.success) {
         // Check if account was recently deleted
@@ -110,11 +114,25 @@ export default function LoginPage() {
           }, 5000);
           return;
         }
+
+        // Check if password was changed recently (show toast in addition to error message)
+        console.log('passwordChangedRecently flag:', data.passwordChangedRecently); // Debug log
         
+        // Always show the error message
         setError(
           data.message || 'Login failed. Please check your credentials.'
         );
         setLoading(false);
+        
+        // Show toast if password was changed recently
+        if (data.passwordChangedRecently === true) {
+          console.log('Setting password changed toast to true');
+          setShowPasswordChangedToast(true);
+          // Auto-hide toast after 7 seconds
+          setTimeout(() => {
+            setShowPasswordChangedToast(false);
+          }, 7000);
+        }
         return;
       }
 
@@ -300,7 +318,7 @@ export default function LoginPage() {
 
       {/* Deleted Account Toast */}
       {showDeletedAccountToast && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 animate-in slide-in-from-top-2">
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999]" style={{ animation: 'fadeIn 0.3s ease-in' }}>
           <div className="bg-red-50 border border-red-200 rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 min-w-[300px] max-w-md">
             <div className="flex-shrink-0">
               <svg
@@ -323,6 +341,50 @@ export default function LoginPage() {
             <button
               onClick={() => setShowDeletedAccountToast(false)}
               className="flex-shrink-0 text-red-600 hover:text-red-800"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Password Changed Recently Toast */}
+      {showPasswordChangedToast && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999]" style={{ animation: 'fadeIn 0.3s ease-in' }}>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 min-w-[300px] max-w-md">
+            <div className="flex-shrink-0">
+              <svg
+                className="w-5 h-5 text-yellow-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+            <p className="text-sm font-medium text-yellow-800 flex-1">
+              Your password was changed recently. Please use your new password to login.
+            </p>
+            <button
+              onClick={() => setShowPasswordChangedToast(false)}
+              className="flex-shrink-0 text-yellow-600 hover:text-yellow-800"
             >
               <svg
                 className="w-5 h-5"

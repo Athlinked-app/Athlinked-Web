@@ -210,12 +210,15 @@ export default function PersonalDetailsForm({
       age--;
     }
 
-    // Check age range (12-21)
-    if (age < 12) {
-      return 'Age must be at least 12 years';
-    }
-    if (age > 21) {
-      return 'Age must be no more than 21 years';
+    // Check age range (12-21) - only for athlete user type
+    // Skip age validation for coach, parent, and organization
+    if (selectedUserType !== 'coach' && selectedUserType !== 'parent' && selectedUserType !== 'organization') {
+      if (age < 12) {
+        return 'Age must be at least 12 years';
+      }
+      if (age > 21) {
+        return 'Age must be no more than 21 years';
+      }
     }
 
     return '';

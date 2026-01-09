@@ -96,6 +96,47 @@ function verifyRefreshTokenJWT(token) {
 }
 
 /**
+ * Generate password reset token
+ * @param {object} user - User object with id, email, username
+ * @returns {string} JWT password reset token (expires in 1 hour)
+ */
+function generatePasswordResetToken(user) {
+  const payload = {
+    id: user.id,
+    email: user.email || null,
+    username: user.username || null,
+    type: 'password_reset',
+  };
+
+  return jwt.sign(payload, JWT_SECRET, {
+    expiresIn: '1h', // Password reset link expires in 1 hour
+  });
+}
+
+/**
+ * Verify password reset token
+ * @param {string} token - Password reset token to verify
+ * @returns {object} Decoded token payload
+ */
+function verifyPasswordResetToken(token) {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    if (decoded.type !== 'password_reset') {
+      throw new Error('Invalid token type');
+    }
+    return decoded;
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      throw new Error('Password reset link has expired. Please request a new one.');
+    } else if (error.name === 'JsonWebTokenError') {
+      throw new Error('Invalid password reset link');
+    } else {
+      throw error;
+    }
+  }
+}
+
+/**
  * Decode token without verification (for debugging)
  * @param {string} token - JWT token to decode
  * @returns {object} Decoded token payload
@@ -108,8 +149,10 @@ module.exports = {
   generateToken, // Deprecated - use generateAccessToken
   generateAccessToken,
   generateRefreshToken,
+  generatePasswordResetToken,
   verifyToken, // Deprecated - use verifyAccessToken
   verifyAccessToken,
   verifyRefreshTokenJWT,
+  verifyPasswordResetToken,
   decodeToken,
 };
