@@ -1,5 +1,6 @@
 const messagesModel = require('./messages.model');
 const pool = require('../config/db');
+const networkModel = require('../network/network.model');
 
 async function sendMessage(
   senderId,
@@ -13,6 +14,13 @@ async function sendMessage(
 
   try {
     await client.query('BEGIN');
+
+    // Check if users are connected before allowing message
+    const isConnected = await networkModel.isConnected(senderId, receiverId);
+    if (!isConnected) {
+      await client.query('ROLLBACK');
+      throw new Error('You can only send messages to connected users');
+    }
 
     const conversation = await messagesModel.getOrCreateConversation(
       senderId,
@@ -108,6 +116,12 @@ async function searchNetworkUsers(userId, searchQuery) {
 
 async function getOrCreateConversation(userId, otherUserId) {
   try {
+    // Check if users are connected before creating conversation
+    const isConnected = await networkModel.isConnected(userId, otherUserId);
+    if (!isConnected) {
+      throw new Error('You can only create conversations with connected users');
+    }
+
     const conversation = await messagesModel.getOrCreateConversation(
       userId,
       otherUserId
@@ -148,6 +162,29 @@ async function getOrCreateConversation(userId, otherUserId) {
   }
 }
 
+async function deleteMessage(messageId, userId) {
+  try {
+    const result = await messagesModel.deleteMessage(messageId, userId);
+    return result;
+  } catch (error) {
+    console.error('Error deleting message in service:', error);
+    throw error;
+  }
+}
+
+async function deleteConversation(conversationId, userId) {
+  try {
+    const result = await messagesModel.deleteConversation(
+      conversationId,
+      userId
+    );
+    return result;
+  } catch (error) {
+    console.error('Error deleting conversation in service:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   sendMessage,
   getConversations,
@@ -155,4 +192,6 @@ module.exports = {
   markAsRead,
   searchNetworkUsers,
   getOrCreateConversation,
+  deleteMessage,
+  deleteConversation,
 };

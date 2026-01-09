@@ -50,10 +50,25 @@ export default function PersonalDetailsForm({
   const [showSportsDropdown, setShowSportsDropdown] = useState(false);
   const sportsDropdownRef = useRef<HTMLDivElement>(null);
 
+  // Check if user is signing up with Google
+  const [isGoogleUser, setIsGoogleUser] = useState(false);
+
+  // Validation error states
+  const [errors, setErrors] = useState({
+    fullName: '',
+    dateOfBirth: '',
+    password: '',
+    confirmPassword: '',
+  });
+
   useEffect(() => {
     if (selectedUserType === 'athlete') {
       fetchSports();
     }
+
+    // Check if this is a Google user
+    const googleData = localStorage.getItem('google_temp_data');
+    setIsGoogleUser(!!googleData);
   }, [selectedUserType]);
 
   // Sync selectedSports with formData when it changes externally
@@ -135,6 +150,216 @@ export default function PersonalDetailsForm({
       primarySport: newPrimarySport,
     });
   };
+
+  // Validation functions
+  const validateName = (name: string): string => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      return 'Name is required';
+    }
+    if (trimmed.length < 4) {
+      return 'Name must be at least 4 characters';
+    }
+    if (trimmed.length > 20) {
+      return 'Name must be no more than 20 characters';
+    }
+    return '';
+  };
+
+  const validateDOB = (dob: string): string => {
+    if (!dob) {
+      return 'Date of birth is required';
+    }
+
+    // Check format MM/DD/YYYY
+    const dateRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+    if (!dateRegex.test(dob)) {
+      return 'Date must be in MM/DD/YYYY format';
+    }
+
+    const [, month, day, year] = dob.match(dateRegex) || [];
+    const monthNum = parseInt(month, 10);
+    const dayNum = parseInt(day, 10);
+    const yearNum = parseInt(year, 10);
+
+    // Validate month and day ranges
+    if (monthNum < 1 || monthNum > 12) {
+      return 'Invalid month. Must be between 01 and 12';
+    }
+    if (dayNum < 1 || dayNum > 31) {
+      return 'Invalid day. Must be between 01 and 31';
+    }
+
+    // Create date object and validate
+    const birthDate = new Date(yearNum, monthNum - 1, dayNum);
+    if (
+      birthDate.getFullYear() !== yearNum ||
+      birthDate.getMonth() !== monthNum - 1 ||
+      birthDate.getDate() !== dayNum
+    ) {
+      return 'Invalid date';
+    }
+
+    // Calculate age
+    const today = new Date();
+    let age = today.getFullYear() - yearNum;
+    const monthDiff = today.getMonth() - (monthNum - 1);
+    const dayDiff = today.getDate() - dayNum;
+
+    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+      age--;
+    }
+
+    // Check age range (12-21) - only for athlete user type
+    // Skip age validation for coach, parent, and organization
+    if (selectedUserType !== 'coach' && selectedUserType !== 'parent' && selectedUserType !== 'organization') {
+      if (age < 12) {
+        return 'Age must be at least 12 years';
+      }
+      if (age > 21) {
+        return 'Age must be no more than 21 years';
+      }
+    }
+
+    return '';
+  };
+
+  const validatePassword = (password: string): string => {
+    if (!password) {
+      return 'Password is required';
+    }
+
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters';
+    }
+    if (password.length > 12) {
+      return 'Password must be no more than 12 characters';
+    }
+
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(
+      password
+    );
+
+    const missingRequirements = [];
+    if (!hasUpperCase) missingRequirements.push('1 uppercase letter');
+    if (!hasLowerCase) missingRequirements.push('1 lowercase letter');
+    if (!hasNumber) missingRequirements.push('1 number');
+    if (!hasSpecialChar) missingRequirements.push('1 special character');
+
+    if (missingRequirements.length > 0) {
+      return `Password must contain: ${missingRequirements.join(', ')}`;
+    }
+
+    return '';
+  };
+
+  const validateConfirmPassword = (
+    confirmPassword: string,
+    password: string
+  ): string => {
+    if (!confirmPassword) {
+      return 'Please confirm your password';
+    }
+    if (confirmPassword !== password) {
+      return 'Passwords do not match';
+    }
+    return '';
+  };
+
+  // Handle field changes with validation
+  const handleNameChange = (value: string) => {
+    onFormDataChange({ ...formData, fullName: value });
+    if (value) {
+      setErrors(prev => ({ ...prev, fullName: validateName(value) }));
+    } else {
+      setErrors(prev => ({ ...prev, fullName: '' }));
+    }
+  };
+
+  const handleDOBChange = (value: string) => {
+    // Auto-format as user types (MM/DD/YYYY)
+    let formatted = value.replace(/\D/g, ''); // Remove non-digits
+
+    if (formatted.length > 8) {
+      formatted = formatted.slice(0, 8);
+    }
+
+    if (formatted.length > 2) {
+      formatted = formatted.slice(0, 2) + '/' + formatted.slice(2);
+    }
+    if (formatted.length > 5) {
+      formatted = formatted.slice(0, 5) + '/' + formatted.slice(5);
+    }
+
+    onFormDataChange({ ...formData, dateOfBirth: formatted });
+    if (formatted.length === 10) {
+      setErrors(prev => ({ ...prev, dateOfBirth: validateDOB(formatted) }));
+    } else {
+      setErrors(prev => ({ ...prev, dateOfBirth: '' }));
+    }
+  };
+
+  const handlePasswordChange = (value: string) => {
+    onFormDataChange({ ...formData, password: value });
+    if (value) {
+      setErrors(prev => ({ ...prev, password: validatePassword(value) }));
+      // Re-validate confirm password if it exists
+      if (formData.confirmPassword) {
+        setErrors(prev => ({
+          ...prev,
+          confirmPassword: validateConfirmPassword(
+            formData.confirmPassword,
+            value
+          ),
+        }));
+      }
+    } else {
+      setErrors(prev => ({ ...prev, password: '' }));
+    }
+  };
+
+  const handleConfirmPasswordChange = (value: string) => {
+    onFormDataChange({ ...formData, confirmPassword: value });
+    if (value) {
+      setErrors(prev => ({
+        ...prev,
+        confirmPassword: validateConfirmPassword(value, formData.password),
+      }));
+    } else {
+      setErrors(prev => ({ ...prev, confirmPassword: '' }));
+    }
+  };
+
+  // Validate all fields before continuing
+  const handleContinueClick = () => {
+    const nameError = validateName(formData.fullName);
+    const dobError = validateDOB(formData.dateOfBirth);
+
+    // Only validate passwords for non-Google users
+    const passwordError = isGoogleUser
+      ? ''
+      : validatePassword(formData.password);
+    const confirmPasswordError = isGoogleUser
+      ? ''
+      : validateConfirmPassword(formData.confirmPassword, formData.password);
+
+    setErrors({
+      fullName: nameError,
+      dateOfBirth: dobError,
+      password: passwordError,
+      confirmPassword: confirmPasswordError,
+    });
+
+    if (nameError || dobError || passwordError || confirmPasswordError) {
+      return;
+    }
+
+    onContinue();
+  };
+
   return (
     <>
       <div className="space-y-4 mb-6">
@@ -147,13 +372,18 @@ export default function PersonalDetailsForm({
             <input
               type="text"
               value={formData.fullName}
-              onChange={e =>
-                onFormDataChange({ ...formData, fullName: e.target.value })
-              }
-              className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
+              onChange={e => handleNameChange(e.target.value)}
+              className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
+                errors.fullName
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-gray-300'
+              }`}
             />
             <User className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           </div>
+          {errors.fullName && (
+            <p className="mt-1 text-xs text-red-600">{errors.fullName}</p>
+          )}
         </div>
 
         {/* Date of Birth */}
@@ -166,13 +396,19 @@ export default function PersonalDetailsForm({
               type="text"
               placeholder="MM/DD/YYYY"
               value={formData.dateOfBirth}
-              onChange={e =>
-                onFormDataChange({ ...formData, dateOfBirth: e.target.value })
-              }
-              className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
+              onChange={e => handleDOBChange(e.target.value)}
+              maxLength={10}
+              className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
+                errors.dateOfBirth
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-gray-300'
+              }`}
             />
             <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           </div>
+          {errors.dateOfBirth && (
+            <p className="mt-1 text-xs text-red-600">{errors.dateOfBirth}</p>
+          )}
         </div>
 
         {/* Sports Played - Only for Athlete */}
@@ -336,10 +572,10 @@ export default function PersonalDetailsForm({
           </>
         )}
 
-        {/* Email/Username */}
+        {/* Email - Show for all users, read-only for Google users */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Email/Username
+            {isGoogleUser ? 'Email' : 'Email/Username'}
           </label>
           <div className="relative">
             <input
@@ -348,12 +584,18 @@ export default function PersonalDetailsForm({
               onChange={e =>
                 onFormDataChange({ ...formData, email: e.target.value })
               }
-              className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
-              placeholder="Enter email or username (min 6 characters)"
+              disabled={isGoogleUser}
+              className={`w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
+                isGoogleUser ? 'bg-gray-50 cursor-not-allowed' : ''
+              }`}
+              placeholder={
+                isGoogleUser ? '' : 'Enter email or username (min 6 characters)'
+              }
             />
             <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           </div>
-          {formData.email &&
+          {!isGoogleUser &&
+            formData.email &&
             !formData.email.includes('@') &&
             formData.email.length < 6 && (
               <p className="mt-1 text-xs text-red-600">
@@ -362,68 +604,82 @@ export default function PersonalDetailsForm({
             )}
         </div>
 
-        {/* Create Password */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Create Password
-          </label>
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              value={formData.password}
-              onChange={e =>
-                onFormDataChange({ ...formData, password: e.target.value })
-              }
-              className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
-            />
-            <button
-              type="button"
-              onClick={onTogglePassword}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-            >
-              {showPassword ? (
-                <EyeOff className="w-5 h-5 text-gray-400" />
-              ) : (
-                <Eye className="w-5 h-5 text-gray-400" />
+        {/* Password fields - Only show for non-Google users */}
+        {!isGoogleUser && (
+          <>
+            {/* Create Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Create Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={e => handlePasswordChange(e.target.value)}
+                  className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
+                    errors.password
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={onTogglePassword}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5 text-gray-400" />
+                  ) : (
+                    <Eye className="w-5 h-5 text-gray-400" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="mt-1 text-xs text-red-600">{errors.password}</p>
               )}
-            </button>
-          </div>
-        </div>
+            </div>
 
-        {/* Confirm Password */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Confirm Password*
-          </label>
-          <div className="relative">
-            <input
-              type={showConfirmPassword ? 'text' : 'password'}
-              value={formData.confirmPassword}
-              onChange={e =>
-                onFormDataChange({
-                  ...formData,
-                  confirmPassword: e.target.value,
-                })
-              }
-              className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
-            />
-            <button
-              type="button"
-              onClick={onToggleConfirmPassword}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
-            >
-              {showConfirmPassword ? (
-                <EyeOff className="w-5 h-5 text-gray-400" />
-              ) : (
-                <Eye className="w-5 h-5 text-gray-400" />
+            {/* Confirm Password */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirm Password*
+              </label>
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={formData.confirmPassword}
+                  onChange={e => handleConfirmPasswordChange(e.target.value)}
+                  className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
+                    errors.confirmPassword
+                      ? 'border-red-500 focus:ring-red-500'
+                      : 'border-gray-300'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={onToggleConfirmPassword}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                >
+                  {showConfirmPassword ? (
+                    <EyeOff className="w-5 h-5 text-gray-400" />
+                  ) : (
+                    <Eye className="w-5 h-5 text-gray-400" />
+                  )}
+                </button>
+              </div>
+              {errors.confirmPassword && (
+                <p className="mt-1 text-xs text-red-600">
+                  {errors.confirmPassword}
+                </p>
               )}
-            </button>
-          </div>
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
       <button
-        onClick={onContinue}
+        onClick={handleContinueClick}
         className="w-full bg-[#CB9729] text-gray-800 font-medium py-3 rounded-lg transition-all mb-4 text-sm sm:text-base"
       >
         {isLoadingOTP && (

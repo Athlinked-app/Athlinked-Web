@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
 import SocialHandlePopup from '../SocialHandlePopup';
 import { apiGet, apiPost, apiDelete } from '@/utils/api';
+import { getCurrentUserId } from '@/utils/auth';
 
 export interface SocialHandle {
   id?: string;
@@ -15,6 +16,7 @@ interface SocialHandleProps {
   handles?: SocialHandle[];
   onHandlesChange?: (handles: SocialHandle[]) => void;
   userId?: string | null;
+  isOwnProfile?: boolean;
 }
 
 const getPlatformIcon = (platform: string) => {
@@ -56,10 +58,22 @@ export default function SocialHandles({
   handles = [],
   onHandlesChange,
   userId,
+  isOwnProfile: propIsOwnProfile,
 }: SocialHandleProps) {
   const [socialHandles, setSocialHandles] = useState<SocialHandle[]>(handles);
   const [showPopup, setShowPopup] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+
+  // Check if viewing own profile (client-side only to avoid hydration issues)
+  useEffect(() => {
+    if (propIsOwnProfile !== undefined) {
+      setIsOwnProfile(propIsOwnProfile);
+    } else {
+      const currentUserId = getCurrentUserId();
+      setIsOwnProfile(userId === currentUserId);
+    }
+  }, [userId, propIsOwnProfile]);
 
   // Sync with props when handles change
   useEffect(() => {
@@ -170,22 +184,26 @@ export default function SocialHandles({
 
   return (
     <>
-      <div className="w-full bg-white rounded-lg p-6 mt-4">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">Social Handles</h2>
-          <button
-            onClick={() => setShowPopup(true)}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <Plus className="w-6 h-6 text-gray-900" />
-          </button>
+      <div className="w-full bg-white rounded-lg px-6 mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-base font-bold text-gray-900">Social Handles</h2>
+          {isOwnProfile && (
+            <button
+              onClick={() => setShowPopup(true)}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <Plus className="w-5 h-5 text-gray-900" />
+            </button>
+          )}
         </div>
 
         {loading ? (
           <p className="text-gray-500 italic">Loading...</p>
         ) : socialHandles.length === 0 ? (
-          <p className="text-gray-500 italic">
-            No social handles added yet. Click the + button to add one.
+          <p className="text-gray-500 italic text-sm">
+            {isOwnProfile
+              ? 'No social handles added yet. Click the + button to add one.'
+              : 'No social handles added yet.'}
           </p>
         ) : (
           <div className="space-y-3">
@@ -208,12 +226,14 @@ export default function SocialHandles({
                     {handle.url}
                   </a>
                 </div>
-                <button
-                  onClick={() => handleDelete(handle.id, index)}
-                  className="p-2 rounded-full hover:bg-red-50 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4 text-red-600" />
-                </button>
+                {isOwnProfile && (
+                  <button
+                    onClick={() => handleDelete(handle.id, index)}
+                    className="p-2 rounded-full hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4 text-red-600" />
+                  </button>
+                )}
               </div>
             ))}
           </div>

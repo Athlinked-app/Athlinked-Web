@@ -1,11 +1,11 @@
 const forgotPasswordService = require('./forgot-password.service');
 
 /**
- * Controller to handle password reset OTP request
+ * Controller to handle password reset link request
  * @param {object} req - Express request object
  * @param {object} res - Express response object
  */
-async function requestOTP(req, res) {
+async function requestResetLink(req, res) {
   try {
     const { emailOrUsername } = req.body;
 
@@ -17,11 +17,11 @@ async function requestOTP(req, res) {
     }
 
     const result =
-      await forgotPasswordService.requestOTPService(emailOrUsername);
+      await forgotPasswordService.requestResetLinkService(emailOrUsername);
 
     return res.status(200).json(result);
   } catch (error) {
-    console.error('Request OTP error:', error);
+    console.error('Request reset link error:', error);
 
     if (
       error.message === 'User not found' ||
@@ -41,71 +41,18 @@ async function requestOTP(req, res) {
 }
 
 /**
- * Controller to handle OTP verification for password reset
- * @param {object} req - Express request object
- * @param {object} res - Express response object
- */
-async function verifyOTP(req, res) {
-  try {
-    const { emailOrUsername, otp } = req.body;
-
-    if (!emailOrUsername || !otp) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email/username and OTP are required',
-      });
-    }
-
-    const result = await forgotPasswordService.verifyOTPService(
-      emailOrUsername,
-      otp
-    );
-
-    return res.status(200).json(result);
-  } catch (error) {
-    console.error('Verify OTP error:', error);
-
-    if (
-      error.errorType === 'NOT_FOUND' ||
-      error.errorType === 'EXPIRED' ||
-      error.errorType === 'INVALID'
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: error.message,
-      });
-    }
-
-    if (
-      error.message === 'User not found' ||
-      error.message === 'No email found for OTP verification'
-    ) {
-      return res.status(404).json({
-        success: false,
-        message: error.message,
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: error.message || 'Internal server error',
-    });
-  }
-}
-
-/**
- * Controller to handle password reset
+ * Controller to handle password reset using token
  * @param {object} req - Express request object
  * @param {object} res - Express response object
  */
 async function resetPassword(req, res) {
   try {
-    const { emailOrUsername, otp, newPassword } = req.body;
+    const { token, newPassword } = req.body;
 
-    if (!emailOrUsername || !otp || !newPassword) {
+    if (!token || !newPassword) {
       return res.status(400).json({
         success: false,
-        message: 'Email/username, OTP, and new password are required',
+        message: 'Reset token and new password are required',
       });
     }
 
@@ -117,8 +64,7 @@ async function resetPassword(req, res) {
     }
 
     const result = await forgotPasswordService.resetPasswordService(
-      emailOrUsername,
-      otp,
+      token,
       newPassword
     );
 
@@ -127,9 +73,9 @@ async function resetPassword(req, res) {
     console.error('Reset password error:', error);
 
     if (
-      error.errorType === 'NOT_FOUND' ||
-      error.errorType === 'EXPIRED' ||
-      error.errorType === 'INVALID'
+      error.message.includes('expired') ||
+      error.message.includes('Invalid') ||
+      error.message.includes('Invalid token')
     ) {
       return res.status(400).json({
         success: false,
@@ -144,6 +90,13 @@ async function resetPassword(req, res) {
       });
     }
 
+    if (error.message === 'User not found') {
+      return res.status(404).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: error.message || 'Internal server error',
@@ -152,7 +105,6 @@ async function resetPassword(req, res) {
 }
 
 module.exports = {
-  requestOTP,
-  verifyOTP,
+  requestResetLink,
   resetPassword,
 };

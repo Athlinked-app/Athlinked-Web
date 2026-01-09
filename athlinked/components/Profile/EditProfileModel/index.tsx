@@ -44,6 +44,17 @@ interface EditProfileModalProps {
     education?: string;
     city?: string;
   };
+  profileSections?: {
+    bio?: string;
+    socialHandles?: any[];
+    academicBackgrounds?: any[];
+    achievements?: any[];
+    athleticAndPerformance?: any[];
+    competitionAndClubs?: any[];
+    characterAndLeadership?: any[];
+    healthAndReadiness?: any[];
+    videoAndMedia?: any[];
+  };
   onSave?: (data: {
     full_name?: string;
     username?: string;
@@ -81,6 +92,7 @@ export default function EditProfileModal({
   connectionRequestStatus,
   onSendConnectionRequest,
   userData,
+  profileSections,
   onSave,
 }: EditProfileModalProps) {
   const router = useRouter();
@@ -247,7 +259,7 @@ export default function EditProfileModal({
     if (open) {
       fetchUserData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [open, viewedUserId, currentUserId]);
 
   // Check favorite status when viewing an athlete profile as a coach
@@ -396,11 +408,11 @@ export default function EditProfileModal({
     }
   };
 
-  const handleProfileImageClick = () => {
+  const _handleProfileImageClick = () => {
     profileImageInputRef.current?.click();
   };
 
-  const handleBackgroundImageClick = () => {
+  const _handleBackgroundImageClick = () => {
     backgroundImageInputRef.current?.click();
   };
 
@@ -438,7 +450,7 @@ export default function EditProfileModal({
     }
   };
 
-  const handleSave = () => {
+  const _handleSave = () => {
     if (onSave) {
       onSave({
         full_name: fullName,
@@ -506,54 +518,89 @@ export default function EditProfileModal({
       .slice(0, 2);
   };
 
-  // Calculate completion percentage based on filled fields
+  // Calculate completion percentage based on all profile sections
   // This recalculates on every render when any field changes
   const calculateCompletion = () => {
     let completed = 0;
-    const totalFields = 7;
+    const totalSections = 12; // Total number of profile sections
 
-    // Check each field - must be non-empty
+    // Basic Profile Information (3 sections)
     if (fullName && fullName.trim() !== '') completed++;
-    if (username && username.trim() !== '') completed++;
-    if (location && location.trim() !== '') completed++;
-    if (age && age.trim() !== '') completed++;
-    if (sportsPlayed && sportsPlayed.trim() !== '') completed++;
-    if (primarySport && primarySport.trim() !== '') completed++;
     if (profileImagePreview) completed++;
+    if ((location && location.trim() !== '') || (age && age.trim() !== ''))
+      completed++;
+
+    // Profile Sections (9 sections)
+    if (profileSections?.bio && profileSections.bio.trim() !== '') completed++;
+    if (
+      profileSections?.socialHandles &&
+      profileSections.socialHandles.length > 0
+    )
+      completed++;
+    if (
+      profileSections?.academicBackgrounds &&
+      profileSections.academicBackgrounds.length > 0
+    )
+      completed++;
+    if (
+      profileSections?.achievements &&
+      profileSections.achievements.length > 0
+    )
+      completed++;
+    if (
+      profileSections?.athleticAndPerformance &&
+      profileSections.athleticAndPerformance.length > 0
+    )
+      completed++;
+    if (
+      profileSections?.competitionAndClubs &&
+      profileSections.competitionAndClubs.length > 0
+    )
+      completed++;
+    if (
+      profileSections?.characterAndLeadership &&
+      profileSections.characterAndLeadership.length > 0
+    )
+      completed++;
+    if (
+      profileSections?.healthAndReadiness &&
+      profileSections.healthAndReadiness.length > 0
+    )
+      completed++;
+    if (
+      profileSections?.videoAndMedia &&
+      profileSections.videoAndMedia.length > 0
+    )
+      completed++;
 
     const percentage = Math.min(
-      Math.round((completed / totalFields) * 100),
+      Math.round((completed / totalSections) * 100),
       100
     );
     return percentage;
   };
 
-  // Calculate completion percentage - this will recalculate on every render when fields change
   const currentCompletion = calculateCompletion();
 
-  // Calculate the circumference for the progress ring
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
-  // Calculate offset: when completion is 0%, offset = full circumference (no fill)
-  // When completion is 100%, offset = 0 (fully filled)
   const offset = circumference - (currentCompletion / 100) * circumference;
 
   if (!open) return null;
 
-  // Sidebar view
   if (asSidebar) {
     return (
-      <div className="w-full  bg-white overflow-y-auto rounded-lg">
-        {/* Background Image */}
-        <div className="relative w-full h-44 bg-gray-100 overflow-hidden">
-          {/* Back Button - Positioned on left side above the image */}
-          <div className="absolute top-4 left-4 z-20">
+      <div className="w-full bg-white overflow-y-auto rounded-lg">
+        <div className="relative w-full h-24 sm:h-20 md:h-30 bg-gray-100 overflow-hidden">
+          <div className="absolute top-2 sm:top-3 md:top-4 left-2 sm:left-3 md:left-4 z-20">
             <button
               onClick={handleBackToHome}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/90 hover:bg-white border border-gray-200 transition-colors text-gray-700 shadow-md"
+              className="flex items-center gap-1 sm:gap-1.5 md:gap-2 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 rounded-lg bg-white/90 hover:bg-white border border-gray-200 transition-colors text-gray-700 shadow-md"
             >
-              <ChevronLeft className="w-5 h-5" />
-              <span className="font-medium">Back</span>
+              <ChevronLeft className="w-4 h-4 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+              <span className="text-xs sm:text-sm md:text-base font-medium">
+                Back
+              </span>
             </button>
           </div>
 
@@ -577,16 +624,13 @@ export default function EditProfileModal({
             className="hidden"
           />
         </div>
-
-        {/* Profile Section */}
-        <div className={`relative ${asSidebar ? 'px-4 pb-4' : 'px-6 pb-6'}`}>
-          <div className="relative -mt-16 mb-4 flex justify-start px-6">
+        <div className="relative px-2 sm:px-3 md:px-4 pb-2 sm:pb-3 md:pb-4">
+          <div className="relative -mt-6 sm:-mt-8 md:-mt-12  flex justify-start px-2 sm:px-4 md:px-6">
             <div className="relative">
               <svg
-                className={`${asSidebar ? 'w-32 h-32' : 'w-40 h-40'} transform -rotate-90`}
+                className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24   transform -rotate-90"
                 viewBox="0 0 120 120"
               >
-                {/* Background circle */}
                 <circle
                   cx="60"
                   cy="60"
@@ -595,7 +639,6 @@ export default function EditProfileModal({
                   strokeWidth="8"
                   fill="none"
                 />
-                {/* Progress circle */}
                 <circle
                   cx="60"
                   cy="60"
@@ -611,9 +654,7 @@ export default function EditProfileModal({
               </svg>
 
               <div className="absolute inset-0 flex items-center justify-center">
-                <div
-                  className={`${asSidebar ? 'w-28 h-28 border-2' : 'w-36 h-36 border-4'} rounded-full overflow-hidden border-white bg-gray-200`}
-                >
+                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 lg:w-20 lg:h-20 border-2 rounded-full overflow-hidden border-white bg-gray-200">
                   {profileImagePreview ? (
                     <img
                       src={profileImagePreview}
@@ -622,24 +663,16 @@ export default function EditProfileModal({
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                      <span className="text-2xl font-semibold text-gray-600">
+                      <span className="text-[10px] sm:text-xs md:text-sm lg:text-base font-semibold text-gray-600">
                         {getInitials(fullName || 'User')}
                       </span>
                     </div>
                   )}
                 </div>
               </div>
-              {/* Completion Percentage */}
-              <div className="absolute bottom-0 right-0 bg-[#CB9729] text-white text-xs font-semibold rounded-full w-10 h-10 flex items-center justify-center border-2 border-white">
+              <div className="absolute bottom-0 right-0 bg-[#CB9729] text-white text-[8px] sm:text-[9px] md:text-[10px] lg:text-xs font-bold rounded-full w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 lg:w-9 lg:h-9 flex items-center justify-center border-2 border-white shadow-lg">
                 {currentCompletion}%
               </div>
-              {/* Camera Icon */}
-              <button
-                onClick={handleProfileImageClick}
-                className="absolute bottom-0 right-0 bg-gray-200 hover:bg-gray-300 rounded-full p-2.5 border-2 border-white transition-colors"
-              >
-                <Camera className="w-5 h-5 text-gray-700" />
-              </button>
               <input
                 ref={profileImageInputRef}
                 type="file"
@@ -650,18 +683,16 @@ export default function EditProfileModal({
             </div>
           </div>
 
-          {/* Profile Details and Action Buttons */}
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6 px-8">
-            {/* Left Column - Profile Details */}
-            <div className="flex-1">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 sm:gap-3 md:gap-4  px-2 sm:px-4 md:px-6 lg:px-8">
+            <div className="flex-1 min-w-0">
               <input
                 type="text"
                 value={fullName}
                 onChange={e => setFullName(e.target.value)}
                 placeholder="Full Name"
-                className="text-2xl font-medium text-black mb-2 w-full border-none focus:outline-none focus:ring-0 bg-transparent placeholder:text-gray-400"
+                className="text-base sm:text-lg md:text-md lg:text-lg font-medium text-black  w-full border-none focus:outline-none focus:ring-0 bg-transparent placeholder:text-gray-400"
               />
-              <p className="text-lg text-gray-600 mb-4">
+              <p className="text-sm sm:text-xs md:text-sm text-gray-600 mb-2 sm:mb-2">
                 {(() => {
                   const userType =
                     fetchedUserData?.user_type || userData?.user_type;
@@ -669,46 +700,58 @@ export default function EditProfileModal({
                     ? 'Coach'
                     : userType === 'organization'
                       ? 'Organization'
-                      : 'Athlete';
+                      : userType === 'parent'
+                        ? 'Parent'
+                        : 'Athlete';
                 })()}
               </p>
 
-              <div className="flex flex-row gap-3 text-gray-600">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" />
+              <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 md:gap-7 text-gray-600">
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <MapPin className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 shrink-0" />
                   <input
                     type="text"
                     value={location}
                     onChange={e => setLocation(e.target.value)}
                     placeholder="Location"
-                    className="w-28 border-none focus:outline-none focus:ring-0 bg-transparent text-black placeholder:text-gray-400"
+                    className="border-none focus:outline-none focus:ring-0 bg-transparent text-xs sm:text-xs md:text-sm text-gray-600 placeholder:text-gray-400"
+                    style={{
+                      width: location
+                        ? `${Math.max(location.length * 6 + 12, 50)}px`
+                        : '80px',
+                    }}
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  <span>
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <Users className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 shrink-0" />
+                  <span className="whitespace-nowrap text-xs sm:text-xs md:text-sm">
                     {userData?.followers_count !== undefined
                       ? userData.followers_count.toLocaleString()
                       : '0'}{' '}
                     followers
                   </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4" />
+                <div className="flex items-center gap-1 sm:gap-1.5">
+                  <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 shrink-0" />
                   <input
                     type="number"
                     value={age}
                     onChange={e => setAge(e.target.value)}
                     placeholder="Age"
-                    className="w-20 border-none focus:outline-none focus:ring-0 bg-transparent text-black placeholder:text-gray-400"
+                    className="border-none focus:outline-none focus:ring-0 bg-transparent text-xs sm:text-xs md:text-sm text-gray-600 placeholder:text-gray-400"
+                    style={{
+                      width: age
+                        ? `${Math.max(age.length * 6 + 8, 30)}px`
+                        : '30px',
+                    }}
                   />
                 </div>
               </div>
             </div>
 
             {/* Right Column - Action Buttons and Sports Information */}
-            <div className="flex flex-col items-end gap-2">
-              <div className="flex gap-3">
+            <div className="flex flex-col items-start md:items-end  gap-2 w-full md:w-auto absolute right-20 bottom-[20px]">
+              <div className="flex flex-wrap gap-2 sm:gap-2.5 md:gap-3 w-full md:w-auto">
                 {/* Show Edit Profile button only if viewing own profile */}
                 {(() => {
                   // Determine if viewing own profile
@@ -720,9 +763,9 @@ export default function EditProfileModal({
                 })() ? (
                   <button
                     onClick={handleEditProfileClick}
-                    className="px-12 py-4 bg-[#CB9729] text-white rounded-lg hover:bg-[#b78322] transition-colors flex items-center gap-2"
+                    className="px-4 sm:px-6 md:px-6 lg:px-8 py-2 sm:py-2.5 md:py-3 lg:py-2 bg-[#CB9729] text-white rounded-lg hover:bg-[#b78322] transition-colors flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base"
                   >
-                    <Pencil className="w-4 h-4" />
+                    <Pencil className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" />
                     <span>Edit Profile</span>
                   </button>
                 ) : (
@@ -741,16 +784,16 @@ export default function EditProfileModal({
                           connectionRequestStatus?.status === 'pending') ||
                         connectionRequestStatus?.status === 'connected'
                       }
-                      className={`px-6 py-4 rounded-lg transition-colors flex items-center gap-2 ${
+                      className={`px-3 sm:px-2 md:px-4 py-2 sm:py-2.5 md:py-2 lg:py-3 rounded-lg transition-colors flex items-center gap-1.5 sm:gap-2 text-xs sm:text-xs md:text-sm ${
                         connectionRequestStatus?.status === 'connected'
-                          ? 'bg-green-600 text-white cursor-default'
+                          ? 'bg-white border border-[#CB9729] text-[#CB9729] cursor-default'
                           : connectionRequestStatus?.exists &&
                               connectionRequestStatus?.status === 'pending'
                             ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
                             : 'bg-[#CB9729] text-white hover:bg-[#b78322]'
                       }`}
                     >
-                      <UserPlus className="w-4 h-4" />
+                      <UserPlus className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" />
                       <span>
                         {connectionRequestStatus?.status === 'connected'
                           ? 'Connected'
@@ -762,11 +805,15 @@ export default function EditProfileModal({
                     </button>
                     <button
                       onClick={() => {
-                        router.push(`/messages?userId=${viewedUserId}`);
+                        if (connectionRequestStatus?.status === 'connected') {
+                          router.push(`/messages?userId=${viewedUserId}`);
+                        } else {
+                          alert('Please connect with them to message');
+                        }
                       }}
-                      className="px-6 py-4 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
+                      className="px-3 sm:px-2 md:px-4 py-2 sm:py-2.5 md:py-2 lg:py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base"
                     >
-                      <MessageCircle className="w-4 h-4" />
+                      <MessageCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4" />
                       <span>Message</span>
                     </button>
                     {/* Show Favourites button only if coach viewing athlete */}
@@ -781,14 +828,14 @@ export default function EditProfileModal({
                       <button
                         onClick={handleToggleFavorite}
                         disabled={favoriteLoading}
-                        className={`px-6 py-4 rounded-lg transition-colors flex items-center gap-2 ${
+                        className={`px-3 sm:px-2 md:px-4 py-2 sm:py-2.5 md:py-2 lg:py-3 rounded-lg transition-colors flex items-center gap-1.5 sm:gap-2 text-xs sm:text-xs md:text-sm ${
                           isFavorite
-                            ? 'bg-red-500 text-white hover:bg-red-600'
+                            ? 'bg-[#CB9729] text-white hover:bg-red-600'
                             : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
                         } ${favoriteLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         <Heart
-                          className={`w-4 h-4 ${isFavorite ? 'fill-current' : ''}`}
+                          className={`w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 ${isFavorite ? 'fill-current' : ''}`}
                         />
                         <span>Favourites</span>
                       </button>
@@ -798,22 +845,32 @@ export default function EditProfileModal({
               </div>
 
               {/* Sports Information */}
-              <div className="space-y-1 mt-2">
-                <div className="text-md flex">
-                  <span className="font-semibold text-gray-900 w-40 text-right">
-                    Sports Played
-                  </span>
-                  <span className="mx-3">:</span>
-                  <span className="text-gray-700">{sportsPlayed || '—'}</span>
-                </div>
-                <div className="text-md flex">
-                  <span className="font-semibold text-gray-900 w-40 text-right">
-                    Primary Sports
-                  </span>
-                  <span className="mx-3">:</span>
-                  <span className="text-gray-700">{primarySport || '—'}</span>
-                </div>
-              </div>
+              {(() => {
+                const userType =
+                  fetchedUserData?.user_type || userData?.user_type;
+                return userType === 'athlete' ? (
+                  <div className="space-y-0.5 sm:space-y-1 mt-1 sm:mt-2 w-full md:w-auto">
+                    <div className="text-xs sm:text-xs md:text-sm flex flex-col sm:flex-row gap-1 sm:gap-0">
+                      <span className="font-semibold text-gray-900 sm:w-32 md:w-40 sm:text-right">
+                        Sports Played
+                      </span>
+                      <span className="hidden sm:inline mx-2 md:mx-3">:</span>
+                      <span className="text-gray-700 wrap-break-word">
+                        {sportsPlayed || '—'}
+                      </span>
+                    </div>
+                    <div className="text-xs sm:text-xs md:text-sm flex flex-col sm:flex-row gap-1 sm:gap-0">
+                      <span className="font-semibold text-gray-900 sm:w-32 md:w-40 sm:text-right">
+                        Primary Sports
+                      </span>
+                      <span className="hidden sm:inline mx-2 md:mx-3">:</span>
+                      <span className="text-gray-700 wrap-break-word">
+                        {primarySport || '—'}
+                      </span>
+                    </div>
+                  </div>
+                ) : null;
+              })()}
             </div>
           </div>
         </div>

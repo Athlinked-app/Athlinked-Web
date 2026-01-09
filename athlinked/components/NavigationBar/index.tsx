@@ -166,26 +166,22 @@ export default function NavigationBar({
           return;
         }
 
-        let response;
+        const { apiGet } = await import('@/utils/api');
+        let data;
+
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
-          response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
-          );
+          data = await apiGet<{
+            success: boolean;
+            user?: UserData;
+          }>(`/signup/user-by-username/${encodeURIComponent(username)}`);
         } else {
-          response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
-          );
+          data = await apiGet<{
+            success: boolean;
+            user?: UserData;
+          }>(`/signup/user/${encodeURIComponent(userIdentifier)}`);
         }
 
-        if (!response.ok) {
-          if (isMounted) {
-            setLoading(false);
-          }
-          return;
-        }
-
-        const data = await response.json();
         if (data.success && data.user && isMounted) {
           setUserData(data.user);
         }
@@ -205,9 +201,10 @@ export default function NavigationBar({
     };
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('userEmail');
-    router.push('/login');
+  const handleLogout = async () => {
+    // Use the proper logout function from auth utils
+    const { logout } = await import('@/utils/auth');
+    await logout();
   };
   const menuItems = [
     { id: 'search', icon: Search, label: 'Search' },
@@ -220,7 +217,6 @@ export default function NavigationBar({
     { id: 'notifications', icon: Bell, label: 'Notifications' },
     { id: 'stats', icon: BarChart3, label: 'Stats' },
     { id: 'resource', icon: Package, label: 'Resource' },
-    { id: 'help', icon: HelpCircle, label: 'Help & Faq' },
     { id: 'logout', icon: LogOut, label: 'Logout' },
   ];
 
@@ -261,16 +257,16 @@ export default function NavigationBar({
   };
 
   return (
-    <div className="w-72 bg-white flex flex-col border-r border-gray-200 rounded-lg">
+    <div className="w-16 sm:w-20 md:w-56 lg:w-64 xl:w-72 bg-white flex flex-col border-r border-gray-200 rounded-lg  transition-all duration-300">
       {/* Athlete Profile Section */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-2 sm:p-3 md:p-4 border-b border-gray-200">
         <div
-          className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+          className="flex items-center gap-2 md:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
           onClick={() => {
             router.push('/profile');
           }}
         >
-          <div className="w-12 h-12 md:w-20 md:h-20 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center shrink-0">
             {userProfileUrl ? (
               <img
                 src={userProfileUrl}
@@ -278,21 +274,23 @@ export default function NavigationBar({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <span className="text-gray-600 font-semibold text-sm md:text-lg">
+              <span className="text-gray-600 font-semibold text-xs sm:text-sm md:text-base">
                 {getInitials(userName)}
               </span>
             )}
           </div>
-          <div className="flex flex-col leading-tight">
-            <span className="text-sm text-gray-500">{userRole}</span>
-            <span className="text-xl font-semibold text-gray-900">
+          <div className="hidden md:flex flex-col leading-tight min-w-0">
+            <span className="text-xs md:text-sm text-gray-500 truncate">
+              {userRole}
+            </span>
+            <span className="text-sm md:text-base lg:text-lg font-semibold text-gray-900 truncate">
               {displayName}
             </span>
           </div>
         </div>
       </div>
-      <nav className="flex-1 p-4 overflow-y-auto">
-        <ul className="space-y-1">
+      <nav className="flex-1 p-1 sm:p-2 md:p-3 overflow-y-auto">
+        <ul className="space-y-0.5 md:space-y-1">
           {menuItems.map(item => {
             const Icon = item.icon;
             const isActive = activeItem === item.id;
@@ -302,14 +300,21 @@ export default function NavigationBar({
                 <li key={item.id}>
                   <button
                     onClick={() => setShowLogoutConfirm(true)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors w-full text-left ${
+                    className={`flex items-center justify-center md:justify-start gap-2 md:gap-3 px-2 md:px-3 lg:px-4 py-2 md:py-2.5 lg:py-3 rounded-lg transition-colors w-full text-left ${
                       isActive
                         ? 'bg-[#CB9729] text-white'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
+                    title={item.label}
                   >
-                    <Icon size={20} strokeWidth={2} />
-                    <span className="text-sm font-medium">{item.label}</span>
+                    <Icon
+                      size={18}
+                      className="md:w-5 md:h-5 shrink-0"
+                      strokeWidth={2}
+                    />
+                    <span className="text-xs md:text-sm font-medium hidden md:inline truncate">
+                      {item.label}
+                    </span>
                   </button>
                 </li>
               );
@@ -349,38 +354,52 @@ export default function NavigationBar({
                 {href !== '#' ? (
                   <Link
                     href={href}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors relative ${
+                    className={`flex items-center justify-center md:justify-start gap-2 md:gap-3 px-2 md:px-3 lg:px-4 py-2 md:py-2.5 lg:py-3 rounded-lg transition-colors relative ${
                       isActive
                         ? ' text-[#CB9729]'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
+                    title={item.label}
                   >
-                    <div className="relative flex-shrink-0">
-                      <Icon size={20} strokeWidth={2} />
+                    <div className="relative shrink-0">
+                      <Icon
+                        size={18}
+                        className="md:w-5 md:h-5"
+                        strokeWidth={2}
+                      />
                       {item.id === 'notifications' && notificationCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center z-10 border-2 border-white shadow-md">
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[9px] md:text-[10px] font-bold rounded-full min-w-[16px] md:min-w-[18px] h-[16px] md:h-[18px] px-0.5 md:px-1 flex items-center justify-center z-10 border-2 border-white shadow-md">
                           {notificationCount > 99 ? '99+' : notificationCount}
                         </span>
                       )}
                       {item.id === 'message' && messageCount > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center z-10 border-2 border-white shadow-md">
+                        <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-[9px] md:text-[10px] font-bold rounded-full min-w-[16px] md:min-w-[18px] h-[16px] md:h-[18px] px-0.5 md:px-1 flex items-center justify-center z-10 border-2 border-white shadow-md">
                           {messageCount > 99 ? '99+' : messageCount}
                         </span>
                       )}
                     </div>
-                    <span className="text-md font-medium">{item.label}</span>
+                    <span className="text-xs md:text-sm font-medium hidden md:inline truncate">
+                      {item.label}
+                    </span>
                   </Link>
                 ) : (
                   <a
                     href={href}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                    className={`flex items-center justify-center md:justify-start gap-2 md:gap-3 px-2 md:px-3 lg:px-4 py-2 md:py-2.5 lg:py-3 rounded-lg transition-colors ${
                       isActive
                         ? 'bg-[#CB9729] text-white'
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
+                    title={item.label}
                   >
-                    <Icon size={20} strokeWidth={2} />
-                    <span className="text-md font-medium">{item.label}</span>
+                    <Icon
+                      size={18}
+                      className="md:w-5 md:h-5 shrink-0"
+                      strokeWidth={2}
+                    />
+                    <span className="text-xs md:text-sm font-medium hidden md:inline truncate">
+                      {item.label}
+                    </span>
                   </a>
                 )}
               </li>

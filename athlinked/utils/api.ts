@@ -61,7 +61,7 @@ let refreshPromise: Promise<string | null> | null = null;
 /**
  * Refresh access token using refresh token
  */
-async function refreshAccessToken(): Promise<string | null> {
+export async function refreshAccessToken(): Promise<string | null> {
   // If refresh is already in progress, wait for it
   if (refreshPromise) {
     return refreshPromise;
@@ -254,7 +254,7 @@ export async function apiUpload<T = any>(
     method: 'POST',
     body: formData,
   });
-  
+
   // Check if response is ok before parsing JSON
   if (!response.ok) {
     let errorMessage = 'Failed to upload file';
@@ -267,6 +267,6 @@ export async function apiUpload<T = any>(
     }
     throw new Error(errorMessage);
   }
-  
+
   return response.json();
 }

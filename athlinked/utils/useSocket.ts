@@ -6,10 +6,11 @@ import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { getCurrentUserId } from './auth';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
+const SOCKET_URL =
+  process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
 
 let globalSocket: Socket | null = null;
-let socketListeners: Map<string, Set<Function>> = new Map();
+const socketListeners: Map<string, Set<Function>> = new Map();
 
 /**
  * Initialize global socket connection
@@ -107,13 +108,14 @@ export function useSocket() {
     return () => {
       newSocket.off('connect', onConnect);
       newSocket.off('disconnect', onDisconnect);
-      // Clean up component-specific listeners
-      listenersRef.current.forEach((handlers, event) => {
+      // Copy current listeners to local variable to avoid stale ref issues during cleanup
+      const currentListeners = listenersRef.current;
+      currentListeners.forEach((handlers, event) => {
         handlers.forEach(handler => {
           newSocket.off(event, handler as any);
         });
       });
-      listenersRef.current.clear();
+      currentListeners.clear();
     };
   }, []);
 
@@ -171,4 +173,3 @@ export function useSocket() {
     emit,
   };
 }
-

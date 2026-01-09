@@ -18,41 +18,37 @@ interface CurrentUser {
 }
 
 export default function SettingsPage() {
-  const router = useRouter();
+  const _router = useRouter();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [activeSettingsItem, setActiveSettingsItem] =
     useState<string>('personal-info');
 
-  useEffect(() => {
-    fetchCurrentUser();
-  }, []);
-
-  const fetchCurrentUser = async () => {
+  async function fetchCurrentUser() {
     try {
       const userIdentifier = localStorage.getItem('userEmail');
-      if (!userIdentifier) {
-        return;
-      }
+      if (!userIdentifier) return;
 
       let response;
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(
+            username
+          )}`
         );
       } else {
         response = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `http://localhost:3001/api/signup/user/${encodeURIComponent(
+            userIdentifier
+          )}`
         );
       }
 
-      if (!response.ok) {
-        return;
-      }
+      if (!response?.ok) return;
 
       const data = await response.json();
-      if (data.success && data.user) {
+      if (data?.success && data.user) {
         setCurrentUserId(data.user.id);
         setCurrentUser({
           id: data.user.id,
@@ -64,7 +60,11 @@ export default function SettingsPage() {
     } catch (error) {
       console.error('Error fetching current user:', error);
     }
-  };
+  }
+
+  useEffect(() => {
+    fetchCurrentUser();
+  }, []);
 
   const handleSettingsItemClick = (itemId: string) => {
     setActiveSettingsItem(itemId);
@@ -83,7 +83,7 @@ export default function SettingsPage() {
   };
 
   // Get initials for placeholder
-  const getInitials = (name?: string) => {
+  const _getInitials = (name?: string) => {
     if (!name) return 'U';
     return name
       .split(' ')

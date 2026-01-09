@@ -29,6 +29,7 @@ export interface PostData {
   username: string;
   user_profile_url: string | null;
   user_id?: string;
+  user_type?: string;
   post_type?: 'photo' | 'video' | 'article' | 'event' | 'text';
   caption?: string | null;
   media_url?: string | null;
@@ -266,8 +267,9 @@ export default function Post({
     if (onCommentCountUpdate) {
       onCommentCountUpdate();
     }
-  };
 
+    // Don't change showComments state - keep it as is
+  };
   const handleShare = () => {
     setShowShare(true);
   };
@@ -389,9 +391,9 @@ export default function Post({
   };
 
   return (
-    <div className="w-full bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-      <div className="flex items-center gap-3 p-4 border-b border-gray-200 mb-4">
-        <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
+    <div className="w-full bg-white border border-gray-200 rounded-lg sm:rounded-xl shadow-sm overflow-hidden">
+      <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 border-b border-gray-200 mb-2 sm:mb-4">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
           {(() => {
             const profileUrl = getProfileUrl(post.user_profile_url);
             if (profileUrl) {
@@ -423,7 +425,12 @@ export default function Post({
           })()}
         </div>
         <div className="flex-1">
-          <p className="text-sm text-gray-500 font-medium">Athlete</p>
+          <p className="text-sm text-gray-500 font-medium">
+            {post.user_type
+              ? post.user_type.charAt(0).toUpperCase() +
+                post.user_type.slice(1).toLowerCase()
+              : 'Athlete'}
+          </p>
           <p className="text-base font-semibold text-gray-900">
             {post.username}
           </p>
@@ -432,10 +439,10 @@ export default function Post({
           <div className="relative">
             <button
               onClick={() => setShowDeleteMenu(!showDeleteMenu)}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 transition-colors"
               disabled={isDeleting}
             >
-              <MoreVertical className="w-5 h-5 text-gray-600" />
+              <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
             </button>
             {showDeleteMenu && (
               <>
@@ -461,7 +468,7 @@ export default function Post({
       {post.post_type === 'article' && (
         <>
           {(post.media_url || post.image_url) && (
-            <div className="w-full">
+            <div className="w-full px-3 sm:px-6 md:px-8">
               <img
                 src={
                   post.media_url && post.media_url.startsWith('http')
@@ -469,9 +476,8 @@ export default function Post({
                     : `http://localhost:3001${post.media_url || post.image_url || ''}`
                 }
                 alt={post.article_title || 'Article image'}
-                className="w-full h-auto object-cover"
+                className="w-full h-auto object-cover rounded-lg sm:rounded-none"
                 onError={e => {
-                  // Only log in development, and log the full URL that was attempted
                   if (process.env.NODE_ENV === 'development') {
                     const attemptedUrl =
                       post.media_url && post.media_url.startsWith('http')
@@ -486,12 +492,14 @@ export default function Post({
           )}
 
           {post.article_title && (
-            <div className="px-6 py-4">
-              <h3 className="text-3xl font-bold text-gray-900 mb-3">
+            <div className="px-3 sm:px-6 md:px-8 py-3 sm:py-4">
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">
                 {post.article_title}
               </h3>
               {post.caption && (
-                <p className="text-lg text-gray-600 mb-4">{post.caption}</p>
+                <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
+                  {post.caption}
+                </p>
               )}
               {post.article_body && (
                 <div className="mb-4">
@@ -509,24 +517,24 @@ export default function Post({
                     return (
                       <>
                         {shouldTruncate ? (
-                          <p className="text-base text-gray-800 mb-3">
+                          <p className="text-sm sm:text-base text-gray-800 mb-2 sm:mb-3">
                             {preview}
                           </p>
                         ) : (
                           <div
-                            className="text-base text-gray-800 prose max-w-none mb-3"
+                            className="text-sm sm:text-base text-gray-800 prose max-w-none mb-2 sm:mb-3 prose-sm sm:prose-base"
                             dangerouslySetInnerHTML={{
                               __html: post.article_body,
                             }}
                           />
                         )}
-                        <div className="flex justify-end gap-3 mt-4">
+                        <div className="flex justify-end gap-2 sm:gap-3 mt-3 sm:mt-4">
                           <button
                             onClick={() => setShowArticleModal(true)}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-[#CB9729] text-white rounded-md hover:bg-[#b78322] transition-colors"
+                            className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base bg-[#CB9729] text-white rounded-md hover:bg-[#b78322] transition-colors"
                           >
                             Read more
-                            <ChevronRight className="w-4 h-4" />
+                            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </button>
                         </div>
                       </>
@@ -542,7 +550,7 @@ export default function Post({
       {post.post_type === 'event' && (
         <>
           {(post.media_url || post.image_url) && (
-            <div className="w-full relative">
+            <div className="w-full relative px-3 sm:px-6 md:px-8">
               {(post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ||
               (post.image_url && post.image_url.match(/\.(mp4|mov)$/i)) ? (
                 <video
@@ -564,7 +572,6 @@ export default function Post({
                   alt={post.event_title || 'Event image'}
                   className="w-full h-auto object-cover"
                   onError={e => {
-                    // Only log in development, and log the full URL that was attempted
                     if (process.env.NODE_ENV === 'development') {
                       const attemptedUrl =
                         post.media_url && post.media_url.startsWith('http')
@@ -577,10 +584,12 @@ export default function Post({
                 />
               )}
               <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 z-10">
-                <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center shadow-xl border-4 border-white">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-blue-500 rounded-full flex items-center justify-center shadow-xl border-2 md:border-4 border-white">
                   {(() => {
                     const IconComponent = getEventTypeIcon(post.event_type);
-                    return <IconComponent className="w-10 h-10 text-white" />;
+                    return (
+                      <IconComponent className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" />
+                    );
                   })()}
                 </div>
               </div>
@@ -589,26 +598,30 @@ export default function Post({
 
           {post.event_title && (
             <div
-              className={`px-6 text-center ${post.media_url || post.image_url ? 'pt-12 pb-6' : 'py-6'}`}
+              className={`px-3 sm:px-6 text-center ${post.media_url || post.image_url ? 'pt-8 sm:pt-10 md:pt-12 pb-4 sm:pb-6' : 'py-4 sm:py-6'}`}
             >
               {!(post.media_url || post.image_url) && (
-                <div className="flex justify-center mb-4">
-                  <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center shadow-xl border-4 border-white">
+                <div className="flex justify-center mb-3 sm:mb-4">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 bg-blue-500 rounded-full flex items-center justify-center shadow-xl border-2 md:border-4 border-white">
                     {(() => {
                       const IconComponent = getEventTypeIcon(post.event_type);
-                      return <IconComponent className="w-10 h-10 text-white" />;
+                      return (
+                        <IconComponent className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 text-white" />
+                      );
                     })()}
                   </div>
                 </div>
               )}
-              <h3 className="text-4xl font-bold text-gray-900 mb-3">
+              <h3 className="text-md sm:text-xl md:text-2xl font-bold text-gray-900 mb-2 ">
                 {post.event_title}
               </h3>
               {post.caption && (
-                <p className="text-md text-gray-600 mb-3">{post.caption}</p>
+                <p className="text-sm sm:text-base text-gray-600 mb-2 ">
+                  {post.caption}
+                </p>
               )}
               {post.event_date && (
-                <p className="text-xl text-gray-600 mb-3">
+                <p className="text-xs sm:text-sm md:text-md text-gray-600 mb-2">
                   {new Date(post.event_date).toLocaleDateString('en-US', {
                     month: 'long',
                     day: 'numeric',
@@ -617,12 +630,12 @@ export default function Post({
                 </p>
               )}
               {post.event_location && (
-                <p className="text-lg text-gray-600 mb-4">
+                <p className="text-xs sm:text-sm md:text-md text-gray-600 ">
                   📍 {post.event_location}
                 </p>
               )}
               {post.caption && (
-                <p className="text-base text-gray-700 leading-relaxed">
+                <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
                   {post.caption}
                 </p>
               )}
@@ -637,13 +650,13 @@ export default function Post({
         !post.post_type) && (
         <>
           {(post.caption || post.description) && (
-            <p className="text-md text-gray-800 px-6 mb-4">
+            <p className="text-sm sm:text-base text-gray-800 px-3 sm:px-6 mb-3 sm:mb-4">
               {post.caption || post.description}
             </p>
           )}
 
           {(post.media_url || post.image_url) && post.post_type !== 'text' && (
-            <div className="w-full aspect-auto px-12">
+            <div className="w-full aspect-auto px-3 sm:px-6 md:px-12">
               {post.post_type === 'video' ||
               (post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ? (
                 <video
@@ -682,56 +695,71 @@ export default function Post({
         </>
       )}
 
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <ThumbsUp className="w-5 h-5 text-gray-600" fill="currentColor" />
-            <span className="text-sm font-medium text-gray-600">
+      <div className="p-3 sm:p-4">
+        <div className="flex items-center justify-between mb-2 sm:mb-3 pb-2 sm:pb-3 border-b border-gray-200">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <ThumbsUp
+              className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600"
+              fill="currentColor"
+            />
+            <span className="text-xs sm:text-sm font-medium text-gray-600">
               {likeCount}
             </span>
           </div>
-          <span className="text-sm text-gray-600">{commentCount} comments</span>
+          <span className="text-xs sm:text-sm text-gray-600">
+            {commentCount} comments
+          </span>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-1 sm:gap-2">
           <button
             onClick={handleLike}
-            className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
+            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md transition-colors flex-1 sm:flex-none ${
               liked
                 ? 'text-[#CB9729] hover:bg-[#CB9729]/10'
                 : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            <ThumbsUp className={`w-5 h-5 ${liked ? 'fill-current' : ''}`} />
-            <span className="text-sm font-medium">Like</span>
+            <ThumbsUp
+              className={`w-4 h-4 sm:w-5 sm:h-5 ${liked ? 'fill-current' : ''}`}
+            />
+            <span className="text-xs sm:text-sm font-medium hidden sm:inline">
+              Like
+            </span>
           </button>
 
           <button
             onClick={handleComment}
-            className="flex items-center gap-2 px-3 py-2 rounded-md text-gray-600 hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-gray-600 hover:bg-gray-50 transition-colors flex-1 sm:flex-none"
           >
-            <MessageSquare className="w-5 h-5" />
-            <span className="text-sm font-medium">Comment</span>
+            <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-xs sm:text-sm font-medium hidden sm:inline">
+              Comment
+            </span>
           </button>
 
           <button
             onClick={handleShare}
-            className="flex items-center gap-2 px-3 py-2 rounded-md text-gray-600 hover:bg-gray-50 transition-colors"
+            className="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md text-gray-600 hover:bg-gray-50 transition-colors flex-1 sm:flex-none"
           >
-            <Share2 className="w-5 h-5" />
-            <span className="text-sm font-medium">Share</span>
+            <Share2 className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-xs sm:text-sm font-medium hidden sm:inline">
+              Share
+            </span>
           </button>
 
           <button
             onClick={handleSave}
-            className={`flex items-center gap-2 px-3 py-2 rounded-md transition-colors ${
+            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md transition-colors flex-1 sm:flex-none ${
               isSaved
                 ? 'text-[#CB9729] hover:bg-[#CB9729]/10'
                 : 'text-gray-600 hover:bg-gray-50'
             }`}
           >
-            <Bookmark className={`w-5 h-5 ${isSaved ? 'fill-current' : ''}`} />
-            <span className="text-sm font-medium">
+            <Bookmark
+              className={`w-4 h-4 sm:w-5 sm:h-5 ${isSaved ? 'fill-current' : ''}`}
+            />
+            <span className="text-xs sm:text-sm font-medium hidden sm:inline">
               {isSaved ? 'Saved' : 'Save'}
             </span>
           </button>
@@ -754,14 +782,16 @@ export default function Post({
       />
 
       {showArticleModal && post.post_type === 'article' && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowArticleModal(false)}
           />
-          <div className="relative z-10 w-full max-w-4xl bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-gray-900">Article</h2>
+          <div className="relative z-10 w-full max-w-4xl bg-white rounded-lg sm:rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+              <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                Article
+              </h2>
               <button
                 type="button"
                 onClick={() => setShowArticleModal(false)}
@@ -771,8 +801,8 @@ export default function Post({
               </button>
             </div>
 
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
+            <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 flex items-center gap-2 sm:gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
                 {(() => {
                   const profileUrl = getProfileUrl(post.user_profile_url);
                   if (profileUrl) {
@@ -805,7 +835,12 @@ export default function Post({
               </div>
               <div>
                 <p className="font-semibold text-gray-900">{post.username}</p>
-                <p className="text-sm text-gray-600">Athlete</p>
+                <p className="text-sm text-gray-600">
+                  {post.user_type
+                    ? post.user_type.charAt(0).toUpperCase() +
+                      post.user_type.slice(1).toLowerCase()
+                    : 'Athlete'}
+                </p>
               </div>
             </div>
 
@@ -823,14 +858,16 @@ export default function Post({
               </div>
             )}
 
-            <div className="px-6 py-6">
+            <div className="px-4 sm:px-6 py-4 sm:py-6">
               {post.article_title && (
-                <h3 className="text-3xl font-bold text-gray-900 mb-4">
+                <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
                   {post.article_title}
                 </h3>
               )}
               {post.caption && (
-                <p className="text-lg text-gray-600 mb-6">{post.caption}</p>
+                <p className="text-base sm:text-lg text-gray-600 mb-4 sm:mb-6">
+                  {post.caption}
+                </p>
               )}
               {post.article_body && (
                 <div
@@ -840,13 +877,14 @@ export default function Post({
               )}
             </div>
 
-            <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-end">
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex justify-end">
               <button
                 onClick={handleDownloadPDF}
-                className="px-6 py-2 bg-[#CB9729] text-white rounded-md hover:bg-red-700 transition-colors flex items-center gap-2"
+                className="px-4 sm:px-6 py-2 text-sm sm:text-base bg-[#CB9729] text-white rounded-md hover:bg-red-700 transition-colors flex items-center gap-1.5 sm:gap-2"
               >
-                <Download className="w-5 h-5" />
-                Download PDF File
+                <Download className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">Download PDF File</span>
+                <span className="sm:hidden">PDF</span>
               </button>
             </div>
           </div>
@@ -854,17 +892,17 @@ export default function Post({
       )}
 
       {showComments && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowComments(false)}
           />
 
           <div
-            className="relative z-10 w-full max-w-5xl h-[80vh] bg-white rounded-xl shadow-2xl overflow-hidden flex flex-row"
+            className="relative z-10 w-full h-full sm:h-[80vh] sm:max-w-5xl bg-white sm:rounded-xl shadow-2xl overflow-hidden flex flex-col sm:flex-row"
             onClick={e => e.stopPropagation()}
           >
-            <div className="w-1/2 bg-black flex items-center justify-center">
+            <div className="w-full sm:w-1/2 h-1/3 sm:h-full bg-black flex items-center justify-center">
               {post.media_url || post.image_url ? (
                 post.post_type === 'video' ||
                 (post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ? (
@@ -892,7 +930,7 @@ export default function Post({
                 <div className="text-white">No media available</div>
               )}
             </div>
-            <div className="w-1/2 flex flex-col">
+            <div className="w-full sm:w-1/2 h-2/3 sm:h-full flex flex-col">
               <CommentsPanel
                 post={post}
                 currentUserProfileUrl={currentUserProfileUrl}

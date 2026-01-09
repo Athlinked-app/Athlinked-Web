@@ -15,6 +15,7 @@ type PostDetailsModalProps = {
   onPost: () => void;
   onRemoveFile: () => void;
   currentUserId?: string;
+  isUploading?: boolean;
 };
 
 export default function PostDetailsModal({
@@ -29,6 +30,7 @@ export default function PostDetailsModal({
   onPost,
   onRemoveFile,
   currentUserId,
+  isUploading = false,
 }: PostDetailsModalProps) {
   if (!open) return null;
 
@@ -56,7 +58,7 @@ export default function PostDetailsModal({
         <div className="border border-dashed border-gray-300 rounded-lg p-4 md:p-5">
           <div className="flex flex-col gap-4">
             <div className="flex gap-3">
-              <div className="w-24 h-24 rounded-md overflow-hidden bg-gray-100 border border-gray-200 flex-shrink-0">
+              <div className="w-24 h-24 rounded-md overflow-hidden bg-gray-100 border border-gray-200 shrink-0">
                 {filePreview ? (
                   postType === 'video' ? (
                     <video
@@ -119,16 +121,29 @@ export default function PostDetailsModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-5 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+            disabled={isUploading}
+            className="px-5 py-2 rounded-md border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={onPost}
-            className="px-6 py-2 rounded-md bg-[#CB9729] text-white font-semibold hover:bg-[#b78322] transition-colors"
+            disabled={isUploading}
+            className={`px-6 py-2 rounded-md font-semibold transition-colors disabled:cursor-not-allowed flex items-center gap-2 ${
+              isUploading
+                ? 'bg-white border-2 border-[#CB9729] text-[#CB9729]'
+                : 'bg-[#CB9729] text-white hover:bg-[#b78322]'
+            }`}
           >
-            Post
+            {isUploading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-[#CB9729] border-t-transparent rounded-full animate-spin"></div>
+                <span>Posting...</span>
+              </>
+            ) : (
+              'Post'
+            )}
           </button>
         </div>
       </div>

@@ -262,6 +262,42 @@ async function checkConnectionRequestStatusService(requesterId, receiverId) {
   }
 }
 
+async function isConnectedService(userId1, userId2) {
+  try {
+    if (!userId1 || !userId2) {
+      throw new Error('Both user IDs are required');
+    }
+
+    const isConnected = await networkModel.isConnected(userId1, userId2);
+
+    return {
+      success: true,
+      isConnected,
+    };
+  } catch (error) {
+    console.error('Is connected service error:', error.message);
+    throw error;
+  }
+}
+
+async function getConnectionsService(userId) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const connections = await networkModel.getConnections(userId);
+
+    return {
+      success: true,
+      connections,
+    };
+  } catch (error) {
+    console.error('Get connections service error:', error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   followUserService,
   unfollowUserService,
@@ -274,4 +310,6 @@ module.exports = {
   rejectConnectionRequestService,
   getConnectionRequestsService,
   checkConnectionRequestStatusService,
+  isConnectedService,
+  getConnectionsService,
 };

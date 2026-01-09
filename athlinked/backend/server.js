@@ -1,3 +1,5 @@
+console.log('ENV CHECK - JWT_SECRET:', process.env.JWT_SECRET);
+console.log('ENV CHECK - JWT_REFRESH_SECRET:', process.env.JWT_REFRESH_SECRET);
 const app = require('./app');
 const { Server } = require('socket.io');
 const http = require('http');
@@ -69,29 +71,28 @@ io.on('connection', socket => {
       const isReceiverOnline = receiverSockets.length > 0;
 
       // Get updated conversation data for both users
-      const messagesModel = require('./messages/messages.model');
+      const _messagesModel = require('./messages/messages.model');
       const conversationsService = require('./messages/messages.service');
-      
-      // Get updated conversations for receiver
-      const receiverConversations = await conversationsService.getConversations(receiverId);
-      const updatedReceiverConv = receiverConversations.find(
-  c => c.conversation_id === createdMessage.conversation_id
-);
 
+      // Get updated conversations for receiver
+      const receiverConversations =
+        await conversationsService.getConversations(receiverId);
+      const updatedReceiverConv = receiverConversations.find(
+        c => c.conversation_id === createdMessage.conversation_id
+      );
 
       // Get updated conversations for sender
-      const senderConversations = await conversationsService.getConversations(senderId);
+      const senderConversations =
+        await conversationsService.getConversations(senderId);
       const updatedSenderConv = senderConversations.find(
-  c => c.conversation_id === createdMessage.conversation_id
-);
-
+        c => c.conversation_id === createdMessage.conversation_id
+      );
 
       // Get total unread count for receiver
       const totalUnreadCount = receiverConversations.reduce(
-  (sum, conv) => sum + (conv.unread_count || 0),
-  0
-);
-
+        (sum, conv) => sum + (conv.unread_count || 0),
+        0
+      );
 
       // Emit to receiver
       io.to(`user:${receiverId}`).emit('receive_message', {

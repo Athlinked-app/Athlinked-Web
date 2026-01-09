@@ -28,7 +28,7 @@ async function followUser(req, res) {
       followerId,
       followingId
     );
-    
+
     // Emit WebSocket event for real-time follow update
     try {
       const app = require('../app');
@@ -47,7 +47,7 @@ async function followUser(req, res) {
     } catch (error) {
       console.error('Error emitting follow WebSocket event:', error);
     }
-    
+
     return res.status(200).json(result);
   } catch (error) {
     console.error('Follow user controller error:', error);
@@ -92,7 +92,7 @@ async function unfollowUser(req, res) {
       followerId,
       followingId
     );
-    
+
     // Emit WebSocket event for real-time unfollow update
     try {
       const app = require('../app');
@@ -111,7 +111,7 @@ async function unfollowUser(req, res) {
     } catch (error) {
       console.error('Error emitting unfollow WebSocket event:', error);
     }
-    
+
     return res.status(200).json(result);
   } catch (error) {
     console.error('Unfollow user controller error:', error);
@@ -381,6 +381,29 @@ async function checkConnectionRequestStatus(req, res) {
   }
 }
 
+async function getConnections(req, res) {
+  try {
+    const userId = req.user?.id || req.params.userId;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
+
+    const result = await networkService.getConnectionsService(userId);
+
+    res.json(result);
+  } catch (error) {
+    console.error('Get connections controller error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 module.exports = {
   followUser,
   unfollowUser,
@@ -393,4 +416,5 @@ module.exports = {
   rejectConnectionRequest,
   getConnectionRequests,
   checkConnectionRequestStatus,
+  getConnections,
 };

@@ -134,24 +134,9 @@ export default function Header({
   }, [showPopup]);
 
   const handleLogout = async () => {
-    // Revoke refresh token on server
-    const refreshToken = localStorage.getItem('refreshToken');
-    if (refreshToken) {
-      try {
-        const { apiPost } = await import('@/utils/api');
-        await apiPost('/auth/logout', { refreshToken });
-      } catch (error) {
-        console.error('Error revoking token:', error);
-      }
-    }
-
-    // Remove tokens and old userEmail
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('userEmail');
-    }
-    router.push('/login');
+    // Use the proper logout function from auth utils
+    const { logout } = await import('@/utils/auth');
+    await logout();
   };
 
   const userRole = userData?.user_type
@@ -160,22 +145,22 @@ export default function Header({
     : 'User';
 
   return (
-    <nav className="flex items-center justify-between px-3 md:px-8 py-4 bg-white">
+    <nav className="flex items-center justify-between px-2 sm:px-3 md:px-4 lg:px-6 py-2 md:py-3 bg-white">
       <div className="flex items-center">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-1 sm:gap-2">
           <Image
             src="/assets/Homescreen/Logo.png"
             alt="ATHLINKED Logo"
             width={180}
             height={50}
-            className="w-32 h-8 md:w-[200px] md:h-[50px]"
+            className="w-24 h-6 sm:w-28 sm:h-7 md:w-36 md:h-9 lg:w-44 lg:h-11"
             priority
           />
         </Link>
       </div>
 
       <div className="flex items-center relative">
-        <div className="ml-2">
+        <div className="ml-1 sm:ml-2">
           <button
             onClick={() => setShowPopup(!showPopup)}
             className="focus:outline-none"
@@ -186,12 +171,12 @@ export default function Header({
                 alt={`${userName} profile avatar`}
                 width={48}
                 height={48}
-                className="w-12 h-12 md:w-20 md:h-20 rounded-full object-cover border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full object-cover border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
                 priority
               />
             ) : (
-              <div className="w-12 h-12 md:w-20 md:h-20 rounded-full bg-gray-300 border border-gray-200 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
-                <span className="text-gray-600 font-semibold text-xs md:text-base">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-300 border border-gray-200 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
+                <span className="text-gray-600 font-semibold text-xs sm:text-sm md:text-base">
                   {getInitials(userName)}
                 </span>
               </div>
@@ -203,18 +188,18 @@ export default function Header({
         {showPopup && (
           <div
             ref={popupRef}
-            className="absolute top-full right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
+            className="absolute top-full right-0 mt-1 sm:mt-2 w-64 sm:w-72 md:w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
           >
             {/* Profile Section */}
-            <div className="p-6 border-b border-gray-200">
+            <div className="p-3 sm:p-4 md:p-5 border-b border-gray-200">
               <div
-                className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={() => {
                   router.push('/profile');
                   setShowPopup(false);
                 }}
               >
-                <div className="w-12 h-12 md:w-20 md:h-20 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center flex-shrink-0">
+                <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center shrink-0">
                   {userProfileUrl ? (
                     <img
                       src={userProfileUrl}
@@ -222,14 +207,16 @@ export default function Header({
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="text-gray-600 font-semibold text-sm md:text-lg">
+                    <span className="text-gray-600 font-semibold text-xs sm:text-sm md:text-base">
                       {getInitials(userName)}
                     </span>
                   )}
                 </div>
                 <div className="flex flex-col leading-tight min-w-0">
-                  <span className="text-sm text-gray-500">{userRole}</span>
-                  <span className="text-xl font-semibold text-gray-900 truncate">
+                  <span className="text-xs sm:text-sm text-gray-500 truncate">
+                    {userRole}
+                  </span>
+                  <span className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 truncate">
                     {userName}
                   </span>
                 </div>
@@ -237,27 +224,31 @@ export default function Header({
             </div>
 
             {/* Options Section */}
-            <div className="py-2">
+            <div className="py-1 sm:py-2">
               <button
                 onClick={() => {
                   // Navigate to settings page or open settings modal
                   router.push('/settings');
                   setShowPopup(false);
                 }}
-                className="w-full flex items-center gap-3 px-6 py-3 text-left hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-left hover:bg-gray-50 transition-colors"
               >
-                <Settings className="w-5 h-5 text-gray-600" />
-                <span className="text-gray-900 font-medium">Settings</span>
+                <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 shrink-0" />
+                <span className="text-sm sm:text-base text-gray-900 font-medium">
+                  Settings
+                </span>
               </button>
               <button
                 onClick={() => {
                   setShowLogoutConfirm(true);
                   setShowPopup(false);
                 }}
-                className="w-full flex items-center gap-3 px-6 py-3 text-left hover:bg-gray-50 transition-colors"
+                className="w-full flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-left hover:bg-gray-50 transition-colors"
               >
-                <LogOut className="w-5 h-5 text-gray-600" />
-                <span className="text-gray-900 font-medium">Logout</span>
+                <LogOut className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 shrink-0" />
+                <span className="text-sm sm:text-base text-gray-900 font-medium">
+                  Logout
+                </span>
               </button>
             </div>
           </div>
@@ -275,34 +266,34 @@ export default function Header({
 
           {/* Modal */}
           <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-semibold text-gray-900">
+            <div className="bg-white rounded-lg shadow-xl p-4 sm:p-5 md:p-6 max-w-md w-full mx-3 sm:mx-4">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
                   Confirm Logout
                 </h3>
                 <button
                   onClick={() => setShowLogoutConfirm(false)}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <X size={20} />
+                  <X size={18} className="sm:w-5 sm:h-5" />
                 </button>
               </div>
 
-              <p className="text-gray-600 mb-6">
+              <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-5 md:mb-6">
                 Are you sure you want to logout? You will need to login again to
                 access your account.
               </p>
 
-              <div className="flex gap-3 justify-end">
+              <div className="flex gap-2 sm:gap-3 justify-end">
                 <button
                   onClick={() => setShowLogoutConfirm(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="px-4 py-2 bg-[#CB9729] hover:bg-[#d4a846] text-white rounded-lg transition-colors font-medium"
+                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base bg-[#CB9729] hover:bg-[#d4a846] text-white rounded-lg transition-colors font-medium"
                 >
                   Yes, Logout
                 </button>

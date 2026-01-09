@@ -6,8 +6,8 @@ const forgotPasswordController = require('./forgot-password.controller');
  * @swagger
  * /api/forgot-password/request:
  *   post:
- *     summary: Request password reset OTP
- *     description: Send OTP to user's email for password reset
+ *     summary: Request password reset link
+ *     description: Send password reset link to user's email
  *     tags: [Password Reset]
  *     security: []
  *     requestBody:
@@ -17,15 +17,14 @@ const forgotPasswordController = require('./forgot-password.controller');
  *           schema:
  *             type: object
  *             required:
- *               - email
+ *               - emailOrUsername
  *             properties:
- *               email:
+ *               emailOrUsername:
  *                 type: string
- *                 format: email
  *                 example: "user@example.com"
  *     responses:
  *       200:
- *         description: OTP sent successfully
+ *         description: Password reset link sent successfully
  *         content:
  *           application/json:
  *             schema:
@@ -37,55 +36,14 @@ const forgotPasswordController = require('./forgot-password.controller');
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/request', forgotPasswordController.requestOTP);
-
-/**
- * @swagger
- * /api/forgot-password/verify-otp:
- *   post:
- *     summary: Verify password reset OTP
- *     description: Verify the OTP code sent to user's email
- *     tags: [Password Reset]
- *     security: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *               - otp
- *             properties:
- *               email:
- *                 type: string
- *                 format: email
- *                 example: "user@example.com"
- *               otp:
- *                 type: string
- *                 example: "123456"
- *     responses:
- *       200:
- *         description: OTP verified successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Success'
- *       400:
- *         description: Invalid or expired OTP
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- */
-router.post('/verify-otp', forgotPasswordController.verifyOTP);
+router.post('/request', forgotPasswordController.requestResetLink);
 
 /**
  * @swagger
  * /api/forgot-password/reset:
  *   post:
- *     summary: Reset password
- *     description: Reset password after OTP verification
+ *     summary: Reset password using token
+ *     description: Reset password using the token from the reset link
  *     tags: [Password Reset]
  *     security: []
  *     requestBody:
@@ -95,17 +53,13 @@ router.post('/verify-otp', forgotPasswordController.verifyOTP);
  *           schema:
  *             type: object
  *             required:
- *               - email
- *               - otp
+ *               - token
  *               - newPassword
  *             properties:
- *               email:
+ *               token:
  *                 type: string
- *                 format: email
- *                 example: "user@example.com"
- *               otp:
- *                 type: string
- *                 example: "123456"
+ *                 description: Password reset token from the email link
+ *                 example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
  *               newPassword:
  *                 type: string
  *                 format: password
@@ -118,7 +72,7 @@ router.post('/verify-otp', forgotPasswordController.verifyOTP);
  *             schema:
  *               $ref: '#/components/schemas/Success'
  *       400:
- *         description: Invalid OTP or bad request
+ *         description: Invalid token or bad request
  *         content:
  *           application/json:
  *             schema:

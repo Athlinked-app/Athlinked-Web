@@ -2,7 +2,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
-import { apiRequest, apiUpload } from '@/utils/api';
 import RightSideBar from '@/components/RightSideBar';
 import { type PostData } from '@/components/Post';
 import EditProfileModal from '@/components/Profile/EditProfileModel';
@@ -33,7 +32,7 @@ import MySaveClips from '@/components/MySave/Clips';
 import MySaveArticle from '@/components/MySave/Article';
 import MySaveOpportunity from '@/components/MySave/Opportunity';
 import Favourites from '@/components/Profile/Favourites';
-import { apiGet, apiPost } from '@/utils/api';
+import { apiGet, apiPost, apiUpload } from '@/utils/api';
 interface CurrentUser {
   id: string;
   full_name: string;
@@ -56,13 +55,20 @@ interface ProfileData {
 
 function ProfileContent() {
   const searchParams = useSearchParams();
-  const viewUserId = searchParams.get('userId'); // User ID from URL params
+  const viewUserId = searchParams.get('userId');
 
+  // Protect this route - check authentication
+  useEffect(() => {
+    const { isAuthenticated } = require('@/utils/auth');
+    if (!isAuthenticated() && typeof window !== 'undefined') {
+      window.location.href = '/login';
+    }
+  }, []);
   const [posts, setPosts] = useState<PostData[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
-  const [viewUser, setViewUser] = useState<CurrentUser | null>(null); // User being viewed
+  const [viewUser, setViewUser] = useState<CurrentUser | null>(null);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [activeTab, setActiveTab] = useState<
@@ -138,6 +144,7 @@ function ProfileContent() {
               ? post.user_profile_url
               : null,
           user_id: post.user_id,
+          user_type: post.user_type || 'athlete',
           post_type: post.post_type,
           caption: post.caption,
           media_url: post.media_url,
@@ -266,7 +273,6 @@ function ProfileContent() {
 
       console.log('Profile data fetched:', data);
 
-      // Process sportsPlayed value
       let processedSportsPlayed: string | null = null;
       if (data.sportsPlayed !== undefined && data.sportsPlayed !== null) {
         if (Array.isArray(data.sportsPlayed)) {
@@ -280,7 +286,6 @@ function ProfileContent() {
         }
       }
 
-      // Ensure userId is set from targetUserId if not in response
       setProfileData({
         userId: data.userId || targetUserId || '',
         fullName: data.fullName ?? null,
@@ -458,7 +463,7 @@ function ProfileContent() {
     }
   };
 
-  const handlePostCreated = () => {
+  const _handlePostCreated = () => {
     fetchPosts();
   };
 
@@ -514,7 +519,7 @@ function ProfileContent() {
     }
     return profileUrl;
   };
-  const getInitials = (name?: string) => {
+  const _getInitials = (name?: string) => {
     if (!name) return 'U';
     return name
       .split(' ')
@@ -532,7 +537,7 @@ function ProfileContent() {
       />
 
       <main className="flex flex-1 w-full mt-5 overflow-hidden">
-        <div className="hidden lg:block flex-[3] flex-shrink-0 border-r border-gray-200 overflow-hidden px-6 flex flex-col">
+        <div className="  flex-[3] flex-shrink-0 border-r border-gray-200 overflow-hidden px-6 flex flex-col">
           <EditProfileModal
             key={`${viewUserId || currentUserId}-${profileData?.profileImage}-${profileData?.bio}-${profileData?.education}-${profileData?.city}`}
             open={true}
@@ -588,6 +593,17 @@ function ProfileContent() {
               bio: userBio || profileData?.bio || '',
               education: profileData?.education || '',
               city: profileData?.city || '',
+            }}
+            profileSections={{
+              bio: userBio || profileData?.bio || '',
+              socialHandles: socialHandles,
+              academicBackgrounds: academicBackgrounds,
+              achievements: achievements,
+              athleticAndPerformance: athleticAndPerformance,
+              competitionAndClubs: competitionAndClubs,
+              characterAndLeadership: characterAndLeadership,
+              healthAndReadiness: healthAndReadiness,
+              videoAndMedia: videoAndMedia,
             }}
             onSave={async (data: {
               profile_url?: File;
@@ -788,11 +804,11 @@ function ProfileContent() {
               }
             }}
           />
-          <div className="bg-white mt-4 rounded-lg flex flex-col flex-1 min-h-0">
+          <div className="bg-white mt-2 rounded-lg flex flex-col flex-1 min-h-0">
             <div className="flex items-center border-b border-gray-200 flex-shrink-0">
               <button
                 onClick={() => setActiveTab('profile')}
-                className={`px-6 py-3 font-medium text-xl transition-colors relative ${
+                className={`px-6 py-3 font-medium text-sm transition-colors relative ${
                   activeTab === 'profile'
                     ? 'text-[#CB9729]'
                     : 'text-gray-500 hover:text-gray-700'
@@ -809,7 +825,7 @@ function ProfileContent() {
                   <div className="h-6 w-px bg-gray-200"></div>
                   <button
                     onClick={() => setActiveTab('activity')}
-                    className={`px-6 py-3 font-medium text-xl transition-colors relative ${
+                    className={`px-6 py-3 font-medium text-sm transition-colors relative ${
                       activeTab === 'activity'
                         ? 'text-[#CB9729]'
                         : 'text-gray-500 hover:text-gray-700'
@@ -817,13 +833,13 @@ function ProfileContent() {
                   >
                     Activity
                     {activeTab === 'activity' && (
-                      <div className="absolute bottom-0 text-xl  left-0 right-0 h-0.5 bg-[#CB9729]"></div>
+                      <div className="absolute bottom-0 text-sm  left-0 right-0 h-0.5 bg-[#CB9729]"></div>
                     )}
                   </button>
                   <div className="h-6 w-px bg-gray-200"></div>
                   <button
                     onClick={() => setActiveTab('mysave')}
-                    className={`px-6 py-3 font-medium text-xl  transition-colors relative ${
+                    className={`px-6 py-3 font-medium text-sm  transition-colors relative ${
                       activeTab === 'mysave'
                         ? 'text-[#CB9729]'
                         : 'text-gray-500 hover:text-gray-700'
@@ -857,7 +873,7 @@ function ProfileContent() {
               )}
             </div>
 
-            <div className="mt-4 space-y-4 overflow-y-auto flex-1 pb-4 px-1 max-h-[400px] lg:max-h-[450px] ">
+            <div className="mt-4 space-y-4 overflow-y-auto flex-1 pb-44 px-1 max-h-[400px] lg:max-h-[450px] ">
               {activeTab === 'profile' && (
                 <>
                   <AboutMe bio={userBio || profileData?.bio || ''} />

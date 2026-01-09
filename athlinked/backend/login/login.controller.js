@@ -22,10 +22,22 @@ async function login(req, res) {
   } catch (error) {
     console.error('Login controller error:', error);
 
-    if (error.message === 'Invalid email or password') {
+    // Check if account was recently deleted
+    if (error.message === 'ACCOUNT_DELETED_RECENTLY') {
+      return res.status(403).json({
+        success: false,
+        message: 'ACCOUNT_DELETED_RECENTLY',
+        error: 'This account was deleted recently. Please contact support if you believe this is an error.',
+      });
+    }
+
+    if (error.message === 'Invalid email or password' || error.message === 'Invalid email/username or password') {
+      const passwordChangedRecently = error.passwordChangedRecently === true;
+      console.log('Login error - passwordChangedRecently flag:', passwordChangedRecently);
       return res.status(401).json({
         success: false,
         message: error.message,
+        passwordChangedRecently: passwordChangedRecently,
       });
     }
 

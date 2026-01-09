@@ -66,11 +66,7 @@ router.get('/', authenticateToken, favoritesController.getFavorites);
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post(
-  '/:athleteId',
-  authenticateToken,
-  favoritesController.addFavorite
-);
+router.post('/:athleteId', authenticateToken, favoritesController.addFavorite);
 
 /**
  * @swagger
@@ -152,4 +148,3 @@ router.get(
 );
 
 module.exports = router;
-

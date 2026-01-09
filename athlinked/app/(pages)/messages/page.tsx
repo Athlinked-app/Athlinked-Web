@@ -4,7 +4,14 @@ import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import NavigationBar from '@/components/NavigationBar';
-import { Search, CheckCheck, Check, X } from 'lucide-react';
+import {
+  Search,
+  CheckCheck,
+  Check,
+  X,
+  MoreVertical,
+  Trash2,
+} from 'lucide-react';
 import io, { Socket } from 'socket.io-client';
 import EmojiPicker from '@/components/Message/EmojiPicker';
 import GIFPicker from '@/components/Message/GIFPicker';
@@ -64,9 +71,14 @@ function MessagesPageContent() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedGIF, setSelectedGIF] = useState<string | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
+  const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [showConversationMenu, setShowConversationMenu] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const conversationMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
@@ -413,6 +425,90 @@ function MessagesPageContent() {
     }
   };
 
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!currentUser?.id || !selectedConversation) return;
+
+    if (!confirm('Are you sure you want to delete this message?')) {
+      return;
+    }
+
+    try {
+      const { apiDelete } = await import('@/utils/api');
+      const response = await apiDelete<{ success: boolean; message?: string }>(
+        `/messages/message/${messageId}`
+      );
+
+      if (response.success) {
+        // Remove message from local state
+        setMessages(prev => prev.filter(msg => msg.message_id !== messageId));
+        setOpenMenuId(null);
+        // Refresh conversations to update last message
+        fetchConversations();
+      } else {
+        alert(response.message || 'Failed to delete message');
+      }
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      alert('Failed to delete message. Please try again.');
+    }
+  };
+
+  const handleDeleteConversation = async () => {
+    if (!currentUser?.id || !selectedConversation) return;
+
+    if (
+      !confirm(
+        'Are you sure you want to delete this conversation? This will delete all messages and cannot be undone.'
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const { apiDelete } = await import('@/utils/api');
+      const response = await apiDelete<{ success: boolean; message?: string }>(
+        `/messages/conversation/${selectedConversation.conversation_id}`
+      );
+
+      if (response.success) {
+        // Clear selected conversation and messages
+        setSelectedConversation(null);
+        setMessages([]);
+        setShowConversationMenu(false);
+        // Refresh conversations list
+        fetchConversations();
+      } else {
+        alert(response.message || 'Failed to delete conversation');
+      }
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      alert('Failed to delete conversation. Please try again.');
+    }
+  };
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+      }
+      if (
+        conversationMenuRef.current &&
+        !conversationMenuRef.current.contains(event.target as Node)
+      ) {
+        setShowConversationMenu(false);
+      }
+    };
+
+    if (openMenuId || showConversationMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openMenuId, showConversationMenu]);
+
   const searchUsers = async (query: string) => {
     if (!query.trim() || !currentUser?.id) {
       setSearchResults([]);
@@ -553,7 +649,7 @@ function MessagesPageContent() {
     if (userIdFromUrl && currentUser?.id && conversations.length > 0) {
       handleUserIdFromUrl();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [userIdFromUrl, currentUser?.id, conversations.length]);
 
   useEffect(() => {
@@ -944,27 +1040,53 @@ function MessagesPageContent() {
           <div className="flex-1 bg-white rounded-lg border border-gray-200 flex flex-col overflow-hidden">
             {selectedConversation ? (
               <>
-                <div className="p-4 border-b border-gray-200 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center">
-                    {selectedConversation.other_user_profile_image ? (
-                      <img
-                        src={
-                          getProfileUrl(
-                            selectedConversation.other_user_profile_image
-                          ) || ''
-                        }
-                        alt={selectedConversation.other_user_username}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-black font-semibold text-xs">
-                        {getInitials(selectedConversation.other_user_username)}
-                      </span>
+                <div className="p-4 border-b border-gray-200 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center">
+                      {selectedConversation.other_user_profile_image ? (
+                        <img
+                          src={
+                            getProfileUrl(
+                              selectedConversation.other_user_profile_image
+                            ) || ''
+                          }
+                          alt={selectedConversation.other_user_username}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-black font-semibold text-xs">
+                          {getInitials(
+                            selectedConversation.other_user_username
+                          )}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-lg font-semibold text-black">
+                      {selectedConversation.other_user_username}
+                    </span>
+                  </div>
+                  <div className="relative" ref={conversationMenuRef}>
+                    <button
+                      onClick={() =>
+                        setShowConversationMenu(!showConversationMenu)
+                      }
+                      className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                      aria-label="Conversation options"
+                    >
+                      <MoreVertical size={20} className="text-gray-600" />
+                    </button>
+                    {showConversationMenu && (
+                      <div className="absolute right-0 top-12 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[150px]">
+                        <button
+                          onClick={handleDeleteConversation}
+                          className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-lg transition-colors"
+                        >
+                          <Trash2 size={16} />
+                          Delete Chat
+                        </button>
+                      </div>
                     )}
                   </div>
-                  <span className="text-lg font-semibold text-black">
-                    {selectedConversation.other_user_username}
-                  </span>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -985,7 +1107,11 @@ function MessagesPageContent() {
                         <div
                           className={`flex gap-3 ${
                             isOwnMessage ? 'flex-row-reverse' : 'flex-row'
-                          }`}
+                          } group`}
+                          onMouseEnter={() =>
+                            isOwnMessage && setHoveredMessageId(msg.message_id)
+                          }
+                          onMouseLeave={() => setHoveredMessageId(null)}
                         >
                           {!isOwnMessage && (
                             <div className="w-8 h-8 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center flex-shrink-0">
@@ -1008,242 +1134,279 @@ function MessagesPageContent() {
                               )}
                             </div>
                           )}
-                          <div
-                            className={`max-w-xs lg:max-w-md rounded-lg overflow-hidden ${
-                              isOwnMessage
-                                ? 'bg-white border border-gray-200'
-                                : 'bg-gray-100'
-                            }`}
-                          >
-                            {msg.post_data && msg.message_type === 'post' ? (
-                              <div className="w-full border border-gray-200 rounded-lg overflow-hidden bg-white max-w-md">
-                                <div className="p-3 border-b border-gray-200 flex items-center gap-2">
-                                  {msg.post_data.user_profile_url && (
-                                    <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0">
-                                      <img
-                                        src={
-                                          msg.post_data.user_profile_url.startsWith(
-                                            'http'
-                                          )
-                                            ? msg.post_data.user_profile_url
-                                            : `http://localhost:3001${msg.post_data.user_profile_url}`
-                                        }
-                                        alt={msg.post_data.username || 'User'}
-                                        className="w-full h-full object-cover"
-                                        onError={e => {
-                                          e.currentTarget.style.display =
-                                            'none';
-                                        }}
-                                      />
+                          <div className="relative flex items-start gap-2">
+                            <div
+                              className={`max-w-xs lg:max-w-md rounded-lg overflow-hidden ${
+                                isOwnMessage
+                                  ? 'bg-white border border-gray-200'
+                                  : 'bg-gray-100'
+                              }`}
+                            >
+                              {msg.post_data && msg.message_type === 'post' ? (
+                                <div className="w-full border border-gray-200 rounded-lg overflow-hidden bg-white max-w-md">
+                                  <div className="p-3 border-b border-gray-200 flex items-center gap-2">
+                                    {msg.post_data.user_profile_url && (
+                                      <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0">
+                                        <img
+                                          src={
+                                            msg.post_data.user_profile_url.startsWith(
+                                              'http'
+                                            )
+                                              ? msg.post_data.user_profile_url
+                                              : `http://localhost:3001${msg.post_data.user_profile_url}`
+                                          }
+                                          alt={msg.post_data.username || 'User'}
+                                          className="w-full h-full object-cover"
+                                          onError={e => {
+                                            e.currentTarget.style.display =
+                                              'none';
+                                          }}
+                                        />
+                                      </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-semibold text-black truncate">
+                                        {msg.post_data.username || 'User'}
+                                      </p>
                                     </div>
-                                  )}
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-black truncate">
-                                      {msg.post_data.username || 'User'}
-                                    </p>
                                   </div>
-                                </div>
-                                {msg.post_data.media_url &&
-                                  (() => {
-                                    const mediaUrl =
-                                      msg.post_data.media_url.startsWith('http')
-                                        ? msg.post_data.media_url
-                                        : `http://localhost:3001${msg.post_data.media_url}`;
-                                    const isVideo =
-                                      msg.post_data.post_type === 'video' ||
-                                      msg.post_data.media_url.match(
-                                        /\.(mp4|mov|webm|ogg)$/i
-                                      );
+                                  {msg.post_data.media_url &&
+                                    (() => {
+                                      const mediaUrl =
+                                        msg.post_data.media_url.startsWith(
+                                          'http'
+                                        )
+                                          ? msg.post_data.media_url
+                                          : `http://localhost:3001${msg.post_data.media_url}`;
+                                      const isVideo =
+                                        msg.post_data.post_type === 'video' ||
+                                        msg.post_data.media_url.match(
+                                          /\.(mp4|mov|webm|ogg)$/i
+                                        );
 
-                                    if (isVideo) {
-                                      return (
-                                        <div className="w-full">
-                                          <video
-                                            src={mediaUrl}
-                                            controls
-                                            className="w-full h-auto object-cover"
-                                            onError={e => {
-                                              e.currentTarget.style.display =
-                                                'none';
-                                            }}
-                                          />
-                                        </div>
-                                      );
-                                    } else {
-                                      return (
-                                        <div className="w-full">
-                                          <img
-                                            src={mediaUrl}
-                                            alt={
-                                              msg.post_data.caption ||
-                                              msg.post_data.article_title ||
-                                              msg.post_data.event_title ||
-                                              'Post'
-                                            }
-                                            className="w-full h-auto object-cover"
-                                            onError={e => {
-                                              e.currentTarget.style.display =
-                                                'none';
-                                            }}
-                                          />
-                                        </div>
-                                      );
-                                    }
-                                  })()}
-                                <div className="p-3">
-                                  {msg.post_data.article_title && (
-                                    <h4 className="font-semibold text-black mb-2 text-base">
-                                      {msg.post_data.article_title}
-                                    </h4>
-                                  )}
-                                  {msg.post_data.event_title && (
-                                    <div className="mb-2">
-                                      <h4 className="font-semibold text-black mb-1 text-base">
-                                        {msg.post_data.event_title}
+                                      if (isVideo) {
+                                        return (
+                                          <div className="w-full">
+                                            <video
+                                              src={mediaUrl}
+                                              controls
+                                              className="w-full h-auto object-cover"
+                                              onError={e => {
+                                                e.currentTarget.style.display =
+                                                  'none';
+                                              }}
+                                            />
+                                          </div>
+                                        );
+                                      } else {
+                                        return (
+                                          <div className="w-full">
+                                            <img
+                                              src={mediaUrl}
+                                              alt={
+                                                msg.post_data.caption ||
+                                                msg.post_data.article_title ||
+                                                msg.post_data.event_title ||
+                                                'Post'
+                                              }
+                                              className="w-full h-auto object-cover"
+                                              onError={e => {
+                                                e.currentTarget.style.display =
+                                                  'none';
+                                              }}
+                                            />
+                                          </div>
+                                        );
+                                      }
+                                    })()}
+                                  <div className="p-3">
+                                    {msg.post_data.article_title && (
+                                      <h4 className="font-semibold text-black mb-2 text-base">
+                                        {msg.post_data.article_title}
                                       </h4>
-                                      {msg.post_data.event_date && (
-                                        <p className="text-xs text-black">
-                                          📅{' '}
-                                          {new Date(
-                                            msg.post_data.event_date
-                                          ).toLocaleDateString()}
-                                        </p>
-                                      )}
-                                      {msg.post_data.event_location && (
-                                        <p className="text-xs text-black">
-                                          📍 {msg.post_data.event_location}
-                                        </p>
-                                      )}
-                                    </div>
-                                  )}
-                                  {msg.post_data.caption && (
-                                    <p className="text-sm text-black mb-2">
-                                      {msg.post_data.caption}
-                                    </p>
-                                  )}
-                                  {msg.post_data.post_url && (
-                                    <a
-                                      href={msg.post_data.post_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
-                                    >
-                                      View Post →
-                                    </a>
-                                  )}
-                                </div>
-                              </div>
-                            ) : (
-                              msg.media_url &&
-                              (() => {
-                                const mediaUrl = msg.media_url.startsWith(
-                                  'http'
-                                )
-                                  ? msg.media_url
-                                  : `http://localhost:3001${msg.media_url}`;
-                                const urlLower = msg.media_url.toLowerCase();
-                                const isImage =
-                                  msg.message_type === 'image' ||
-                                  msg.message_type === 'gif' ||
-                                  (!msg.message_type &&
-                                    (urlLower.match(
-                                      /\.(jpg|jpeg|png|gif|webp)$/i
-                                    ) ||
-                                      urlLower.includes('giphy.com')));
-                                const isVideo =
-                                  msg.message_type === 'video' ||
-                                  (!msg.message_type &&
-                                    urlLower.match(/\.(mp4|mov|webm|ogg)$/i));
-                                const isGif =
-                                  msg.message_type === 'gif' ||
-                                  urlLower.includes('giphy.com');
-
-                                if (isImage || isGif) {
-                                  return (
-                                    <div className="w-full">
-                                      <img
-                                        src={mediaUrl}
-                                        alt={msg.message || 'Media'}
-                                        className="w-full h-auto object-cover max-w-md rounded-lg"
-                                        onError={e => {
-                                          e.currentTarget.style.display =
-                                            'none';
-                                        }}
-                                      />
-                                    </div>
-                                  );
-                                } else if (isVideo) {
-                                  return (
-                                    <div className="w-full">
-                                      <video
-                                        src={mediaUrl}
-                                        controls
-                                        className="w-full h-auto max-w-md rounded-lg"
-                                        onError={e => {
-                                          e.currentTarget.style.display =
-                                            'none';
-                                        }}
-                                      />
-                                    </div>
-                                  );
-                                } else {
-                                  return (
-                                    <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                    )}
+                                    {msg.post_data.event_title && (
+                                      <div className="mb-2">
+                                        <h4 className="font-semibold text-black mb-1 text-base">
+                                          {msg.post_data.event_title}
+                                        </h4>
+                                        {msg.post_data.event_date && (
+                                          <p className="text-xs text-black">
+                                            📅{' '}
+                                            {new Date(
+                                              msg.post_data.event_date
+                                            ).toLocaleDateString()}
+                                          </p>
+                                        )}
+                                        {msg.post_data.event_location && (
+                                          <p className="text-xs text-black">
+                                            📍 {msg.post_data.event_location}
+                                          </p>
+                                        )}
+                                      </div>
+                                    )}
+                                    {msg.post_data.caption && (
+                                      <p className="text-sm text-black mb-2">
+                                        {msg.post_data.caption}
+                                      </p>
+                                    )}
+                                    {msg.post_data.post_url && (
                                       <a
-                                        href={mediaUrl}
-                                        download
+                                        href={msg.post_data.post_url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
+                                        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
                                       >
-                                        <span className="text-sm font-medium">
-                                          {msg.message || 'Download file'}
-                                        </span>
+                                        View Post →
                                       </a>
-                                    </div>
-                                  );
-                                }
-                              })()
-                            )}
+                                    )}
+                                  </div>
+                                </div>
+                              ) : msg.media_url ? (
+                                (() => {
+                                  const mediaUrl = msg.media_url.startsWith(
+                                    'http'
+                                  )
+                                    ? msg.media_url
+                                    : `http://localhost:3001${msg.media_url}`;
+                                  const urlLower = msg.media_url.toLowerCase();
+                                  const isImage =
+                                    msg.message_type === 'image' ||
+                                    msg.message_type === 'gif' ||
+                                    (!msg.message_type &&
+                                      (urlLower.match(
+                                        /\.(jpg|jpeg|png|gif|webp)$/i
+                                      ) ||
+                                        urlLower.includes('giphy.com')));
+                                  const isVideo =
+                                    msg.message_type === 'video' ||
+                                    (!msg.message_type &&
+                                      urlLower.match(/\.(mp4|mov|webm|ogg)$/i));
+                                  const isGif =
+                                    msg.message_type === 'gif' ||
+                                    urlLower.includes('giphy.com');
 
-                            {msg.message && (
-                              <p
-                                className={`text-sm text-black ${msg.media_url ? 'px-4 py-2' : 'px-4 py-2'}`}
+                                  if (isImage || isGif) {
+                                    return (
+                                      <div className="w-full">
+                                        <img
+                                          src={mediaUrl}
+                                          alt={msg.message || 'Media'}
+                                          className="w-full h-auto object-cover max-w-md rounded-lg"
+                                          onError={e => {
+                                            e.currentTarget.style.display =
+                                              'none';
+                                          }}
+                                        />
+                                      </div>
+                                    );
+                                  } else if (isVideo) {
+                                    return (
+                                      <div className="w-full">
+                                        <video
+                                          src={mediaUrl}
+                                          controls
+                                          className="w-full h-auto max-w-md rounded-lg"
+                                          onError={e => {
+                                            e.currentTarget.style.display =
+                                              'none';
+                                          }}
+                                        />
+                                      </div>
+                                    );
+                                  } else {
+                                    return (
+                                      <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                                        <a
+                                          href={mediaUrl}
+                                          download
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex items-center gap-2 text-blue-600 hover:text-blue-800"
+                                        >
+                                          <span className="text-sm font-medium">
+                                            {msg.message || 'Download file'}
+                                          </span>
+                                        </a>
+                                      </div>
+                                    );
+                                  }
+                                })()
+                              ) : null}
+
+                              {msg.message && (
+                                <p
+                                  className={`text-sm text-black ${msg.media_url ? 'px-4 py-2' : 'px-4 py-2'}`}
+                                >
+                                  {msg.message}
+                                </p>
+                              )}
+
+                              <div
+                                className={`flex items-center justify-end gap-1.5 px-4 pb-2 ${isOwnMessage ? '' : 'justify-start'}`}
                               >
-                                {msg.message}
-                              </p>
-                            )}
-
-                            <div
-                              className={`flex items-center justify-end gap-1.5 px-4 pb-2 ${isOwnMessage ? '' : 'justify-start'}`}
-                            >
-                              <span className="text-xs text-black">
-                                {formatMessageTimestamp(msg.created_at)}
-                              </span>
-                              {isOwnMessage && (
-                                <div className="flex items-center">
-                                  {msg.is_read_by_recipient ? (
-                                    <CheckCheck
-                                      size={16}
-                                      className="text-[#53BDEB]"
-                                      strokeWidth={2.5}
+                                <span className="text-xs text-black">
+                                  {formatMessageTimestamp(msg.created_at)}
+                                </span>
+                                {isOwnMessage && (
+                                  <div className="flex items-center">
+                                    {msg.is_read_by_recipient ? (
+                                      <CheckCheck
+                                        size={16}
+                                        className="text-[#53BDEB]"
+                                        strokeWidth={2.5}
+                                      />
+                                    ) : msg.is_delivered ? (
+                                      <CheckCheck
+                                        size={16}
+                                        className="text-[#8696A0]"
+                                        strokeWidth={2.5}
+                                      />
+                                    ) : (
+                                      <Check
+                                        size={12}
+                                        className="text-[#8696A0]"
+                                        strokeWidth={2.5}
+                                      />
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            {isOwnMessage &&
+                              hoveredMessageId === msg.message_id && (
+                                <div className="relative" ref={menuRef}>
+                                  <button
+                                    onClick={() =>
+                                      setOpenMenuId(
+                                        openMenuId === msg.message_id
+                                          ? null
+                                          : msg.message_id
+                                      )
+                                    }
+                                    className="p-1 rounded-full hover:bg-gray-200 transition-colors"
+                                    aria-label="Message options"
+                                  >
+                                    <MoreVertical
+                                      size={18}
+                                      className="text-gray-600"
                                     />
-                                  ) : msg.is_delivered ? (
-                                    <CheckCheck
-                                      size={16}
-                                      className="text-[#8696A0]"
-                                      strokeWidth={2.5}
-                                    />
-                                  ) : (
-                                    <Check
-                                      size={12}
-                                      className="text-[#8696A0]"
-                                      strokeWidth={2.5}
-                                    />
+                                  </button>
+                                  {openMenuId === msg.message_id && (
+                                    <div className="absolute right-0 top-8 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[120px]">
+                                      <button
+                                        onClick={() =>
+                                          handleDeleteMessage(msg.message_id)
+                                        }
+                                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 rounded-lg transition-colors"
+                                      >
+                                        <Trash2 size={16} />
+                                        Delete
+                                      </button>
+                                    </div>
                                   )}
                                 </div>
                               )}
-                            </div>
                           </div>
                         </div>
                       </div>

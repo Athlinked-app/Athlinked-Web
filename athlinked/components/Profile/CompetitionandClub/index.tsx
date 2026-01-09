@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Pencil } from 'lucide-react';
+import { Plus, Trash2, Pencil, X } from 'lucide-react';
 import CompetitionAndClubPopup, {
   type CompetitionAndClub,
 } from '../CompetitionandClubPopup';
 import { apiGet, apiPost, apiPut, apiDelete } from '@/utils/api';
+import { getCurrentUserId } from '@/utils/auth';
 
 export type { CompetitionAndClub };
 
@@ -22,8 +23,17 @@ export default function CompetitionAndClub({
 }: CompetitionAndClubProps) {
   const [clubsList, setClubsList] = useState<CompetitionAndClub[]>(clubs);
   const [showPopup, setShowPopup] = useState(false);
+  const [showViewPopup, setShowViewPopup] = useState(false);
+  const [viewingIndex, setViewingIndex] = useState<number | null>(null);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
+
+  // Check if viewing own profile (client-side only to avoid hydration issues)
+  useEffect(() => {
+    const currentUserId = getCurrentUserId();
+    setIsOwnProfile(userId === currentUserId);
+  }, [userId]);
 
   // Sync with props when clubs change
   useEffect(() => {
@@ -148,6 +158,16 @@ export default function CompetitionAndClub({
     setEditingIndex(null);
   };
 
+  const handleView = (index: number) => {
+    setViewingIndex(index);
+    setShowViewPopup(true);
+  };
+
+  const handleCloseView = () => {
+    setShowViewPopup(false);
+    setViewingIndex(null);
+  };
+
   const handleDelete = async (id: string | undefined, index: number) => {
     if (!id) {
       // If no ID, just update local state
@@ -189,21 +209,23 @@ export default function CompetitionAndClub({
           <h2 className="text-2xl font-bold text-gray-900">
             Competition and Club Information
           </h2>
-          <button
-            onClick={() => {
-              // If there's existing data, show the first entry for editing
-              // Otherwise, open empty form for new entry
-              if (clubsList.length > 0) {
-                setEditingIndex(0);
-              } else {
-                setEditingIndex(null);
-              }
-              setShowPopup(true);
-            }}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-          >
-            <Plus className="w-6 h-6 text-gray-900" />
-          </button>
+          {isOwnProfile && (
+            <button
+              onClick={() => {
+                // If there's existing data, show the first entry for editing
+                // Otherwise, open empty form for new entry
+                if (clubsList.length > 0) {
+                  setEditingIndex(0);
+                } else {
+                  setEditingIndex(null);
+                }
+                setShowPopup(true);
+              }}
+              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            >
+              <Plus className="w-6 h-6 text-gray-900" />
+            </button>
+          )}
         </div>
 
         {loading ? (
@@ -218,12 +240,13 @@ export default function CompetitionAndClub({
             {clubsList.map((club, index) => (
               <div
                 key={club.id || index}
-                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50"
+                className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                onClick={() => handleView(index)}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-sm text-gray-600">
                         {club.clubOrTravelTeamName}
                       </h3>
                       {club.teamLevel && (
@@ -249,20 +272,25 @@ export default function CompetitionAndClub({
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 ml-4">
-                    <button
-                      onClick={() => handleEdit(index)}
-                      className="p-2 rounded-full hover:bg-blue-50 transition-colors"
+                  {isOwnProfile && (
+                    <div
+                      className="flex items-center gap-2 ml-4"
+                      onClick={e => e.stopPropagation()}
                     >
-                      <Pencil className="w-4 h-4 text-blue-600" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(club.id, index)}
-                      className="p-2 rounded-full hover:bg-red-50 transition-colors"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-600" />
-                    </button>
-                  </div>
+                      <button
+                        onClick={() => handleEdit(index)}
+                        className="p-2 rounded-full hover:bg-blue-50 transition-colors"
+                      >
+                        <Pencil className="w-4 h-4 text-blue-600" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(club.id, index)}
+                        className="p-2 rounded-full hover:bg-red-50 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -278,6 +306,99 @@ export default function CompetitionAndClub({
           editingIndex !== null ? clubsList[editingIndex] : undefined
         }
       />
+
+      {/* View Popup */}
+      {showViewPopup && viewingIndex !== null && (
+        <ViewCompetitionAndClubPopup
+          open={showViewPopup}
+          onClose={handleCloseView}
+          data={clubsList[viewingIndex]}
+        />
+      )}
     </>
+  );
+}
+
+// View-only popup component
+function ViewCompetitionAndClubPopup({
+  open,
+  onClose,
+  data,
+}: {
+  open: boolean;
+  onClose: () => void;
+  data: CompetitionAndClub;
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="relative z-10 w-full max-w-2xl bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">
+            Competition and Club Details
+          </h2>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          >
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
+        </div>
+
+        <div className="px-6 py-6 space-y-4">
+          {data.clubOrTravelTeamName && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Club or Travel Team Name
+              </label>
+              <p className="text-gray-900">{data.clubOrTravelTeamName}</p>
+            </div>
+          )}
+
+          {data.teamLevel && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Team Level
+              </label>
+              <p className="text-gray-900">{data.teamLevel}</p>
+            </div>
+          )}
+
+          {data.leagueOrOrganizationName && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                League/Organization Name
+              </label>
+              <p className="text-gray-900">{data.leagueOrOrganizationName}</p>
+            </div>
+          )}
+
+          {data.tournamentParticipation && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Tournament Participation
+              </label>
+              <p className="text-gray-900">{data.tournamentParticipation}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 px-6 py-4 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-6 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-[#b78322] transition-colors font-semibold"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

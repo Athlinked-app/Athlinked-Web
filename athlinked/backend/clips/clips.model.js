@@ -183,9 +183,13 @@ async function getClipComments(clipId) {
       cc.parent_comment_id,
       cc.created_at,
       COALESCE(u.full_name, 'User') as username,
-      u.email
+      u.email,
+      u.profile_url as user_profile_url,
+      COALESCE(parent_u.full_name, 'User') as parent_username
     FROM clip_comments cc
     LEFT JOIN users u ON cc.user_id = u.id
+    LEFT JOIN clip_comments parent_cc ON cc.parent_comment_id = parent_cc.id
+    LEFT JOIN users parent_u ON parent_cc.user_id = parent_u.id
     WHERE cc.clip_id = $1
     ORDER BY cc.created_at ASC
   `;

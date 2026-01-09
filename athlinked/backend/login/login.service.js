@@ -1,6 +1,8 @@
 const loginModel = require('./login.model');
 const { comparePassword } = require('../utils/hash');
 const refreshTokensService = require('../auth/refresh-tokens.service');
+const deletedAccountsModel = require('../signup/deleted-accounts.model');
+const { getOldPassword } = require('../forgot-password/old-password.store');
 
 /**
  * Check if string is an email
@@ -33,7 +35,15 @@ async function loginService(emailOrUsername, password, req = null) {
       user = await loginModel.findByUsername(normalizedInput);
     }
 
+    // If user not found, check if account was recently deleted
     if (!user) {
+      const deletedAccount = await deletedAccountsModel.findRecentlyDeletedAccount(normalizedInput);
+      
+      if (deletedAccount) {
+        // Account was recently deleted - return special error
+        throw new Error('ACCOUNT_DELETED_RECENTLY');
+      }
+      
       throw new Error('Invalid email/username or password');
     }
 
@@ -41,7 +51,20 @@ async function loginService(emailOrUsername, password, req = null) {
     const isPasswordValid = await comparePassword(password, user.password);
 
     if (!isPasswordValid) {
-      throw new Error('Invalid email/username or password');
+      // Check if the provided password matches the old password hash
+      const oldPasswordData = getOldPassword(user.id);
+      let isOldPassword = false;
+      
+      if (oldPasswordData) {
+        isOldPassword = await comparePassword(password, oldPasswordData.oldPasswordHash);
+      }
+      
+      // Create error with flag indicating if old password was used
+      const error = new Error('Invalid email/username or password');
+      if (isOldPassword) {
+        error.passwordChangedRecently = true;
+      }
+      throw error;
     }
 
     // Return user data without password
