@@ -805,7 +805,11 @@ export default function EditProfileModal({
                     </button>
                     <button
                       onClick={() => {
-                        router.push(`/messages?userId=${viewedUserId}`);
+                        if (connectionRequestStatus?.status === 'connected') {
+                          router.push(`/messages?userId=${viewedUserId}`);
+                        } else {
+                          alert('Please connect with them to message');
+                        }
                       }}
                       className="px-3 sm:px-2 md:px-4 py-2 sm:py-2.5 md:py-2 lg:py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm md:text-base"
                     >
