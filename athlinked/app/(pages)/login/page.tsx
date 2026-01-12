@@ -15,7 +15,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [showDeletedAccountToast, setShowDeletedAccountToast] = useState(false);
-  const [showPasswordChangedToast, setShowPasswordChangedToast] = useState(false);
+  const [showPasswordChangedToast, setShowPasswordChangedToast] =
+    useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   // Redirect if already authenticated (unless just logged out)
@@ -38,7 +39,7 @@ export default function LoginPage() {
     if (!password) {
       return 'Password is required';
     }
-    
+
     if (password.length < 8) {
       return 'Password must be at least 8 characters';
     }
@@ -49,7 +50,9 @@ export default function LoginPage() {
     const hasUpperCase = /[A-Z]/.test(password);
     const hasLowerCase = /[a-z]/.test(password);
     const hasNumber = /[0-9]/.test(password);
-    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(
+      password
+    );
 
     const missingRequirements = [];
     if (!hasUpperCase) missingRequirements.push('1 uppercase letter');
@@ -78,34 +81,34 @@ export default function LoginPage() {
     setError('');
     setShowPasswordChangedToast(false); // Reset toast state
     setShowDeletedAccountToast(false); // Reset deleted account toast
-    
+
     // Validate password before submitting
     const passwordValidationError = validatePassword(password);
     if (passwordValidationError) {
       setPasswordError(passwordValidationError);
       return;
     }
-    
+
     setLoading(true);
 
     try {
-      const response = await fetch(
-        'https://qd9ngjg1-3001.inc1.devtunnels.ms/api/login',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ email: identifier, password }), // Backend still expects 'email' field
-        }
-      );
+      const response = await fetch('https://http://localhost:3001/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: identifier, password }), // Backend still expects 'email' field
+      });
 
       const data = await response.json();
       console.log('Login response:', data); // Debug log
 
       if (!data.success) {
         // Check if account was recently deleted
-        if (data.message === 'ACCOUNT_DELETED_RECENTLY' || data.error?.includes('deleted recently')) {
+        if (
+          data.message === 'ACCOUNT_DELETED_RECENTLY' ||
+          data.error?.includes('deleted recently')
+        ) {
           setShowDeletedAccountToast(true);
           setLoading(false);
           // Auto-hide toast after 5 seconds
@@ -116,14 +119,17 @@ export default function LoginPage() {
         }
 
         // Check if password was changed recently (show toast in addition to error message)
-        console.log('passwordChangedRecently flag:', data.passwordChangedRecently); // Debug log
-        
+        console.log(
+          'passwordChangedRecently flag:',
+          data.passwordChangedRecently
+        ); // Debug log
+
         // Always show the error message
         setError(
           data.message || 'Login failed. Please check your credentials.'
         );
         setLoading(false);
-        
+
         // Show toast if password was changed recently
         if (data.passwordChangedRecently === true) {
           console.log('Setting password changed toast to true');
@@ -318,7 +324,10 @@ export default function LoginPage() {
 
       {/* Deleted Account Toast */}
       {showDeletedAccountToast && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999]" style={{ animation: 'fadeIn 0.3s ease-in' }}>
+        <div
+          className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999]"
+          style={{ animation: 'fadeIn 0.3s ease-in' }}
+        >
           <div className="bg-red-50 border border-red-200 rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 min-w-[300px] max-w-md">
             <div className="flex-shrink-0">
               <svg
@@ -336,7 +345,8 @@ export default function LoginPage() {
               </svg>
             </div>
             <p className="text-sm font-medium text-red-800 flex-1">
-              This account was deleted recently. Please create a new account to continue.
+              This account was deleted recently. Please create a new account to
+              continue.
             </p>
             <button
               onClick={() => setShowDeletedAccountToast(false)}
@@ -362,7 +372,10 @@ export default function LoginPage() {
 
       {/* Password Changed Recently Toast */}
       {showPasswordChangedToast && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999]" style={{ animation: 'fadeIn 0.3s ease-in' }}>
+        <div
+          className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[9999]"
+          style={{ animation: 'fadeIn 0.3s ease-in' }}
+        >
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg shadow-lg px-4 py-3 flex items-center gap-3 min-w-[300px] max-w-md">
             <div className="flex-shrink-0">
               <svg
@@ -380,7 +393,8 @@ export default function LoginPage() {
               </svg>
             </div>
             <p className="text-sm font-medium text-yellow-800 flex-1">
-              Your password was changed recently. Please use your new password to login.
+              Your password was changed recently. Please use your new password
+              to login.
             </p>
             <button
               onClick={() => setShowPasswordChangedToast(false)}

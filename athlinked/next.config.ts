@@ -22,7 +22,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'qd9ngjg1-3001.inc1.devtunnels.ms',
+        hostname: 'http://localhost:3001',
         pathname: '/**',
       },
       {
@@ -38,7 +38,7 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'qd9ngjg1-3001.inc1.devtunnels.ms',
+        hostname: 'http://localhost:3001',
         port: '',
         pathname: '/**',
       },
