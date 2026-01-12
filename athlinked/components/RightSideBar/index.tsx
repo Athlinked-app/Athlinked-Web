@@ -9,6 +9,8 @@ interface Person {
   role: string;
   avatar: string | null;
   isFollowing: boolean;
+  dob?: string; // Date of birth for age sorting
+  created_at?: string; // For newest/oldest sorting
 }
 
 interface SearchResult {
@@ -17,13 +19,18 @@ interface SearchResult {
   role: string;
   avatar: string | null;
   isFollowing: boolean;
+  dob?: string;
+  created_at?: string;
 }
 
 interface RightSideBarProps {
   searchResults?: SearchResult[];
+  sortBy?: string;
+  searchType?: string;
+  collegeSchool?: string;
 }
 
-export default function RightSideBar({ searchResults }: RightSideBarProps) {
+export default function RightSideBar({ searchResults, sortBy = '', searchType = '', collegeSchool = '' }: RightSideBarProps) {
   const router = useRouter();
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,10 +55,60 @@ export default function RightSideBar({ searchResults }: RightSideBarProps) {
     return profileUrl;
   };
 
+  // Calculate age from date of birth
+  const calculateAge = (dob: string): number => {
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  // Sort people based on sortBy parameter
+  const sortPeople = (peopleList: Person[], sortOption: string): Person[] => {
+    const sorted = [...peopleList];
+
+    switch (sortOption) {
+      case 'name':
+        // A-Z by name
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+
+      case 'latest':
+        // Newest users (most recent created_at)
+        return sorted.sort((a, b) => {
+          if (!a.created_at || !b.created_at) return 0;
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+
+      case 'oldest':
+        // Oldest users (earliest created_at)
+        return sorted.sort((a, b) => {
+          if (!a.created_at || !b.created_at) return 0;
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        });
+
+      case 'youngest':
+        // Youngest by age (most recent DOB = lowest age)
+        return sorted.sort((a, b) => {
+          if (!a.dob || !b.dob) return 0;
+          const ageA = calculateAge(a.dob);
+          const ageB = calculateAge(b.dob);
+          return ageA - ageB; // Lower age first
+        });
+
+      default:
+        return sorted;
+    }
+  };
+
   useEffect(() => {
     // If search results are provided, use them instead of fetching default people
     if (searchResults && searchResults.length > 0) {
-      setPeople(searchResults);
+      const sortedResults = sortPeople(searchResults, sortBy);
+      setPeople(sortedResults);
       setLoading(false);
       return;
     }
@@ -90,10 +147,14 @@ export default function RightSideBar({ searchResults }: RightSideBarProps) {
         }
 
         const excludeParam = userId ? `&excludeUserId=${userId}` : '';
+        const sortParam = sortBy ? `&sortBy=${sortBy}` : '';
+        const searchTypeParam = searchType ? `&searchType=${searchType}` : '';
+        const collegeSchoolParam = collegeSchool ? `&collegeSchool=${encodeURIComponent(collegeSchool)}` : '';
         const data = await apiGet<{
           success: boolean;
           users?: any[];
-        }>(`/signup/users?limit=10${excludeParam}`);
+        }>(`/signup/users?limit=10${excludeParam}${sortParam}${searchTypeParam}${collegeSchoolParam}`);
+        
         if (data.success && data.users) {
           const transformedPeople: Person[] = await Promise.all(
             data.users.map(async (user: any) => {
@@ -125,10 +186,14 @@ export default function RightSideBar({ searchResults }: RightSideBarProps) {
                   : 'User',
                 avatar: getProfileUrl(user.profile_url),
                 isFollowing,
+                dob: user.dob,
+                created_at: user.created_at,
               };
             })
           );
-          setPeople(transformedPeople);
+          
+          const sortedPeople = sortPeople(transformedPeople, sortBy);
+          setPeople(sortedPeople);
         } else {
           setPeople([]);
         }
@@ -141,7 +206,7 @@ export default function RightSideBar({ searchResults }: RightSideBarProps) {
     };
 
     fetchData();
-  }, [searchResults]);
+  }, [searchResults, sortBy, searchType, collegeSchool]);
 
   const handleFollow = async (id: string, isCurrentlyFollowing: boolean) => {
     if (!currentUserId) {

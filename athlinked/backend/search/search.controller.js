@@ -72,8 +72,11 @@ async function getUserById(req, res) {
 async function getAllUsers(req, res) {
   try {
     const limit = parseInt(req.query.limit) || 100;
+    const sortBy = req.query.sortBy || '';
+    const searchType = req.query.searchType || '';
+    const collegeSchool = req.query.collegeSchool || '';
 
-    const result = await searchService.getAllUsersService(limit);
+    const result = await searchService.getAllUsersService(limit, sortBy, searchType, collegeSchool);
     return res.status(200).json(result);
   } catch (error) {
     console.error('Get all users controller error:', error);

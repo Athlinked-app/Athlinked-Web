@@ -69,14 +69,6 @@ async function searchUsers(filters) {
       paramIndex += 2;
     }
 
-    // Filter by gender - would need to add gender column to users table
-    // For now, commenting this out as gender is not in the current schema
-    // if (filters.gender && filters.gender.trim() !== '') {
-    //   query += ` AND LOWER(gender) = $${paramIndex}`;
-    //   queryParams.push(filters.gender.toLowerCase());
-    //   paramIndex++;
-    // }
-
     // Apply sorting
     if (filters.sortBy) {
       switch (filters.sortBy) {
@@ -88,6 +80,10 @@ async function searchUsers(filters) {
           break;
         case 'oldest':
           query += ` ORDER BY created_at ASC`;
+          break;
+        case 'youngest':
+          // Sort by youngest age (most recent DOB = lowest age, nulls last)
+          query += ` ORDER BY dob DESC NULLS LAST`;
           break;
         default:
           query += ` ORDER BY created_at DESC`;
@@ -142,33 +138,81 @@ async function getUserById(userId) {
 }
 
 /**
- * Get all users with optional limit
+ * Get all users with optional limit, sorting, user type and college/school filtering
  * @param {number} limit - Optional limit for results
+ * @param {string} sortBy - Optional sort parameter
+ * @param {string} searchType - Optional user type filter (athlete, coach, organization)
+ * @param {string} collegeSchool - Optional college/school filter
  * @returns {Promise<Array>} Array of users
  */
-async function getAllUsers(limit = 100) {
+async function getAllUsers(limit = 100, sortBy = '', searchType = '', collegeSchool = '') {
   try {
-    const query = `
-      SELECT 
-        id,
-        full_name,
-        username,
-        email,
-        user_type,
-        profile_url,
-        bio,
-        city,
-        education,
-        primary_sport,
-        sports_played,
-        dob,
-        created_at
-      FROM users
-      ORDER BY created_at DESC
-      LIMIT $1
+    let query = `
+      SELECT DISTINCT
+        u.id,
+        u.full_name,
+        u.username,
+        u.email,
+        u.user_type,
+        u.profile_url,
+        u.bio,
+        u.city,
+        u.education,
+        u.primary_sport,
+        u.sports_played,
+        u.dob,
+        u.created_at
+      FROM users u
     `;
 
-    const result = await pool.query(query, [limit]);
+    const queryParams = [];
+    let paramIndex = 1;
+
+    // Join with academic_backgrounds if college/school filter is provided
+    if (collegeSchool && collegeSchool.trim() !== '') {
+      query += `
+        INNER JOIN academic_backgrounds ab ON u.id = ab.user_id
+      `;
+    }
+
+    query += ` WHERE 1=1`;
+
+    // Filter by user type if provided
+    if (searchType && searchType.trim() !== '') {
+      query += ` AND LOWER(u.user_type) = $${paramIndex}`;
+      queryParams.push(searchType.toLowerCase());
+      paramIndex++;
+    }
+
+    // Filter by college/school if provided
+    if (collegeSchool && collegeSchool.trim() !== '') {
+      query += ` AND LOWER(ab.school) LIKE $${paramIndex}`;
+      queryParams.push(`%${collegeSchool.toLowerCase()}%`);
+      paramIndex++;
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case 'name':
+        query += ` ORDER BY u.full_name ASC`;
+        break;
+      case 'latest':
+        query += ` ORDER BY u.created_at DESC`;
+        break;
+      case 'oldest':
+        query += ` ORDER BY u.created_at ASC`;
+        break;
+      case 'youngest':
+        query += ` ORDER BY u.dob DESC NULLS LAST`;
+        break;
+      default:
+        query += ` ORDER BY u.created_at DESC`;
+    }
+
+    query += ` LIMIT $${paramIndex}`;
+    queryParams.push(limit);
+
+    const result = await pool.query(query, queryParams);
     return result.rows;
   } catch (error) {
     console.error('Error getting all users:', error);
