@@ -31,6 +31,40 @@ async function getUserProfile(userId) {
   }
 }
 
+async function getCurrentUserProfile(userId) {
+  const query = `
+    SELECT 
+      u.id,
+      u.email,
+      u.username,
+      u.full_name,
+      u.profile_url,
+      u.cover_url,
+      u.bio,
+      u.education,
+      u.city,
+      u.primary_sport,
+      u.sports_played,
+      u.dob,
+      u.user_type,
+      u.created_at,
+      u.updated_at
+    FROM users u
+    WHERE u.id = $1
+  `;
+
+  try {
+    const result = await pool.query(query, [userId]);
+    if (result.rows.length === 0) {
+      return null;
+    }
+    return result.rows[0];
+  } catch (error) {
+    console.error('Error fetching current user profile:', error);
+    throw error;
+  }
+}
+
 async function upsertUserProfile(userId, profileData) {
   const dbClient = await pool.connect();
   try {
@@ -178,4 +212,5 @@ module.exports = {
   getUserProfile,
   upsertUserProfile,
   updateProfileImages,
+  getCurrentUserProfile,
 };

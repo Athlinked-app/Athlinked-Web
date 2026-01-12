@@ -37,6 +37,38 @@ async function createResource(req, res) {
       });
     }
 
+    // Articles should not have file uploads - only links
+    if (resource_type === 'article' && req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Articles only accept links, not file uploads',
+      });
+    }
+
+    // Videos must have either a file upload or video_url
+    if (resource_type === 'video' && !req.file && !video_url) {
+      return res.status(400).json({
+        success: false,
+        message: 'Videos must have a video file upload',
+      });
+    }
+
+    // Templates must have either a file upload or file_url
+    if (resource_type === 'template' && !req.file && !file_url) {
+      return res.status(400).json({
+        success: false,
+        message: 'Templates must have a PDF file upload',
+      });
+    }
+
+    // Articles must have article_link
+    if (resource_type === 'article' && !article_link) {
+      return res.status(400).json({
+        success: false,
+        message: 'Articles must have a link',
+      });
+    }
+
     let finalFileUrl = file_url;
     let finalFileType = file_type;
     let finalFileSize = file_size;

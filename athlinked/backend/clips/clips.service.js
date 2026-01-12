@@ -244,4 +244,64 @@ module.exports = {
   replyToCommentService,
   getClipCommentsService,
   deleteClipService,
+  likeClipService,
+  unlikeClipService,
 };
+
+async function likeClipService(clipId, userId) {
+  const client = await pool.connect();
+  try {
+    const clip = await clipsModel.getClipById(clipId);
+    if (!clip) {
+      throw new Error('Clip not found');
+    }
+
+    await client.query('BEGIN');
+    try {
+      const likeResult = await clipsModel.likeClip(clipId, userId, client);
+      await client.query('COMMIT');
+      return {
+        success: true,
+        message: 'Clip liked successfully',
+        like_count: likeResult.like_count,
+      };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    }
+  } catch (error) {
+    console.error('Like clip service error:', error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}
+
+async function unlikeClipService(clipId, userId) {
+  const client = await pool.connect();
+  try {
+    const clip = await clipsModel.getClipById(clipId);
+    if (!clip) {
+      throw new Error('Clip not found');
+    }
+
+    await client.query('BEGIN');
+    try {
+      const unlikeResult = await clipsModel.unlikeClip(clipId, userId, client);
+      await client.query('COMMIT');
+      return {
+        success: true,
+        message: 'Clip unliked successfully',
+        like_count: unlikeResult.like_count,
+      };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    }
+  } catch (error) {
+    console.error('Unlike clip service error:', error);
+    throw error;
+  } finally {
+    client.release();
+  }
+}

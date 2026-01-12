@@ -95,7 +95,7 @@ export default function StatsPage() {
   const getProfileUrl = (profileUrl?: string | null): string | undefined => {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
-    if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
+    if (!profileUrl.startsWith('/assets')) {
       return `http://localhost:3001${profileUrl}`;
     }
     return profileUrl;
