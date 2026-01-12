@@ -258,4 +258,52 @@ module.exports = {
   replyToComment,
   getClipComments,
   deleteClip,
+  likeClip,
+  unlikeClip,
 };
+
+/**
+ * Controller to handle like clip request
+ */
+async function likeClip(req, res) {
+  try {
+    const { clipId } = req.params;
+    const user_id = req.user?.id;
+
+    if (!user_id) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+
+    const result = await clipsService.likeClipService(clipId, user_id);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Like clip error:', error);
+    if (error.message === 'Clip not found') {
+      return res.status(404).json({ success: false, message: error.message });
+    }
+    return res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+  }
+}
+
+/**
+ * Controller to handle unlike clip request
+ */
+async function unlikeClip(req, res) {
+  try {
+    const { clipId } = req.params;
+    const user_id = req.user?.id;
+
+    if (!user_id) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+
+    const result = await clipsService.unlikeClipService(clipId, user_id);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Unlike clip error:', error);
+    if (error.message === 'Clip not found') {
+      return res.status(404).json({ success: false, message: error.message });
+    }
+    return res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+  }
+}
