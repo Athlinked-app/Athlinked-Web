@@ -444,23 +444,63 @@ export default function ClipsPage() {
     setShowDeleteMenu({});
   };
 
-  const handleLike = (reelId: string) => {
+  const handleLike = async (reelId: string) => {
+    // Optimistic update
+    const wasLiked = !!likedReels[reelId];
     setReels(prev =>
       prev.map(reel => {
         if (reel.id === reelId) {
-          const isLiked = likedReels[reelId];
           return {
             ...reel,
-            likes: isLiked ? reel.likes - 1 : reel.likes + 1,
+            likes: wasLiked ? reel.likes - 1 : reel.likes + 1,
           };
         }
         return reel;
       })
     );
-    setLikedReels(prev => ({
-      ...prev,
-      [reelId]: !prev[reelId],
-    }));
+    setLikedReels(prev => ({ ...prev, [reelId]: !prev[reelId] }));
+
+    try {
+      const { apiPost } = await import('@/utils/api');
+      const endpoint = wasLiked ? `/clips/${reelId}/unlike` : `/clips/${reelId}/like`;
+      const result = await apiPost(endpoint, {});
+
+      if (!result.success) {
+        // revert
+        setReels(prev =>
+          prev.map(reel => {
+            if (reel.id === reelId) {
+              return {
+                ...reel,
+                likes: wasLiked ? reel.likes + 1 : reel.likes - 1,
+              };
+            }
+            return reel;
+          })
+        );
+        setLikedReels(prev => ({ ...prev, [reelId]: wasLiked }));
+        alert(result.message || 'Failed to update like status');
+      } else if (result.like_count !== undefined) {
+        // sync server count
+        setReels(prev => prev.map(r => (r.id === reelId ? { ...r, likes: result.like_count } : r)));
+      }
+    } catch (error) {
+      console.error('Error liking/unliking clip:', error);
+      // revert optimistic update
+      setReels(prev =>
+        prev.map(reel => {
+          if (reel.id === reelId) {
+            return {
+              ...reel,
+              likes: wasLiked ? reel.likes + 1 : reel.likes - 1,
+            };
+          }
+          return reel;
+        })
+      );
+      setLikedReels(prev => ({ ...prev, [reelId]: wasLiked }));
+      alert('Failed to update like. Please try again.');
+    }
   };
 
   const handleShare = (reelId: string) => {
@@ -1128,7 +1168,7 @@ export default function ClipsPage() {
                         style={{ pointerEvents: 'auto' }}
                       >
                         <button
-                          onClick={() => handleLike(reel.id)}
+                          onClick={(e) => { e.stopPropagation(); handleLike(reel.id); }}
                           className="flex flex-col items-center gap-0.5 sm:gap-1 text-white hover:scale-110 transition-transform"
                         >
                           <Heart

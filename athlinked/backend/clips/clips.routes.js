@@ -294,4 +294,10 @@ router.post(
  */
 router.delete('/:clipId', authenticateToken, clipsController.deleteClip);
 
+/**
+ * Like / Unlike endpoints for clips
+ */
+router.post('/:clipId/like', authenticateToken, clipsController.likeClip);
+router.post('/:clipId/unlike', authenticateToken, clipsController.unlikeClip);
+
 module.exports = router;
