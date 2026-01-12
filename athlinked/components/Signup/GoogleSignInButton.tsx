@@ -23,6 +23,7 @@ export default function GoogleSignInButton({
     onSuccess: async tokenResponse => {
       setIsLoading(true);
       try {
+        // Fetch user info from Google
         const userInfoResponse = await fetch(
           'https://www.googleapis.com/oauth2/v3/userinfo',
           {
@@ -34,29 +35,19 @@ export default function GoogleSignInButton({
 
         const userInfo = await userInfoResponse.json();
 
-        const response = await fetch('http://localhost:3001/api/auth/google', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            google_id: userInfo.sub,
-            email: userInfo.email,
-            full_name: userInfo.name,
-            profile_picture: userInfo.picture,
-            email_verified: userInfo.email_verified,
-            access_token: tokenResponse.access_token,
-          }),
-        });
+        // 🔥 NEW: Just return Google data WITHOUT calling backend
+        // We'll create the user later when they complete all steps
+        const googleData = {
+          success: true,
+          needs_user_type: true,
+          google_id: userInfo.sub,
+          email: userInfo.email,
+          full_name: userInfo.name,
+          profile_picture: userInfo.picture,
+          email_verified: userInfo.email_verified,
+        };
 
-        const data = await response.json();
-
-        if (data.success) {
-          onSuccess(data);
-        } else {
-          onError?.(data);
-          alert(data.message || 'Failed to sign in with Google');
-        }
+        onSuccess(googleData);
       } catch (error) {
         console.error('Google sign-in error:', error);
         onError?.(error);

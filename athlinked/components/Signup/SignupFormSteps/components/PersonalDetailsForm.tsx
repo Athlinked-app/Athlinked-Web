@@ -33,7 +33,7 @@ export default function PersonalDetailsForm({
   showPassword,
   showConfirmPassword,
   isLoadingOTP = false,
-  isGoogleUser: propIsGoogleUser,
+  isGoogleUser = false, 
   onFormDataChange,
   onContinue,
   onTogglePassword,
@@ -52,10 +52,6 @@ export default function PersonalDetailsForm({
   const [showSportsDropdown, setShowSportsDropdown] = useState(false);
   const sportsDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Check if user is signing up with Google - use prop if provided, otherwise check localStorage
-  const [isGoogleUserState, setIsGoogleUserState] = useState(false);
-  const isGoogleUser = propIsGoogleUser ?? isGoogleUserState;
-
   // Validation error states
   const [errors, setErrors] = useState({
     fullName: '',
@@ -67,12 +63,6 @@ export default function PersonalDetailsForm({
   useEffect(() => {
     if (selectedUserType === 'athlete') {
       fetchSports();
-    }
-
-    // Check if this is a Google user (only if prop not provided)
-    if (propIsGoogleUser === undefined) {
-      const googleData = localStorage.getItem('google_temp_data');
-      setIsGoogleUserState(!!googleData);
     }
   }, [selectedUserType]);
 
@@ -217,7 +207,11 @@ export default function PersonalDetailsForm({
 
     // Check age range (12-21) - only for athlete user type
     // Skip age validation for coach, parent, and organization
-    if (selectedUserType !== 'coach' && selectedUserType !== 'parent' && selectedUserType !== 'organization') {
+    if (
+      selectedUserType !== 'coach' &&
+      selectedUserType !== 'parent' &&
+      selectedUserType !== 'organization'
+    ) {
       if (age < 12) {
         return 'Age must be at least 12 years';
       }
@@ -340,7 +334,8 @@ export default function PersonalDetailsForm({
 
   // Validate all fields before continuing
   const handleContinueClick = () => {
-    const nameError = validateName(formData.fullName);
+    // Only validate name if not a Google user
+    const nameError = isGoogleUser ? '' : validateName(formData.fullName);
     const dobError = validateDOB(formData.dateOfBirth);
 
     // Only validate passwords for non-Google users
@@ -368,28 +363,30 @@ export default function PersonalDetailsForm({
   return (
     <>
       <div className="space-y-4 mb-6">
-        {/* Full Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Full Name
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={formData.fullName}
-              onChange={e => handleNameChange(e.target.value)}
-              className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
-                errors.fullName
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300'
-              }`}
-            />
-            <User className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        {/* Full Name - HIDE for Google users */}
+        {!isGoogleUser && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Full Name
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={formData.fullName}
+                onChange={e => handleNameChange(e.target.value)}
+                className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
+                  errors.fullName
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300'
+                }`}
+              />
+              <User className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            </div>
+            {errors.fullName && (
+              <p className="mt-1 text-xs text-red-600">{errors.fullName}</p>
+            )}
           </div>
-          {errors.fullName && (
-            <p className="mt-1 text-xs text-red-600">{errors.fullName}</p>
-          )}
-        </div>
+        )}
 
         {/* Date of Birth */}
         <div>
@@ -577,37 +574,33 @@ export default function PersonalDetailsForm({
           </>
         )}
 
-        {/* Email - Show for all users, read-only for Google users */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            {isGoogleUser ? 'Email' : 'Email/Username'}
-          </label>
-          <div className="relative">
-            <input
-              type="text"
-              value={formData.email}
-              onChange={e =>
-                onFormDataChange({ ...formData, email: e.target.value })
-              }
-              disabled={isGoogleUser}
-              className={`w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
-                isGoogleUser ? 'bg-gray-50 cursor-not-allowed' : ''
-              }`}
-              placeholder={
-                isGoogleUser ? '' : 'Enter email or username (min 6 characters)'
-              }
-            />
-            <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        {/* Email - HIDE for Google users */}
+        {!isGoogleUser && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Email/Username
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                value={formData.email}
+                onChange={e =>
+                  onFormDataChange({ ...formData, email: e.target.value })
+                }
+                className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
+                placeholder="Enter email or username (min 6 characters)"
+              />
+              <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            </div>
+            {formData.email &&
+              !formData.email.includes('@') &&
+              formData.email.length < 6 && (
+                <p className="mt-1 text-xs text-red-600">
+                  Username must be at least 6 characters
+                </p>
+              )}
           </div>
-          {!isGoogleUser &&
-            formData.email &&
-            !formData.email.includes('@') &&
-            formData.email.length < 6 && (
-              <p className="mt-1 text-xs text-red-600">
-                Username must be at least 6 characters
-              </p>
-            )}
-        </div>
+        )}
 
         {/* Password fields - Only show for non-Google users */}
         {!isGoogleUser && (

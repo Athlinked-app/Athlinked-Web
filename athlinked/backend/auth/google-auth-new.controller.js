@@ -7,8 +7,14 @@ class GoogleAuthController {
     console.log('=== NEW GOOGLE SIGN IN CALLED ===');
 
     try {
-      const { google_id, email, full_name, profile_picture, email_verified } =
-        req.body;
+      const {
+        google_id,
+        email,
+        full_name,
+        profile_picture,
+        email_verified,
+        flow,
+      } = req.body;
 
       if (!google_id || !email) {
         return res.status(400).json({
@@ -21,6 +27,16 @@ class GoogleAuthController {
 
       if (user) {
         if (!user.user_type) {
+          // User exists but no user_type set
+          if (flow === 'login') {
+            // LOGIN: User exists but incomplete profile
+            return res.json({
+              success: false,
+              message:
+                'Your account setup is incomplete. Please complete signup first.',
+            });
+          }
+          // SIGNUP: Continue with signup flow
           return res.json({
             success: true,
             needs_user_type: true,
@@ -31,7 +47,7 @@ class GoogleAuthController {
           });
         }
 
-        // Generate token pair
+        // User exists with complete profile - log them in
         const { accessToken, refreshToken } =
           await refreshTokensService.createTokenPair(
             {
@@ -47,7 +63,7 @@ class GoogleAuthController {
         return res.json({
           success: true,
           needs_user_type: false,
-          token: accessToken, // For backward compatibility
+          token: accessToken,
           accessToken,
           refreshToken,
           user: {
@@ -61,6 +77,7 @@ class GoogleAuthController {
         });
       }
 
+      // User not found by google_id, check by email
       const existingUser = await googleAuthService.findUserByEmail(email);
 
       if (existingUser) {
@@ -71,6 +88,13 @@ class GoogleAuthController {
         );
 
         if (!user.user_type) {
+          if (flow === 'login') {
+            return res.json({
+              success: false,
+              message:
+                'Your account setup is incomplete. Please complete signup first.',
+            });
+          }
           return res.json({
             success: true,
             needs_user_type: true,
@@ -81,7 +105,6 @@ class GoogleAuthController {
           });
         }
 
-        // Generate token pair
         const { accessToken, refreshToken } =
           await refreshTokensService.createTokenPair(
             {
@@ -97,7 +120,7 @@ class GoogleAuthController {
         return res.json({
           success: true,
           needs_user_type: false,
-          token: accessToken, // For backward compatibility
+          token: accessToken,
           accessToken,
           refreshToken,
           user: {
@@ -111,6 +134,17 @@ class GoogleAuthController {
         });
       }
 
+      // 🔥 NEW: User doesn't exist at all
+      if (flow === 'login') {
+        // LOGIN: Don't create, just return error
+        return res.json({
+          success: false,
+          message:
+            'No account found with this Google account. Please sign up first.',
+        });
+      }
+
+      // SIGNUP: Create new user
       user = await googleAuthService.createGoogleUser(
         google_id,
         email,
@@ -136,6 +170,7 @@ class GoogleAuthController {
       });
     }
   }
+  yyyy;
 
   async completeGoogleSignup(req, res) {
     console.log('=== COMPLETE GOOGLE SIGNUP (User Type) CALLED ===');
@@ -183,6 +218,156 @@ class GoogleAuthController {
       });
     } catch (error) {
       console.error('Complete Google signup error:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to complete Google signup',
+        error: error.message,
+      });
+    }
+  }
+
+  /**
+   * Complete Google signup in ONE step (create user with all data at once)
+   */
+  async completeGoogleSignupFull(req, res) {
+    console.log('=== COMPLETE GOOGLE SIGNUP FULL (ONE STEP) ===');
+    console.log('Request body:', req.body);
+
+    try {
+      const {
+        google_id,
+        email,
+        full_name,
+        profile_picture,
+        email_verified,
+        user_type,
+        dob,
+        sports_played,
+        primary_sport,
+        company_name,
+        designation,
+        parent_name,
+        parent_email,
+        parent_dob,
+      } = req.body;
+
+      if (!google_id || !email || !user_type) {
+        return res.status(400).json({
+          success: false,
+          message: 'Google ID, email, and user type are required',
+        });
+      }
+
+      // Check if user already exists
+      let user = await googleAuthService.findUserByGoogleId(google_id);
+
+      if (user) {
+        return res.status(400).json({
+          success: false,
+          message: 'User already exists with this Google account',
+        });
+      }
+
+      // Check if email is already used
+      const existingEmailUser = await googleAuthService.findUserByEmail(email);
+      if (existingEmailUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'Email is already registered',
+        });
+      }
+
+      // Create user with ALL data at once
+      user = await googleAuthService.createGoogleUser(
+        google_id,
+        email,
+        full_name,
+        profile_picture,
+        email_verified
+      );
+
+      // Update with user type and profile data
+      await googleAuthService.updateUserType(google_id, user_type);
+
+      const updateData = {
+        dob: dob || null,
+      };
+
+      if (user_type === 'athlete') {
+        updateData.sports_played = sports_played || null;
+        updateData.primary_sport = primary_sport || null;
+        updateData.parent_name = parent_name || null;
+        updateData.parent_email = parent_email || null;
+        updateData.parent_dob = parent_dob || null;
+      } else if (user_type === 'coach') {
+        updateData.sports_played = sports_played || null;
+        updateData.primary_sport = primary_sport || null;
+      } else if (user_type === 'organization') {
+        updateData.company_name = company_name || null;
+        updateData.designation = designation || null;
+      }
+
+      const updatedUser = await googleAuthService.updateUserProfile(
+        google_id,
+        updateData
+      );
+
+      // Send parent signup link for athletes
+      if (updatedUser.user_type === 'athlete' && updatedUser.parent_email) {
+        try {
+          const { sendParentSignupLink } = require('../utils/email');
+          const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+          const signupLink = updatedUser.email
+            ? `${baseUrl}/parent-signup?email=${encodeURIComponent(updatedUser.email)}`
+            : `${baseUrl}/parent-signup?username=${encodeURIComponent(updatedUser.username || '')}`;
+
+          console.log(
+            `📧 Sending parent signup link to: ${updatedUser.parent_email}`
+          );
+          await sendParentSignupLink(
+            updatedUser.parent_email,
+            updatedUser.username || updatedUser.email || updatedUser.full_name,
+            signupLink
+          );
+          console.log('✅ Parent signup link sent successfully');
+        } catch (emailError) {
+          console.error('❌ Error sending parent signup link:', emailError);
+        }
+      }
+
+      // Generate tokens
+      const { accessToken, refreshToken } =
+        await refreshTokensService.createTokenPair(
+          {
+            id: updatedUser.id,
+            email: updatedUser.email,
+            username: updatedUser.username,
+            user_type: updatedUser.user_type,
+          },
+          req.headers['user-agent'],
+          req.ip
+        );
+
+      return res.json({
+        success: true,
+        token: accessToken,
+        accessToken,
+        refreshToken,
+        user: {
+          id: updatedUser.id,
+          email: updatedUser.email,
+          full_name: updatedUser.full_name,
+          user_type: updatedUser.user_type,
+          profile_picture: updatedUser.profile_picture,
+          google_id: updatedUser.google_id,
+          sports_played: updatedUser.sports_played,
+          primary_sport: updatedUser.primary_sport,
+          company_name: updatedUser.company_name,
+          designation: updatedUser.designation,
+        },
+      });
+    } catch (error) {
+      console.error('Complete Google signup full error:', error);
       return res.status(500).json({
         success: false,
         message: 'Failed to complete Google signup',

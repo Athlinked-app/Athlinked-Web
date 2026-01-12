@@ -47,14 +47,18 @@ function ForgotPasswordContent() {
       const data = await response.json();
 
       if (!data.success) {
-        setError(data.message || 'Failed to send reset link. Please try again.');
+        setError(
+          data.message || 'Failed to send reset link. Please try again.'
+        );
         setLoading(false);
         return;
       }
 
       // Show success message
       setError('');
-      alert('Password reset link has been sent to your email. Please check your inbox and click the link to reset your password.');
+      alert(
+        'Password reset link has been sent to your email. Please check your inbox and click the link to reset your password.'
+      );
       setLoading(false);
     } catch (error) {
       console.error('Error requesting reset link:', error);

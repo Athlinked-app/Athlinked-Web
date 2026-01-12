@@ -11,7 +11,8 @@ function walk(dir, cb) {
     const fp = path.join(dir, file);
     const stat = fs.statSync(fp);
     if (stat && stat.isDirectory()) {
-      if (file === 'node_modules' || file === '.next' || file === 'dist') return;
+      if (file === 'node_modules' || file === '.next' || file === 'dist')
+        return;
       walk(fp, cb);
     } else {
       cb(fp);
@@ -27,11 +28,13 @@ let changed = 0;
 walk(root, file => {
   if (!isCodeFile(file)) return;
   // skip config and script files
-  if (file.includes('eslint.config') || file.includes('prefix-unused-vars.js')) return;
+  if (file.includes('eslint.config') || file.includes('prefix-unused-vars.js'))
+    return;
   let src = fs.readFileSync(file, 'utf8');
 
   // find simple top-level const/let/var declarations: const name =
-  const declRegex = /(^|\n)\s*(const|let|var)\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*=\s/gm;
+  const declRegex =
+    /(^|\n)\s*(const|let|var)\s+([A-Za-z_$][A-Za-z0-9_$]*)\s*=\s/gm;
   let match;
   const toReplace = [];
   while ((match = declRegex.exec(src)) !== null) {
@@ -39,7 +42,8 @@ walk(root, file => {
     // ignore names that already start with _
     if (name.startsWith('_')) continue;
     // count occurrences
-    const occurrences = (src.match(new RegExp('\\b' + name + '\\b', 'g')) || []).length;
+    const occurrences = (src.match(new RegExp('\\b' + name + '\\b', 'g')) || [])
+      .length;
     if (occurrences === 1) {
       toReplace.push(name);
     }

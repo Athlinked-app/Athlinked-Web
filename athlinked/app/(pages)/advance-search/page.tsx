@@ -508,7 +508,12 @@ export default function SearchPage() {
 
         {hasActiveFilters && (
           <div className="hidden lg:flex">
-            <RightSideBar searchResults={searchResults} sortBy={sortBy} searchType={searchType} collegeSchool={collegeSchool} />
+            <RightSideBar
+              searchResults={searchResults}
+              sortBy={sortBy}
+              searchType={searchType}
+              collegeSchool={collegeSchool}
+            />
           </div>
         )}
       </main>

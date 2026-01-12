@@ -1,4 +1,3 @@
- 
 const signupModel = require('./signup.model');
 const { hashPassword } = require('../utils/hash');
 const { startOTPFlow, verifyOTP } = require('./otp.service');

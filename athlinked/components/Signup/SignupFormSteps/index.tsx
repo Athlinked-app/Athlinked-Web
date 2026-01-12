@@ -1,3 +1,100 @@
+// import UserTypeSelection from './components/UserTypeSelection';
+// import PersonalDetailsForm from './components/PersonalDetailsForm';
+// import ParentDetailsForm from './components/ParentDetailsForm';
+// import OTPVerification from './components/OTPVerification';
+
+// interface SignupFormStepsProps {
+//   currentStep: number;
+//   selectedUserType: string;
+//   formData: any;
+//   showPassword: boolean;
+//   showConfirmPassword: boolean;
+//   isLoadingOTP?: boolean;
+//   onFormDataChange: (data: any) => void;
+//   onUserTypeSelect: (type: string) => void;
+//   onContinue: () => void;
+//   onTogglePassword: () => void;
+//   isGoogleUser?: boolean; // ADD THIS
+//   onToggleConfirmPassword: () => void;
+//   onGoogleSignIn?: (userData: any) => void; // NEW - Added this prop
+// }
+
+// export default function SignupFormSteps({
+//   currentStep,
+//   selectedUserType,
+//   formData,
+//   showPassword,
+//   showConfirmPassword,
+//   isGoogleUser = false, // ADD THIS
+//   isLoadingOTP = false,
+//   onFormDataChange,
+//   onUserTypeSelect,
+//   onContinue,
+//   onTogglePassword,
+//   onToggleConfirmPassword,
+//   onGoogleSignIn, // NEW - Added this prop
+// }: SignupFormStepsProps) {
+//   // Step 0: Join as - User Type Selection
+//   if (currentStep === 0) {
+//     return (
+//       <UserTypeSelection
+//         selectedUserType={selectedUserType}
+//         onUserTypeSelect={onUserTypeSelect}
+//         onContinue={onContinue}
+//         onGoogleSignIn={onGoogleSignIn} // NEW - Pass it down
+//       />
+//     );
+//   }
+
+//   // Step 1: Personal Details
+//   if (selectedUserType && currentStep === 1) {
+//     return (
+//       <PersonalDetailsForm
+//         selectedUserType={selectedUserType}
+//         formData={formData}
+//         showPassword={showPassword}
+//         showConfirmPassword={showConfirmPassword}
+//         isLoadingOTP={isLoadingOTP}
+//         isGoogleUser={isGoogleUser} // PASS IT HERE
+//         onFormDataChange={onFormDataChange}
+//         onContinue={onContinue}
+//         onTogglePassword={onTogglePassword}
+//         onToggleConfirmPassword={onToggleConfirmPassword}
+//       />
+//     );
+//   }
+
+//   // Step 2: Parent Details (Only for Athlete)
+//   if (selectedUserType === 'athlete' && currentStep === 2) {
+//     return (
+//       <ParentDetailsForm
+//         formData={formData}
+//         onFormDataChange={onFormDataChange}
+//         isLoadingOTP={isLoadingOTP}
+//         onContinue={onContinue}
+//       />
+//     );
+//   }
+
+//   // OTP Verification (Last Step)
+//   if (
+//     selectedUserType &&
+//     ((selectedUserType === 'athlete' && currentStep === 3) ||
+//       (selectedUserType !== 'athlete' && currentStep === 2))
+//   ) {
+//     return (
+//       <OTPVerification
+//         formData={formData}
+//         onFormDataChange={onFormDataChange}
+//         selectedUserType={selectedUserType}
+//         onContinue={onContinue}
+//       />
+//     );
+//   }
+
+//   return null;
+// }
+
 import UserTypeSelection from './components/UserTypeSelection';
 import PersonalDetailsForm from './components/PersonalDetailsForm';
 import ParentDetailsForm from './components/ParentDetailsForm';
@@ -10,13 +107,13 @@ interface SignupFormStepsProps {
   showPassword: boolean;
   showConfirmPassword: boolean;
   isLoadingOTP?: boolean;
+  isGoogleUser?: boolean; // 🔥 ADD THIS
   onFormDataChange: (data: any) => void;
   onUserTypeSelect: (type: string) => void;
   onContinue: () => void;
   onTogglePassword: () => void;
-  isGoogleUser?: boolean; // ADD THIS
   onToggleConfirmPassword: () => void;
-  onGoogleSignIn?: (userData: any) => void; // NEW - Added this prop
+  onGoogleSignIn?: (userData: any) => void;
 }
 
 export default function SignupFormSteps({
@@ -25,14 +122,14 @@ export default function SignupFormSteps({
   formData,
   showPassword,
   showConfirmPassword,
-  isGoogleUser = false, // ADD THIS
   isLoadingOTP = false,
+  isGoogleUser = false, // 🔥 ADD THIS
   onFormDataChange,
   onUserTypeSelect,
   onContinue,
   onTogglePassword,
   onToggleConfirmPassword,
-  onGoogleSignIn, // NEW - Added this prop
+  onGoogleSignIn,
 }: SignupFormStepsProps) {
   // Step 0: Join as - User Type Selection
   if (currentStep === 0) {
@@ -41,7 +138,7 @@ export default function SignupFormSteps({
         selectedUserType={selectedUserType}
         onUserTypeSelect={onUserTypeSelect}
         onContinue={onContinue}
-        onGoogleSignIn={onGoogleSignIn} // NEW - Pass it down
+        onGoogleSignIn={onGoogleSignIn}
       />
     );
   }
@@ -55,7 +152,7 @@ export default function SignupFormSteps({
         showPassword={showPassword}
         showConfirmPassword={showConfirmPassword}
         isLoadingOTP={isLoadingOTP}
-        isGoogleUser={isGoogleUser} // PASS IT HERE
+        isGoogleUser={isGoogleUser} // 🔥 PASS IT HERE
         onFormDataChange={onFormDataChange}
         onContinue={onContinue}
         onTogglePassword={onTogglePassword}

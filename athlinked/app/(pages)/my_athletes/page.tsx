@@ -105,8 +105,6 @@ export default function MyAthletesPage() {
     fetchData();
   }, []);
 
-  
-
   const getInitials = (name: string) => {
     return name
       .split(' ')

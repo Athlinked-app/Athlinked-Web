@@ -73,4 +73,3 @@ module.exports = {
   deleteOldPassword,
   cleanExpiredOldPasswords,
 };
-

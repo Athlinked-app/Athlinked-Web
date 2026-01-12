@@ -192,7 +192,9 @@ export default function OTPVerification({
           setResendMessage('');
         }, 3000);
       } else {
-        setResendMessage(data.message || 'Failed to resend OTP. Please try again.');
+        setResendMessage(
+          data.message || 'Failed to resend OTP. Please try again.'
+        );
       }
     } catch (error) {
       console.error('Error resending OTP:', error);

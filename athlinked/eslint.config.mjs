@@ -20,7 +20,7 @@ const eslintConfig = defineConfig([
       'import/no-commonjs': 'off',
       '@typescript-eslint/no-require-imports': 'off',
       // Allow unused vars in backend scripts to reduce noise during migration
-      '@typescript-eslint/no-unused-vars': 'off'
+      '@typescript-eslint/no-unused-vars': 'off',
     },
   },
   // Relax some strict rules for the frontend to reduce widespread red errors
@@ -39,7 +39,7 @@ const eslintConfig = defineConfig([
       // Many existing effects reference local functions; disable exhaustive-deps warnings
       'react-hooks/exhaustive-deps': 'off',
       '@typescript-eslint/no-unsafe-function-type': 'off',
-      '@typescript-eslint/no-unsafe-assignment': 'off'
+      '@typescript-eslint/no-unsafe-assignment': 'off',
     },
   },
 ]);

@@ -1,7 +1,10 @@
 const forgotPasswordModel = require('./forgot-password.model');
 const { sendPasswordResetLink } = require('../utils/email');
 const { hashPassword } = require('../utils/hash');
-const { generatePasswordResetToken, verifyPasswordResetToken } = require('../utils/jwt');
+const {
+  generatePasswordResetToken,
+  verifyPasswordResetToken,
+} = require('../utils/jwt');
 const { storeOldPassword } = require('./old-password.store');
 
 /**
@@ -96,7 +99,7 @@ async function resetPasswordService(token, newPassword) {
 
     // Find user by ID from token
     let user;
-    
+
     if (decoded.email) {
       user = await forgotPasswordModel.findByEmail(decoded.email);
     } else if (decoded.username) {

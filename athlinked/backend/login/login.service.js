@@ -37,13 +37,14 @@ async function loginService(emailOrUsername, password, req = null) {
 
     // If user not found, check if account was recently deleted
     if (!user) {
-      const deletedAccount = await deletedAccountsModel.findRecentlyDeletedAccount(normalizedInput);
-      
+      const deletedAccount =
+        await deletedAccountsModel.findRecentlyDeletedAccount(normalizedInput);
+
       if (deletedAccount) {
         // Account was recently deleted - return special error
         throw new Error('ACCOUNT_DELETED_RECENTLY');
       }
-      
+
       throw new Error('Invalid email/username or password');
     }
 
@@ -54,11 +55,14 @@ async function loginService(emailOrUsername, password, req = null) {
       // Check if the provided password matches the old password hash
       const oldPasswordData = getOldPassword(user.id);
       let isOldPassword = false;
-      
+
       if (oldPasswordData) {
-        isOldPassword = await comparePassword(password, oldPasswordData.oldPasswordHash);
+        isOldPassword = await comparePassword(
+          password,
+          oldPasswordData.oldPasswordHash
+        );
       }
-      
+
       // Create error with flag indicating if old password was used
       const error = new Error('Invalid email/username or password');
       if (isOldPassword) {

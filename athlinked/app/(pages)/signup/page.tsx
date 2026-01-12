@@ -23,6 +23,12 @@ export default function SignupPage() {
     }
   }, [router]);
 
+  //  Clear stale Google data on page load
+  useEffect(() => {
+    // Clear any leftover Google signup data from previous sessions
+    localStorage.removeItem('google_temp_data');
+  }, []);
+
   // Form data
   const [formData, setFormData] = useState({
     fullName: '',
@@ -60,12 +66,7 @@ export default function SignupPage() {
 
   // For Google signup
   const googleSteps = ['Join as', 'Personal Details'];
-  const googleAthleteSteps = [
-    'Join as',
-    'Personal Details',
-    'Parent Details',
-    'Verify Email',
-  ];
+  const googleAthleteSteps = ['Join as', 'Personal Details', 'Parent Details'];
 
   // Get current steps based on selection and auth method
   let currentSteps;
@@ -90,12 +91,15 @@ export default function SignupPage() {
       email: userData.user?.email || '',
     }));
 
-    // Store Google data temporarily (we'll use it later)
+    // Store Google data temporarily (we'll use it later to CREATE user in database)
     localStorage.setItem(
       'google_temp_data',
       JSON.stringify({
         google_id: userData.user?.google_id,
+        email: userData.user?.email,
+        full_name: userData.user?.full_name,
         profile_picture: userData.user?.profile_picture,
+        email_verified: userData.user?.email_verified,
         user_type: userData.user?.user_type,
       })
     );
@@ -112,36 +116,38 @@ export default function SignupPage() {
     const googleDataStr = localStorage.getItem('google_temp_data');
     const isGoogleUser = !!googleDataStr;
 
-    // Determine OTP step based on user type
-    const _otpStep = selectedUserType === 'athlete' ? 3 : 2;
+    // 🔥 NEW: For Google users, only create in database on LAST step
+    if (isGoogleUser) {
+      // For coach/org: Last step is Personal Details (step 1)
+      // For athlete: Last step is Parent Details (step 2)
+      const isLastStep =
+        (selectedUserType !== 'athlete' && currentStep === 1) ||
+        (selectedUserType === 'athlete' && currentStep === 2);
 
-    // If on Personal Details step and is Google user
-    if (currentStep === 1 && isGoogleUser) {
-      // For athletes, move to parent details step (step 2)
-      if (selectedUserType === 'athlete') {
-        // Just advance to parent details, don't call API yet
+      if (!isLastStep) {
+        // Not last step, just move forward
         if (currentStep < currentSteps.length - 1) {
           setCurrentStep(currentStep + 1);
         }
         return;
       }
 
-      // For coach/organization, complete profile immediately
+      // LAST STEP: Create user in database with ALL data
       const googleData = JSON.parse(googleDataStr);
-      const { google_id, user_type } = googleData;
 
       try {
         const profileData: any = {
-          google_id,
-          dob: formData.dateOfBirth, // Add DOB field
+          google_id: googleData.google_id,
+          email: googleData.email,
+          full_name: googleData.full_name,
+          profile_picture: googleData.profile_picture,
+          email_verified: googleData.email_verified,
+          user_type: googleData.user_type,
+          dob: formData.dateOfBirth,
         };
 
-        // Add user-type specific data with validation
-        if (user_type === 'coach') {
-          // Coach doesn't need additional fields for now
-          // They can be added later if needed
-        } else if (user_type === 'athlete') {
-          // Validate athlete-specific fields
+        // Add user-type specific data
+        if (googleData.user_type === 'athlete') {
           if (!formData.sportsPlayed || !formData.primarySport) {
             alert('Please select sports played and primary sport');
             return;
@@ -151,8 +157,12 @@ export default function SignupPage() {
             .map(s => s.trim())
             .filter(Boolean);
           profileData.primary_sport = formData.primarySport;
-        } else if (user_type === 'organization') {
-          // Validate organization-specific fields
+          profileData.parent_name = formData.parentName;
+          profileData.parent_email = formData.parentEmail;
+          profileData.parent_dob = formData.parentDOB;
+        } else if (googleData.user_type === 'coach') {
+          // Coach doesn't need additional fields
+        } else if (googleData.user_type === 'organization') {
           if (!formData.companyName || !formData.designation) {
             alert('Please fill in company name and designation');
             return;
@@ -162,95 +172,7 @@ export default function SignupPage() {
         }
 
         const response = await fetch(
-          'http://localhost:3001/api/auth/google/complete-profile',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(profileData),
-          }
-        );
-
-        const data = await response.json();
-
-        if (data.success) {
-          // Store tokens with consistent naming
-          if (data.accessToken) {
-            localStorage.setItem('accessToken', data.accessToken);
-          } else if (data.token) {
-            localStorage.setItem('accessToken', data.token);
-          }
-
-          if (data.refreshToken) {
-            localStorage.setItem('refreshToken', data.refreshToken);
-          }
-
-          // Store user data
-          if (data.user) {
-            localStorage.setItem('user', JSON.stringify(data.user));
-            localStorage.setItem('userEmail', data.user.email);
-          }
-
-          // Clean up temporary Google data
-          localStorage.removeItem('google_temp_data');
-
-          // Redirect to home
-          router.push('/home');
-          return;
-        } else {
-          alert(data.message || 'Failed to complete profile');
-          return;
-        }
-      } catch (error) {
-        console.error('Error completing Google profile:', error);
-        alert('Failed to complete profile. Please try again.');
-        return;
-      }
-    }
-
-    // If on Parent Details step and is Google athlete
-    if (currentStep === 2 && isGoogleUser && selectedUserType === 'athlete') {
-      const googleData = JSON.parse(googleDataStr);
-      const { google_id } = googleData;
-
-      // Validate parent email is different from athlete's email
-      if (
-        formData.parentEmail &&
-        formData.email &&
-        formData.parentEmail.toLowerCase().trim() ===
-          formData.email.toLowerCase().trim()
-      ) {
-        alert(
-          'Parent email cannot be the same as your email. Please use a different email address.'
-        );
-        return;
-      }
-
-      // Validate required fields
-      if (
-        !formData.parentName ||
-        !formData.parentEmail ||
-        !formData.parentDOB
-      ) {
-        alert('Please fill in all parent details');
-        return;
-      }
-
-      try {
-        const profileData: any = {
-          google_id,
-          dob: formData.dateOfBirth,
-          sports_played: formData.sportsPlayed
-            .split(',')
-            .map(s => s.trim())
-            .filter(Boolean),
-          primary_sport: formData.primarySport,
-          parent_name: formData.parentName,
-          parent_email: formData.parentEmail,
-          parent_dob: formData.parentDOB,
-        };
-
-        const response = await fetch(
-          'http://localhost:3001/api/auth/google/complete-profile',
+          'http://localhost:3001/api/auth/google/complete-signup-full',
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -285,12 +207,12 @@ export default function SignupPage() {
           router.push('/home');
           return;
         } else {
-          alert(data.message || 'Failed to complete profile');
+          alert(data.message || 'Failed to complete signup');
           return;
         }
       } catch (error) {
-        console.error('Error completing Google athlete profile:', error);
-        alert('Failed to complete profile. Please try again.');
+        console.error('Error completing Google signup:', error);
+        alert('Failed to complete signup. Please try again.');
         return;
       }
     }
@@ -408,6 +330,7 @@ export default function SignupPage() {
             showPassword={showPassword}
             showConfirmPassword={showConfirmPassword}
             isLoadingOTP={isLoadingOTP}
+            isGoogleUser={isGoogleUser} // 🔥 PASS THIS
             onFormDataChange={setFormData}
             onUserTypeSelect={setSelectedUserType}
             onContinue={handleContinue}

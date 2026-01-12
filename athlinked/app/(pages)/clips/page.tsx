@@ -240,7 +240,6 @@ export default function ClipsPage() {
         fetchComments(selectedReelId);
       }
     }
-     
   }, [selectedReelId, reels.length]);
 
   // Enable audio on any page interaction (makes it feel automatic)

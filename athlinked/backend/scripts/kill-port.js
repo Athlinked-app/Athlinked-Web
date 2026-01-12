@@ -35,7 +35,9 @@ function run(cmd) {
       }
     }
   } catch (err) {
-    console.error(`Unable to query port ${port}. Make sure 'lsof' is installed.`);
+    console.error(
+      `Unable to query port ${port}. Make sure 'lsof' is installed.`
+    );
     console.error(err.message || err);
     process.exit(1);
   }
