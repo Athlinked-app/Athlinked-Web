@@ -649,7 +649,6 @@ function MessagesPageContent() {
     if (userIdFromUrl && currentUser?.id && conversations.length > 0) {
       handleUserIdFromUrl();
     }
-     
   }, [userIdFromUrl, currentUser?.id, conversations.length]);
 
   useEffect(() => {

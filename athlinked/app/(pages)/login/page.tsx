@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import SignupHero from '@/components/Signup/SignupHero';
 import { isAuthenticated } from '@/utils/auth';
+import GoogleSignInButton from '@/components/Signup/GoogleSignInButton';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -92,7 +93,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('https://http://localhost:3001/api/login', {
+      const response = await fetch('http://localhost:3001/api/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -175,6 +176,70 @@ export default function LoginPage() {
     }
   };
 
+  // 🔥 GOOGLE SIGN-IN HANDLER
+  const handleGoogleSignIn = async (userData: any) => {
+    console.log('Google sign-in data received:', userData);
+    setError('');
+    setShowPasswordChangedToast(false);
+    setShowDeletedAccountToast(false);
+
+    try {
+      const response = await fetch('http://localhost:3001/api/auth/google', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          google_id: userData.google_id,
+          email: userData.email,
+          full_name: userData.full_name,
+          profile_picture: userData.profile_picture,
+          email_verified: userData.email_verified,
+          flow: 'login',
+        }),
+      });
+
+      const data = await response.json();
+      console.log('Google login response:', data);
+
+      if (!data.success) {
+        setError(data.message || 'Failed to sign in with Google');
+        return;
+      }
+
+      if (data.needs_user_type) {
+        setError(
+          'No account found with this Google account. Please sign up first.'
+        );
+        return;
+      }
+
+      if (data.accessToken || data.token) {
+        if (data.accessToken) {
+          localStorage.setItem('accessToken', data.accessToken);
+        } else if (data.token) {
+          localStorage.setItem('accessToken', data.token);
+        }
+
+        if (data.refreshToken) {
+          localStorage.setItem('refreshToken', data.refreshToken);
+        }
+
+        if (data.user) {
+          localStorage.setItem('user', JSON.stringify(data.user));
+          localStorage.setItem('userEmail', data.user.email);
+        }
+
+        router.push('/home');
+        return;
+      }
+
+      setError('Failed to sign in with Google. Please try again.');
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      setError('Failed to connect to server. Please try again.');
+    }
+  };
   // Show loading state while checking authentication
   if (checkingAuth) {
     return (
@@ -223,6 +288,8 @@ export default function LoginPage() {
               <p className="text-sm text-red-600">{error}</p>
             </div>
           )}
+
+          {/* Google Sign-In Button */}
 
           {/* Login Form */}
           <form onSubmit={handleLogin} className="space-y-6">
@@ -297,6 +364,25 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          <div className="mb-6">
+            <GoogleSignInButton
+              onSuccess={handleGoogleSignIn}
+              buttonText="Sign in with Google"
+            />
+          </div>
+
           {/* Forgot Password Link */}
           <div className="mt-4 text-center">
             <a
@@ -310,7 +396,7 @@ export default function LoginPage() {
           {/* Sign Up Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-black">
-              Don't have an account?{' '}
+              Don&apos;t have an account?{' '}
               <a
                 href="/signup"
                 className="text-yellow-500 hover:text-yellow-600 font-semibold"

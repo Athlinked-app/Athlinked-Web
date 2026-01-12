@@ -30,7 +30,12 @@ interface RightSideBarProps {
   collegeSchool?: string;
 }
 
-export default function RightSideBar({ searchResults, sortBy = '', searchType = '', collegeSchool = '' }: RightSideBarProps) {
+export default function RightSideBar({
+  searchResults,
+  sortBy = '',
+  searchType = '',
+  collegeSchool = '',
+}: RightSideBarProps) {
   const router = useRouter();
   const [people, setPeople] = useState<Person[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,7 +66,10 @@ export default function RightSideBar({ searchResults, sortBy = '', searchType = 
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
       age--;
     }
     return age;
@@ -80,14 +88,18 @@ export default function RightSideBar({ searchResults, sortBy = '', searchType = 
         // Newest users (most recent created_at)
         return sorted.sort((a, b) => {
           if (!a.created_at || !b.created_at) return 0;
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+          return (
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
         });
 
       case 'oldest':
         // Oldest users (earliest created_at)
         return sorted.sort((a, b) => {
           if (!a.created_at || !b.created_at) return 0;
-          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          return (
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+          );
         });
 
       case 'youngest':
@@ -149,12 +161,16 @@ export default function RightSideBar({ searchResults, sortBy = '', searchType = 
         const excludeParam = userId ? `&excludeUserId=${userId}` : '';
         const sortParam = sortBy ? `&sortBy=${sortBy}` : '';
         const searchTypeParam = searchType ? `&searchType=${searchType}` : '';
-        const collegeSchoolParam = collegeSchool ? `&collegeSchool=${encodeURIComponent(collegeSchool)}` : '';
+        const collegeSchoolParam = collegeSchool
+          ? `&collegeSchool=${encodeURIComponent(collegeSchool)}`
+          : '';
         const data = await apiGet<{
           success: boolean;
           users?: any[];
-        }>(`/signup/users?limit=10${excludeParam}${sortParam}${searchTypeParam}${collegeSchoolParam}`);
-        
+        }>(
+          `/signup/users?limit=10${excludeParam}${sortParam}${searchTypeParam}${collegeSchoolParam}`
+        );
+
         if (data.success && data.users) {
           const transformedPeople: Person[] = await Promise.all(
             data.users.map(async (user: any) => {
@@ -191,7 +207,7 @@ export default function RightSideBar({ searchResults, sortBy = '', searchType = 
               };
             })
           );
-          
+
           const sortedPeople = sortPeople(transformedPeople, sortBy);
           setPeople(sortedPeople);
         } else {

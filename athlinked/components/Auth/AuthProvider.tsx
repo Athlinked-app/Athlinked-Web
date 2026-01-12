@@ -8,13 +8,23 @@ import { getToken, getRefreshToken, refreshAccessToken } from '@/utils/api';
  * AuthProvider component that handles automatic session restoration
  * This ensures users stay logged in even after closing and reopening the browser
  */
-export default function AuthProvider({ children }: { children: React.ReactNode }) {
+export default function AuthProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
     // Don't check auth on login/signup pages or landing page
-    const publicRoutes = ['/login', '/signup', '/parent-signup', '/forgot-password', '/'];
+    const publicRoutes = [
+      '/login',
+      '/signup',
+      '/parent-signup',
+      '/forgot-password',
+      '/',
+    ];
     if (publicRoutes.includes(pathname) || pathname.startsWith('/landing')) {
       return;
     }
@@ -37,7 +47,7 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
           try {
             const decoded = JSON.parse(atob(token.split('.')[1]));
             const currentTime = Math.floor(Date.now() / 1000);
-            
+
             // If token is valid, user is authenticated
             if (decoded.exp && decoded.exp > currentTime) {
               return; // Session is valid
@@ -80,4 +90,3 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
 
   return <>{children}</>;
 }
-

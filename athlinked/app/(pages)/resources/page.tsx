@@ -302,7 +302,10 @@ export default function ManageResourcesPage() {
         }
       }
     } catch (e) {
-      console.warn('Server-side scrape failed, falling back to client proxy', e);
+      console.warn(
+        'Server-side scrape failed, falling back to client proxy',
+        e
+      );
     }
 
     // Fallback: try AllOrigins raw endpoint, then last-resort default

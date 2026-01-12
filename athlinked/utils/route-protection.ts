@@ -11,12 +11,11 @@ import { isAuthenticated } from './auth';
  */
 export function protectRoute(): boolean {
   if (typeof window === 'undefined') return false;
-  
+
   if (!isAuthenticated()) {
     window.location.href = '/login';
     return false;
   }
-  
+
   return true;
 }
-

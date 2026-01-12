@@ -145,7 +145,12 @@ async function getUserById(userId) {
  * @param {string} collegeSchool - Optional college/school filter
  * @returns {Promise<Array>} Array of users
  */
-async function getAllUsers(limit = 100, sortBy = '', searchType = '', collegeSchool = '') {
+async function getAllUsers(
+  limit = 100,
+  sortBy = '',
+  searchType = '',
+  collegeSchool = ''
+) {
   try {
     let query = `
       SELECT DISTINCT

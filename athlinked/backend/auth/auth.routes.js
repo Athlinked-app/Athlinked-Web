@@ -200,5 +200,8 @@ router.post(
   authenticateToken,
   refreshTokensController.logoutAll
 );
-
+router.post(
+  '/google/complete-signup-full',
+  googleAuthController.completeGoogleSignupFull
+);
 module.exports = router;

@@ -127,7 +127,9 @@ function verifyPasswordResetToken(token) {
     return decoded;
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      throw new Error('Password reset link has expired. Please request a new one.');
+      throw new Error(
+        'Password reset link has expired. Please request a new one.'
+      );
     } else if (error.name === 'JsonWebTokenError') {
       throw new Error('Invalid password reset link');
     } else {

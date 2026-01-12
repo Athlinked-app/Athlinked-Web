@@ -238,7 +238,10 @@ export default function SettingsNavigation({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  To confirm, please type your email address: {currentUserEmail && <span className="font-bold">{currentUserEmail}</span>}
+                  To confirm, please type your email address:{' '}
+                  {currentUserEmail && (
+                    <span className="font-bold">{currentUserEmail}</span>
+                  )}
                 </label>
                 <input
                   type="email"

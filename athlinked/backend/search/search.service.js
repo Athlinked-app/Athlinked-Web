@@ -87,9 +87,19 @@ async function getUserByIdService(userId) {
  * @param {string} collegeSchool - Optional college/school filter
  * @returns {Promise<object>} Result object with users
  */
-async function getAllUsersService(limit = 100, sortBy = '', searchType = '', collegeSchool = '') {
+async function getAllUsersService(
+  limit = 100,
+  sortBy = '',
+  searchType = '',
+  collegeSchool = ''
+) {
   try {
-    const users = await searchModel.getAllUsers(limit, sortBy, searchType, collegeSchool);
+    const users = await searchModel.getAllUsers(
+      limit,
+      sortBy,
+      searchType,
+      collegeSchool
+    );
 
     return {
       success: true,

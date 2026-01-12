@@ -259,7 +259,6 @@ export default function EditProfileModal({
     if (open) {
       fetchUserData();
     }
-     
   }, [open, viewedUserId, currentUserId]);
 
   // Check favorite status when viewing an athlete profile as a coach

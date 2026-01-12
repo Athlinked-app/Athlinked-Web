@@ -20,74 +20,21 @@ export default function UserTypeSelection({
   const handleGoogleSuccess = async (data: any) => {
     console.log('Google sign-in response:', data);
 
-    // Case 1: User already has complete profile (returning user)
-    if (!data.needs_user_type && data.token) {
-      // Store tokens and user data
-      if (data.accessToken) {
-        localStorage.setItem('accessToken', data.accessToken);
-      } else if (data.token) {
-        localStorage.setItem('accessToken', data.token);
-      }
-
-      if (data.refreshToken) {
-        localStorage.setItem('refreshToken', data.refreshToken);
-      }
-
-      if (data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('userEmail', data.user.email);
-      }
-
-      // Clean up any temp data
-      localStorage.removeItem('google_temp_data');
-
-      // Redirect directly to home
-      router.push('/home');
-      return;
-    }
-
-    // Case 2: New user needs to set user type and complete profile
+    // 🔥 NEW: Just store Google data locally, don't call backend yet
+    // We'll create the user when they complete all steps
     if (data.needs_user_type) {
-      // Set the user type that was already selected
-      try {
-        const response = await fetch(
-          'http://localhost:3001/api/auth/google/complete',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              google_id: data.google_id,
-              user_type: selectedUserType,
-            }),
-          }
-        );
-
-        const result = await response.json();
-
-        if (result.success) {
-          // Pass data to parent to continue with profile completion
-          onGoogleSignIn?.({
-            ...result,
-            user: {
-              ...result.user,
-              user_type: selectedUserType,
-            },
-          });
-        } else {
-          alert(result.message || 'Failed to complete signup');
-        }
-      } catch (error) {
-        console.error('Error completing Google signup:', error);
-        alert('Failed to complete signup. Please try again.');
-      }
-      return;
-    }
-
-    // Case 3: User has type but needs profile completion
-    if (data.needs_profile_completion) {
-      onGoogleSignIn?.(data);
+      // Pass data to parent with the selected user type
+      onGoogleSignIn?.({
+        ...data,
+        user: {
+          google_id: data.google_id,
+          email: data.email,
+          full_name: data.full_name,
+          profile_picture: data.profile_picture,
+          email_verified: data.email_verified,
+          user_type: selectedUserType,
+        },
+      });
       return;
     }
   };
@@ -244,7 +191,7 @@ export default function UserTypeSelection({
 
       <div className="text-center text-xs sm:text-sm text-gray-600 mt-4">
         <span className="text-gray-700">Already have an account? </span>
-        <a href="#" className="text-[#CB9729] font-medium hover:underline">
+        <a href="/login" className="text-[#CB9729] font-medium hover:underline">
           Sign in
         </a>
       </div>

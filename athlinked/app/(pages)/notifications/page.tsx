@@ -138,7 +138,6 @@ export default function NotificationsPage() {
   // Fetch notifications on mount and when userId changes
   useEffect(() => {
     fetchNotifications();
-     
   }, [currentUserId]);
 
   // Refresh notifications when tab changes
@@ -146,7 +145,6 @@ export default function NotificationsPage() {
     if (currentUserId) {
       fetchNotifications();
     }
-     
   }, [activeTab]);
 
   // Filter notifications based on active tab
