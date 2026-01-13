@@ -41,6 +41,9 @@ async function createAchievementController(req, res) {
     const { userId } = req.params;
     const data = req.body;
 
+    console.log('Create Achievement - req.file:', req.file);
+    console.log('Create Achievement - req.body:', req.body);
+
     if (!userId) {
       return res.status(400).json({
         success: false,
@@ -53,6 +56,14 @@ async function createAchievementController(req, res) {
         success: false,
         message: 'Title is required',
       });
+    }
+
+    // Handle PDF file upload if present
+    if (req.file) {
+      console.log('PDF file uploaded:', req.file.filename);
+      data.mediaPdf = `/uploads/profile/pdfs/${req.file.filename}`;
+    } else {
+      console.log('No PDF file in request');
     }
 
     const result = await createAchievementService(userId, data);
@@ -76,11 +87,22 @@ async function updateAchievementController(req, res) {
     const { id } = req.params;
     const data = req.body;
 
+    console.log('Update Achievement - req.file:', req.file);
+    console.log('Update Achievement - req.body:', req.body);
+
     if (!id) {
       return res.status(400).json({
         success: false,
         message: 'Achievement ID is required',
       });
+    }
+
+    // Handle PDF file upload if present
+    if (req.file) {
+      console.log('PDF file uploaded:', req.file.filename);
+      data.mediaPdf = `/uploads/profile/pdfs/${req.file.filename}`;
+    } else {
+      console.log('No PDF file in request');
     }
 
     const result = await updateAchievementService(id, data);
