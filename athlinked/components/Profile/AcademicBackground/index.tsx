@@ -5,7 +5,7 @@ import { Plus, Trash2, FileText, Pencil, X } from 'lucide-react';
 import AcademicBackgroundPopup, {
   type AcademicBackground,
 } from '../AcademicBackgroundPopup';
-import { apiGet, apiPost, apiPut, apiDelete } from '@/utils/api';
+import { apiGet, apiPost, apiPut, apiDelete, apiUpload, apiRequest } from '@/utils/api';
 import { getCurrentUserId } from '@/utils/auth';
 
 export type { AcademicBackground };
@@ -73,6 +73,9 @@ export default function AcademicBackgrounds({
   };
 
   const handleAdd = async (newBackground: AcademicBackground) => {
+    // Check if there's a PDF file to upload
+    const hasPdfFile = newBackground.degreePdf instanceof File;
+
     if (editingIndex !== null) {
       // Update existing background
       const existingBg = academicBackgrounds[editingIndex];
@@ -89,11 +92,37 @@ export default function AcademicBackgrounds({
       }
 
       try {
-        const result = await apiPut<{
-          success: boolean;
-          data?: AcademicBackground;
-          message?: string;
-        }>(`/profile/academic-backgrounds/${existingBg.id}`, newBackground);
+        let result;
+        if (hasPdfFile) {
+          // Use FormData for file upload
+          const formData = new FormData();
+          formData.append('degreePdf', newBackground.degreePdf as File);
+          // Add other fields as JSON string or individual fields
+          Object.keys(newBackground).forEach(key => {
+            if (key !== 'degreePdf' && key !== 'id') {
+              const value = (newBackground as any)[key];
+              if (value !== undefined && value !== null) {
+                formData.append(key, String(value));
+              }
+            }
+          });
+          
+          // Use apiRequest directly for PUT with FormData
+          const response = await apiRequest(
+            `/profile/academic-backgrounds/${existingBg.id}`,
+            {
+              method: 'PUT',
+              body: formData,
+            }
+          );
+          result = await response.json();
+        } else {
+          result = await apiPut<{
+            success: boolean;
+            data?: AcademicBackground;
+            message?: string;
+          }>(`/profile/academic-backgrounds/${existingBg.id}`, newBackground);
+        }
 
         if (result.success && result.data) {
           const updatedBackgrounds = [...academicBackgrounds];
@@ -125,11 +154,33 @@ export default function AcademicBackgrounds({
       }
 
       try {
-        const result = await apiPost<{
-          success: boolean;
-          data?: AcademicBackground;
-          message?: string;
-        }>(`/profile/${userId}/academic-backgrounds`, newBackground);
+        let result;
+        if (hasPdfFile) {
+          // Use FormData for file upload
+          const formData = new FormData();
+          formData.append('degreePdf', newBackground.degreePdf as File);
+          // Add other fields
+          Object.keys(newBackground).forEach(key => {
+            if (key !== 'degreePdf' && key !== 'id') {
+              const value = (newBackground as any)[key];
+              if (value !== undefined && value !== null) {
+                formData.append(key, String(value));
+              }
+            }
+          });
+          
+          result = await apiUpload<{
+            success: boolean;
+            data?: AcademicBackground;
+            message?: string;
+          }>(`/profile/${userId}/academic-backgrounds`, formData);
+        } else {
+          result = await apiPost<{
+            success: boolean;
+            data?: AcademicBackground;
+            message?: string;
+          }>(`/profile/${userId}/academic-backgrounds`, newBackground);
+        }
 
         if (result.success && result.data) {
           const updatedBackgrounds = [...academicBackgrounds, result.data];

@@ -270,3 +270,6 @@ export async function apiUpload<T = any>(
 
   return response.json();
 }
+
+// Export apiRequest for direct use when needed (e.g., PUT with FormData)
+export { apiRequest };

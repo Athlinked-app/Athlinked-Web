@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, FileText, Pencil, X } from 'lucide-react';
 import AchievementsPopup, { type Achievement } from '../AchievementsPopup';
-import { apiGet, apiPost, apiPut, apiDelete } from '@/utils/api';
+import { apiGet, apiPost, apiPut, apiDelete, apiUpload, apiRequest } from '@/utils/api';
 import { getCurrentUserId } from '@/utils/auth';
 
 export type { Achievement };
@@ -71,6 +71,9 @@ export default function Achievements({
   };
 
   const handleAdd = async (newAchievement: Achievement) => {
+    // Check if there's a PDF file to upload
+    const hasPdfFile = newAchievement.mediaPdf instanceof File;
+
     if (editingIndex !== null) {
       // Update existing achievement
       const existingAchievement = achievementsList[editingIndex];
@@ -87,11 +90,37 @@ export default function Achievements({
       }
 
       try {
-        const result = await apiPut<{
-          success: boolean;
-          data?: Achievement;
-          message?: string;
-        }>(`/profile/achievements/${existingAchievement.id}`, newAchievement);
+        let result;
+        if (hasPdfFile) {
+          // Use FormData for file upload
+          const formData = new FormData();
+          formData.append('mediaPdf', newAchievement.mediaPdf as File);
+          // Add other fields as JSON string or individual fields
+          Object.keys(newAchievement).forEach(key => {
+            if (key !== 'mediaPdf' && key !== 'id') {
+              const value = (newAchievement as any)[key];
+              if (value !== undefined && value !== null) {
+                formData.append(key, String(value));
+              }
+            }
+          });
+          
+          // Use apiRequest directly for PUT with FormData
+          const response = await apiRequest(
+            `/profile/achievements/${existingAchievement.id}`,
+            {
+              method: 'PUT',
+              body: formData,
+            }
+          );
+          result = await response.json();
+        } else {
+          result = await apiPut<{
+            success: boolean;
+            data?: Achievement;
+            message?: string;
+          }>(`/profile/achievements/${existingAchievement.id}`, newAchievement);
+        }
 
         if (result.success && result.data) {
           const updatedAchievements = [...achievementsList];
@@ -123,11 +152,33 @@ export default function Achievements({
       }
 
       try {
-        const result = await apiPost<{
-          success: boolean;
-          data?: Achievement;
-          message?: string;
-        }>(`/profile/${userId}/achievements`, newAchievement);
+        let result;
+        if (hasPdfFile) {
+          // Use FormData for file upload
+          const formData = new FormData();
+          formData.append('mediaPdf', newAchievement.mediaPdf as File);
+          // Add other fields
+          Object.keys(newAchievement).forEach(key => {
+            if (key !== 'mediaPdf' && key !== 'id') {
+              const value = (newAchievement as any)[key];
+              if (value !== undefined && value !== null) {
+                formData.append(key, String(value));
+              }
+            }
+          });
+          
+          result = await apiUpload<{
+            success: boolean;
+            data?: Achievement;
+            message?: string;
+          }>(`/profile/${userId}/achievements`, formData);
+        } else {
+          result = await apiPost<{
+            success: boolean;
+            data?: Achievement;
+            message?: string;
+          }>(`/profile/${userId}/achievements`, newAchievement);
+        }
 
         if (result.success && result.data) {
           const updatedAchievements = [...achievementsList, result.data];

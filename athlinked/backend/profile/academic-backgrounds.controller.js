@@ -41,6 +41,9 @@ async function createAcademicBackgroundController(req, res) {
     const { userId } = req.params;
     const data = req.body;
 
+    console.log('Create Academic Background - req.file:', req.file);
+    console.log('Create Academic Background - req.body:', req.body);
+
     if (!userId) {
       return res.status(400).json({
         success: false,
@@ -53,6 +56,14 @@ async function createAcademicBackgroundController(req, res) {
         success: false,
         message: 'School is required',
       });
+    }
+
+    // Handle PDF file upload if present
+    if (req.file) {
+      console.log('PDF file uploaded:', req.file.filename);
+      data.degreePdf = `/uploads/profile/pdfs/${req.file.filename}`;
+    } else {
+      console.log('No PDF file in request');
     }
 
     const result = await createAcademicBackgroundService(userId, data);
@@ -76,11 +87,22 @@ async function updateAcademicBackgroundController(req, res) {
     const { id } = req.params;
     const data = req.body;
 
+    console.log('Update Academic Background - req.file:', req.file);
+    console.log('Update Academic Background - req.body:', req.body);
+
     if (!id) {
       return res.status(400).json({
         success: false,
         message: 'Academic background ID is required',
       });
+    }
+
+    // Handle PDF file upload if present
+    if (req.file) {
+      console.log('PDF file uploaded:', req.file.filename);
+      data.degreePdf = `/uploads/profile/pdfs/${req.file.filename}`;
+    } else {
+      console.log('No PDF file in request');
     }
 
     const result = await updateAcademicBackgroundService(id, data);

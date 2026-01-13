@@ -10,6 +10,7 @@ const competitionClubsController = require('./competition-clubs.controller');
 const characterLeadershipController = require('./character-leadership.controller');
 const healthReadinessController = require('./health-readiness.controller');
 const videoMediaController = require('./video-media.controller');
+const uploadPdf = require('./upload-pdf');
 
 /**
  * POST /api/profile/upload
@@ -426,6 +427,18 @@ router.get(
 router.post(
   '/:userId/academic-backgrounds',
   authenticateToken,
+  (req, res, next) => {
+    uploadPdf.single('degreePdf')(req, res, (err) => {
+      if (err) {
+        console.error('Multer error:', err);
+        return res.status(400).json({
+          success: false,
+          message: err.message || 'File upload error',
+        });
+      }
+      next();
+    });
+  },
   academicBackgroundsController.createAcademicBackgroundController
 );
 
@@ -479,6 +492,18 @@ router.post(
 router.put(
   '/academic-backgrounds/:id',
   authenticateToken,
+  (req, res, next) => {
+    uploadPdf.single('degreePdf')(req, res, (err) => {
+      if (err) {
+        console.error('Multer error:', err);
+        return res.status(400).json({
+          success: false,
+          message: err.message || 'File upload error',
+        });
+      }
+      next();
+    });
+  },
   academicBackgroundsController.updateAcademicBackgroundController
 );
 
@@ -614,6 +639,21 @@ router.get(
 router.post(
   '/:userId/achievements',
   authenticateToken,
+  (req, res, next) => {
+    console.log('POST /achievements - Content-Type:', req.headers['content-type']);
+    console.log('POST /achievements - Body keys:', Object.keys(req.body || {}));
+    uploadPdf.single('mediaPdf')(req, res, (err) => {
+      if (err) {
+        console.error('Multer error:', err);
+        return res.status(400).json({
+          success: false,
+          message: err.message || 'File upload error',
+        });
+      }
+      console.log('After multer - req.file:', req.file ? req.file.filename : 'no file');
+      next();
+    });
+  },
   achievementsController.createAchievementController
 );
 
@@ -664,6 +704,21 @@ router.post(
 router.put(
   '/achievements/:id',
   authenticateToken,
+  (req, res, next) => {
+    console.log('PUT /achievements - Content-Type:', req.headers['content-type']);
+    console.log('PUT /achievements - Body keys:', Object.keys(req.body || {}));
+    uploadPdf.single('mediaPdf')(req, res, (err) => {
+      if (err) {
+        console.error('Multer error:', err);
+        return res.status(400).json({
+          success: false,
+          message: err.message || 'File upload error',
+        });
+      }
+      console.log('After multer - req.file:', req.file ? req.file.filename : 'no file');
+      next();
+    });
+  },
   achievementsController.updateAchievementController
 );
 
