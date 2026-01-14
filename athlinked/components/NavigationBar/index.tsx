@@ -256,6 +256,37 @@ export default function NavigationBar({
       .slice(0, 2);
   };
 
+  // Determine which menu items to show based on user type
+  const normalizedRole = (userData?.user_type || propUserRole || 'athlete')
+    .toString()
+    .toLowerCase();
+
+  const filteredMenuItems = menuItems.filter(item => {
+    // Athlete: show everything except "My Athletes"
+    if (normalizedRole === 'athlete') {
+      return item.id !== 'my_athletes';
+    }
+
+    // Coach / Organization: hide stats, resource, my_athletes, opportunities
+    if (
+      normalizedRole === 'coach' ||
+      normalizedRole === 'organization' ||
+      normalizedRole === 'organisation'
+    ) {
+      return !['stats', 'resource', 'my_athletes', 'opportunities'].includes(
+        item.id
+      );
+    }
+
+    // Parent: hide opportunities, resource, stats
+    if (normalizedRole === 'parent') {
+      return !['opportunities', 'resource', 'stats'].includes(item.id);
+    }
+
+    // Default: no filtering
+    return true;
+  });
+
   return (
     <div className="w-16 sm:w-20 md:w-56 lg:w-64 xl:w-72 bg-white flex flex-col border-r border-gray-200 rounded-lg  transition-all duration-300">
       {/* Athlete Profile Section */}
@@ -291,7 +322,7 @@ export default function NavigationBar({
       </div>
       <nav className="flex-1 p-1 sm:p-2 md:p-3 overflow-y-auto">
         <ul className="space-y-0.5 md:space-y-1">
-          {menuItems.map(item => {
+          {filteredMenuItems.map(item => {
             const Icon = item.icon;
             const isActive = activeItem === item.id;
 

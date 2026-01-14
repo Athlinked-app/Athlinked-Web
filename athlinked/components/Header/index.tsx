@@ -148,12 +148,12 @@ export default function Header({
     <nav className="flex items-center justify-between px-2 sm:px-3 md:px-4 lg:px-6 py-2 md:py-3 bg-white">
       <div className="flex items-center">
         <Link href="/" className="flex items-center gap-1 sm:gap-2">
-          <Image
+        <Image
             src="/assets/Homescreen/Logo.png"
             alt="ATHLINKED Logo"
             width={180}
             height={50}
-            className="w-24 h-6 sm:w-28 sm:h-7 md:w-36 md:h-9 lg:w-44 lg:h-11"
+            className="w-32 h-8 md:w-[145px] md:h-[35px]"
             priority
           />
         </Link>

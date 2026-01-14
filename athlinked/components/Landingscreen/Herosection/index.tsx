@@ -11,7 +11,7 @@ export default function Herosection() {
             alt="ATHLINKED Logo"
             width={180}
             height={50}
-            className="w-32 h-8 md:w-[180px] md:h-[50px]"
+            className="w-32 h-8 md:w-[145px] md:h-[35px]"
             priority
           />
         </Link>
@@ -19,12 +19,12 @@ export default function Herosection() {
 
       <div className="flex items-center gap-4">
         <Link href="/login">
-          <button className="px-4 py-3 bg-[#CB9729] hover:bg-white hover:border-2 hover:border-[#CB9729] hover:text-[#CB9729] text-white font-bold rounded-md transition-colors">
+          <button className="px-4 py-3 text-sm bg-[#CB9729] hover:bg-white hover:border-2 hover:border-[#CB9729] hover:text-[#CB9729] text-white font-bold rounded-md transition-colors">
             Sign in
           </button>
         </Link>
         <Link href="/signup">
-          <button className="px-4 py-3 bg-white  text-[#525252] hover:bg-[#CB9729] hover:text-white hover:border-0 font-bold rounded-md border-2 border-[#A3A3A3] transition-colors">
+          <button className="px-4 py-3 text-sm bg-white  text-[#525252] hover:bg-[#CB9729] hover:text-white hover:border-0 font-bold rounded-md border-2 border-[#A3A3A3] transition-colors">
             Sign up
           </button>
         </Link>

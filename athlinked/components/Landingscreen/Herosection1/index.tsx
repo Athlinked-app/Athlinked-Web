@@ -31,7 +31,7 @@ export default function HeroSection() {
             and <span className="text-white">Get Discovered</span>
           </h1>
 
-          <p className="text-lg md:text-2xl text-gray-200 mb-8 font-medium max-w-8xl leading-relaxed">
+          <p className="text-lg md:text-2xl text-gray-200 mb-8 font-medium max-w-8xl ">
             AthLinked is the premier platform for young athletes aged 12-21 to
             showcase their talent. Here, athletes can connect with college
             recruiters, scouts, and coaches from top organizations and colleges,

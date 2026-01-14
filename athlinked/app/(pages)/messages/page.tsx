@@ -894,11 +894,11 @@ function MessagesPageContent() {
       />
 
       <main className="flex flex-1 w-full mt-5 overflow-hidden">
-        <div className="hidden md:flex px-6">
+        <div className="hidden md:flex px-3">
           <NavigationBar activeItem="message" />
         </div>
 
-        <div className="flex-1 flex gap-4 px-4 overflow-hidden">
+        <div className="flex-1 flex gap-3 pr-4 overflow-hidden">
           <div className="w-80 bg-white rounded-lg border border-gray-200 flex flex-col overflow-hidden">
             <div className="p-4 border-b border-gray-200 relative">
               <h2 className="text-xl font-semibold text-black mb-4">

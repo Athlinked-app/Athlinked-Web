@@ -4,12 +4,12 @@ import Link from 'next/link';
 export default function Herosection2() {
   return (
     <div className="w-full bg-[#D4D4D4]">
-      <section className="w-full px-8 py-6 md:px-16 lg:px-6 mt-5">
+      <section className="w-full px-8  md:px-16 lg:px-6 mt-5">
         <div className=" mx-auto bg-white rounded-lg p-6">
           <h2 className="text-4xl md:text-4xl font-bold text-[#171717] mb-4">
             Everything You Need to Succeed
           </h2>
-          <p className="text-xl text-[#525252] mb-8 max-w-6xl">
+          <p className="text-xl font-medium text-[#525252] mb-8 max-w-6xl">
             AthLinked provides powerful tools to help young athletes showcase
             their talents and connect with opportunities.
           </p>
@@ -28,7 +28,7 @@ export default function Herosection2() {
               <h3 className="text-2xl font-bold text-[#171717] mb-2">
                 Networking
               </h3>
-              <p className="text-[#525252] text-lg">
+              <p className="text-[#525252] text-md">
                 Connect directly with coaches, recruiters, and other athletes to
                 expand your opportunities.
               </p>
@@ -47,7 +47,7 @@ export default function Herosection2() {
               <h3 className="text-2xl font-bold text-[#171717] mb-2">
                 Stats Tracking
               </h3>
-              <p className="text-[#525252] text-lg">
+              <p className="text-[#525252] text-md">
                 Track and visualize performance statistics over time to measure
                 growth and identify areas for improvement.
               </p>
@@ -66,7 +66,7 @@ export default function Herosection2() {
               <h3 className="text-2xl font-bold text-[#171717] mb-2">
                 AthScore
               </h3>
-              <p className="text-[#525252] text-lg">
+              <p className="text-[#525252] text-md">
                 Our proprietary rating system helps recruiters identify top
                 talent based on verified performance metrics.
               </p>
@@ -85,7 +85,7 @@ export default function Herosection2() {
               <h3 className="text-2xl font-bold text-[#525252] mb-2">
                 Dynamic Profiles
               </h3>
-              <p className="text-[#525252] text-lg">
+              <p className="text-[#525252] text-md">
                 Create comprehensive athlete profiles showcasing your skills,
                 achievements and highlight videos.
               </p>
@@ -94,12 +94,12 @@ export default function Herosection2() {
         </div>
       </section>
 
-      <section className="w-full px-8 py-6 md:px-16 lg:px-6 ">
+      <section className="w-full px-8 py-4 md:px-16 lg:px-6 ">
         <div className=" mx-auto bg-white rounded-lg p-6">
           <h2 className="text-4xl md:text-4xl font-bold text-[#171717] mb-4">
             Who We Support
           </h2>
-          <p className="text-xl text-[#525252] mb-8 max-w-6xl">
+          <p className="text-xl text-[#525252] font-medium mb-8 max-w-6xl">
             Helping athletes grow, parents stay involved, coaches recruit, and
             organizations thrive with confidence and success.
           </p>
@@ -118,7 +118,7 @@ export default function Herosection2() {
               <h3 className="text-2xl font-bold text-[#171717] mb-2">
                 For Athletes
               </h3>
-              <p className="text-[#525252] text-lg">
+              <p className="text-[#525252] text-md">
                 Connect directly with coaches, recruiters, and other athletes to
                 expand your opportunities.
               </p>
@@ -137,13 +137,13 @@ export default function Herosection2() {
               <h3 className="text-2xl font-bold text-[#171717] mb-2">
                 For Parents
               </h3>
-              <p className="text-[#525252] text-lg">
+              <p className="text-[#525252] text-md">
                 Track and visualize performance statistics over time to measure
                 growth and identify areas for improvement.
               </p>
             </div>
 
-            <div className="border border-[#E5E5E5] rounded-lg p-6 bg-white">
+            <div className="border border-[#E5E5E5] border-2 rounded-lg p-6 bg-white">
               <div className="w-16 h-16 bg-[#FFD700] rounded-full flex items-center justify-center mb-4">
                 <Image
                   src="/assets/Homescreen/Coach.png"
@@ -156,13 +156,13 @@ export default function Herosection2() {
               <h3 className="text-2xl font-bold text-[#171717] mb-2">
                 For Coaches and Recruiters
               </h3>
-              <p className="text-[#525252] text-lg">
+              <p className="text-[#525252] text-md">
                 Track and visualize performance statistics over time to measure
                 growth and identify areas for improvement.
               </p>
             </div>
 
-            <div className="border border-[#E5E5E5] rounded-lg p-6 bg-white">
+            <div className="border border-[#E5E5E5] border-2 rounded-lg p-6 bg-white">
               <div className="w-16 h-16 bg-[#FFD700] rounded-full flex items-center justify-center mb-4">
                 <Image
                   src="/assets/Homescreen/Organization.png"
@@ -175,7 +175,7 @@ export default function Herosection2() {
               <h3 className="text-2xl font-bold text-[#171717] mb-2">
                 For Organization
               </h3>
-              <p className="text-[#525252] text-lg">
+              <p className="text-[#525252] text-md">
                 Connect directly with coaches, recruiters, and other athletes to
                 expand your opportunities.
               </p>
@@ -184,7 +184,7 @@ export default function Herosection2() {
         </div>
       </section>
 
-      <section className="px-8 py-6 md:px-6 lg:px-6">
+      <section className="px-8  md:px-6 lg:px-6 ">
         <div className="relative mx-auto rounded-lg overflow-hidden">
           <div className="relative z-10 max-w-7xl mx-auto text-left px-8 py-20">
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-4">
