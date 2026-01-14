@@ -461,7 +461,9 @@ export default function ClipsPage() {
 
     try {
       const { apiPost } = await import('@/utils/api');
-      const endpoint = wasLiked ? `/clips/${reelId}/unlike` : `/clips/${reelId}/like`;
+      const endpoint = wasLiked
+        ? `/clips/${reelId}/unlike`
+        : `/clips/${reelId}/like`;
       const result = await apiPost(endpoint, {});
 
       if (!result.success) {
@@ -481,7 +483,11 @@ export default function ClipsPage() {
         alert(result.message || 'Failed to update like status');
       } else if (result.like_count !== undefined) {
         // sync server count
-        setReels(prev => prev.map(r => (r.id === reelId ? { ...r, likes: result.like_count } : r)));
+        setReels(prev =>
+          prev.map(r =>
+            r.id === reelId ? { ...r, likes: result.like_count } : r
+          )
+        );
       }
     } catch (error) {
       console.error('Error liking/unliking clip:', error);
@@ -1167,7 +1173,10 @@ export default function ClipsPage() {
                         style={{ pointerEvents: 'auto' }}
                       >
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleLike(reel.id); }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleLike(reel.id);
+                          }}
                           className="flex flex-col items-center gap-0.5 sm:gap-1 text-white hover:scale-110 transition-transform"
                         >
                           <Heart

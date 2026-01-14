@@ -101,7 +101,9 @@ export default function EditProfileModal({
   const [loading, setLoading] = useState(true);
   const [fullName, setFullName] = useState(userData?.full_name || '');
   const [username, setUsername] = useState(userData?.username || '');
-  const [location, setLocation] = useState(userData?.city || userData?.location || '');
+  const [location, setLocation] = useState(
+    userData?.city || userData?.location || ''
+  );
   const [age, setAge] = useState(userData?.age?.toString() || '');
   const [sportsPlayed, setSportsPlayed] = useState(
     userData?.sports_played || ''

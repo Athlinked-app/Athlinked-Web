@@ -14,7 +14,10 @@ const { v4: uuidv4 } = require('uuid');
       )`;
     await pool.query(createQuery);
   } catch (err) {
-    console.error('Error ensuring clip_likes table exists:', err.message || err);
+    console.error(
+      'Error ensuring clip_likes table exists:',
+      err.message || err
+    );
   }
 })();
 
@@ -324,9 +327,12 @@ async function checkClipLikeStatus(clipId, userId) {
 }
 
 async function likeClip(clipId, userId, client = null) {
-  const checkQuery = 'SELECT * FROM clip_likes WHERE clip_id = $1 AND user_id = $2';
-  const insertLikeQuery = 'INSERT INTO clip_likes (clip_id, user_id) VALUES ($1, $2)';
-  const updateCountQuery = 'UPDATE clips SET like_count = like_count + 1 WHERE id = $1 RETURNING like_count';
+  const checkQuery =
+    'SELECT * FROM clip_likes WHERE clip_id = $1 AND user_id = $2';
+  const insertLikeQuery =
+    'INSERT INTO clip_likes (clip_id, user_id) VALUES ($1, $2)';
+  const updateCountQuery =
+    'UPDATE clips SET like_count = like_count + 1 WHERE id = $1 RETURNING like_count';
 
   try {
     const dbClient = client || pool;
@@ -345,8 +351,10 @@ async function likeClip(clipId, userId, client = null) {
 }
 
 async function unlikeClip(clipId, userId, client = null) {
-  const deleteLikeQuery = 'DELETE FROM clip_likes WHERE clip_id = $1 AND user_id = $2';
-  const updateCountQuery = 'UPDATE clips SET like_count = GREATEST(like_count - 1, 0) WHERE id = $1 RETURNING like_count';
+  const deleteLikeQuery =
+    'DELETE FROM clip_likes WHERE clip_id = $1 AND user_id = $2';
+  const updateCountQuery =
+    'UPDATE clips SET like_count = GREATEST(like_count - 1, 0) WHERE id = $1 RETURNING like_count';
 
   try {
     const dbClient = client || pool;

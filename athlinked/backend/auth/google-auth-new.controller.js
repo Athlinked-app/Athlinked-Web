@@ -134,7 +134,7 @@ class GoogleAuthController {
         });
       }
 
-      // 🔥 NEW: User doesn't exist at all
+      //   NEW: User doesn't exist at all
       if (flow === 'login') {
         // LOGIN: Don't create, just return error
         return res.json({
