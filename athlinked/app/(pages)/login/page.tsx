@@ -176,7 +176,7 @@ export default function LoginPage() {
     }
   };
 
-  // 🔥 GOOGLE SIGN-IN HANDLER
+  //   GOOGLE SIGN-IN HANDLER
   const handleGoogleSignIn = async (userData: any) => {
     console.log('Google sign-in data received:', userData);
     setError('');

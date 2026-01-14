@@ -247,10 +247,13 @@ function ProfileContent() {
               if (prevSports && prevSports.trim() !== '') {
                 return prevSports;
               }
-              
+
               let sportsString = user.sports_played;
               if (typeof sportsString === 'string') {
-                if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+                if (
+                  sportsString.startsWith('{') &&
+                  sportsString.endsWith('}')
+                ) {
                   sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
                 }
                 return sportsString;
@@ -318,7 +321,10 @@ function ProfileContent() {
       // Profile data is ALWAYS the authoritative source - it comes directly from the database
       // When profile data is fetched, it should always be used, even if it overwrites existing data
       // This ensures consistency after page refresh
-      if (processedSportsPlayed !== null && processedSportsPlayed !== undefined) {
+      if (
+        processedSportsPlayed !== null &&
+        processedSportsPlayed !== undefined
+      ) {
         // Always use profile data if it exists (even if empty string)
         // This ensures that after refresh, we show what's actually in the database
         if (processedSportsPlayed.trim() !== '') {
@@ -819,8 +825,10 @@ function ProfileContent() {
                         profileData.city !== undefined
                           ? profileData.city
                           : prev.city,
-                      primarySport: profileData.primarySport || prev.primarySport,
-                      sportsPlayed: profileData.sportsPlayed || prev.sportsPlayed,
+                      primarySport:
+                        profileData.primarySport || prev.primarySport,
+                      sportsPlayed:
+                        profileData.sportsPlayed || prev.sportsPlayed,
                     };
                   });
                 }

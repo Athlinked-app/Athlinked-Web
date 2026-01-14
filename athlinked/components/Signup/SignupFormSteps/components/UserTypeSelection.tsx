@@ -20,7 +20,7 @@ export default function UserTypeSelection({
   const handleGoogleSuccess = async (data: any) => {
     console.log('Google sign-in response:', data);
 
-    // 🔥 NEW: Just store Google data locally, don't call backend yet
+    //   NEW: Just store Google data locally, don't call backend yet
     // We'll create the user when they complete all steps
     if (data.needs_user_type) {
       // Pass data to parent with the selected user type
@@ -77,12 +77,9 @@ export default function UserTypeSelection({
               </svg>
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 mb-1">
-                I'm an Athlete
-              </h3>
+              <h3 className="font-semibold text-gray-900 mb-1">Athlete</h3>
               <p className="text-sm text-gray-600">
-                Showcase your skills, connect with coaches, and grow your sports
-                career
+                Chase your dreams, push your limits, and showcase your talent
               </p>
             </div>
           </div>
@@ -114,10 +111,9 @@ export default function UserTypeSelection({
               </svg>
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 mb-1">I'm a Coach</h3>
+              <h3 className="font-semibold text-gray-900 mb-1"> Coach</h3>
               <p className="text-sm text-gray-600">
-                Find talented athletes, manage your team, and build your
-                coaching network
+                Inspire athletes, shape champions, and leave a lasting impact.
               </p>
             </div>
           </div>
@@ -149,12 +145,10 @@ export default function UserTypeSelection({
               </svg>
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-900 mb-1">
-                I'm an Organization
-              </h3>
+              <h3 className="font-semibold text-gray-900 mb-1">Organization</h3>
               <p className="text-sm text-gray-600">
-                Connect with athletes and coaches, organize events, and expand
-                your reach
+                Empower teams, discover rising stars, and build a legacy of
+                success.
               </p>
             </div>
           </div>

@@ -33,7 +33,7 @@ export default function PersonalDetailsForm({
   showPassword,
   showConfirmPassword,
   isLoadingOTP = false,
-  isGoogleUser = false, 
+  isGoogleUser = false,
   onFormDataChange,
   onContinue,
   onTogglePassword,

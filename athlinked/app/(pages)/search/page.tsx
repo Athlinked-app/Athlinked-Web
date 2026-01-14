@@ -111,7 +111,7 @@ export default function SearchPage() {
       user_id: 'user_text1',
       post_type: 'text',
       caption:
-        'Just want to share some motivation today: Every champion was once a contender who refused to give up. Your struggle today is developing the strength you need for tomorrow. Keep pushing! 🔥💯 #Motivation #NeverGiveUp #ChampionMindset',
+        'Just want to share some motivation today: Every champion was once a contender who refused to give up. Your struggle today is developing the strength you need for tomorrow. Keep pushing!  💯 #Motivation #NeverGiveUp #ChampionMindset',
       like_count: 892,
       comment_count: 156,
       save_count: 234,

@@ -116,7 +116,7 @@ export default function SignupPage() {
     const googleDataStr = localStorage.getItem('google_temp_data');
     const isGoogleUser = !!googleDataStr;
 
-    // 🔥 NEW: For Google users, only create in database on LAST step
+    //   NEW: For Google users, only create in database on LAST step
     if (isGoogleUser) {
       // For coach/org: Last step is Personal Details (step 1)
       // For athlete: Last step is Parent Details (step 2)
@@ -330,7 +330,7 @@ export default function SignupPage() {
             showPassword={showPassword}
             showConfirmPassword={showConfirmPassword}
             isLoadingOTP={isLoadingOTP}
-            isGoogleUser={isGoogleUser} // 🔥 PASS THIS
+            isGoogleUser={isGoogleUser} //   PASS THIS
             onFormDataChange={setFormData}
             onUserTypeSelect={setSelectedUserType}
             onContinue={handleContinue}

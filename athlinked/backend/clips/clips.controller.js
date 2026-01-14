@@ -271,7 +271,9 @@ async function likeClip(req, res) {
     const user_id = req.user?.id;
 
     if (!user_id) {
-      return res.status(401).json({ success: false, message: 'Authentication required' });
+      return res
+        .status(401)
+        .json({ success: false, message: 'Authentication required' });
     }
 
     const result = await clipsService.likeClipService(clipId, user_id);
@@ -281,7 +283,12 @@ async function likeClip(req, res) {
     if (error.message === 'Clip not found') {
       return res.status(404).json({ success: false, message: error.message });
     }
-    return res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+    return res
+      .status(500)
+      .json({
+        success: false,
+        message: error.message || 'Internal server error',
+      });
   }
 }
 
@@ -294,7 +301,9 @@ async function unlikeClip(req, res) {
     const user_id = req.user?.id;
 
     if (!user_id) {
-      return res.status(401).json({ success: false, message: 'Authentication required' });
+      return res
+        .status(401)
+        .json({ success: false, message: 'Authentication required' });
     }
 
     const result = await clipsService.unlikeClipService(clipId, user_id);
@@ -304,6 +313,11 @@ async function unlikeClip(req, res) {
     if (error.message === 'Clip not found') {
       return res.status(404).json({ success: false, message: error.message });
     }
-    return res.status(500).json({ success: false, message: error.message || 'Internal server error' });
+    return res
+      .status(500)
+      .json({
+        success: false,
+        message: error.message || 'Internal server error',
+      });
   }
 }

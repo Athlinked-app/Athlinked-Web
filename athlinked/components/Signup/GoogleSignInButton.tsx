@@ -35,7 +35,7 @@ export default function GoogleSignInButton({
 
         const userInfo = await userInfoResponse.json();
 
-        // 🔥 NEW: Just return Google data WITHOUT calling backend
+        //   NEW: Just return Google data WITHOUT calling backend
         // We'll create the user later when they complete all steps
         const googleData = {
           success: true,
