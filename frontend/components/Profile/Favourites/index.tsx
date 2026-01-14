@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { getResourceUrl } from '@/utils/config';
 import { useRouter } from 'next/navigation';
 import { apiGet, apiDelete } from '@/utils/api';
 import { Heart, User, MapPin, GraduationCap, Trophy } from 'lucide-react';
@@ -75,7 +76,7 @@ export default function Favourites({ coachId }: FavouritesProps) {
       return profileUrl;
     }
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return getResourceUrl(profileUrl) || profileUrl;
     }
     return profileUrl;
   };

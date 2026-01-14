@@ -6,6 +6,7 @@ import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 import type { PostData } from '../Post';
 import MentionInputField from '../Mention/MentionInputField';
+import { getResourceUrl } from '@/utils/config';
 
 export interface CommentData {
   id: string;
@@ -294,7 +295,7 @@ export default function CommentsPanel({
                           src={
                             comment.user_profile_url.startsWith('http')
                               ? comment.user_profile_url
-                              : `http://localhost:3001${comment.user_profile_url}`
+                              : getResourceUrl(comment.user_profile_url) || comment.user_profile_url
                           }
                           alt={comment.username}
                           className="w-full h-full object-cover"
@@ -349,7 +350,7 @@ export default function CommentsPanel({
                                   src={
                                     reply.user_profile_url.startsWith('http')
                                       ? reply.user_profile_url
-                                      : `http://localhost:3001${reply.user_profile_url}`
+                                      : getResourceUrl(reply.user_profile_url) || reply.user_profile_url
                                   }
                                   alt={reply.username}
                                   className="w-full h-full object-cover"

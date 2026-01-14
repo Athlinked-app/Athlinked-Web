@@ -16,6 +16,7 @@ import io, { Socket } from 'socket.io-client';
 import EmojiPicker from '@/components/Message/EmojiPicker';
 import GIFPicker from '@/components/Message/GIFPicker';
 import FileUpload from '@/components/Message/FileUpload';
+import { getResourceUrl } from '@/utils/config';
 
 interface Conversation {
   conversation_id: string;
@@ -783,7 +784,7 @@ function MessagesPageContent() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return getResourceUrl(profileUrl) || profileUrl;
     }
     return profileUrl;
   };
@@ -1152,7 +1153,7 @@ function MessagesPageContent() {
                                               'http'
                                             )
                                               ? msg.post_data.user_profile_url
-                                              : `http://localhost:3001${msg.post_data.user_profile_url}`
+                                              : getResourceUrl(msg.post_data.user_profile_url) || msg.post_data.user_profile_url
                                           }
                                           alt={msg.post_data.username || 'User'}
                                           className="w-full h-full object-cover"
@@ -1176,7 +1177,7 @@ function MessagesPageContent() {
                                           'http'
                                         )
                                           ? msg.post_data.media_url
-                                          : `http://localhost:3001${msg.post_data.media_url}`;
+                                          : getResourceUrl(msg.post_data.media_url) || msg.post_data.media_url;
                                       const isVideo =
                                         msg.post_data.post_type === 'video' ||
                                         msg.post_data.media_url.match(
@@ -1267,7 +1268,7 @@ function MessagesPageContent() {
                                     'http'
                                   )
                                     ? msg.media_url
-                                    : `http://localhost:3001${msg.media_url}`;
+                                    : getResourceUrl(msg.media_url) || msg.media_url;
                                   const urlLower = msg.media_url.toLowerCase();
                                   const isImage =
                                     msg.message_type === 'image' ||

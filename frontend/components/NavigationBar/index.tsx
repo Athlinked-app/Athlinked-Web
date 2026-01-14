@@ -17,6 +17,7 @@ import {
   X,
   UserCheck,
 } from 'lucide-react';
+import { getResourceUrl } from '@/utils/config';
 
 interface NavigationBarProps {
   activeItem?: string;
@@ -235,7 +236,7 @@ export default function NavigationBar({
       ? rawProfileUrl.startsWith('http')
         ? rawProfileUrl
         : rawProfileUrl.startsWith('/') && !rawProfileUrl.startsWith('/assets')
-          ? `http://localhost:3001${rawProfileUrl}`
+          ? getResourceUrl(rawProfileUrl) || rawProfileUrl
           : rawProfileUrl
       : null;
 

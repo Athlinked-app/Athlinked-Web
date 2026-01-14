@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { getResourceUrl } from '@/utils/config';
 import Header from '@/components/Header';
 import NavigationBar from '@/components/NavigationBar';
 import { apiGet, apiPost } from '@/utils/api';
@@ -96,7 +97,7 @@ export default function StatsPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (!profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return getResourceUrl(profileUrl) || profileUrl;
     }
     return profileUrl;
   };

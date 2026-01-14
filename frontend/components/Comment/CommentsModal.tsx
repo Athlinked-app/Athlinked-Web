@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Send } from 'lucide-react';
 import type { PostData } from '../Post';
+import { getResourceUrl } from '@/utils/config';
 
 export interface CommentData {
   id: string;
@@ -257,7 +258,7 @@ export default function CommentsModal({
                                 src={
                                   comment.user_profile_url.startsWith('http')
                                     ? comment.user_profile_url
-                                    : `http://localhost:3001${comment.user_profile_url}`
+                                    : getResourceUrl(comment.user_profile_url) || comment.user_profile_url
                                 }
                                 alt={comment.username}
                                 className="w-full h-full object-cover"
@@ -314,7 +315,7 @@ export default function CommentsModal({
                                             'http'
                                           )
                                             ? reply.user_profile_url
-                                            : `http://localhost:3001${reply.user_profile_url}`
+                                            : getResourceUrl(reply.user_profile_url) || reply.user_profile_url
                                         }
                                         alt={reply.username}
                                         className="w-full h-full object-cover"

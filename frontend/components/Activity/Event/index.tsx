@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Calendar, X } from 'lucide-react';
 import { type PostData } from '@/components/Post';
 import Post from '@/components/Post';
+import { getResourceUrl } from '@/utils/config';
 
 interface EventProps {
   posts: PostData[];
@@ -46,7 +47,7 @@ export default function Event({
     if (mediaUrl.startsWith('http')) return mediaUrl;
 
     // Otherwise, prepend the base URL
-    return `http://localhost:3001${mediaUrl}`;
+    return getResourceUrl(mediaUrl) || mediaUrl;
   };
 
   if (loading) {

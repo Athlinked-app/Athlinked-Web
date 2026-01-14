@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import io, { Socket } from 'socket.io-client';
 import type { PostData } from '../Post';
-import { apiPost, apiGet } from '@/utils/api';
+import { apiPost, apiGet, getResourceUrl } from '@/utils/api';
 
 export interface UserData {
   id: string;
@@ -86,7 +86,7 @@ export default function ShareModal({
         socketRef.current.disconnect();
       }
 
-      const socket = io('http://localhost:3001', {
+      const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
         transports: ['websocket'],
       });
 
@@ -155,7 +155,7 @@ export default function ShareModal({
   const getProfileUrl = (url: string | null | undefined) => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
-    return `http://localhost:3001${url}`;
+    return getResourceUrl(url) || url;
   };
 
   const handleShareToWhatsApp = () => {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { getResourceUrl } from '@/utils/config';
 
 interface Follower {
   id: string;
@@ -205,7 +206,7 @@ export default function MentionInput({
                     src={
                       follower.profile_url.startsWith('http')
                         ? follower.profile_url
-                        : `http://localhost:3001${follower.profile_url}`
+                        : getResourceUrl(follower.profile_url) || follower.profile_url
                     }
                     alt={follower.full_name}
                     className="w-full h-full rounded-full object-cover"

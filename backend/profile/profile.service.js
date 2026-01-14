@@ -23,21 +23,45 @@ async function getUserProfileService(userId) {
       };
     }
 
+    // Process sports_played (list of all sports) - separate from primary_sport
     let sportsPlayed = null;
     if (profile.sports_played) {
+      console.log('Processing sports_played from database:', {
+        raw: profile.sports_played,
+        type: typeof profile.sports_played,
+        isArray: Array.isArray(profile.sports_played),
+        primary_sport: profile.primary_sport, // Log to verify they're different
+      });
+      
       if (Array.isArray(profile.sports_played)) {
-        sportsPlayed = profile.sports_played.join(', ');
+        // PostgreSQL array - join all sports with comma and space
+        sportsPlayed = profile.sports_played.filter(Boolean).join(', ');
+        console.log('Converted array to string:', sportsPlayed);
       } else if (typeof profile.sports_played === 'string') {
-        let sportsString = profile.sports_played;
+        let sportsString = profile.sports_played.trim();
+        // Handle PostgreSQL array string format: {sport1,sport2,sport3}
         if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
           sportsString = sportsString.slice(1, -1);
         }
+        // Remove quotes and split by comma
         sportsString = sportsString.replace(/["']/g, '');
-        sportsPlayed = sportsString;
+        // Split by comma and rejoin to ensure proper formatting
+        const sportsArray = sportsString.split(',').map(s => s.trim()).filter(Boolean);
+        sportsPlayed = sportsArray.join(', ');
+        console.log('Processed string array:', { 
+          original: profile.sports_played, 
+          processed: sportsPlayed, 
+          array: sportsArray,
+          count: sportsArray.length,
+        });
       }
+    } else {
+      console.log('No sports_played in profile data (this is OK - user may not have set sports yet)');
     }
 
-    return {
+    // IMPORTANT: Keep primary_sport and sports_played separate
+    // primary_sport is a single sport, sports_played is a list of all sports
+    const result = {
       userId: profile.user_id,
       fullName: profile.full_name || null,
       profileImage: profile.profile_image_url || null,
@@ -45,10 +69,19 @@ async function getUserProfileService(userId) {
       bio: profile.bio || null,
       education: profile.education || null,
       city: profile.city || null,
-      primarySport: profile.primary_sport || null,
-      sportsPlayed: sportsPlayed,
+      primarySport: profile.primary_sport || null, // Single sport
+      sportsPlayed: sportsPlayed, // List of all sports (comma-separated)
       dob: profile.dob || null,
     };
+    
+    console.log('Service: Returning profile data:', {
+      primarySport: result.primarySport,
+      sportsPlayed: result.sportsPlayed,
+      areTheyDifferent: result.primarySport !== result.sportsPlayed,
+      sportsPlayedIsArray: Array.isArray(profile.sports_played),
+    });
+    
+    return result;
   } catch (error) {
     console.error('Get user profile service error:', error.message);
     throw error;
@@ -76,16 +109,31 @@ async function upsertUserProfileService(userId, profileData) {
 
     let sportsPlayed = null;
     if (updatedProfile.sports_played) {
+      console.log('upsertUserProfileService: Processing sports_played from updated profile:', {
+        raw: updatedProfile.sports_played,
+        type: typeof updatedProfile.sports_played,
+        isArray: Array.isArray(updatedProfile.sports_played),
+      });
+      
       if (Array.isArray(updatedProfile.sports_played)) {
-        sportsPlayed = updatedProfile.sports_played.join(', ');
+        // PostgreSQL array - join all sports with comma and space
+        sportsPlayed = updatedProfile.sports_played.filter(Boolean).join(', ');
+        console.log('upsertUserProfileService: Converted array to string:', sportsPlayed);
       } else if (typeof updatedProfile.sports_played === 'string') {
-        let sportsString = updatedProfile.sports_played;
+        let sportsString = updatedProfile.sports_played.trim();
+        // Handle PostgreSQL array string format: {sport1,sport2,sport3}
         if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
           sportsString = sportsString.slice(1, -1);
         }
+        // Remove quotes and split by comma
         sportsString = sportsString.replace(/["']/g, '');
-        sportsPlayed = sportsString;
+        // Split by comma and rejoin to ensure proper formatting
+        const sportsArray = sportsString.split(',').map(s => s.trim()).filter(Boolean);
+        sportsPlayed = sportsArray.join(', ');
+        console.log('upsertUserProfileService: Processed string array:', { original: updatedProfile.sports_played, processed: sportsPlayed, array: sportsArray });
       }
+    } else {
+      console.log('upsertUserProfileService: No sports_played in updated profile');
     }
 
     console.log('Service: Profile updated successfully');

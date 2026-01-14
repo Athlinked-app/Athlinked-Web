@@ -32,11 +32,11 @@ function ParentSignupContent() {
         let response;
         if (username) {
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else if (email) {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(email)}`
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(email)}`
           );
         }
 
@@ -94,7 +94,7 @@ function ParentSignupContent() {
 
     try {
       const response = await fetch(
-        'http://localhost:3001/api/signup/parent-complete',
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/parent-complete`,
         {
           method: 'POST',
           headers: {

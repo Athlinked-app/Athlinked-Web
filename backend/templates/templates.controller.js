@@ -24,7 +24,8 @@ async function createTemplate(req, res) {
     let finalFileSize = file_size;
 
     if (req.file) {
-      const uploadedFileUrl = `/uploads/${req.file.filename}`;
+      // Use S3 URL if available, otherwise fallback to local path (for backward compatibility)
+      const uploadedFileUrl = req.file.location || `/uploads/${req.file.filename}`;
       finalFileUrl = uploadedFileUrl;
       finalFileType = req.file.mimetype || file_type;
       finalFileSize = req.file.size || file_size;

@@ -75,7 +75,8 @@ async function createResource(req, res) {
     let finalVideoUrl = video_url;
 
     if (req.file) {
-      const uploadedFileUrl = `/uploads/${req.file.filename}`;
+      // Use S3 URL if available, otherwise fallback to local path (for backward compatibility)
+      const uploadedFileUrl = req.file.location || `/uploads/${req.file.filename}`;
 
       if (resource_type === 'video') {
         finalVideoUrl = uploadedFileUrl;

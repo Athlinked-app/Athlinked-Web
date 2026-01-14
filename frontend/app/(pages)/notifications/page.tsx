@@ -5,6 +5,7 @@ import { X, Trash2 } from 'lucide-react';
 import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import Header from '@/components/Header';
+import { getResourceUrl } from '@/utils/config';
 
 interface Notification {
   id: string;
@@ -250,7 +251,7 @@ export default function NotificationsPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return getResourceUrl(profileUrl) || profileUrl;
     }
     return profileUrl;
   };

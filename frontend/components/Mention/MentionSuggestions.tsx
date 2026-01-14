@@ -1,6 +1,7 @@
 'use client';
 
 import type { Follower } from './useMention';
+import { getResourceUrl } from '@/utils/config';
 
 interface MentionSuggestionsProps {
   suggestions: Follower[];
@@ -42,7 +43,7 @@ export default function MentionSuggestions({
                 src={
                   follower.profile_url.startsWith('http')
                     ? follower.profile_url
-                    : `http://localhost:3001${follower.profile_url}`
+                    : getResourceUrl(follower.profile_url) || follower.profile_url
                 }
                 alt={follower.full_name}
                 className="w-full h-full rounded-full object-cover"

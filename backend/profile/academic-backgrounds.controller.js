@@ -60,8 +60,9 @@ async function createAcademicBackgroundController(req, res) {
 
     // Handle PDF file upload if present
     if (req.file) {
-      console.log('PDF file uploaded:', req.file.filename);
-      data.degreePdf = `/uploads/profile/pdfs/${req.file.filename}`;
+      console.log('PDF file uploaded:', req.file.originalname);
+      // Use S3 URL if available, otherwise fallback to local path (for backward compatibility)
+      data.degreePdf = req.file.location || `/uploads/profile/pdfs/${req.file.filename}`;
     } else {
       console.log('No PDF file in request');
     }
@@ -99,8 +100,9 @@ async function updateAcademicBackgroundController(req, res) {
 
     // Handle PDF file upload if present
     if (req.file) {
-      console.log('PDF file uploaded:', req.file.filename);
-      data.degreePdf = `/uploads/profile/pdfs/${req.file.filename}`;
+      console.log('PDF file uploaded:', req.file.originalname);
+      // Use S3 URL if available, otherwise fallback to local path (for backward compatibility)
+      data.degreePdf = req.file.location || `/uploads/profile/pdfs/${req.file.filename}`;
     } else {
       console.log('No PDF file in request');
     }

@@ -9,6 +9,7 @@ import SettingsNavigation from '@/components/Settings/Navigation';
 import AboutUs from '@/components/Settings/About us';
 import TermsAndService from '@/components/Settings/Terms&Service';
 import PrivacyPolicy from '@/components/Settings/PrivacyPolicy';
+import { BASE_URL, getResourceUrl } from '@/utils/api';
 
 interface CurrentUser {
   id: string;
@@ -33,13 +34,13 @@ export default function SettingsPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(
             username
           )}`
         );
       } else {
         response = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(
             userIdentifier
           )}`
         );
@@ -77,7 +78,7 @@ export default function SettingsPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return getResourceUrl(profileUrl) || profileUrl;
     }
     return profileUrl;
   };

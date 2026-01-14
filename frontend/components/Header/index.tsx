@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Settings, LogOut, X } from 'lucide-react';
+import { getResourceUrl } from '@/utils/api';
 
 type HeaderProps = {
   userName?: string;
@@ -100,7 +101,7 @@ export default function Header({
       ? rawProfileUrl.startsWith('http')
         ? rawProfileUrl
         : rawProfileUrl.startsWith('/') && !rawProfileUrl.startsWith('/assets')
-          ? `http://localhost:3001${rawProfileUrl}`
+          ? getResourceUrl(rawProfileUrl) || rawProfileUrl
           : rawProfileUrl
       : null;
 

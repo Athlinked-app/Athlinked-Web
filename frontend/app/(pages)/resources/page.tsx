@@ -7,6 +7,7 @@ import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import ResourceCard from '@/components/Resources/ResourceCard';
 import ResourceModals from '@/components/Resources/ResourceModals';
+import { BASE_URL, getResourceUrl } from '@/utils/api';
 
 type TabType = 'guides' | 'videos' | 'templates';
 
@@ -74,11 +75,11 @@ export default function ManageResourcesPage() {
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `${BASE_URL}/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `${BASE_URL}/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -116,7 +117,7 @@ export default function ManageResourcesPage() {
     const videoUrl = video.video_url
       ? video.video_url.startsWith('http')
         ? video.video_url
-        : `http://localhost:3001${video.video_url}`
+        : getResourceUrl(video.video_url) || video.video_url
       : undefined;
 
     return {
@@ -133,7 +134,7 @@ export default function ManageResourcesPage() {
     const fileUrl = template.file_url
       ? template.file_url.startsWith('http')
         ? template.file_url
-        : `http://localhost:3001${template.file_url}`
+        : getResourceUrl(template.file_url) || template.file_url
       : undefined;
 
     return {
@@ -159,11 +160,11 @@ export default function ManageResourcesPage() {
       let endpoint = '';
 
       if (activeTab === 'guides') {
-        endpoint = `http://localhost:3001/api/articles?user_id=${encodeURIComponent(currentUserId)}`;
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || `${BASE_URL}/api`}/articles?user_id=${encodeURIComponent(currentUserId)}`;
       } else if (activeTab === 'videos') {
-        endpoint = `http://localhost:3001/api/videos?user_id=${encodeURIComponent(currentUserId)}`;
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || `${BASE_URL}/api`}/videos?user_id=${encodeURIComponent(currentUserId)}`;
       } else {
-        endpoint = `http://localhost:3001/api/templates?user_id=${encodeURIComponent(currentUserId)}`;
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || `${BASE_URL}/api`}/templates?user_id=${encodeURIComponent(currentUserId)}`;
       }
 
       const response = await fetch(endpoint);
@@ -231,11 +232,11 @@ export default function ManageResourcesPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         userResponse = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -251,11 +252,11 @@ export default function ManageResourcesPage() {
       // Determine endpoint based on active tab
       let endpoint = '';
       if (activeTab === 'guides') {
-        endpoint = `http://localhost:3001/api/articles/${resourceToDelete}`;
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || `${BASE_URL}/api`}/articles/${resourceToDelete}`;
       } else if (activeTab === 'videos') {
-        endpoint = `http://localhost:3001/api/videos/${resourceToDelete}`;
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || `${BASE_URL}/api`}/videos/${resourceToDelete}`;
       } else {
-        endpoint = `http://localhost:3001/api/templates/${resourceToDelete}`;
+        endpoint = `${process.env.NEXT_PUBLIC_API_URL || `${BASE_URL}/api`}/templates/${resourceToDelete}`;
       }
 
       // Use apiRequest to perform DELETE so token refresh is handled automatically
@@ -417,6 +418,7 @@ export default function ManageResourcesPage() {
 
             if (activeTab === 'videos') {
               // For videos, we need to get duration
+              formData.append('resource_type', 'video');
               const video = document.createElement('video');
               video.preload = 'metadata';
               video.src = URL.createObjectURL(file);
@@ -435,7 +437,7 @@ export default function ManageResourcesPage() {
                 }
 
                 const response = await fetch(
-                  'http://localhost:3001/api/videos',
+                  `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/videos`,
                   {
                     method: 'POST',
                     headers,
@@ -492,6 +494,7 @@ export default function ManageResourcesPage() {
               };
             } else {
               // For templates (PDFs)
+              formData.append('resource_type', 'template');
               formData.append('file_type', file.type);
               formData.append('file_size', file.size.toString());
 
@@ -503,7 +506,7 @@ export default function ManageResourcesPage() {
               }
 
               const response = await fetch(
-                'http://localhost:3001/api/templates',
+                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/templates`,
                 {
                   method: 'POST',
                   headers,
@@ -588,7 +591,7 @@ export default function ManageResourcesPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return getResourceUrl(profileUrl) || profileUrl;
     }
     return profileUrl;
   };

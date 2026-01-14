@@ -7,6 +7,7 @@ import RightSideBar from '@/components/RightSideBar';
 import Header from '@/components/Header';
 import { MoreVertical } from 'lucide-react';
 import { apiGet } from '@/utils/api';
+import { getResourceUrl } from '@/utils/config';
 
 interface Athlete {
   id: string;
@@ -118,7 +119,7 @@ export default function MyAthletesPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return getResourceUrl(profileUrl) || profileUrl;
     }
     return profileUrl;
   };

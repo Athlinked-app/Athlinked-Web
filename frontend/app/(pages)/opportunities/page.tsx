@@ -7,6 +7,7 @@ import Header from '@/components/Header';
 import CampDetailsPopup from '@/components/opportunities/CampDetailsPopup';
 import SaveModal from '@/components/Save/SaveModal';
 import { apiGet } from '@/utils/api';
+import { getResourceUrl } from '@/utils/config';
 
 type TabType = 'all' | 'tryouts' | 'scholarships' | 'tournaments';
 
@@ -472,7 +473,7 @@ export default function OpportunitiesPage() {
       return profileUrl;
     }
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return getResourceUrl(profileUrl) || profileUrl;
     }
     return profileUrl;
   };

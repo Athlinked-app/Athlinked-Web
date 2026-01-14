@@ -34,7 +34,8 @@ async function createPost(req, res) {
 
     let media_url = null;
     if (req.file) {
-      media_url = `/uploads/${req.file.filename}`;
+      // Use S3 URL if available, otherwise fallback to local path (for backward compatibility)
+      media_url = req.file.location || `/uploads/${req.file.filename}`;
     }
 
     if ((post_type === 'photo' || post_type === 'video') && !media_url) {

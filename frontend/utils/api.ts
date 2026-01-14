@@ -2,8 +2,11 @@
  * API utility functions for making authenticated requests
  */
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+// Import from config for consistency
+import { API_BASE_URL, BASE_URL, getResourceUrl } from './config';
+
+// Re-export for backward compatibility
+export { BASE_URL, getResourceUrl };
 
 /**
  * Get the access token from localStorage
@@ -204,6 +207,23 @@ export async function apiPost<T = any>(
     method: 'POST',
     body: JSON.stringify(data),
   });
+  
+  // Check if response is ok (status 200-299)
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorData;
+    try {
+      errorData = JSON.parse(errorText);
+    } catch {
+      errorData = { message: errorText || `HTTP ${response.status}: ${response.statusText}` };
+    }
+    
+    const error: any = new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+    error.status = response.status;
+    error.response = { data: errorData };
+    throw error;
+  }
+  
   return response.json();
 }
 

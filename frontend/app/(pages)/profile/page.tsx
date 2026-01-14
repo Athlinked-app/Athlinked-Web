@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/Header';
 import RightSideBar from '@/components/RightSideBar';
@@ -33,6 +33,7 @@ import MySaveArticle from '@/components/MySave/Article';
 import MySaveOpportunity from '@/components/MySave/Opportunity';
 import Favourites from '@/components/Profile/Favourites';
 import { apiGet, apiPost, apiUpload } from '@/utils/api';
+import { getResourceUrl } from '@/utils/config';
 interface CurrentUser {
   id: string;
   full_name: string;
@@ -109,6 +110,9 @@ function ProfileContent() {
 
   const targetUserId = viewUserId || currentUserId;
   const isViewingOwnProfile = !viewUserId || viewUserId === currentUserId;
+  
+  // Track previous targetUserId to prevent unnecessary state clears
+  const prevTargetUserIdRef = useRef<string | null>(null);
 
   // Reset to profile tab if viewing someone else's profile and on a restricted tab
   useEffect(() => {
@@ -193,19 +197,38 @@ function ProfileContent() {
     }
   }, [targetUserId]);
 
+  // Main effect: Fetch profile data when targetUserId changes
+  // This is the ONLY effect that should fetch profile data to prevent race conditions
   useEffect(() => {
-    setUserBio('');
+    if (!targetUserId) return;
 
-    if (targetUserId) {
-      // Always fetch profile data first (it has the most complete data)
-      fetchProfileData();
-      fetchFollowCounts();
-      // Only fetch view user if viewing another user's profile (not your own)
-      if (viewUserId && viewUserId !== currentUserId) {
-        fetchViewUser();
-      }
+    // Only clear state if targetUserId actually changed (not on every render)
+    const prevTargetUserId = prevTargetUserIdRef.current;
+    const targetUserIdChanged = prevTargetUserId !== targetUserId;
+    
+    if (targetUserIdChanged) {
+      console.log('Profile page: targetUserId changed from', prevTargetUserId, 'to', targetUserId);
+      console.log('Profile page: Clearing state and fetching fresh data');
+      setUserBio('');
+      setSportsPlayed('');
+      prevTargetUserIdRef.current = targetUserId;
+    } else {
+      console.log('Profile page: targetUserId unchanged, skipping state clear:', targetUserId);
     }
-  }, [targetUserId, viewUserId, currentUserId]);
+
+    // Always fetch profile data (it will update state with fresh data from database)
+    // This is the authoritative source for sports_played
+    fetchProfileData();
+    fetchFollowCounts();
+  }, [targetUserId]); // Only depend on targetUserId, not viewUserId or currentUserId
+
+  // Separate effect: Fetch view user data (doesn't affect sports)
+  useEffect(() => {
+    // Only fetch view user if viewing another user's profile (not your own)
+    if (viewUserId && viewUserId !== currentUserId && targetUserId) {
+      fetchViewUser();
+    }
+  }, [viewUserId, currentUserId, targetUserId]);
 
   useEffect(() => {
     if (currentUserId && viewUserId && currentUserId !== viewUserId) {
@@ -235,31 +258,10 @@ function ProfileContent() {
             username: user.username,
             user_type: user.user_type,
           });
-          // Only update sports_played if:
-          // 1. The user object has sports_played data
-          // 2. We're viewing another user's profile (not our own)
-          // 3. We don't already have sports data from profile API
-          // This prevents overwriting correct profile data with incomplete data from /signup/users
-          if (user.sports_played && viewUserId !== currentUserId) {
-            setSportsPlayed(prevSports => {
-              // If we already have sports data from profile API, don't overwrite it
-              // The /signup/users endpoint doesn't reliably return sports_played
-              if (prevSports && prevSports.trim() !== '') {
-                return prevSports;
-              }
-              
-              let sportsString = user.sports_played;
-              if (typeof sportsString === 'string') {
-                if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
-                  sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
-                }
-                return sportsString;
-              } else if (Array.isArray(sportsString)) {
-                return sportsString.join(', ');
-              }
-              return '';
-            });
-          }
+          // DO NOT update sports_played from fetchViewUser
+          // The /signup/users endpoint doesn't reliably return sports_played
+          // Only fetchProfileData() should update sports_played state
+          // This prevents race conditions and ensures data consistency
         }
       }
     } catch (error) {
@@ -268,10 +270,16 @@ function ProfileContent() {
   };
 
   const fetchProfileData = async () => {
-    if (!targetUserId) return;
+    if (!targetUserId) {
+      console.log('fetchProfileData: No targetUserId, skipping fetch');
+      return;
+    }
+
+    // Prevent multiple simultaneous fetches for the same userId
+    const currentTargetId = targetUserId;
+    console.log('fetchProfileData: Starting fetch for userId:', currentTargetId);
 
     try {
-      console.log('Fetching profile data for userId:', targetUserId);
       const { apiGet } = await import('@/utils/api');
       const data = await apiGet<{
         userId?: string;
@@ -284,22 +292,54 @@ function ProfileContent() {
         primarySport?: string | null;
         sportsPlayed?: string | string[] | null;
         dob?: string | null;
-      }>(`/profile/${targetUserId}`);
+      }>(`/profile/${currentTargetId}`);
+      
+      // Verify we're still fetching for the same userId (prevent race conditions)
+      if (currentTargetId !== targetUserId) {
+        console.log('fetchProfileData: targetUserId changed during fetch, ignoring response');
+        return;
+      }
 
       console.log('Profile data fetched:', data);
 
       let processedSportsPlayed: string | null = null;
       if (data.sportsPlayed !== undefined && data.sportsPlayed !== null) {
+        console.log('Frontend: Processing sports_played from API:', {
+          raw: data.sportsPlayed,
+          type: typeof data.sportsPlayed,
+          isArray: Array.isArray(data.sportsPlayed),
+        });
+        
         if (Array.isArray(data.sportsPlayed)) {
-          processedSportsPlayed = data.sportsPlayed.join(', ');
+          // PostgreSQL array format - join all sports with comma and space
+          const sportsArray = data.sportsPlayed.filter(Boolean);
+          processedSportsPlayed = sportsArray.join(', ');
+          console.log('Frontend: Converted array to string:', { array: sportsArray, result: processedSportsPlayed });
         } else if (typeof data.sportsPlayed === 'string') {
-          let sportsString = data.sportsPlayed;
+          let sportsString = data.sportsPlayed.trim();
+          // Handle PostgreSQL array string format: {sport1,sport2,sport3}
           if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
-            sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
+            sportsString = sportsString.slice(1, -1);
           }
-          processedSportsPlayed = sportsString;
+          // Remove quotes, split by comma, trim each, and rejoin
+          const sportsArray = sportsString.replace(/["']/g, '').split(',').map(s => s.trim()).filter(Boolean);
+          processedSportsPlayed = sportsArray.join(', ');
+          console.log('Frontend: Processed string array:', { original: data.sportsPlayed, array: sportsArray, result: processedSportsPlayed });
         }
+      } else {
+        console.log('Frontend: No sports_played in API response');
       }
+      
+      console.log('Frontend: Final processed sports_played:', processedSportsPlayed);
+      console.log('Frontend: primarySport from API:', data.primarySport);
+      console.log('Frontend: sportsPlayed from API:', data.sportsPlayed);
+
+      // IMPORTANT: Ensure sportsPlayed is NOT the same as primarySport
+      // If sportsPlayed is null/empty but primarySport exists, don't use primarySport as sportsPlayed
+      // They are separate fields - sportsPlayed should be the full list, primarySport is just one sport
+      const finalSportsPlayed = processedSportsPlayed !== null && processedSportsPlayed !== '' 
+        ? processedSportsPlayed 
+        : null; // Don't fallback to primarySport - they're different fields
 
       setProfileData({
         userId: data.userId || targetUserId || '',
@@ -309,32 +349,50 @@ function ProfileContent() {
         bio: data.bio ?? null,
         education: data.education ?? null,
         city: data.city ?? null,
-        primarySport: data.primarySport ?? null,
-        sportsPlayed: processedSportsPlayed,
+        primarySport: data.primarySport ?? null, // Keep primarySport separate
+        sportsPlayed: finalSportsPlayed, // Use processed sports_played (list of all sports)
         dob: data.dob ?? null,
+      });
+      
+      console.log('Frontend: Set profileData with:', {
+        primarySport: data.primarySport ?? null,
+        sportsPlayed: finalSportsPlayed,
+        areTheyDifferent: data.primarySport !== finalSportsPlayed,
       });
       setUserBio(data.bio || '');
       // Update sportsPlayed from profile data
       // Profile data is ALWAYS the authoritative source - it comes directly from the database
       // When profile data is fetched, it should always be used, even if it overwrites existing data
       // This ensures consistency after page refresh
+      // IMPORTANT: This is the ONLY place that should update sportsPlayed state from database
+      // IMPORTANT: Use sportsPlayed from database, NOT primarySport
       if (processedSportsPlayed !== null && processedSportsPlayed !== undefined) {
         // Always use profile data if it exists (even if empty string)
         // This ensures that after refresh, we show what's actually in the database
-        if (processedSportsPlayed.trim() !== '') {
-          setSportsPlayed(processedSportsPlayed);
-        } else {
-          // Profile data says no sports, so clear it
-          setSportsPlayed('');
-        }
+        const finalSports = processedSportsPlayed.trim();
+        setSportsPlayed(finalSports);
+        console.log('fetchProfileData: Updated sportsPlayed state from database:', {
+          processed: processedSportsPlayed,
+          final: finalSports,
+          count: finalSports ? finalSports.split(',').length : 0,
+          primarySport: data.primarySport, // Log to compare
+          areTheyDifferent: finalSports !== (data.primarySport || ''),
+        });
       } else {
         // Profile data returned null/undefined for sports, which means no sports in database
+        // DO NOT fallback to primarySport - they are different fields
         setSportsPlayed('');
+        console.log('fetchProfileData: No sports_played in database, cleared sportsPlayed state');
+        console.log('fetchProfileData: primarySport value (for reference):', data.primarySport);
       }
     } catch (error) {
       console.error('Error fetching profile data:', error);
-      setProfileData(null);
-      setUserBio('');
+      // Only clear state if we're still fetching for the same userId
+      if (currentTargetId === targetUserId) {
+        setProfileData(null);
+        setUserBio('');
+        setSportsPlayed('');
+      }
     }
   };
 
@@ -546,7 +604,7 @@ function ProfileContent() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return getResourceUrl(profileUrl) || profileUrl;
     }
     return profileUrl;
   };
@@ -588,14 +646,14 @@ function ProfileContent() {
               profile_url: profileData?.profileImage
                 ? profileData.profileImage.startsWith('http')
                   ? profileData.profileImage
-                  : `http://localhost:3001${profileData.profileImage}`
+                  : getResourceUrl(profileData.profileImage) || profileData.profileImage
                 : viewUserId
                   ? viewUser?.profile_url || null
                   : currentUser?.profile_url || null,
               background_image_url: profileData?.coverImage
                 ? profileData.coverImage.startsWith('http')
                   ? profileData.coverImage
-                  : `http://localhost:3001${profileData.coverImage}`
+                  : getResourceUrl(profileData.coverImage) || profileData.coverImage
                 : null,
               user_type: viewUserId
                 ? viewUser?.user_type || 'athlete'
@@ -604,20 +662,39 @@ function ProfileContent() {
               age: calculateAge(profileData?.dob) || undefined,
               followers_count: followersCount,
               sports_played: (() => {
-                if (sportsPlayed) return sportsPlayed;
+                // Priority 1: Use profileData.sportsPlayed (from database) - this is the authoritative source
+                let result = '';
                 if (
                   profileData?.sportsPlayed !== undefined &&
-                  profileData?.sportsPlayed !== null
+                  profileData?.sportsPlayed !== null &&
+                  profileData.sportsPlayed !== ''
                 ) {
-                  const sports = profileData.sportsPlayed;
-                  if (typeof sports === 'string') {
-                    return sports.replace(/[{}"']/g, '');
+                  // profileData.sportsPlayed is typed as string | null, so it's always a string here
+                  const sports = profileData.sportsPlayed as string;
+                  // Clean up any PostgreSQL array formatting but preserve all sports
+                  let cleaned = sports.trim();
+                  if (cleaned.startsWith('{') && cleaned.endsWith('}')) {
+                    cleaned = cleaned.slice(1, -1);
                   }
-                  if (Array.isArray(sports)) {
-                    return (sports as string[]).join(', ');
-                  }
+                  cleaned = cleaned.replace(/["']/g, '');
+                  // Split and rejoin to ensure proper formatting
+                  const sportsArray = cleaned.split(',').map((s: string) => s.trim()).filter((s: string) => Boolean(s));
+                  result = sportsArray.join(', ');
+                  console.log('Profile page: Processing sports_played for EditProfileModal:', {
+                    original: sports,
+                    cleaned: cleaned,
+                    sportsArray: sportsArray,
+                    result: result,
+                    count: sportsArray.length,
+                  });
+                } else if (sportsPlayed && sportsPlayed.trim() !== '') {
+                  // Priority 2: Use sportsPlayed state (fallback)
+                  result = sportsPlayed.trim();
+                  console.log('Profile page: Using sportsPlayed state as fallback:', result);
                 }
-                return '';
+                
+                console.log('Profile page: Final sports_played passed to EditProfileModal:', result);
+                return result;
               })(),
               primary_sport: profileData?.primarySport || '',
               profile_completion: 60,
@@ -657,7 +734,6 @@ function ProfileContent() {
                   return;
                 }
                 const profileData: {
-                  userId: string;
                   bio?: string;
                   education?: string;
                   city?: string;
@@ -665,9 +741,7 @@ function ProfileContent() {
                   sportsPlayed?: string;
                   profileImageUrl?: string;
                   coverImageUrl?: string;
-                } = {
-                  userId: currentUserId,
-                };
+                } = {};
                 console.log('Received data from EditProfilePopup:', {
                   bio: data.bio,
                   education: data.education,
@@ -676,27 +750,35 @@ function ProfileContent() {
                   educationUndefined: data.education === undefined,
                 });
 
+                // Always include fields if they're defined (even if empty string)
                 if (data.bio !== undefined) {
-                  profileData.bio = data.bio || undefined;
+                  profileData.bio = data.bio;
                 }
                 if (data.education !== undefined) {
-                  profileData.education = data.education || undefined;
+                  profileData.education = data.education;
                 }
                 if (data.city !== undefined) {
-                  profileData.city = data.city || undefined;
+                  profileData.city = data.city;
                 }
 
-                console.log('Profile data being sent to API:', profileData);
                 if (data.sports_played !== undefined) {
-                  profileData.sportsPlayed = data.sports_played || undefined;
-                  if (data.sports_played) {
+                  profileData.sportsPlayed = data.sports_played;
+                  if (data.sports_played && data.sports_played.trim() !== '') {
                     const sports = data.sports_played
                       .split(',')
                       .map(s => s.trim())
                       .filter(Boolean);
-                    if (sports.length > 0) profileData.primarySport = sports[0];
+                    if (sports.length > 0) {
+                      profileData.primarySport = sports[0];
+                    } else {
+                      profileData.primarySport = '';
+                    }
+                  } else {
+                    profileData.primarySport = '';
                   }
                 }
+                
+                console.log('Profile data being sent to API:', profileData);
                 if (data.profile_url instanceof File) {
                   const formData = new FormData();
                   formData.append('file', data.profile_url);
@@ -735,21 +817,64 @@ function ProfileContent() {
                   profileData.coverImageUrl = data.background_image_url;
                 }
 
-                const result = await apiPost<{
-                  success: boolean;
-                  message?: string;
-                }>('/profile', profileData);
-
-                if (!result.success) {
-                  console.error('Failed to save profile:', result);
-                  alert(
-                    'Failed to save profile: ' +
-                      (result.message || 'Unknown error')
-                  );
+                // Ensure we have at least one field to update
+                if (Object.keys(profileData).length === 0) {
+                  console.log('No profile data to update');
                   return;
                 }
 
-                console.log('Profile saved successfully:', result);
+                console.log('=== FRONTEND: Sending profile update to API ===');
+                console.log('Profile data object:', profileData);
+                console.log('Profile data keys:', Object.keys(profileData));
+                console.log('Profile data values:', Object.entries(profileData).map(([k, v]) => {
+                  if (typeof v === 'string') {
+                    return [k, v.length > 50 ? v.substring(0, 50) + '...' : v];
+                  }
+                  return [k, v];
+                }));
+                console.log('API endpoint: /profile');
+                console.log('Request method: POST');
+                
+                try {
+                  const result = await apiPost<{
+                    success: boolean;
+                    message?: string;
+                    profile?: any;
+                  }>('/profile', profileData);
+
+                  console.log('=== FRONTEND: API Response Received ===');
+                  console.log('Full API response:', JSON.stringify(result, null, 2));
+                  console.log('API response success:', result.success);
+                  console.log('API response message:', result.message);
+                  console.log('API response profile:', result.profile);
+
+                  if (!result.success) {
+                    console.error('=== FRONTEND: API returned failure ===');
+                    console.error('Failed to save profile:', result);
+                    alert(
+                      'Failed to save profile: ' +
+                        (result.message || 'Unknown error')
+                    );
+                    return;
+                  }
+
+                  console.log('=== FRONTEND: Profile saved successfully ===');
+                  console.log('Updated profile data:', result.profile);
+                  
+                  // Show success message
+                  alert('Profile saved successfully!');
+                } catch (error: any) {
+                  console.error('=== FRONTEND: API Call Error ===');
+                  console.error('Error object:', error);
+                  console.error('Error message:', error.message);
+                  console.error('Error stack:', error.stack);
+                  console.error('Error response:', error.response);
+                  console.error('Error status:', error.status);
+                  
+                  const errorMessage = error.response?.data?.message || error.message || 'Network error. Please check your connection and try again.';
+                  alert('Error saving profile: ' + errorMessage);
+                  return;
+                }
 
                 // Refresh profile data from server FIRST to get latest values from database
                 // This ensures we have the most up-to-date data including sports_played

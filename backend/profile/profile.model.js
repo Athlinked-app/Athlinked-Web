@@ -92,19 +92,23 @@ async function upsertUserProfile(userId, profileData) {
     }
     if (profileData.education !== undefined) {
       usersUpdateFields.push(`education = $${usersParamIndex++}`);
-      usersUpdateValues.push(profileData.education || null);
+      // Allow empty strings to be saved (don't convert to null)
+      usersUpdateValues.push(profileData.education === '' ? null : profileData.education);
     }
     if (profileData.bio !== undefined) {
       usersUpdateFields.push(`bio = $${usersParamIndex++}`);
-      usersUpdateValues.push(profileData.bio || null);
+      // Allow empty strings to be saved (don't convert to null)
+      usersUpdateValues.push(profileData.bio === '' ? null : profileData.bio);
     }
     if (profileData.city !== undefined) {
       usersUpdateFields.push(`city = $${usersParamIndex++}`);
-      usersUpdateValues.push(profileData.city || null);
+      // Allow empty strings to be saved (don't convert to null)
+      usersUpdateValues.push(profileData.city === '' ? null : profileData.city);
     }
     if (profileData.primarySport !== undefined) {
       usersUpdateFields.push(`primary_sport = $${usersParamIndex++}`);
-      usersUpdateValues.push(profileData.primarySport || null);
+      // Allow empty strings to be saved (don't convert to null)
+      usersUpdateValues.push(profileData.primarySport === '' ? null : profileData.primarySport);
     }
     if (profileData.sportsPlayed !== undefined) {
       let sportsArray = [];
@@ -129,8 +133,31 @@ async function upsertUserProfile(userId, profileData) {
         RETURNING *
       `;
 
+      console.log('=== DATABASE: Executing UPDATE query ===');
+      console.log('SQL Query:', updateUsersQuery);
+      console.log('Parameter count:', usersUpdateValues.length);
+      console.log('With values:', usersUpdateValues.map((v, i) => {
+        if (v === null) return `$${i + 1} = NULL`;
+        if (typeof v === 'string') return `$${i + 1} = '${v.length > 50 ? v.substring(0, 50) + '...' : v}'`;
+        if (Array.isArray(v)) return `$${i + 1} = [${v.join(', ')}]`;
+        return `$${i + 1} = ${v}`;
+      }));
+
       const result = await dbClient.query(updateUsersQuery, usersUpdateValues);
-      console.log('Updated users table with profile data:', {
+      
+      console.log('=== DATABASE: Query Execution Result ===');
+      console.log('Rows affected:', result.rowCount);
+      console.log('Returned row count:', result.rows.length);
+      
+      if (result.rowCount === 0) {
+        console.error('=== DATABASE ERROR: UPDATE query affected 0 rows ===');
+        console.error('User ID:', userId);
+        console.error('This means the user might not exist or the WHERE clause did not match');
+        throw new Error('User not found or update failed');
+      }
+      
+      console.log('=== DATABASE: Update successful ===');
+      console.log('Updated fields:', {
         full_name: profileData.fullName,
         profile_url: profileData.profileImageUrl,
         cover_url: profileData.coverImageUrl,
@@ -140,19 +167,37 @@ async function upsertUserProfile(userId, profileData) {
         primary_sport: profileData.primarySport,
         sports_played: profileData.sportsPlayed,
       });
-      console.log('Query executed successfully');
-      console.log('Rows affected:', result.rowCount);
-      console.log('Returned data:', result.rows[0]);
+      console.log('Returned user data:', {
+        id: result.rows[0]?.id,
+        full_name: result.rows[0]?.full_name,
+        bio: result.rows[0]?.bio,
+        education: result.rows[0]?.education,
+        city: result.rows[0]?.city,
+        sports_played: result.rows[0]?.sports_played,
+        primary_sport: result.rows[0]?.primary_sport,
+      });
     } else {
       console.log('WARNING: No profile fields provided to update');
+      throw new Error('No profile fields provided to update');
     }
 
     await dbClient.query('COMMIT');
-    console.log('Transaction committed');
+    console.log('Transaction committed successfully');
 
     const finalProfile = await getUserProfile(userId);
+    
+    if (!finalProfile) {
+      console.error('ERROR: Could not retrieve updated profile after commit');
+      throw new Error('Failed to retrieve updated profile');
+    }
 
     console.log('=== UPSERT PROFILE SUCCESS ===');
+    console.log('Final profile data:', {
+      bio: finalProfile.bio,
+      education: finalProfile.education,
+      city: finalProfile.city,
+      sports_played: finalProfile.sports_played,
+    });
     return finalProfile;
   } catch (error) {
     await dbClient.query('ROLLBACK');
@@ -161,7 +206,8 @@ async function upsertUserProfile(userId, profileData) {
     console.error('Error code:', error.code);
     console.error('Error detail:', error.detail);
     console.error('Error hint:', error.hint);
-    console.error('Full error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Full error object:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
     throw error;
   } finally {
     dbClient.release();

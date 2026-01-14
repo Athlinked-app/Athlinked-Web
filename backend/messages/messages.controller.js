@@ -1,5 +1,4 @@
 const messagesService = require('./messages.service');
-const upload = require('../utils/upload-message');
 const path = require('path');
 
 async function getConversations(req, res) {
@@ -218,30 +217,20 @@ async function getOrCreateConversation(req, res) {
 
 async function uploadMessageFile(req, res) {
   try {
-    const uploadSingle = upload.single('file');
-
-    uploadSingle(req, res, async err => {
-      if (err) {
-        return res.status(400).json({
-          success: false,
-          message: err.message || 'File upload failed',
-        });
-      }
-
-      if (!req.file) {
-        return res.status(400).json({
-          success: false,
-          message: 'No file uploaded',
-        });
-      }
-
-      const mediaUrl = `/uploads/messages/${req.file.filename}`;
-
-      res.json({
-        success: true,
-        media_url: mediaUrl,
-        filename: req.file.filename,
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded',
       });
+    }
+
+    // Use S3 URL if available, otherwise fallback to local path (for backward compatibility)
+    const mediaUrl = req.file.location || `/uploads/messages/${req.file.filename}`;
+
+    res.json({
+      success: true,
+      media_url: mediaUrl,
+      filename: req.file.originalname,
     });
   } catch (error) {
     console.error('Error uploading message file:', error);

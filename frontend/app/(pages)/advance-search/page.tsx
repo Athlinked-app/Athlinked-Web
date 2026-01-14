@@ -5,6 +5,7 @@ import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import Header from '@/components/Header';
 import { Search as SearchIcon, X, ChevronDown } from 'lucide-react';
+import { BASE_URL, getResourceUrl } from '@/utils/api';
 
 interface SearchResult {
   id: string;
@@ -64,11 +65,11 @@ export default function SearchPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         response = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -97,14 +98,14 @@ export default function SearchPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return getResourceUrl(profileUrl) || profileUrl;
     }
     return profileUrl;
   };
 
   const performSearch = async () => {
     setIsSearching(true);
-    const baseUrl = 'http://localhost:3001';
+    const baseUrl = BASE_URL;
 
     try {
       // Build query parameters
@@ -210,8 +211,8 @@ export default function SearchPage() {
 
     try {
       const endpoint = isCurrentlyFollowing
-        ? `http://localhost:3001/api/network/unfollow/${userId}`
-        : `http://localhost:3001/api/network/follow/${userId}`;
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/network/unfollow/${userId}`
+        : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/network/follow/${userId}`;
 
       const response = await fetch(endpoint, {
         method: 'POST',

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Play, X } from 'lucide-react';
+import { BASE_URL, getResourceUrl } from '@/utils/api';
 
 interface Clip {
   id: string;
@@ -39,7 +40,7 @@ export default function Clips({
       try {
         setLoading(true);
         const response = await fetch(
-          'http://localhost:3001/api/clips?page=1&limit=50'
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/clips?page=1&limit=50`
         );
 
         if (!response.ok) {
@@ -68,7 +69,7 @@ export default function Clips({
             id: clip.id,
             videoUrl: clip.video_url?.startsWith('http')
               ? clip.video_url
-              : `http://localhost:3001${clip.video_url}`,
+              : getResourceUrl(clip.video_url) || clip.video_url,
             author: clip.username || fallbackName,
             authorAvatar: clip.user_profile_url || null,
             caption: clip.description || '',

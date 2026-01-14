@@ -52,7 +52,7 @@ export default function OTPVerification({
 
       // Call backend to verify OTP and create user
       const response = await fetch(
-        'http://localhost:3001/api/signup/verify-otp',
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/verify-otp`,
         {
           method: 'POST',
           headers: {
@@ -173,7 +173,7 @@ export default function OTPVerification({
       };
 
       // Call backend to resend OTP
-      const response = await fetch('http://localhost:3001/api/signup/start', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
