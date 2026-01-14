@@ -10,7 +10,7 @@ const competitionClubsController = require('./competition-clubs.controller');
 const characterLeadershipController = require('./character-leadership.controller');
 const healthReadinessController = require('./health-readiness.controller');
 const videoMediaController = require('./video-media.controller');
-const uploadPdf = require('./upload-pdf');
+const { upload: uploadPdf, uploadToS3Middleware: uploadPdfToS3Middleware } = require('./upload-pdf');
 
 /**
  * POST /api/profile/upload
@@ -439,6 +439,7 @@ router.post(
       next();
     });
   },
+  uploadPdfToS3Middleware,
   academicBackgroundsController.createAcademicBackgroundController
 );
 
@@ -504,6 +505,7 @@ router.put(
       next();
     });
   },
+  uploadPdfToS3Middleware,
   academicBackgroundsController.updateAcademicBackgroundController
 );
 
@@ -654,6 +656,7 @@ router.post(
       next();
     });
   },
+  uploadPdfToS3Middleware,
   achievementsController.createAchievementController
 );
 
@@ -719,6 +722,7 @@ router.put(
       next();
     });
   },
+  uploadPdfToS3Middleware,
   achievementsController.updateAchievementController
 );
 

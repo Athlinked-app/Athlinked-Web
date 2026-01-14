@@ -22,25 +22,29 @@ export const metadata: Metadata = {
     'Sports networking platform for athletes, coaches, and businesses',
 };
 
+function GoogleOAuthWrapper({ children }: { children: React.ReactNode }) {
+  'use client';
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+
+  // Only render provider if clientId exists
+  if (!clientId) {
+    return <>{children}</>;
+  }
+
+  return <GoogleOAuthProvider clientId={clientId}>{children}</GoogleOAuthProvider>;
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
-  console.log('abc', clientId);
 
   return (
     <html lang="en">
       <body className={manrope.className}>
-        {clientId ? (
-          <GoogleOAuthProvider clientId={clientId}>
-            {children}
-          </GoogleOAuthProvider>
-        ) : (
-          // Render children without Google provider when client id is not configured
-          children
-        )}
+        <GoogleOAuthWrapper>{children}</GoogleOAuthWrapper>
       </body>
     </html>
   );

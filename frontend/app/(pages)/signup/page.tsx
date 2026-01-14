@@ -172,7 +172,7 @@ export default function SignupPage() {
         }
 
         const response = await fetch(
-          'http://localhost:3001/api/auth/google/complete-signup-full',
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/auth/google/complete-signup-full`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -263,7 +263,7 @@ export default function SignupPage() {
         };
 
         // Call backend to send OTP via email
-        const response = await fetch('http://localhost:3001/api/signup/start', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/start`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

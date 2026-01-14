@@ -1,25 +1,8 @@
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { uploadToS3, generateS3Key } = require('../utils/s3');
 
-const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'profile', 'pdfs');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    console.log('Saving file to:', uploadDir);
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    const filename = 'pdf-' + uniqueSuffix + ext;
-    console.log('Generated filename:', filename);
-    cb(null, filename);
-  },
-});
+// Use memory storage since we'll upload directly to S3
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   console.log('File filter - mimetype:', file.mimetype, 'originalname:', file.originalname);
@@ -41,4 +24,25 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
-module.exports = upload;
+// Middleware to upload file to S3 after multer processes it
+const uploadToS3Middleware = async (req, res, next) => {
+  if (req.file) {
+    try {
+      const s3Key = generateS3Key('profile', req.file.originalname, req.file.mimetype);
+      const s3Url = await uploadToS3(req.file.buffer, s3Key, req.file.mimetype);
+      
+      // Store S3 URL in req.file.location for controllers to use
+      req.file.location = s3Url;
+      req.file.s3Key = s3Key;
+      console.log('File uploaded to S3:', s3Url);
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: `Failed to upload file to S3: ${error.message}`,
+      });
+    }
+  }
+  next();
+};
+
+module.exports = { upload, uploadToS3Middleware };

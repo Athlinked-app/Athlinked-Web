@@ -21,16 +21,6 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'http://localhost:3001',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        pathname: '/**',
-      },
-      {
         protocol: 'http',
         hostname: 'localhost',
         port: '3001',
@@ -38,8 +28,29 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'http://localhost:3001',
-        port: '',
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
+      // AWS S3 bucket domains
+      {
+        protocol: 'https',
+        hostname: 'athlinked-storage-23453.s3.amazonaws.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'athlinked-storage-23453.s3.us-east-1.amazonaws.com',
+        pathname: '/**',
+      },
+      // Generic S3 pattern for any region
+      {
+        protocol: 'https',
+        hostname: '*.s3.amazonaws.com',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.s3.*.amazonaws.com',
         pathname: '/**',
       },
     ],

@@ -38,7 +38,8 @@ async function createClip(req, res) {
       });
     }
 
-    const video_url = `/uploads/${file.filename}`;
+    // Use S3 URL if available, otherwise fallback to local path (for backward compatibility)
+    const video_url = file.location || `/uploads/${file.filename}`;
 
     const result = await clipsService.createClipService({
       user_id,

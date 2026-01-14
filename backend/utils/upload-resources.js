@@ -35,8 +35,9 @@ const fileFilter = (req, file, cb) => {
   }
 
   // For video resources, accept all video MIME types only
-  if (resourceType === 'video') {
+  if (inferredResourceType === 'video') {
     if (file.mimetype && file.mimetype.startsWith('video/')) {
+      console.log('Video file accepted');
       return cb(null, true);
     } else {
       return cb(new Error('Only video files are allowed for video library'));
@@ -48,6 +49,7 @@ const fileFilter = (req, file, cb) => {
     const isPdf =
       file.mimetype === 'application/pdf' || /\.pdf$/i.test(file.originalname);
     if (isPdf) {
+      console.log('PDF file accepted for template');
       return cb(null, true);
     } else {
       return cb(new Error('Only PDF files are allowed for templates'));
@@ -59,10 +61,12 @@ const fileFilter = (req, file, cb) => {
   const isVideo = file.mimetype && file.mimetype.startsWith('video/');
   if (isVideo) {
     // Accept all video files when no resource_type is specified (for /api/videos endpoint)
+    console.log('Video file accepted (fallback)');
     return cb(null, true);
   }
 
   // If resource_type is not specified and it's not a video, reject
+  console.log('File rejected - no resource type match. URL:', url);
   cb(
     new Error(
       'Invalid file type. Videos must be video files, templates must be PDF files, and articles only accept links.'
@@ -78,4 +82,33 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
-module.exports = upload;
+// Middleware to upload file to S3 after multer processes it
+const uploadToS3Middleware = async (req, res, next) => {
+  if (req.file) {
+    try {
+      let prefix = 'resources';
+      if (req.body && req.body.resource_type) {
+        if (req.body.resource_type === 'video') {
+          prefix = 'resources';
+        } else if (req.body.resource_type === 'template') {
+          prefix = 'resources';
+        }
+      }
+
+      const s3Key = generateS3Key(prefix, req.file.originalname, req.file.mimetype);
+      const s3Url = await uploadToS3(req.file.buffer, s3Key, req.file.mimetype);
+      
+      // Store S3 URL in req.file.location for controllers to use
+      req.file.location = s3Url;
+      req.file.s3Key = s3Key;
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: `Failed to upload file to S3: ${error.message}`,
+      });
+    }
+  }
+  next();
+};
+
+module.exports = { upload, uploadToS3Middleware };

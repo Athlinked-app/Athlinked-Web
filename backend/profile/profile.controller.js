@@ -56,16 +56,36 @@ async function upsertUserProfile(req, res) {
     if (primarySport !== undefined) profileData.primarySport = primarySport;
     if (sportsPlayed !== undefined) profileData.sportsPlayed = sportsPlayed;
 
+    console.log('Controller: Calling upsertUserProfileService with:', {
+      userId: userId ? userId.substring(0, 8) + '...' : 'null',
+      profileDataKeys: Object.keys(profileData),
+      profileData: profileData,
+    });
+
     const result = await profileService.upsertUserProfileService(
       userId,
       profileData
     );
+    
+    console.log('Controller: Service returned:', {
+      success: result.success,
+      message: result.message,
+      profileKeys: result.profile ? Object.keys(result.profile) : 'no profile',
+    });
+    
+    if (!result.success) {
+      console.error('Controller: Service returned failure:', result);
+      return res.status(400).json(result);
+    }
+    
     return res.status(200).json(result);
   } catch (error) {
     console.error('Upsert user profile controller error:', error);
+    console.error('Error stack:', error.stack);
     return res.status(500).json({
       success: false,
       message: error.message || 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     });
   }
 }

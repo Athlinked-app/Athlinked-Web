@@ -1,24 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { uploadToS3, generateS3Key } = require('../utils/s3');
 
-const uploadDir = path.join(__dirname, '..', 'public', 'uploads', 'profile');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    cb(null, 'profile-' + uniqueSuffix + ext);
-  },
-});
+// Use memory storage since we'll upload directly to S3
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   const allowedExtensions = /\.(png|jpeg|jpg|gif)$/i;
@@ -94,7 +80,7 @@ const { authenticateToken } = require('../middleware/auth');
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/upload', authenticateToken, upload.single('file'), (req, res) => {
+router.post('/upload', authenticateToken, upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({
@@ -103,14 +89,24 @@ router.post('/upload', authenticateToken, upload.single('file'), (req, res) => {
       });
     }
 
-    const fileUrl = `/uploads/profile/${req.file.filename}`;
+    // Upload to S3
+    try {
+      const s3Key = generateS3Key('profile', req.file.originalname, req.file.mimetype);
+      const s3Url = await uploadToS3(req.file.buffer, s3Key, req.file.mimetype);
 
-    return res.status(200).json({
-      success: true,
-      message: 'File uploaded successfully',
-      fileUrl: fileUrl,
-      filename: req.file.filename,
-    });
+      return res.status(200).json({
+        success: true,
+        message: 'File uploaded successfully',
+        fileUrl: s3Url,
+        filename: req.file.originalname,
+      });
+    } catch (s3Error) {
+      console.error('S3 upload error:', s3Error);
+      return res.status(500).json({
+        success: false,
+        message: `Failed to upload file to S3: ${s3Error.message}`,
+      });
+    }
   } catch (error) {
     console.error('Upload error:', error);
     return res.status(500).json({

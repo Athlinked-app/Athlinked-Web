@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const clipsController = require('./clips.controller');
-const upload = require('../utils/upload');
+const { upload, uploadToS3Middleware } = require('../utils/upload');
 
 /**
  * @swagger
@@ -77,6 +77,7 @@ router.post(
       next();
     });
   },
+  uploadToS3Middleware,
   clipsController.createClip
 );
 

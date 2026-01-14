@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const templatesController = require('./templates.controller');
-const upload = require('../utils/upload-resources');
+const { upload, uploadToS3Middleware } = require('../utils/upload-resources');
 
 /**
  * @swagger
@@ -56,6 +56,7 @@ router.post(
   '/',
   authenticateToken,
   upload.single('file'),
+  uploadToS3Middleware,
   templatesController.createTemplate
 );
 

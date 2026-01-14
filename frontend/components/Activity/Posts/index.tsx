@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { Play, X } from 'lucide-react';
 import { type PostData } from '@/components/Post';
 import Post from '@/components/Post';
+import { getResourceUrl } from '@/utils/api';
 
 interface PostsProps {
   posts: PostData[];
@@ -51,7 +52,7 @@ export default function Posts({
     if (mediaUrl.startsWith('http')) return mediaUrl;
 
     // Otherwise, prepend the base URL
-    return `http://localhost:3001${mediaUrl}`;
+    return getResourceUrl(mediaUrl) || mediaUrl;
   };
 
   if (loading) {

@@ -1,38 +1,8 @@
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { uploadToS3, generateS3Key } = require('./s3');
 
-const uploadDir = path.join(__dirname, '..', 'public', 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const ext = path.extname(file.originalname);
-    let prefix = 'post-media-';
-    if (file.mimetype) {
-      if (file.mimetype.startsWith('video/')) {
-        prefix = 'post-video-';
-      } else if (file.mimetype.startsWith('image/')) {
-        prefix = 'post-photo-';
-      }
-    }
-    if (req.body && req.body.post_type) {
-      prefix =
-        req.body.post_type === 'video'
-          ? 'post-video-'
-          : req.body.post_type === 'photo'
-            ? 'post-photo-'
-            : prefix;
-    }
-    cb(null, prefix + uniqueSuffix + ext);
-  },
-});
+// Use memory storage since we'll upload directly to S3
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   const allowedExtensions = /\.(mp4|mov|png|jpeg|jpg|gif)$/i;
@@ -61,4 +31,29 @@ const upload = multer({
   fileFilter: fileFilter,
 });
 
-module.exports = upload;
+// Middleware to upload file to S3 after multer processes it
+const uploadToS3Middleware = async (req, res, next) => {
+  if (req.file) {
+    try {
+      let prefix = 'posts';
+      if (req.body && req.body.post_type) {
+        prefix = req.body.post_type === 'video' ? 'posts' : 'posts';
+      }
+
+      const s3Key = generateS3Key(prefix, req.file.originalname, req.file.mimetype);
+      const s3Url = await uploadToS3(req.file.buffer, s3Key, req.file.mimetype);
+      
+      // Store S3 URL in req.file.location for controllers to use
+      req.file.location = s3Url;
+      req.file.s3Key = s3Key;
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: `Failed to upload file to S3: ${error.message}`,
+      });
+    }
+  }
+  next();
+};
+
+module.exports = { upload, uploadToS3Middleware };

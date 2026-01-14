@@ -7,6 +7,7 @@ import FileUploadModal from '@/components/Clips/FileUploadModal';
 import ShareModal from '@/components/Share/ShareModal';
 import SaveModal from '@/components/Save/SaveModal';
 import type { PostData } from '@/components/Post';
+import { getResourceUrl } from '@/utils/config';
 import {
   Heart,
   Share2,
@@ -821,7 +822,7 @@ export default function ClipsPage() {
           id: clip.id,
           videoUrl: clip.video_url?.startsWith('http')
             ? clip.video_url
-            : `http://localhost:3001${clip.video_url}`,
+            : getResourceUrl(clip.video_url) || clip.video_url,
           author: clip.username || fallbackName,
           authorAvatar:
             clip.user_profile_url && clip.user_profile_url.trim() !== ''
@@ -987,7 +988,7 @@ export default function ClipsPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return getResourceUrl(profileUrl) || profileUrl;
     }
     return profileUrl;
   };

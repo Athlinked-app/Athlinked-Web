@@ -6,6 +6,7 @@ import RightSideBar from '@/components/RightSideBar';
 import Header from '@/components/Header';
 import Post, { type PostData } from '@/components/Post';
 import { Search as SearchIcon, X, Play } from 'lucide-react';
+import { BASE_URL, getResourceUrl } from '@/utils/api';
 
 interface SearchResult {
   id: string;
@@ -279,11 +280,11 @@ export default function SearchPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `${BASE_URL}/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         response = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `${BASE_URL}/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -312,7 +313,7 @@ export default function SearchPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return getResourceUrl(profileUrl) || profileUrl;
     }
     return profileUrl;
   };
@@ -330,7 +331,7 @@ export default function SearchPage() {
 
     setIsSearching(true);
     const searchLower = query.toLowerCase();
-    const baseUrl = 'http://localhost:3001';
+    const baseUrl = BASE_URL;
 
     try {
       // Fetch all content types in parallel
@@ -527,8 +528,8 @@ export default function SearchPage() {
 
     try {
       const endpoint = isCurrentlyFollowing
-        ? `http://localhost:3001/api/network/unfollow/${userId}`
-        : `http://localhost:3001/api/network/follow/${userId}`;
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/network/unfollow/${userId}`
+        : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/network/follow/${userId}`;
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -821,7 +822,7 @@ export default function SearchPage() {
                 {searchClips.map(clip => {
                   const videoUrl = clip.video_url?.startsWith('http')
                     ? clip.video_url
-                    : `http://localhost:3001${clip.video_url}`;
+                    : getResourceUrl(clip.video_url) || clip.video_url;
 
                   return (
                     <div
@@ -938,7 +939,7 @@ export default function SearchPage() {
           {searchClips.map(clip => {
             const videoUrl = clip.video_url?.startsWith('http')
               ? clip.video_url
-              : `http://localhost:3001${clip.video_url}`;
+              : getResourceUrl(clip.video_url) || clip.video_url;
 
             return (
               <div

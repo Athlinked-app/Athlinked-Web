@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const messagesController = require('./messages.controller');
+const { upload, uploadToS3Middleware } = require('../utils/upload-message');
 
 /**
  * @swagger
@@ -204,7 +205,13 @@ router.post(
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post('/upload', authenticateToken, messagesController.uploadMessageFile);
+router.post(
+  '/upload',
+  authenticateToken,
+  upload.single('file'),
+  uploadToS3Middleware,
+  messagesController.uploadMessageFile
+);
 
 /**
  * @swagger

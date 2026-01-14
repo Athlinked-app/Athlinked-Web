@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
+import { getResourceUrl } from '@/utils/config';
 
 interface User {
   id: string;
@@ -219,7 +220,7 @@ export default function NetworkPage() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return getResourceUrl(profileUrl) || profileUrl;
     }
     return profileUrl;
   };

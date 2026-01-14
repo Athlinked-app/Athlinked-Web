@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { getResourceUrl } from '@/utils/config';
 
 interface Person {
   id: string;
@@ -55,7 +56,7 @@ export default function RightSideBar({
     if (!profileUrl || profileUrl.trim() === '') return null;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return getResourceUrl(profileUrl) || profileUrl;
     }
     return profileUrl;
   };

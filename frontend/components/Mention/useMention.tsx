@@ -46,7 +46,7 @@ export function useMention({
 
       try {
         const response = await fetch(
-          `http://localhost:3001/api/network/following/${currentUserId}`
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/network/following/${currentUserId}`
         );
 
         if (response.ok) {

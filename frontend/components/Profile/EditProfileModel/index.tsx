@@ -16,6 +16,7 @@ import {
   Heart,
 } from 'lucide-react';
 import EditProfilePopup from '../EditProfilePopup';
+import { BASE_URL, getResourceUrl } from '@/utils/api';
 
 interface EditProfileModalProps {
   open: boolean;
@@ -153,11 +154,11 @@ export default function EditProfileModal({
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -181,13 +182,13 @@ export default function EditProfileModal({
             if (data.user.profile_url) {
               const profileUrl = data.user.profile_url.startsWith('http')
                 ? data.user.profile_url
-                : `http://localhost:3001${data.user.profile_url}`;
+                : getResourceUrl(data.user.profile_url) || data.user.profile_url;
               setProfileImagePreview(profileUrl);
             }
             if (data.user.background_image_url) {
               const bgUrl = data.user.background_image_url.startsWith('http')
                 ? data.user.background_image_url
-                : `http://localhost:3001${data.user.background_image_url}`;
+                : getResourceUrl(data.user.background_image_url) || data.user.background_image_url;
               setBackgroundImagePreview(bgUrl);
             }
             if (data.user.sports_played) {
@@ -231,18 +232,23 @@ export default function EditProfileModal({
             if (profileData.profileImage) {
               const profileUrl = profileData.profileImage.startsWith('http')
                 ? profileData.profileImage
-                : `http://localhost:3001${profileData.profileImage}`;
+                : getResourceUrl(profileData.profileImage) || profileData.profileImage;
               setProfileImagePreview(profileUrl);
             }
             if (profileData.coverImage) {
               const bgUrl = profileData.coverImage.startsWith('http')
                 ? profileData.coverImage
-                : `http://localhost:3001${profileData.coverImage}`;
+                : getResourceUrl(profileData.coverImage) || profileData.coverImage;
               setBackgroundImagePreview(bgUrl);
             }
-            if (profileData.primarySport) {
-              setPrimarySport(profileData.primarySport);
-              setSportsPlayed(profileData.primarySport);
+            // IMPORTANT: Keep primarySport and sportsPlayed separate!
+            // primarySport is a single sport, sportsPlayed is a list of all sports
+            if (profileData.primarySport !== undefined) {
+              setPrimarySport(profileData.primarySport || '');
+            }
+            // sportsPlayed should come from profileData.sportsPlayed, NOT from primarySport
+            if (profileData.sportsPlayed !== undefined) {
+              setSportsPlayed(profileData.sportsPlayed || '');
             }
           } catch (error) {
             console.error(
@@ -288,11 +294,11 @@ export default function EditProfileModal({
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -351,12 +357,33 @@ export default function EditProfileModal({
         setLocation(userData.location || '');
       }
       if (userData.age !== undefined) setAge(userData.age?.toString() || '');
-      // Always update sports_played, even if empty (to clear it)
+      // IMPORTANT: Keep primarySport and sportsPlayed separate!
+      // Always update sports_played from userData.sports_played (list of all sports)
       if (userData.sports_played !== undefined) {
-        setSportsPlayed(userData.sports_played || '');
+        const sportsValue = userData.sports_played || '';
+        setSportsPlayed(sportsValue);
+        console.log('EditProfileModal: Updated sportsPlayed from userData:', {
+          sports_played: sportsValue,
+          type: typeof sportsValue,
+          length: sportsValue.length,
+        });
       }
-      if (userData.primary_sport !== undefined)
-        setPrimarySport(userData.primary_sport || '');
+      // Always update primary_sport from userData.primary_sport (single sport)
+      if (userData.primary_sport !== undefined) {
+        const primaryValue = userData.primary_sport || '';
+        setPrimarySport(primaryValue);
+        console.log('EditProfileModal: Updated primarySport from userData:', {
+          primary_sport: primaryValue,
+          type: typeof primaryValue,
+        });
+      }
+      
+      // Verify they're different
+      console.log('EditProfileModal: Sports state after update:', {
+        sportsPlayed: userData.sports_played || '',
+        primarySport: userData.primary_sport || '',
+        areTheyDifferent: (userData.sports_played || '') !== (userData.primary_sport || ''),
+      });
       if (userData.bio !== undefined) setBio(userData.bio || '');
       if (userData.education !== undefined)
         setEducation(userData.education || '');
@@ -365,7 +392,7 @@ export default function EditProfileModal({
         const profileUrl = userData.profile_url
           ? userData.profile_url.startsWith('http')
             ? userData.profile_url
-            : `http://localhost:3001${userData.profile_url}`
+            : getResourceUrl(userData.profile_url) || userData.profile_url
           : null;
         setProfileImagePreview(profileUrl);
       }
@@ -374,7 +401,7 @@ export default function EditProfileModal({
         const bgUrl = userData.background_image_url
           ? userData.background_image_url.startsWith('http')
             ? userData.background_image_url
-            : `http://localhost:3001${userData.background_image_url}`
+            : getResourceUrl(userData.background_image_url) || userData.background_image_url
           : null;
         setBackgroundImagePreview(bgUrl);
       }

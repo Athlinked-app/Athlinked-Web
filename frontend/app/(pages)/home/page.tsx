@@ -9,6 +9,7 @@ import HomeHerosection from '@/components/Home/Herosection';
 import Post, { type PostData } from '@/components/Post';
 import HomePopup from '@/components/Home/Homepopup';
 import { isAuthenticated } from '@/utils/auth';
+import { BASE_URL, getResourceUrl } from '@/utils/api';
 
 interface CurrentUser {
   id: string;
@@ -30,7 +31,7 @@ export default function Landing() {
     try {
       setLoading(true);
       const response = await fetch(
-        'http://localhost:3001/api/posts?page=1&limit=50'
+        `${process.env.NEXT_PUBLIC_API_URL || `${BASE_URL}/api`}/posts?page=1&limit=50`
       );
 
       if (!response.ok) {
@@ -118,11 +119,11 @@ export default function Landing() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `http://localhost:3001/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `${BASE_URL}/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         response = await fetch(
-          `http://localhost:3001/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `${BASE_URL}/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -301,7 +302,7 @@ export default function Landing() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001${profileUrl}`;
+      return getResourceUrl(profileUrl) || profileUrl;
     }
     return profileUrl;
   };
