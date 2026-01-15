@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "kill-port": "node scripts/kill-port.js"
+    "kill-port": "node scripts/kill-port.js",
+    "test-db": "node scripts/test-db-connection.js"
   },
   "keywords": [
     "nodejs",
