@@ -13,6 +13,7 @@ async function getUserProfile(userId) {
       u.primary_sport,
       u.sports_played,
       u.dob,
+      u.user_type,
       u.created_at,
       u.updated_at
     FROM users u
@@ -254,9 +255,162 @@ async function updateProfileImages(userId, imageData) {
   }
 }
 
+/**
+ * Get user profile with athletic performance and sports with IDs (optimized for stats page)
+ * This combines user data, athletic performance, and sports with IDs in a single query
+ * @param {string} userId - User ID
+ * @param {string} activeSport - Optional active sport to filter athletic performance
+ * @returns {Promise<object|null>} Combined user data with athletic performance and sports
+ */
+async function getUserProfileWithStats(userId, activeSport = null) {
+  try {
+    // Get user data
+    const userQuery = `
+      SELECT 
+        u.id as user_id,
+        u.full_name,
+        u.profile_url as profile_image_url,
+        u.cover_url as cover_image_url,
+        u.bio,
+        u.education,
+        u.city,
+        u.primary_sport,
+        u.sports_played,
+        u.dob,
+        u.user_type
+      FROM users u
+      WHERE u.id = $1
+    `;
+    
+    const userResult = await pool.query(userQuery, [userId]);
+    if (userResult.rows.length === 0) {
+      return null;
+    }
+    
+    const userData = userResult.rows[0];
+    
+    // Get athletic performance (filtered by active sport if provided)
+    let athleticPerfQuery = `
+      SELECT 
+        ap.id,
+        ap.height,
+        ap.weight,
+        ap.hand,
+        ap.arm,
+        ap.jersey_number,
+        ap.sport,
+        ap.created_at
+      FROM athletic_performance ap
+      WHERE ap.user_id = $1
+      ORDER BY 
+    `;
+    
+    const athleticPerfParams = [userId];
+    if (activeSport) {
+      athleticPerfQuery += `
+        CASE WHEN LOWER(ap.sport) = LOWER($2) THEN 0 ELSE 1 END,
+      `;
+      athleticPerfParams.push(activeSport);
+    }
+    athleticPerfQuery += ` ap.created_at DESC LIMIT 1`;
+    
+    const athleticPerfResult = await pool.query(athleticPerfQuery, athleticPerfParams);
+    const athleticPerformance = athleticPerfResult.rows.length > 0 ? athleticPerfResult.rows[0] : null;
+    
+    // Parse sports_played to get sport names array
+    let sportsPlayedArray = [];
+    if (userData.sports_played) {
+      if (Array.isArray(userData.sports_played)) {
+        sportsPlayedArray = userData.sports_played.filter(Boolean);
+      } else if (typeof userData.sports_played === 'string') {
+        let sportsString = userData.sports_played.trim();
+        if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+          sportsString = sportsString.slice(1, -1);
+        }
+        sportsString = sportsString.replace(/["']/g, '');
+        sportsPlayedArray = sportsString.split(',').map(s => s.trim()).filter(Boolean);
+      }
+    }
+    
+    // Get sports with IDs by matching with sports_played
+    let sports = [];
+    if (sportsPlayedArray.length > 0) {
+      // Get all sports from database
+      const allSportsQuery = `SELECT id, name FROM sports ORDER BY name ASC`;
+      const allSportsResult = await pool.query(allSportsQuery);
+      const allSports = allSportsResult.rows;
+      
+      // Create a map for case-insensitive matching (handles "Basketball" vs "Basket Ball")
+      const sportsMap = new Map();
+      allSports.forEach(row => {
+        const normalizedName = row.name.toLowerCase().replace(/\s+/g, '');
+        sportsMap.set(normalizedName, { id: row.id, name: row.name });
+      });
+      
+      // Match sports_played order, using normalized names for matching
+      sports = sportsPlayedArray.map(sportName => {
+        const normalizedSportName = sportName.toLowerCase().replace(/\s+/g, '');
+        
+        // Find matching sport (case-insensitive, ignore spaces)
+        for (const [normalized, sportData] of sportsMap.entries()) {
+          if (normalized === normalizedSportName) {
+            return sportData;
+          }
+        }
+        
+        // If not found in database, return with null id
+        return { id: null, name: sportName };
+      }).filter(Boolean);
+    } else {
+      // If no sports_played, return all sports as fallback
+      const allSportsQuery = `SELECT id, name FROM sports ORDER BY name ASC`;
+      const allSportsResult = await pool.query(allSportsQuery);
+      sports = allSportsResult.rows.map(row => ({
+        id: row.id,
+        name: row.name,
+      }));
+    }
+    
+    // Parse sports_played for display
+    let sportsPlayed = null;
+    if (sportsPlayedArray.length > 0) {
+      sportsPlayed = sportsPlayedArray.join(', ');
+    }
+    
+    return {
+      user_id: userData.user_id,
+      full_name: userData.full_name,
+      profile_image_url: userData.profile_image_url,
+      cover_image_url: userData.cover_image_url,
+      bio: userData.bio,
+      education: userData.education,
+      city: userData.city,
+      primary_sport: userData.primary_sport,
+      sports_played: sportsPlayed,
+      sports_played_array: sportsPlayedArray,
+      dob: userData.dob,
+      user_type: userData.user_type,
+      athletic_performance: athleticPerformance ? {
+        id: athleticPerformance.id,
+        height: athleticPerformance.height,
+        weight: athleticPerformance.weight,
+        hand: athleticPerformance.hand,
+        arm: athleticPerformance.arm,
+        jerseyNumber: athleticPerformance.jersey_number,
+        sport: athleticPerformance.sport,
+      } : null,
+      sports: sports,
+    };
+  } catch (error) {
+    console.error('Error fetching user profile with stats:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   getUserProfile,
   upsertUserProfile,
   updateProfileImages,
   getCurrentUserProfile,
+  getUserProfileWithStats,
 };

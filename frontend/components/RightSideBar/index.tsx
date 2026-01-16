@@ -160,54 +160,37 @@ export default function RightSideBar({
         }
 
         const excludeParam = userId ? `&excludeUserId=${userId}` : '';
+        const currentUserIdParam = userId ? `&currentUserId=${userId}` : '';
         const sortParam = sortBy ? `&sortBy=${sortBy}` : '';
         const searchTypeParam = searchType ? `&searchType=${searchType}` : '';
         const collegeSchoolParam = collegeSchool
           ? `&collegeSchool=${encodeURIComponent(collegeSchool)}`
           : '';
+        
+        // Optimized: Backend now includes isFollowing status in the response
+        // This eliminates 10 separate API calls for follow status checks
         const data = await apiGet<{
           success: boolean;
           users?: any[];
         }>(
-          `/signup/users?limit=10${excludeParam}${sortParam}${searchTypeParam}${collegeSchoolParam}`
+          `/signup/users?limit=10${excludeParam}${currentUserIdParam}${sortParam}${searchTypeParam}${collegeSchoolParam}`
         );
 
         if (data.success && data.users) {
-          const transformedPeople: Person[] = await Promise.all(
-            data.users.map(async (user: any) => {
-              let isFollowing = false;
-              if (userId) {
-                try {
-                  const { apiGet } = await import('@/utils/api');
-                  const isFollowingData = await apiGet<{
-                    success: boolean;
-                    isFollowing?: boolean;
-                  }>(`/network/is-following/${user.id}?follower_id=${userId}`);
-                  if (isFollowingData.success) {
-                    isFollowing = isFollowingData.isFollowing || false;
-                  }
-                } catch (error) {
-                  console.error(
-                    `Error checking follow status for ${user.id}:`,
-                    error
-                  );
-                }
-              }
-
-              return {
-                id: user.id,
-                name: user.full_name || 'User',
-                role: user.user_type
-                  ? user.user_type.charAt(0).toUpperCase() +
-                    user.user_type.slice(1).toLowerCase()
-                  : 'User',
-                avatar: getProfileUrl(user.profile_url),
-                isFollowing,
-                dob: user.dob,
-                created_at: user.created_at,
-              };
-            })
-          );
+          // No need for Promise.all or separate follow status checks anymore!
+          // Backend already includes isFollowing in the response
+          const transformedPeople: Person[] = data.users.map((user: any) => ({
+            id: user.id,
+            name: user.full_name || 'User',
+            role: user.user_type
+              ? user.user_type.charAt(0).toUpperCase() +
+                user.user_type.slice(1).toLowerCase()
+              : 'User',
+            avatar: getProfileUrl(user.profile_url),
+            isFollowing: user.isFollowing || false, // Already included from backend
+            dob: user.dob,
+            created_at: user.created_at,
+          }));
 
           const sortedPeople = sortPeople(transformedPeople, sortBy);
           setPeople(sortedPeople);

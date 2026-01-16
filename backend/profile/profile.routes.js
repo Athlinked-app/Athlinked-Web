@@ -1727,6 +1727,91 @@ router.delete(
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
+/**
+ * @swagger
+ * /api/profile/{userId}/stats-summary:
+ *   get:
+ *     summary: Get user profile with athletic performance and sports (optimized)
+ *     description: |
+ *       Optimized endpoint that combines:
+ *       - User data (name, profile picture, primary sport, sports_played)
+ *       - Athletic performance (height, weight, hand, arm, jersey number)
+ *       - Sports list with IDs (matching user's sports_played)
+ *       
+ *       This reduces API calls from 2-3 to 1 for the stats page visible section.
+ *     tags: [Profile]
+ *     security: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *       - in: query
+ *         name: activeSport
+ *         required: false
+ *         schema:
+ *           type: string
+ *         description: Optional active sport to filter athletic performance
+ *     responses:
+ *       200:
+ *         description: Profile with stats retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     full_name:
+ *                       type: string
+ *                     profile_url:
+ *                       type: string
+ *                     primary_sport:
+ *                       type: string
+ *                     sports_played:
+ *                       type: string
+ *                 athleticPerformance:
+ *                   type: object
+ *                   properties:
+ *                     height:
+ *                       type: string
+ *                     weight:
+ *                       type: string
+ *                     hand:
+ *                       type: string
+ *                     arm:
+ *                       type: string
+ *                     jerseyNumber:
+ *                       type: string
+ *                     sport:
+ *                       type: string
+ *                 sports:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       name:
+ *                         type: string
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Internal server error
+ */
+router.get(
+  '/:userId/stats-summary',
+  profileController.getUserProfileWithStats
+);
+
 router.get('/:userId', profileController.getUserProfile);
 
 module.exports = router;

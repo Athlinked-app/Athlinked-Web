@@ -238,8 +238,11 @@ async function getAllUsers(req, res) {
   try {
     const excludeUserId = req.query.excludeUserId || null;
     const limit = parseInt(req.query.limit) || 10;
+    // Accept currentUserId to check follow status in the same query
+    // This reduces API calls from 12 to 2 (one for user lookup, one for users list)
+    const currentUserId = req.query.currentUserId || req.query.follower_id || null;
 
-    const result = await signupService.getAllUsersService(excludeUserId, limit);
+    const result = await signupService.getAllUsersService(excludeUserId, limit, currentUserId);
 
     return res.status(200).json(result);
   } catch (error) {

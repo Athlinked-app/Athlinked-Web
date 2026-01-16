@@ -125,15 +125,69 @@ async function findById(userId) {
  * Get all users excluding the current user
  * @param {string} excludeUserId - User ID to exclude from results
  * @param {number} limit - Maximum number of users to return (default: 10)
- * @returns {Promise<Array>} Array of user data
+ * @param {string} currentUserId - Optional current user ID to check follow status
+ * @returns {Promise<Array>} Array of user data with isFollowing status
  */
-async function getAllUsers(excludeUserId = null, limit = 10) {
+async function getAllUsers(excludeUserId = null, limit = 10, currentUserId = null) {
   let query;
   let values;
 
-  if (excludeUserId) {
+  // If currentUserId is provided, include follow status in the query
+  if (currentUserId && excludeUserId) {
     query = `
-      SELECT id, full_name, username, email, user_type, profile_url, created_at
+      SELECT 
+        u.id, 
+        u.full_name, 
+        u.username, 
+        u.email, 
+        u.user_type, 
+        u.profile_url, 
+        u.created_at,
+        u.dob,
+        CASE 
+          WHEN uf.id IS NOT NULL THEN true 
+          ELSE false 
+        END as is_following
+      FROM users u
+      LEFT JOIN user_follows uf ON uf.follower_id = $1 AND uf.following_id = u.id
+      WHERE u.id != $2
+      ORDER BY u.created_at DESC
+      LIMIT $3
+    `;
+    values = [currentUserId, excludeUserId, limit];
+  } else if (currentUserId && !excludeUserId) {
+    query = `
+      SELECT 
+        u.id, 
+        u.full_name, 
+        u.username, 
+        u.email, 
+        u.user_type, 
+        u.profile_url, 
+        u.created_at,
+        u.dob,
+        CASE 
+          WHEN uf.id IS NOT NULL THEN true 
+          ELSE false 
+        END as is_following
+      FROM users u
+      LEFT JOIN user_follows uf ON uf.follower_id = $1 AND uf.following_id = u.id
+      ORDER BY u.created_at DESC
+      LIMIT $2
+    `;
+    values = [currentUserId, limit];
+  } else if (excludeUserId) {
+    query = `
+      SELECT 
+        id, 
+        full_name, 
+        username, 
+        email, 
+        user_type, 
+        profile_url, 
+        created_at,
+        dob,
+        false as is_following
       FROM users
       WHERE id != $1
       ORDER BY created_at DESC
@@ -142,7 +196,16 @@ async function getAllUsers(excludeUserId = null, limit = 10) {
     values = [excludeUserId, limit];
   } else {
     query = `
-      SELECT id, full_name, username, email, user_type, profile_url, created_at
+      SELECT 
+        id, 
+        full_name, 
+        username, 
+        email, 
+        user_type, 
+        profile_url, 
+        created_at,
+        dob,
+        false as is_following
       FROM users
       ORDER BY created_at DESC
       LIMIT $1

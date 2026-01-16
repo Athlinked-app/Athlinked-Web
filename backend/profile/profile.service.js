@@ -72,6 +72,7 @@ async function getUserProfileService(userId) {
       primarySport: profile.primary_sport || null, // Single sport
       sportsPlayed: sportsPlayed, // List of all sports (comma-separated)
       dob: profile.dob || null,
+      userType: profile.user_type || null,
     };
     
     console.log('Service: Returning profile data:', {
@@ -239,9 +240,70 @@ async function getCurrentUserProfileService(userId) {
   }
 }
 
+/**
+ * Get user profile with athletic performance and sports with IDs (optimized for stats page)
+ * Combines user data, athletic performance, and sports in a single API call
+ * @param {string} userId - User ID
+ * @param {string} activeSport - Optional active sport to filter athletic performance
+ * @returns {Promise<object>} Combined user data with athletic performance and sports
+ */
+async function getUserProfileWithStatsService(userId, activeSport = null) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const combinedData = await profileModel.getUserProfileWithStats(userId, activeSport);
+
+    if (!combinedData) {
+      return {
+        success: false,
+        message: 'User not found',
+      };
+    }
+
+    // Process sports_played for display
+    let sportsPlayed = null;
+    if (combinedData.sports_played_array && combinedData.sports_played_array.length > 0) {
+      sportsPlayed = combinedData.sports_played_array.join(', ');
+    }
+
+    return {
+      success: true,
+      user: {
+        id: combinedData.user_id,
+        full_name: combinedData.full_name,
+        profile_url: combinedData.profile_image_url,
+        cover_url: combinedData.cover_image_url,
+        bio: combinedData.bio,
+        education: combinedData.education,
+        city: combinedData.city,
+        primary_sport: combinedData.primary_sport,
+        sports_played: sportsPlayed,
+        dob: combinedData.dob,
+        user_type: combinedData.user_type || null,
+      },
+      athleticPerformance: combinedData.athletic_performance ? {
+        id: combinedData.athletic_performance.id,
+        height: combinedData.athletic_performance.height,
+        weight: combinedData.athletic_performance.weight,
+        hand: combinedData.athletic_performance.hand,
+        arm: combinedData.athletic_performance.arm,
+        jerseyNumber: combinedData.athletic_performance.jerseyNumber,
+        sport: combinedData.athletic_performance.sport,
+      } : null,
+      sports: combinedData.sports || [], // Array of { id, name }
+    };
+  } catch (error) {
+    console.error('Get user profile with stats service error:', error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   getUserProfileService,
   upsertUserProfileService,
   updateProfileImagesService,
   getCurrentUserProfileService,
+  getUserProfileWithStatsService,
 };

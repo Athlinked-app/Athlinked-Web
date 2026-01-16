@@ -80,6 +80,7 @@ export default function StatsPage() {
   const [editingYear, setEditingYear] = useState<string>('');
   const [athleticPerformance, setAthleticPerformance] =
     useState<AthleticPerformance | null>(null);
+  const [allAthleticPerformance, setAllAthleticPerformance] = useState<AthleticPerformance[]>([]); // Cache all performance data
 
   // Get initials for placeholder
   const getInitials = (name?: string) => {
@@ -102,7 +103,7 @@ export default function StatsPage() {
     return profileUrl;
   };
 
-  // Fetch user data on mount
+  // Fetch user data on mount - OPTIMIZED: Single API call combines user data, athletic performance, and sports
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -115,44 +116,88 @@ export default function StatsPage() {
           return;
         }
 
-        // Fetch user data from backend
-        let data;
+        // First, get user ID from user identifier
+        let userId: string | null = null;
+        let initialData;
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
-          data = await apiGet<{
+          initialData = await apiGet<{
             success: boolean;
             user?: any;
           }>(`/signup/user-by-username/${encodeURIComponent(username)}`);
         } else {
-          data = await apiGet<{
+          initialData = await apiGet<{
             success: boolean;
             user?: any;
           }>(`/signup/user/${encodeURIComponent(userIdentifier)}`);
         }
 
-        if (data.success && data.user) {
-          setUserData(data.user);
-          setUserId(data.user.id);
+        if (!initialData.success || !initialData.user) {
+          setLoading(false);
+          return;
+        }
 
-          // Parse sports_played from user data
+        userId = initialData.user.id;
+        setUserId(userId);
+
+        // OPTIMIZED: Fetch combined data in ONE API call
+        // This replaces 2-3 separate API calls (user data, athletic performance, sports)
+        const combinedData = await apiGet<{
+          success: boolean;
+          user?: any;
+          athleticPerformance?: AthleticPerformance | null;
+          sports?: { id: string; name: string }[];
+        }>(`/profile/${userId}/stats-summary`);
+
+        if (combinedData.success) {
+          // Set user data
+          if (combinedData.user) {
+            setUserData({
+              full_name: combinedData.user.full_name,
+              primary_sport: combinedData.user.primary_sport,
+              sports_played: combinedData.user.sports_played,
+              email: initialData.user.email,
+              profile_url: combinedData.user.profile_url,
+            });
+          }
+
+          // Set athletic performance (if available)
+          // Note: For full optimization, we'd fetch ALL athletic performance here
+          // For now, we set the initial one and will fetch all on sport change if needed
+          if (combinedData.athleticPerformance) {
+            const perf = {
+              id: combinedData.athleticPerformance.id,
+              height: combinedData.athleticPerformance.height,
+              weight: combinedData.athleticPerformance.weight,
+              hand: combinedData.athleticPerformance.hand,
+              arm: combinedData.athleticPerformance.arm,
+              jerseyNumber: combinedData.athleticPerformance.jerseyNumber,
+              sport: combinedData.athleticPerformance.sport,
+            };
+            setAthleticPerformance(perf);
+            // Cache as array for client-side filtering
+            setAllAthleticPerformance([perf]);
+          }
+
+          // Set sports list with IDs (for sport buttons)
           let sportsList: string[] = [];
-          if (data.user.sports_played) {
-            // Handle PostgreSQL array format: "{Basketball, Football}" or '{"Basketball", "Football"}'
-            let sportsString = data.user.sports_played;
-            // Remove curly brackets if present
+          if (combinedData.sports && combinedData.sports.length > 0) {
+            // Use sports from API response (already matched with IDs)
+            sportsList = combinedData.sports.map(s => s.name);
+          } else if (combinedData.user?.sports_played) {
+            // Fallback: parse sports_played string
+            let sportsString = combinedData.user.sports_played;
             if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
               sportsString = sportsString.slice(1, -1);
             }
-            // Remove quotes (both single and double) from each sport
             sportsString = sportsString.replace(/["']/g, '');
-            // Split by comma and clean up
             sportsList = sportsString
               .split(',')
               .map((s: string) => s.trim())
               .filter(Boolean);
           }
 
-          // If no sports_played, try to get from all available sports in database
+          // Fallback: if still no sports, try fetching all sports
           if (sportsList.length === 0) {
             try {
               const sportsData = await apiGet<{
@@ -160,14 +205,10 @@ export default function StatsPage() {
                 sports?: { name: string; id: string }[];
               }>('/sports');
               if (sportsData.success && sportsData.sports) {
-                // Use all available sports as fallback
-                sportsList = sportsData.sports.map(
-                  (s: { name: string; id: string }) => s.name
-                );
+                sportsList = sportsData.sports.map(s => s.name);
               }
             } catch (error) {
               console.error('Error fetching sports:', error);
-              // Fallback to default sports
               sportsList = ['Football', 'Basketball', 'Golf'];
             }
           }
@@ -175,20 +216,17 @@ export default function StatsPage() {
           setUserSports(sportsList);
 
           // Set active sport to user's primary sport if available, otherwise first sport
-          if (data.user.primary_sport) {
-            const primarySportLower = data.user.primary_sport.toLowerCase();
-            // Check if primary sport is in the user's sports list
+          if (combinedData.user?.primary_sport) {
+            const primarySportLower = combinedData.user.primary_sport.toLowerCase();
             const primaryInList = sportsList.some(
               s => s.toLowerCase() === primarySportLower
             );
             if (primaryInList) {
               setActiveSport(primarySportLower);
             } else if (sportsList.length > 0) {
-              // If primary sport not in list, use first sport
               setActiveSport(sportsList[0].toLowerCase());
             }
           } else if (sportsList.length > 0) {
-            // No primary sport, use first sport
             setActiveSport(sportsList[0].toLowerCase());
           }
         }
@@ -365,46 +403,53 @@ export default function StatsPage() {
     fetchFields();
   }, [formData.position, availablePositions, activeSport]);
 
-  // Fetch athletic performance data
+  // OPTIMIZED: Filter athletic performance client-side when sport changes
+  // Fetch ALL athletic performance once, then filter in memory (no API call on sport change)
   useEffect(() => {
-    const fetchAthleticPerformance = async () => {
+    const fetchAllAthleticPerformance = async () => {
       if (!userId) return;
 
       try {
+        // Fetch all athletic performance data once
         const data = await apiGet<{
           success: boolean;
           data?: AthleticPerformance[];
         }>(`/profile/${userId}/athletic-performance`);
 
         if (data.success && data.data && data.data.length > 0) {
-          // Get the most recent entry, or match by active sport if available
-          let selectedPerformance = data.data[0]; // Default to most recent
-
-          // Try to find performance data matching the active sport
-          const sportMatch = data.data.find(
-            (perf: AthleticPerformance) =>
-              perf.sport &&
-              perf.sport.toLowerCase() === activeSport.toLowerCase()
-          );
-
-          if (sportMatch) {
-            selectedPerformance = sportMatch;
-          }
-
-          setAthleticPerformance(selectedPerformance);
-        } else {
-          setAthleticPerformance(null);
+          setAllAthleticPerformance(data.data);
         }
       } catch (error) {
         console.error('Error fetching athletic performance:', error);
-        setAthleticPerformance(null);
       }
     };
 
-    if (userId) {
-      fetchAthleticPerformance();
+    // Fetch all performance data once when userId is available
+    if (userId && allAthleticPerformance.length === 0) {
+      fetchAllAthleticPerformance();
     }
-  }, [userId, activeSport]);
+  }, [userId]); // Only when userId changes, not on sport change
+
+  // Filter athletic performance client-side when sport changes (NO API CALL)
+  useEffect(() => {
+    if (!allAthleticPerformance.length) {
+      return;
+    }
+
+    // Filter from cached data by active sport
+    const sportMatch = allAthleticPerformance.find(
+      perf => perf.sport && perf.sport.toLowerCase() === activeSport.toLowerCase()
+    );
+
+    if (sportMatch) {
+      setAthleticPerformance(sportMatch);
+    } else if (allAthleticPerformance.length > 0) {
+      // Use most recent if no match
+      setAthleticPerformance(allAthleticPerformance[0]);
+    } else {
+      setAthleticPerformance(null);
+    }
+  }, [activeSport, allAthleticPerformance]); // Filter client-side, no API call!
 
   // Fetch user sport profiles and stats
   useEffect(() => {

@@ -279,16 +279,23 @@ async function parentCompleteService(username, email, password) {
  * Get all users service
  * @param {string} excludeUserId - User ID to exclude from results
  * @param {number} limit - Maximum number of users to return
- * @returns {Promise<object>} Service result with users array
+ * @param {string} currentUserId - Optional current user ID to check follow status
+ * @returns {Promise<object>} Service result with users array including isFollowing status
  */
-async function getAllUsersService(excludeUserId = null, limit = 10) {
+async function getAllUsersService(excludeUserId = null, limit = 10, currentUserId = null) {
   try {
-    const users = await signupModel.getAllUsers(excludeUserId, limit);
+    const users = await signupModel.getAllUsers(excludeUserId, limit, currentUserId);
 
     // Remove password from all users (produce shallow copies)
+    // Also convert is_following to isFollowing (camelCase) for frontend consistency
     const sanitizedUsers = users.map(user => {
       const copy = { ...user };
       delete copy.password;
+      // Convert is_following (snake_case from DB) to isFollowing (camelCase)
+      if ('is_following' in copy) {
+        copy.isFollowing = copy.is_following;
+        delete copy.is_following;
+      }
       return copy;
     });
 
