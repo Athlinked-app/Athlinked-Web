@@ -104,6 +104,13 @@ Complete list of all API endpoints in the AthLinked project.
 - **GET** `/api/profile/:userId` - Get user profile by ID
   - Auth: None
 
+- **GET** `/api/profile/:userId/stats-summary` - Get optimized profile data for stats page (NEW ⭐)
+  - Query: `activeSport` (optional) - Filter athletic performance by sport
+  - Returns: `{ success, user, athleticPerformance, sports: [{ id, name }] }`
+  - Combines: User data, athletic performance, and sports with IDs in one call
+  - **Reduces API calls from 2-3 to 1 for stats page visible section**
+  - Auth: None
+
 - **POST** `/api/profile/upload` - Upload profile or cover image
   - FormData: `file` (PNG, JPG, GIF, max 10MB)
   - Auth: Required

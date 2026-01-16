@@ -146,9 +146,45 @@ async function getCurrentUserProfile(req, res) {
   }
 }
 
+/**
+ * Get user profile with athletic performance and sports (optimized for stats page)
+ * GET /api/profile/:userId/stats-summary
+ */
+async function getUserProfileWithStats(req, res) {
+  try {
+    const { userId } = req.params;
+    const { activeSport } = req.query; // Optional: filter athletic performance by sport
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required',
+      });
+    }
+
+    const result = await profileService.getUserProfileWithStatsService(
+      userId,
+      activeSport || null
+    );
+
+    if (!result.success) {
+      return res.status(404).json(result);
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Get user profile with stats controller error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 module.exports = {
   getUserProfile,
   upsertUserProfile,
   updateProfileImages,
   getCurrentUserProfile,
+  getUserProfileWithStats,
 };
