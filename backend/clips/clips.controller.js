@@ -284,12 +284,10 @@ async function likeClip(req, res) {
     if (error.message === 'Clip not found') {
       return res.status(404).json({ success: false, message: error.message });
     }
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: error.message || 'Internal server error',
-      });
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
   }
 }
 
@@ -314,11 +312,9 @@ async function unlikeClip(req, res) {
     if (error.message === 'Clip not found') {
       return res.status(404).json({ success: false, message: error.message });
     }
-    return res
-      .status(500)
-      .json({
-        success: false,
-        message: error.message || 'Internal server error',
-      });
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
   }
 }
