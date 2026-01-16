@@ -202,6 +202,9 @@ export default function NavigationBar({
   }, []);
 
   const handleLogout = async () => {
+    // Clear session storage BEFORE logout
+    sessionStorage.clear();
+
     // Use the proper logout function from auth utils
     const { logout } = await import('@/utils/auth');
     await logout();

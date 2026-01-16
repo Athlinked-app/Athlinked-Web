@@ -16,42 +16,88 @@ export default function HomePopup({
   userId,
 }: HomePopupProps) {
   const [showPopup, setShowPopup] = useState(false);
-  const [dontShowAgain, setDontShowAgain] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     // Only check if we have a userId
     if (!userId) return;
 
-    // Check if this specific user has opted to not show this again
-    // Using user-specific key so it persists across logins
-    const storageKey = `athlinked_hide_profile_popup_${userId}`;
-    const hidePopup = localStorage.getItem(storageKey);
+    // Check localStorage for permanent hide (when user checked "don't show again")
+    const permanentHideKey = `athlinked_hide_profile_popup_${userId}`;
+    const isPermanentlyHidden = localStorage.getItem(permanentHideKey);
 
-    if (!hidePopup) {
-      // Show popup after a small delay for better UX
-      const timer = setTimeout(() => {
-        setShowPopup(true);
-      }, 500);
-      return () => clearTimeout(timer);
+    if (isPermanentlyHidden) {
+      return; // Don't show popup at all
     }
+
+    // Create session ID only if it doesn't exist (first time this login session)
+    // This way it persists across page refreshes but NOT across logout/login
+    const sessionKey = `athlinked_session_id_${userId}`;
+    let currentSessionId = sessionStorage.getItem(sessionKey);
+
+    if (!currentSessionId) {
+      // No session ID = fresh login, create new one
+      currentSessionId = Date.now().toString();
+      sessionStorage.setItem(sessionKey, currentSessionId);
+    }
+
+    // Check sessionStorage for temporary hide (when user clicked "skip for now")
+    const sessionHideKey = `athlinked_skip_profile_popup_${userId}`;
+    const skipData = sessionStorage.getItem(sessionHideKey);
+
+    if (skipData) {
+      try {
+        const parsed = JSON.parse(skipData);
+        const savedSessionId = parsed.sessionId;
+
+        // Only hide if it's the same session
+        if (savedSessionId === currentSessionId) {
+          return; // Don't show popup this session
+        } else {
+          // Different session (new login), clear old skip data
+          sessionStorage.removeItem(sessionHideKey);
+        }
+      } catch (error) {
+        // Invalid data, clear it
+        sessionStorage.removeItem(sessionHideKey);
+      }
+    }
+
+    // Show popup after a small delay for better UX
+    const timer = setTimeout(() => {
+      setShowPopup(true);
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+    };
   }, [userId]);
 
   const handleSkip = () => {
-    if (dontShowAgain && userId) {
-      // Store preference with user-specific key
-      const storageKey = `athlinked_hide_profile_popup_${userId}`;
-      localStorage.setItem(storageKey, 'true');
+    if (userId) {
+      // Store in sessionStorage with current session ID
+      const sessionKey = `athlinked_session_id_${userId}`;
+      const currentSessionId = sessionStorage.getItem(sessionKey);
+      const sessionHideKey = `athlinked_skip_profile_popup_${userId}`;
+      const dataToStore = JSON.stringify({ sessionId: currentSessionId });
+
+      sessionStorage.setItem(sessionHideKey, dataToStore);
     }
+
+    setShowPopup(false);
+  };
+
+  const handleDontShowAgain = () => {
+    if (userId) {
+      // Store in localStorage so it never shows again
+      const permanentHideKey = `athlinked_hide_profile_popup_${userId}`;
+      localStorage.setItem(permanentHideKey, 'true');
+    }
+
     setShowPopup(false);
   };
 
   const handleCompleteProfile = () => {
-    if (dontShowAgain && userId) {
-      // Store preference with user-specific key
-      const storageKey = `athlinked_hide_profile_popup_${userId}`;
-      localStorage.setItem(storageKey, 'true');
-    }
     setShowPopup(false);
     if (onCompleteProfile) {
       onCompleteProfile();
@@ -65,15 +111,6 @@ export default function HomePopup({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="relative bg-white rounded-xl shadow-2xl max-w-lg w-full mx-4 p-6 sm:p-8">
-        {/* Close Button */}
-        <button
-          onClick={handleSkip}
-          className="absolute top-4 right-4 p-1 rounded-full hover:bg-gray-100 transition-colors"
-          aria-label="Close"
-        >
-          <X className="w-5 h-5 text-gray-600" />
-        </button>
-
         {/* Title */}
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">
           Finish Strong
@@ -83,7 +120,7 @@ export default function HomePopup({
         <div className="mb-6 relative">
           {/* Runner Icon - positioned above the progress bar, moves with progress */}
           <div
-            className="absolute bottom-full  transition-all duration-500 z-10"
+            className="absolute bottom-full transition-all duration-500 z-10"
             style={{ left: `calc(${profileCompletion}% - 20px)` }}
           >
             <img
@@ -108,8 +145,6 @@ export default function HomePopup({
               className="absolute left-0 top-0 h-full bg-[#CB9729] rounded-full transition-all duration-500"
               style={{ width: `${profileCompletion}%` }}
             />
-
-            {/* Finish Flag */}
           </div>
         </div>
 
@@ -146,8 +181,7 @@ export default function HomePopup({
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
-            checked={dontShowAgain}
-            onChange={e => setDontShowAgain(e.target.checked)}
+            onChange={handleDontShowAgain}
             className="w-4 h-4 text-[#CB9729] border-gray-300 rounded focus:ring-[#CB9729]"
           />
           <span className="text-sm text-gray-600">Do not show this again</span>
