@@ -25,7 +25,58 @@ const searchRoutes = require('./search/search.routes');
 
 const app = express();
 
-app.use(cors());
+// CORS configuration - allow production frontend and localhost for development
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://athlinked.randomw.dev',
+  'https://athlinked.randomw.dev/', // With trailing slash
+  process.env.FRONTEND_URL,
+  process.env.CLIENT_URL,
+].filter(Boolean); // Remove undefined values
+
+// Normalize origin by removing trailing slash
+const normalizeOrigin = (origin) => {
+  if (!origin) return origin;
+  return origin.replace(/\/$/, '');
+};
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) {
+      console.log('CORS: Allowing request with no origin');
+      return callback(null, true);
+    }
+    
+    const normalizedOrigin = normalizeOrigin(origin);
+    const normalizedAllowedOrigins = allowedOrigins.map(normalizeOrigin);
+    
+    // In development, allow all origins
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`CORS: Development mode - allowing origin: ${origin}`);
+      return callback(null, true);
+    }
+    
+    // In production, check if origin is in allowed list
+    if (normalizedAllowedOrigins.includes(normalizedOrigin)) {
+      console.log(`CORS: Allowing origin: ${origin}`);
+      callback(null, true);
+    } else {
+      // Log but allow for now to prevent breaking (can be stricter later)
+      console.warn(`CORS: Unknown origin but allowing: ${origin} (normalized: ${normalizedOrigin})`);
+      console.warn(`CORS: Allowed origins: ${normalizedAllowedOrigins.join(', ')}`);
+      callback(null, true);
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  optionsSuccessStatus: 200, // Some legacy browsers choke on 204
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
