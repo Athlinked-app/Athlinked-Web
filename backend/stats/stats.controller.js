@@ -182,7 +182,69 @@ async function saveUserPositionStats(req, res) {
 }
 
 /**
- * 6. Get User Stats for a Sport
+ * 6. Save Stats Combined (Optimized - Reduces API calls from 6 to 1)
+ * POST /user/stats
+ * Accepts sport name, position name, and stats object
+ * Handles all lookups internally
+ */
+async function saveStatsCombined(req, res) {
+  try {
+    const userId = req.body.user_id || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
+
+    const { sportName, positionName, year, stats, userSportProfileId } = req.body;
+
+    if (!sportName || !positionName) {
+      return res.status(400).json({
+        success: false,
+        message: 'sportName and positionName are required',
+      });
+    }
+
+    if (!stats || typeof stats !== 'object' || Object.keys(stats).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'stats object is required and cannot be empty',
+      });
+    }
+
+    const result = await statsService.saveStatsCombinedService(
+      userId,
+      sportName,
+      positionName,
+      year || null,
+      stats,
+      userSportProfileId || null // Pass existing profile ID if editing
+    );
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Save stats combined controller error:', error);
+    if (
+      error.message.includes('not found') ||
+      error.message.includes('Invalid') ||
+      error.message.includes('required')
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
+/**
+ * 7. Get User Stats for a Sport
  * GET /user/sport-profile/:id/stats
  */
 async function getUserStatsByProfile(req, res) {
@@ -259,6 +321,7 @@ module.exports = {
   getFieldsByPosition,
   createOrUpdateUserSportProfile,
   saveUserPositionStats,
+  saveStatsCombined,
   getUserStatsByProfile,
   getAllUserSportProfiles,
 };

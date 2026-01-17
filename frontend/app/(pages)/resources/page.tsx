@@ -7,7 +7,7 @@ import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import ResourceCard from '@/components/Resources/ResourceCard';
 import ResourceModals from '@/components/Resources/ResourceModals';
-import { BASE_URL, getResourceUrl } from '@/utils/api';
+import { BASE_URL, getResourceUrl, apiGet, apiDelete, apiUpload } from '@/utils/api';
 
 type TabType = 'guides' | 'videos' | 'templates';
 
@@ -71,27 +71,26 @@ export default function ManageResourcesPage() {
           return;
         }
 
-        let response;
+        let data;
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
-          response = await fetch(
-            `${BASE_URL}/api/signup/user-by-username/${encodeURIComponent(username)}`
-          );
+          data = await apiGet<{
+            success: boolean;
+            user?: any;
+          }>(`/signup/user-by-username/${encodeURIComponent(username)}`);
         } else {
-          response = await fetch(
-            `${BASE_URL}/api/signup/user/${encodeURIComponent(userIdentifier)}`
-          );
+          data = await apiGet<{
+            success: boolean;
+            user?: any;
+          }>(`/signup/user/${encodeURIComponent(userIdentifier)}`);
         }
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.user) {
-            setCurrentUserId(data.user.id);
-            setCurrentUser({
-              full_name: data.user.full_name,
-              profile_url: data.user.profile_url,
-            });
-          }
+        if (data.success && data.user) {
+          setCurrentUserId(data.user.id);
+          setCurrentUser({
+            full_name: data.user.full_name,
+            profile_url: data.user.profile_url,
+          });
         }
       } catch (error) {
         console.error('Error fetching current user ID:', error);
@@ -160,22 +159,20 @@ export default function ManageResourcesPage() {
       let endpoint = '';
 
       if (activeTab === 'guides') {
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL || `${BASE_URL}/api`}/articles?user_id=${encodeURIComponent(currentUserId)}`;
+        endpoint = `/articles?user_id=${encodeURIComponent(currentUserId)}`;
       } else if (activeTab === 'videos') {
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL || `${BASE_URL}/api`}/videos?user_id=${encodeURIComponent(currentUserId)}`;
+        endpoint = `/videos?user_id=${encodeURIComponent(currentUserId)}`;
       } else {
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL || `${BASE_URL}/api`}/templates?user_id=${encodeURIComponent(currentUserId)}`;
+        endpoint = `/templates?user_id=${encodeURIComponent(currentUserId)}`;
       }
 
-      const response = await fetch(endpoint);
+      const data = await apiGet<{
+        success: boolean;
+        articles?: any[];
+        videos?: any[];
+        templates?: any[];
+      }>(endpoint);
 
-      if (!response.ok) {
-        console.error('Failed to fetch resources');
-        setResources([]);
-        return;
-      }
-
-      const data = await response.json();
       if (data.success) {
         let mappedResources: Resource[] = [];
 
@@ -228,23 +225,20 @@ export default function ManageResourcesPage() {
         return;
       }
 
-      let userResponse;
+      let userData;
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
-        userResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(username)}`
-        );
+        userData = await apiGet<{
+          success: boolean;
+          user?: any;
+        }>(`/signup/user-by-username/${encodeURIComponent(username)}`);
       } else {
-        userResponse = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
+        userData = await apiGet<{
+          success: boolean;
+          user?: any;
+        }>(`/signup/user/${encodeURIComponent(userIdentifier)}`);
       }
 
-      if (!userResponse.ok) {
-        throw new Error('Failed to fetch user data');
-      }
-
-      const userData = await userResponse.json();
       if (!userData.success || !userData.user) {
         throw new Error('User not found');
       }
@@ -252,23 +246,18 @@ export default function ManageResourcesPage() {
       // Determine endpoint based on active tab
       let endpoint = '';
       if (activeTab === 'guides') {
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL || `${BASE_URL}/api`}/articles/${resourceToDelete}`;
+        endpoint = `/articles/${resourceToDelete}`;
       } else if (activeTab === 'videos') {
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL || `${BASE_URL}/api`}/videos/${resourceToDelete}`;
+        endpoint = `/videos/${resourceToDelete}`;
       } else {
-        endpoint = `${process.env.NEXT_PUBLIC_API_URL || `${BASE_URL}/api`}/templates/${resourceToDelete}`;
+        endpoint = `/templates/${resourceToDelete}`;
       }
 
-      // Use apiRequest to perform DELETE so token refresh is handled automatically
-      const { apiRequest } = await import('@/utils/api');
-      const response = await apiRequest(endpoint, {
-        method: 'DELETE',
-        body: JSON.stringify({
-          user_id: userData.user.id,
-        }),
-      });
-
-      const result = await response.json();
+      // Use apiDelete to perform DELETE so token refresh is handled automatically
+      const result = await apiDelete<{
+        success: boolean;
+        message?: string;
+      }>(endpoint);
       if (result.success) {
         // Refresh resources after deletion
         await fetchResources();
@@ -429,62 +418,35 @@ export default function ManageResourcesPage() {
 
                 formData.append('video_duration', duration.toString());
 
-                // Get authentication token
-                const token = localStorage.getItem('accessToken');
-                const headers: Record<string, string> = {};
-                if (token) {
-                  headers['Authorization'] = `Bearer ${token}`;
-                }
+              try {
+                // Use apiUpload for file uploads (handles authentication automatically)
+                const data = await apiUpload<{
+                  success: boolean;
+                  message?: string;
+                }>('/videos', formData);
 
-                const response = await fetch(
-                  `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/videos`,
-                  {
-                    method: 'POST',
-                    headers,
-                    body: formData,
-                  }
-                );
-
-                // Check if response is JSON
-                const contentType = response.headers.get('content-type');
-                let data;
-
-                if (contentType && contentType.includes('application/json')) {
-                  try {
-                    data = await response.json();
-                  } catch (jsonError) {
-                    console.error('JSON parse error:', jsonError);
-                    const text = await response.text();
-                    console.error('Response text:', text);
-                    throw new Error(
-                      `Failed to parse response: ${text.substring(0, 100)}`
-                    );
-                  }
-                } else {
-                  const text = await response.text();
-                  console.error(
-                    'Non-JSON response (status:',
-                    response.status,
-                    '):',
-                    text.substring(0, 200)
-                  );
-                  throw new Error(
-                    `Server returned non-JSON response (status: ${response.status}). Check backend logs.`
-                  );
-                }
-
-                if (response.ok) {
-                  if (data.success) {
-                    // Refresh resources after successful upload
-                    await fetchResources();
-                    alert('Video uploaded successfully!');
-                  } else {
-                    alert(data.message || 'Failed to upload video');
-                  }
+                if (data.success) {
+                  // Refresh resources after successful upload
+                  await fetchResources();
+                  alert('Video uploaded successfully!');
                 } else {
                   alert(data.message || 'Failed to upload video');
                 }
+              } catch (uploadError: any) {
+                console.error('Error uploading video:', uploadError);
+                let errorMessage = 'Failed to upload video. Please try again.';
+                
+                // Provide more specific error messages
+                if (uploadError.isNetworkError) {
+                  errorMessage = `Network error: Unable to connect to the server.\n\nPlease ensure:\n1. Backend server is running on http://localhost:3001\n2. Check browser console for details`;
+                } else if (uploadError.message) {
+                  errorMessage = uploadError.message;
+                }
+                
+                alert(errorMessage);
+              } finally {
                 setIsLoading(false);
+              }
               };
 
               video.onerror = () => {
@@ -498,51 +460,13 @@ export default function ManageResourcesPage() {
               formData.append('file_type', file.type);
               formData.append('file_size', file.size.toString());
 
-              // Get authentication token
-              const token = localStorage.getItem('accessToken');
-              const headers: Record<string, string> = {};
-              if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-              }
+              try {
+                // Use apiUpload for file uploads (handles authentication automatically)
+                const data = await apiUpload<{
+                  success: boolean;
+                  message?: string;
+                }>('/templates', formData);
 
-              const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/templates`,
-                {
-                  method: 'POST',
-                  headers,
-                  body: formData,
-                }
-              );
-
-              // Check if response is JSON
-              const contentType = response.headers.get('content-type');
-              let data;
-
-              if (contentType && contentType.includes('application/json')) {
-                try {
-                  data = await response.json();
-                } catch (jsonError) {
-                  console.error('JSON parse error:', jsonError);
-                  const text = await response.text();
-                  console.error('Response text:', text);
-                  throw new Error(
-                    `Failed to parse response: ${text.substring(0, 100)}`
-                  );
-                }
-              } else {
-                const text = await response.text();
-                console.error(
-                  'Non-JSON response (status:',
-                  response.status,
-                  '):',
-                  text.substring(0, 200)
-                );
-                throw new Error(
-                  `Server returned non-JSON response (status: ${response.status}). Check backend logs.`
-                );
-              }
-
-              if (response.ok) {
                 if (data.success) {
                   // Refresh resources after successful upload
                   await fetchResources();
@@ -550,10 +474,21 @@ export default function ManageResourcesPage() {
                 } else {
                   alert(data.message || 'Failed to upload template');
                 }
-              } else {
-                alert(data.message || 'Failed to upload template');
+              } catch (uploadError: any) {
+                console.error('Error uploading template:', uploadError);
+                let errorMessage = 'Failed to upload template. Please try again.';
+                
+                // Provide more specific error messages
+                if (uploadError.isNetworkError) {
+                  errorMessage = `Network error: Unable to connect to the server.\n\nPlease ensure:\n1. Backend server is running on http://localhost:3001\n2. Check browser console for details`;
+                } else if (uploadError.message) {
+                  errorMessage = uploadError.message;
+                }
+                
+                alert(errorMessage);
+              } finally {
+                setIsLoading(false);
               }
-              setIsLoading(false);
             }
           } catch (error) {
             console.error('Error uploading file:', error);

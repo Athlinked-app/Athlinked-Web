@@ -9,7 +9,7 @@ import HomeHerosection from '@/components/Home/Herosection';
 import Post, { type PostData } from '@/components/Post';
 import HomePopup from '@/components/Home/Homepopup';
 import { isAuthenticated } from '@/utils/auth';
-import { BASE_URL, getResourceUrl } from '@/utils/api';
+import { BASE_URL, getResourceUrl, apiGet } from '@/utils/api';
 
 interface CurrentUser {
   id: string;
@@ -30,33 +30,11 @@ export default function Landing() {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || `${BASE_URL}/api`}/posts?page=1&limit=50`
-      );
-
-      if (!response.ok) {
-        console.error(
-          'Failed to fetch posts:',
-          response.status,
-          response.statusText
-        );
-        const text = await response.text();
-        console.error('Response text:', text.substring(0, 200));
-        setPosts([]);
-        return;
-      }
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        console.error('Non-JSON response from posts API');
-        const text = await response.text();
-        console.error('Response text:', text.substring(0, 200));
-        setPosts([]);
-        return;
-      }
-
-      const data = await response.json();
-      console.log('Posts API response:', data);
+      const data = await apiGet<{
+        success: boolean;
+        posts?: any[];
+        message?: string;
+      }>('/posts?page=1&limit=50');
 
       if (data.success && data.posts) {
         const transformedPosts: PostData[] = data.posts.map((post: any) => ({
@@ -115,23 +93,20 @@ export default function Landing() {
         return;
       }
 
-      let response;
+      let data;
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
-        response = await fetch(
-          `${BASE_URL}/api/signup/user-by-username/${encodeURIComponent(username)}`
-        );
+        data = await apiGet<{
+          success: boolean;
+          user?: any;
+        }>(`/signup/user-by-username/${encodeURIComponent(username)}`);
       } else {
-        response = await fetch(
-          `${BASE_URL}/api/signup/user/${encodeURIComponent(userIdentifier)}`
-        );
+        data = await apiGet<{
+          success: boolean;
+          user?: any;
+        }>(`/signup/user/${encodeURIComponent(userIdentifier)}`);
       }
 
-      if (!response.ok) {
-        return;
-      }
-
-      const data = await response.json();
       if (data.success && data.user) {
         setCurrentUserId(data.user.id);
         setCurrentUser({
