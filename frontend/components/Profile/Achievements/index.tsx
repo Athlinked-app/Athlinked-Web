@@ -3,7 +3,14 @@
 import { useState, useEffect } from 'react';
 import { Plus, Trash2, FileText, Pencil, X } from 'lucide-react';
 import AchievementsPopup, { type Achievement } from '../AchievementsPopup';
-import { apiGet, apiPost, apiPut, apiDelete, apiUpload, apiRequest } from '@/utils/api';
+import {
+  apiGet,
+  apiPost,
+  apiPut,
+  apiDelete,
+  apiUpload,
+  apiRequest,
+} from '@/utils/api';
 import { getCurrentUserId } from '@/utils/auth';
 
 export type { Achievement };
@@ -104,7 +111,7 @@ export default function Achievements({
               }
             }
           });
-          
+
           // Use apiRequest directly for PUT with FormData
           const response = await apiRequest(
             `/profile/achievements/${existingAchievement.id}`,
@@ -166,7 +173,7 @@ export default function Achievements({
               }
             }
           });
-          
+
           result = await apiUpload<{
             success: boolean;
             data?: Achievement;

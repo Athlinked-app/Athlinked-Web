@@ -166,7 +166,7 @@ export default function RightSideBar({
         const collegeSchoolParam = collegeSchool
           ? `&collegeSchool=${encodeURIComponent(collegeSchool)}`
           : '';
-        
+
         // Optimized: Backend now includes isFollowing status in the response
         // This eliminates 10 separate API calls for follow status checks
         const data = await apiGet<{

@@ -1153,7 +1153,10 @@ function MessagesPageContent() {
                                               'http'
                                             )
                                               ? msg.post_data.user_profile_url
-                                              : getResourceUrl(msg.post_data.user_profile_url) || msg.post_data.user_profile_url
+                                              : getResourceUrl(
+                                                  msg.post_data.user_profile_url
+                                                ) ||
+                                                msg.post_data.user_profile_url
                                           }
                                           alt={msg.post_data.username || 'User'}
                                           className="w-full h-full object-cover"
@@ -1177,7 +1180,9 @@ function MessagesPageContent() {
                                           'http'
                                         )
                                           ? msg.post_data.media_url
-                                          : getResourceUrl(msg.post_data.media_url) || msg.post_data.media_url;
+                                          : getResourceUrl(
+                                              msg.post_data.media_url
+                                            ) || msg.post_data.media_url;
                                       const isVideo =
                                         msg.post_data.post_type === 'video' ||
                                         msg.post_data.media_url.match(
@@ -1268,7 +1273,8 @@ function MessagesPageContent() {
                                     'http'
                                   )
                                     ? msg.media_url
-                                    : getResourceUrl(msg.media_url) || msg.media_url;
+                                    : getResourceUrl(msg.media_url) ||
+                                      msg.media_url;
                                   const urlLower = msg.media_url.toLowerCase();
                                   const isImage =
                                     msg.message_type === 'image' ||

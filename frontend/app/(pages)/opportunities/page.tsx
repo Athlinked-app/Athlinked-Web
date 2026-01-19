@@ -15,6 +15,8 @@ interface OpportunityItem {
   id: string;
   category: string;
   title: string;
+  sport?: string; // Add sport field
+  website?: string; // Add website field
   image: string;
   link?: string;
   type: 'tryouts' | 'scholarship' | 'tournament';
@@ -244,31 +246,38 @@ export default function OpportunitiesPage() {
     useState<OpportunityItem[]>(staticOpportunities);
 
   useEffect(() => {
-    const fetchCamps = async () => {
-      console.log('🔍 Starting to fetch camps...');
+    const fetchAllCamps = async () => {
       setLoadingCamps(true);
       try {
-        const response = await fetch('/api/scrape-camps');
-        console.log('📡 Response status:', response.status);
+        const [playNSportsResponse, laxCampsResponse] = await Promise.all([
+          fetch('/api/scrape-camps'),
+          fetch('/api/scrape-laxcamps'),
+        ]);
 
-        const data = await response.json();
-        console.log('📦 Data received:', data);
+        const [playNSportsData, laxCampsData] = await Promise.all([
+          playNSportsResponse.json(),
+          laxCampsResponse.json(),
+        ]);
 
-        if (data.success && data.camps) {
-          console.log('✅ Setting scraped camps:', data.camps);
-          setScrapedCamps(data.camps);
-        } else {
-          console.log('❌ No camps in response');
-        }
+        const allScrapedCamps = [
+          ...(playNSportsData.success && playNSportsData.camps
+            ? playNSportsData.camps
+            : []),
+          ...(laxCampsData.success && laxCampsData.camps
+            ? laxCampsData.camps
+            : []),
+        ];
+
+        console.log(`✅ Total camps loaded: ${allScrapedCamps.length}`);
+        setScrapedCamps(allScrapedCamps);
       } catch (error) {
         console.error('❌ Error fetching camps:', error);
       } finally {
         setLoadingCamps(false);
-        console.log('✅ Finished loading camps');
       }
     };
 
-    fetchCamps();
+    fetchAllCamps();
   }, []);
 
   const allOpportunities = [...opportunities, ...scrapedCamps];
@@ -458,13 +467,6 @@ export default function OpportunitiesPage() {
 
   const filteredData = getFilteredData();
 
-  console.log('=== OPPORTUNITIES DEBUG ===');
-  console.log('Active Tab:', activeTab);
-  console.log('Scraped Camps:', scrapedCamps);
-  console.log('All Opportunities:', allOpportunities);
-  console.log('Filtered Data:', filteredData);
-  console.log('==========================');
-
   const getProfileUrl = (profileUrl?: string | null): string | undefined => {
     if (!profileUrl || profileUrl.trim() === '') {
       return undefined;
@@ -584,6 +586,8 @@ export default function OpportunitiesPage() {
                     <div className="flex-1">
                       <p className="text-xs text-gray-500 mb-0.5">
                         {opportunity.category}
+                        {opportunity.sport && ` • ${opportunity.sport}`}
+                        {opportunity.website && ` • ${opportunity.website}`}
                       </p>
                       <h3 className="text-base font-medium text-gray-900">
                         {opportunity.title}

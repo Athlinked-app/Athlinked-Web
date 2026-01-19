@@ -45,11 +45,13 @@ export default function EditProfilePopup({
     userData?.background_image_url || null
   );
   // Initialize sportsPlayed and selectedSports from userData
-  const parseSportsFromString = (sportsString: string | undefined): { sportsArray: string[]; sportsString: string } => {
+  const parseSportsFromString = (
+    sportsString: string | undefined
+  ): { sportsArray: string[]; sportsString: string } => {
     if (!sportsString || sportsString.trim() === '') {
       return { sportsArray: [], sportsString: '' };
     }
-    
+
     let cleaned = sportsString.trim();
     // Handle PostgreSQL array format: {sport1,sport2,sport3}
     if (cleaned.startsWith('{') && cleaned.endsWith('}')) {
@@ -57,13 +59,13 @@ export default function EditProfilePopup({
     }
     // Remove quotes
     cleaned = cleaned.replace(/["']/g, '');
-    
+
     // Split by comma and process each sport
     const sportsArray = cleaned
       .split(',')
       .map(s => s.trim())
       .filter(Boolean);
-    
+
     return {
       sportsArray,
       sportsString: sportsArray.join(', '),
@@ -72,8 +74,10 @@ export default function EditProfilePopup({
 
   const initialSports = parseSportsFromString(userData?.sports_played);
   const [sportsPlayed, setSportsPlayed] = useState(initialSports.sportsString);
-  const [selectedSports, setSelectedSports] = useState<string[]>(initialSports.sportsArray);
-  
+  const [selectedSports, setSelectedSports] = useState<string[]>(
+    initialSports.sportsArray
+  );
+
   const [education, setEducation] = useState(userData?.education || '');
   const [city, setCity] = useState(userData?.city || '');
   const [bio, setBio] = useState(userData?.bio || '');
@@ -100,7 +104,7 @@ export default function EditProfilePopup({
         sports_played: userData?.sports_played,
         type: typeof userData?.sports_played,
       });
-      
+
       if (userData?.sports_played !== undefined) {
         // Handle empty string - clear sports
         if (!userData.sports_played || userData.sports_played.trim() === '') {
@@ -114,26 +118,29 @@ export default function EditProfilePopup({
             cleaned = cleaned.slice(1, -1);
           }
           cleaned = cleaned.replace(/["']/g, '');
-          
+
           // Split by comma, trim each sport, and filter out empty strings
           const sportsArray = cleaned
             .split(',')
             .map(s => s.trim())
             .filter(Boolean);
-          
+
           console.log('EditProfilePopup: Parsed sports array:', {
             original: userData.sports_played,
             cleaned: cleaned,
             sportsArray: sportsArray,
             count: sportsArray.length,
           });
-          
+
           // Always update both states to ensure consistency
           setSelectedSports(sportsArray);
           setSportsPlayed(sportsArray.join(', '));
-          
+
           console.log('EditProfilePopup: Updated selectedSports:', sportsArray);
-          console.log('EditProfilePopup: Updated sportsPlayed:', sportsArray.join(', '));
+          console.log(
+            'EditProfilePopup: Updated sportsPlayed:',
+            sportsArray.join(', ')
+          );
         }
       } else {
         console.log('EditProfilePopup: No sports_played in userData');

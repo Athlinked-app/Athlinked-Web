@@ -31,7 +31,9 @@ function GoogleOAuthWrapper({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  return <GoogleOAuthProvider clientId={clientId}>{children}</GoogleOAuthProvider>;
+  return (
+    <GoogleOAuthProvider clientId={clientId}>{children}</GoogleOAuthProvider>
+  );
 }
 
 export default function RootLayout({

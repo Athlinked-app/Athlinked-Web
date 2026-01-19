@@ -24,7 +24,9 @@ export const SOCKET_URL =
  * @param path - Relative path (e.g., '/uploads/profile/image.jpg')
  * @returns Full URL or undefined if path is invalid
  */
-export function getResourceUrl(path: string | null | undefined): string | undefined {
+export function getResourceUrl(
+  path: string | null | undefined
+): string | undefined {
   if (!path || path.trim() === '') return undefined;
   if (path.startsWith('http')) return path;
   if (path.startsWith('/') && !path.startsWith('/assets')) {

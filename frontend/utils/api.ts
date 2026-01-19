@@ -313,7 +313,7 @@ export async function apiPost<T = any>(
     method: 'POST',
     body: JSON.stringify(data),
   });
-  
+
   // Check if response is ok (status 200-299)
   if (!response.ok) {
     const errorText = await response.text();
@@ -321,15 +321,19 @@ export async function apiPost<T = any>(
     try {
       errorData = JSON.parse(errorText);
     } catch {
-      errorData = { message: errorText || `HTTP ${response.status}: ${response.statusText}` };
+      errorData = {
+        message: errorText || `HTTP ${response.status}: ${response.statusText}`,
+      };
     }
-    
-    const error: any = new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+
+    const error: any = new Error(
+      errorData.message || `HTTP ${response.status}: ${response.statusText}`
+    );
     error.status = response.status;
     error.response = { data: errorData };
     throw error;
   }
-  
+
   return response.json();
 }
 

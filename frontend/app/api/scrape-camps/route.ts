@@ -1,10 +1,31 @@
 import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 
+const ALLOWED_SPORTS = [
+  'baseball',
+  'basketball',
+  'golf',
+  'softball',
+  'swimming',
+  'ice hockey',
+  'hockey',
+];
+
+function extractSport(title: string): string | null {
+  const lowerTitle = title.toLowerCase();
+
+  for (const sport of ALLOWED_SPORTS) {
+    if (lowerTitle.includes(sport)) {
+      if (sport === 'ice hockey' || sport === 'hockey') return 'Ice Hockey';
+      return sport.charAt(0).toUpperCase() + sport.slice(1);
+    }
+  }
+
+  return null;
+}
+
 export async function GET() {
   try {
-    console.log('Starting to scrape camps from playnsports.com...');
-
     const response = await fetch(
       'https://www.playnsports.com/find-camps-clinics/',
       {
@@ -20,12 +41,9 @@ export async function GET() {
     }
 
     const html = await response.text();
-    console.log('Fetched HTML, length:', html.length);
-
     const $ = cheerio.load(html);
     const camps: any[] = [];
 
-    // Try multiple possible selectors
     const possibleSelectors = [
       '.event-item',
       '.camp-item',
@@ -41,14 +59,9 @@ export async function GET() {
     for (const selector of possibleSelectors) {
       const elements = $(selector);
       if (elements.length > 0) {
-        console.log(
-          `Found ${elements.length} elements with selector: ${selector}`
-        );
-
         elements.each((index, element) => {
           const $el = $(element);
 
-          // Try to find title
           const title =
             $el.find('h2').first().text().trim() ||
             $el.find('h3').first().text().trim() ||
@@ -56,28 +69,30 @@ export async function GET() {
             $el.find('[class*="title"]').first().text().trim() ||
             $el.find('a').first().text().trim();
 
-          // Try to find image
+          const sport = extractSport(title);
+
+          if (!sport) {
+            return;
+          }
+
           const img = $el.find('img').first();
           let image = img.attr('src') || img.attr('data-src') || '';
           if (image && !image.startsWith('http')) {
             image = `https://www.playnsports.com${image}`;
           }
 
-          // Try to find link
           const linkElement = $el.find('a').first();
           let link = linkElement.attr('href') || '';
           if (link && !link.startsWith('http')) {
             link = `https://www.playnsports.com${link}`;
           }
 
-          // Try to find date
           const date =
             $el.find('.date').first().text().trim() ||
             $el.find('[class*="date"]').first().text().trim() ||
             $el.find('time').first().text().trim() ||
             '';
 
-          // Try to find location
           const location =
             $el.find('.location').first().text().trim() ||
             $el.find('[class*="location"]').first().text().trim() ||
@@ -86,8 +101,10 @@ export async function GET() {
 
           if (title && link) {
             camps.push({
-              id: `camp-${index + 1}`,
+              id: `camp-${camps.length + 1}`,
               title,
+              sport,
+              website: 'Play N Sports',
               image:
                 image ||
                 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=100&h=100&fit=crop',
@@ -101,51 +118,17 @@ export async function GET() {
         });
 
         foundElements = true;
-        break; // Stop after finding valid selector
+        break;
       }
     }
 
-    if (!foundElements) {
-      console.log('No camps found with any selector. Returning mock data.');
-      // Fallback to mock data if scraping fails
-      return NextResponse.json({
-        success: true,
-        camps: [
-          {
-            id: 'camp-1',
-            title: 'Basketball Training Camp',
-            image:
-              'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=100&h=100&fit=crop',
-            link: 'https://www.playnsports.com/find-camps-clinics/',
-            date: 'Contact for dates',
-            location: 'Various locations',
-            category: 'Tryouts & Camps',
-            type: 'tryouts',
-          },
-        ],
-      });
-    }
-
-    console.log(`Successfully scraped ${camps.length} camps`);
+    console.log(`✅ Play N Sports: Scraped ${camps.length} camps`);
     return NextResponse.json({ success: true, camps });
   } catch (error) {
-    console.error('Scraping error:', error);
-    // Return mock data on error
+    console.error('❌ Play N Sports scraping error:', error);
     return NextResponse.json({
       success: true,
-      camps: [
-        {
-          id: 'camp-error-1',
-          title: 'Unable to load camps - Check console',
-          image:
-            'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=100&h=100&fit=crop',
-          link: 'https://www.playnsports.com/find-camps-clinics/',
-          date: 'Error loading',
-          location: 'N/A',
-          category: 'Tryouts & Camps',
-          type: 'tryouts',
-        },
-      ],
+      camps: [],
     });
   }
 }

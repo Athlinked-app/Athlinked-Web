@@ -43,7 +43,8 @@ export default function MentionSuggestions({
                 src={
                   follower.profile_url.startsWith('http')
                     ? follower.profile_url
-                    : getResourceUrl(follower.profile_url) || follower.profile_url
+                    : getResourceUrl(follower.profile_url) ||
+                      follower.profile_url
                 }
                 alt={follower.full_name}
                 className="w-full h-full rounded-full object-cover"

@@ -182,13 +182,15 @@ export default function EditProfileModal({
             if (data.user.profile_url) {
               const profileUrl = data.user.profile_url.startsWith('http')
                 ? data.user.profile_url
-                : getResourceUrl(data.user.profile_url) || data.user.profile_url;
+                : getResourceUrl(data.user.profile_url) ||
+                  data.user.profile_url;
               setProfileImagePreview(profileUrl);
             }
             if (data.user.background_image_url) {
               const bgUrl = data.user.background_image_url.startsWith('http')
                 ? data.user.background_image_url
-                : getResourceUrl(data.user.background_image_url) || data.user.background_image_url;
+                : getResourceUrl(data.user.background_image_url) ||
+                  data.user.background_image_url;
               setBackgroundImagePreview(bgUrl);
             }
             if (data.user.sports_played) {
@@ -232,13 +234,15 @@ export default function EditProfileModal({
             if (profileData.profileImage) {
               const profileUrl = profileData.profileImage.startsWith('http')
                 ? profileData.profileImage
-                : getResourceUrl(profileData.profileImage) || profileData.profileImage;
+                : getResourceUrl(profileData.profileImage) ||
+                  profileData.profileImage;
               setProfileImagePreview(profileUrl);
             }
             if (profileData.coverImage) {
               const bgUrl = profileData.coverImage.startsWith('http')
                 ? profileData.coverImage
-                : getResourceUrl(profileData.coverImage) || profileData.coverImage;
+                : getResourceUrl(profileData.coverImage) ||
+                  profileData.coverImage;
               setBackgroundImagePreview(bgUrl);
             }
             // IMPORTANT: Keep primarySport and sportsPlayed separate!
@@ -377,12 +381,13 @@ export default function EditProfileModal({
           type: typeof primaryValue,
         });
       }
-      
+
       // Verify they're different
       console.log('EditProfileModal: Sports state after update:', {
         sportsPlayed: userData.sports_played || '',
         primarySport: userData.primary_sport || '',
-        areTheyDifferent: (userData.sports_played || '') !== (userData.primary_sport || ''),
+        areTheyDifferent:
+          (userData.sports_played || '') !== (userData.primary_sport || ''),
       });
       if (userData.bio !== undefined) setBio(userData.bio || '');
       if (userData.education !== undefined)
@@ -401,7 +406,8 @@ export default function EditProfileModal({
         const bgUrl = userData.background_image_url
           ? userData.background_image_url.startsWith('http')
             ? userData.background_image_url
-            : getResourceUrl(userData.background_image_url) || userData.background_image_url
+            : getResourceUrl(userData.background_image_url) ||
+              userData.background_image_url
           : null;
         setBackgroundImagePreview(bgUrl);
       }

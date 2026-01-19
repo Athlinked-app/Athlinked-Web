@@ -637,12 +637,13 @@ export default function ManageResourcesPage() {
                     {resources.length === 0 && (
                       <div className="text-center py-16">
                         <p className="text-black text-base mb-2">
-                          No resources available
+                          No Forms and Documents yet, Upload your first Form and
+                          Document
                         </p>
                         <p className="text-black text-sm">
                           {activeTab === 'guides'
                             ? 'Click Upload to add article URL'
-                            : 'Click Upload to add new content'}
+                            : ''}
                         </p>
                       </div>
                     )}
