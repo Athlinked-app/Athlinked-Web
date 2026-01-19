@@ -107,9 +107,9 @@ async function createPostService(postData, userId) {
   }
 }
 
-async function getPostsFeedService(page = 1, limit = 50) {
+async function getPostsFeedService(page = 1, limit = 50, viewerUserId = null) {
   try {
-    const posts = await postsModel.getPostsFeed(page, limit);
+    const posts = await postsModel.getPostsFeed(page, limit, viewerUserId);
     return {
       success: true,
       posts,

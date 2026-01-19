@@ -257,9 +257,15 @@ Complete list of all API endpoints in the AthLinked project.
   - Field: `media` (image/video file)
   - Auth: Required
 
-- **GET** `/api/posts` - Get posts feed
+- **GET** `/api/posts` - Get posts feed (NEW ⭐ Follow-based visibility)
   - Query: `page`, `limit`
-  - Auth: None
+  - Auth: Optional (Bearer token recommended)
+  - **Visibility Rules:**
+    - Shows posts from users the authenticated user follows
+    - Shows posts from users the authenticated user is connected with
+    - Always shows the user's own posts
+    - Unauthenticated users see no posts (empty array)
+  - Returns: `{ success, posts: [], page, limit }`
 
 - **GET** `/api/posts/:postId/like-status` - Check like status
   - Auth: Required

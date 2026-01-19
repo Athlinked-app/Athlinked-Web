@@ -92,10 +92,16 @@ async function createPost(postData, client = null) {
   }
 }
 
-async function getPostsFeed(page = 1, limit = 50) {
+async function getPostsFeed(page = 1, limit = 50, viewerUserId = null) {
   const offset = (page - 1) * limit;
+  
+  // If no viewer is authenticated, return empty array (strict privacy)
+  if (!viewerUserId) {
+    return [];
+  }
+
   const query = `
-    SELECT 
+    SELECT DISTINCT
       p.*,
       COALESCE(u.profile_url, p.user_profile_url) as user_profile_url,
       COALESCE(u.full_name, p.username) as username,
@@ -103,12 +109,32 @@ async function getPostsFeed(page = 1, limit = 50) {
     FROM posts p
     LEFT JOIN users u ON p.user_id = u.id
     WHERE p.is_active = true
+      AND (
+        -- User sees their own posts
+        p.user_id = $1
+        OR
+        -- User follows the post author (direct follow)
+        EXISTS (
+          SELECT 1 
+          FROM user_follows uf 
+          WHERE uf.follower_id = $1 
+            AND uf.following_id = p.user_id
+        )
+        OR
+        -- User is connected to the post author (connections count as follows)
+        EXISTS (
+          SELECT 1 
+          FROM user_connections uc 
+          WHERE (uc.user_id_1 = $1 AND uc.user_id_2 = p.user_id)
+             OR (uc.user_id_1 = p.user_id AND uc.user_id_2 = $1)
+        )
+      )
     ORDER BY p.created_at DESC
-    LIMIT $1 OFFSET $2
+    LIMIT $2 OFFSET $3
   `;
 
   try {
-    const result = await pool.query(query, [limit, offset]);
+    const result = await pool.query(query, [viewerUserId, limit, offset]);
     return result.rows;
   } catch (error) {
     console.error('Error fetching posts feed:', error);
