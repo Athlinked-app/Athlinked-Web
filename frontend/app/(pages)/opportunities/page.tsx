@@ -15,6 +15,8 @@ interface OpportunityItem {
   id: string;
   category: string;
   title: string;
+  sport?: string; // Add sport field
+  website?: string; // Add website field
   image: string;
   link?: string;
   type: 'tryouts' | 'scholarship' | 'tournament';
@@ -243,33 +245,49 @@ export default function OpportunitiesPage() {
   const [opportunities, setOpportunities] =
     useState<OpportunityItem[]>(staticOpportunities);
 
-  useEffect(() => {
-    const fetchCamps = async () => {
-      console.log('🔍 Starting to fetch camps...');
-      setLoadingCamps(true);
-      try {
-        const response = await fetch('/api/scrape-camps');
-        console.log('📡 Response status:', response.status);
 
-        const data = await response.json();
-        console.log('📦 Data received:', data);
+useEffect(() => {
+  const fetchAllCamps = async () => {
+    console.log('🔍 Starting to fetch camps from all sources...');
+    setLoadingCamps(true);
+    try {
+      // Fetch from only two sources: Play N Sports and Lax Camps
+      const [playNSportsResponse, laxCampsResponse] = await Promise.all([
+        fetch('/api/scrape-camps'),
+        fetch('/api/scrape-laxcamps'),
+      ]);
 
-        if (data.success && data.camps) {
-          console.log('✅ Setting scraped camps:', data.camps);
-          setScrapedCamps(data.camps);
-        } else {
-          console.log('❌ No camps in response');
-        }
-      } catch (error) {
-        console.error('❌ Error fetching camps:', error);
-      } finally {
-        setLoadingCamps(false);
-        console.log('✅ Finished loading camps');
-      }
-    };
+      const [playNSportsData, laxCampsData] = await Promise.all([
+        playNSportsResponse.json(),
+        laxCampsResponse.json(),
+      ]);
 
-    fetchCamps();
-  }, []);
+      console.log('📦 Play N Sports data:', playNSportsData);
+      console.log('📦 Lax Camps data:', laxCampsData);
+
+      // Combine only the two scraped sources
+      const allScrapedCamps = [
+        ...(playNSportsData.success && playNSportsData.camps
+          ? playNSportsData.camps
+          : []),
+        ...(laxCampsData.success && laxCampsData.camps
+          ? laxCampsData.camps
+          : []),
+      ];
+
+      console.log('✅ Total scraped camps:', allScrapedCamps.length);
+      setScrapedCamps(allScrapedCamps);
+    } catch (error) {
+      console.error('❌ Error fetching camps:', error);
+    } finally {
+      setLoadingCamps(false);
+      console.log('✅ Finished loading camps');
+    }
+  };
+
+  fetchAllCamps();
+}, []);
+
 
   const allOpportunities = [...opportunities, ...scrapedCamps];
 
@@ -581,14 +599,16 @@ export default function OpportunitiesPage() {
                       />
                     </div>
 
-                    <div className="flex-1">
-                      <p className="text-xs text-gray-500 mb-0.5">
-                        {opportunity.category}
-                      </p>
-                      <h3 className="text-base font-medium text-gray-900">
-                        {opportunity.title}
-                      </h3>
-                    </div>
+                  <div className="flex-1">
+  <p className="text-xs text-gray-500 mb-0.5">
+    {opportunity.category}
+    {opportunity.sport && ` • ${opportunity.sport}`}
+    {opportunity.website && ` • ${opportunity.website}`}
+  </p>
+  <h3 className="text-base font-medium text-gray-900">
+    {opportunity.title}
+  </h3>
+</div>
 
                     <button
                       onClick={e => {

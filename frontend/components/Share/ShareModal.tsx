@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import io, { Socket } from 'socket.io-client';
 import type { PostData } from '../Post';
-import { apiPost, apiGet, getResourceUrl } from '@/utils/api';
+import { apiPost, apiGet } from '@/utils/api';
 
 export interface UserData {
   id: string;
@@ -47,27 +47,7 @@ export default function ShareModal({
   const [linkCopied, setLinkCopied] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
-  useEffect(() => {
-    if (open && currentUserId) {
-      loadFollowingUsers();
-      // Initialize socket with error handling - don't block modal if it fails
-      initializeSocket().catch(error => {
-        console.warn(
-          'Socket connection failed (this is okay for WhatsApp/Copy Link):',
-          error
-        );
-        // Socket is only needed for sharing to users, not for WhatsApp or copy link
-        // So we continue without it
-      });
-    }
 
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-        socketRef.current = null;
-      }
-    };
-  }, [open, currentUserId]);
 
   const initializeSocket = (): Promise<void> => {
     return new Promise((resolve, reject) => {
@@ -86,7 +66,7 @@ export default function ShareModal({
         socketRef.current.disconnect();
       }
 
-      const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
+      const socket = io('http://localhost:3001', {
         transports: ['websocket'],
       });
 
@@ -155,7 +135,7 @@ export default function ShareModal({
   const getProfileUrl = (url: string | null | undefined) => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
-    return getResourceUrl(url) || url;
+    return `http://localhost:3001${url}`;
   };
 
   const handleShareToWhatsApp = () => {
@@ -406,13 +386,7 @@ export default function ShareModal({
         {/* Share Options */}
         <div className="border-b border-gray-200 p-4 flex-shrink-0">
           <div className="flex gap-3">
-            <button
-              onClick={handleShareToWhatsApp}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-            >
-              <MessageCircle className="w-5 h-5" />
-              <span className="text-sm font-medium">WhatsApp</span>
-            </button>
+      
             <button
               onClick={handleCopyLink}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
