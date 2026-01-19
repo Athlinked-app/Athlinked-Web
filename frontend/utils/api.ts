@@ -9,6 +9,54 @@ import { API_BASE_URL, BASE_URL, getResourceUrl } from './config';
 export { BASE_URL, getResourceUrl };
 
 /**
+ * Make an unauthenticated API request (for login, signup, etc.)
+ * Uses API_BASE_URL from config for consistent URL construction
+ */
+export async function apiRequestUnauthenticated(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const isFormData = options.body instanceof FormData;
+
+  const headers: Record<string, string> = {
+    ...((options.headers as Record<string, string>) || {}),
+  };
+
+  // Only set Content-Type if not FormData
+  if (!isFormData && !headers['Content-Type']) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  const url = endpoint.startsWith('http')
+    ? endpoint
+    : `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+    return response;
+  } catch (error: any) {
+    // Handle network errors
+    if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+      const networkError: any = new Error(
+        `Network error: Unable to connect to ${url}. Please check:\n` +
+          `1. The API server is running\n` +
+          `2. The API URL is correct (${API_BASE_URL})\n` +
+          `3. CORS is configured correctly\n` +
+          `4. Your network connection is working`
+      );
+      networkError.isNetworkError = true;
+      networkError.url = url;
+      networkError.originalError = error;
+      throw networkError;
+    }
+    throw error;
+  }
+}
+
+/**
  * Get the access token from localStorage
  */
 export function getToken(): string | null {
@@ -170,30 +218,97 @@ export async function apiRequest(
     ? endpoint
     : `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
 
-  // If token is invalid or expired, try to refresh it once
-  if (response.status === 401 && retryCount === 0) {
-    const newToken = await refreshAccessToken();
-    if (newToken) {
-      // Retry the original request with the new token
-      return apiRequest(endpoint, options, retryCount + 1);
+    // If token is invalid or expired, try to refresh it once
+    if (response.status === 401 && retryCount === 0) {
+      const newToken = await refreshAccessToken();
+      if (newToken) {
+        // Retry the original request with the new token
+        return apiRequest(endpoint, options, retryCount + 1);
+      }
+      // If refresh failed, token is cleared and user will be redirected to login
     }
-    // If refresh failed, token is cleared and user will be redirected to login
-  }
 
-  return response;
+    return response;
+  } catch (error: any) {
+    // Handle network errors (Failed to fetch, CORS, etc.)
+    if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+      const networkError: any = new Error(
+        `Network error: Unable to connect to ${url}. Please check:\n` +
+          `1. The API server is running\n` +
+          `2. The API URL is correct (${API_BASE_URL})\n` +
+          `3. CORS is configured correctly\n` +
+          `4. Your network connection is working`
+      );
+      networkError.isNetworkError = true;
+      networkError.url = url;
+      networkError.originalError = error;
+      throw networkError;
+    }
+    throw error;
+  }
 }
 
 /**
  * Helper function for GET requests
  */
 export async function apiGet<T = any>(endpoint: string): Promise<T> {
-  const response = await apiRequest(endpoint, { method: 'GET' });
-  return response.json();
+  try {
+    const response = await apiRequest(endpoint, { method: 'GET' });
+
+    // Check if response is ok (status 200-299)
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = {
+          message:
+            errorText || `HTTP ${response.status}: ${response.statusText}`,
+        };
+      }
+
+      const error: any = new Error(
+        errorData.message || `HTTP ${response.status}: ${response.statusText}`
+      );
+      error.status = response.status;
+      error.response = { data: errorData };
+      throw error;
+    }
+
+    // Check content type before parsing JSON
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return response.json();
+    } else {
+      // If not JSON, return text as error
+      const text = await response.text();
+      throw new Error(
+        `Expected JSON but got ${contentType || 'unknown content type'}: ${text.substring(0, 200)}`
+      );
+    }
+  } catch (error: any) {
+    // Re-throw if it's already our custom error
+    if (error.status) {
+      throw error;
+    }
+    // Handle network errors (Failed to fetch)
+    if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+      const networkError: any = new Error(
+        'Network error: Unable to connect to the server. Please check your connection and ensure the API server is running.'
+      );
+      networkError.isNetworkError = true;
+      networkError.originalError = error;
+      throw networkError;
+    }
+    throw error;
+  }
 }
 
 /**
@@ -207,7 +322,7 @@ export async function apiPost<T = any>(
     method: 'POST',
     body: JSON.stringify(data),
   });
-  
+
   // Check if response is ok (status 200-299)
   if (!response.ok) {
     const errorText = await response.text();
@@ -215,15 +330,19 @@ export async function apiPost<T = any>(
     try {
       errorData = JSON.parse(errorText);
     } catch {
-      errorData = { message: errorText || `HTTP ${response.status}: ${response.statusText}` };
+      errorData = {
+        message: errorText || `HTTP ${response.status}: ${response.statusText}`,
+      };
     }
-    
-    const error: any = new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+
+    const error: any = new Error(
+      errorData.message || `HTTP ${response.status}: ${response.statusText}`
+    );
     error.status = response.status;
     error.response = { data: errorData };
     throw error;
   }
-  
+
   return response.json();
 }
 
@@ -270,23 +389,61 @@ export async function apiUpload<T = any>(
   endpoint: string,
   formData: FormData
 ): Promise<T> {
-  const response = await apiRequest(endpoint, {
-    method: 'POST',
-    body: formData,
-  });
+  try {
+    const response = await apiRequest(endpoint, {
+      method: 'POST',
+      body: formData,
+    });
 
-  // Check if response is ok before parsing JSON
-  if (!response.ok) {
-    let errorMessage = 'Failed to upload file';
-    try {
-      const errorData = await response.json();
-      errorMessage = errorData.message || errorMessage;
-    } catch (e) {
-      // If response is not JSON, use status text
-      errorMessage = response.statusText || errorMessage;
+    // Check if response is ok before parsing JSON
+    if (!response.ok) {
+      let errorMessage = 'Failed to upload file';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorMessage;
+      } catch (e) {
+        // If response is not JSON, use status text
+        errorMessage = response.statusText || errorMessage;
+      }
+      const error: any = new Error(errorMessage);
+      error.status = response.status;
+      throw error;
     }
-    throw new Error(errorMessage);
-  }
 
-  return response.json();
+    // Check content type before parsing JSON
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      return response.json();
+    } else {
+      // If not JSON, return text as error
+      const text = await response.text();
+      throw new Error(
+        `Expected JSON but got ${contentType || 'unknown content type'}: ${text.substring(0, 200)}`
+      );
+    }
+  } catch (error: any) {
+    // Re-throw if it's already our custom error with status
+    if (error.status) {
+      throw error;
+    }
+    // Handle network errors (Failed to fetch)
+    if (
+      error.message === 'Failed to fetch' ||
+      error.name === 'TypeError' ||
+      error.isNetworkError
+    ) {
+      const networkError: any = new Error(
+        `Network error: Unable to upload file to ${endpoint}. Please check:\n` +
+          `1. The API server is running on ${API_BASE_URL}\n` +
+          `2. The backend server is accessible\n` +
+          `3. CORS is configured correctly\n` +
+          `4. Your network connection is working`
+      );
+      networkError.isNetworkError = true;
+      networkError.endpoint = endpoint;
+      networkError.originalError = error;
+      throw networkError;
+    }
+    throw error;
+  }
 }

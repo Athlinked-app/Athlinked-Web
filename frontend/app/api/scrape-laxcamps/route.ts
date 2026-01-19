@@ -3,8 +3,6 @@ import * as cheerio from 'cheerio';
 
 export async function GET() {
   try {
-    console.log('Starting to scrape camps from laxcamps.com...');
-
     const response = await fetch('https://laxcamps.com/camps/', {
       headers: {
         'User-Agent':
@@ -19,56 +17,46 @@ export async function GET() {
     }
 
     const html = await response.text();
-    console.log('Fetched HTML from laxcamps.com, length:', html.length);
-
     const $ = cheerio.load(html);
     const camps: any[] = [];
 
-    // Find all accordion panels (each state is in a panel)
     const panels = $('.fusion-panel');
-    console.log(`Found ${panels.length} state panels`);
 
     panels.each((stateIndex, stateElement) => {
       const $statePanel = $(stateElement);
 
-      // Extract state name from the accordion heading
       const stateName = $statePanel
         .find('.fusion-toggle-heading')
         .text()
         .trim()
-        .replace(' LACROSSE CAMPS', ''); // e.g., "ARIZONA"
+        .replace(' LACROSSE CAMPS', '');
 
       if (!stateName) return;
 
-      // Get the state-specific "VIEW ALL" link
-      const viewAllLink = $statePanel
-        .find('a.fusion-button[href*="/camps/"]')
-        .attr('href') || '';
+      const viewAllLink =
+        $statePanel.find('a.fusion-button[href*="/camps/"]').attr('href') || '';
 
-      // Find all camps within this state's panel body
       const panelBody = $statePanel.find('.panel-body');
-
-      // Each camp is separated by <hr> tags, so we split by them
       const campSections = panelBody.html()?.split('<hr>') || [];
 
       campSections.forEach((section, campIndex) => {
         const $section = $('<div>').html(section);
 
-        // Extract city from <strong> tag (e.g., "FLAGSTAFF, AZ")
         const cityState = $section.find('strong').text().trim();
 
-        // Extract camp name and link from the colored span
         const campLink = $section.find('a[style*="color"]');
         const campName = campLink.text().trim();
         const campUrl = campLink.attr('href') || viewAllLink;
 
-        // Extract register and more info links
-        const registerLink = $section
-          .find('a.find-by-state[href*="register"], a.find-by-state[href*="active.com"]')
-          .attr('href') || '';
-        const moreInfoLink = $section
-          .find('a.find-by-state[href*="laxcamps.com"]')
-          .attr('href') || campUrl;
+        const registerLink =
+          $section
+            .find(
+              'a.find-by-state[href*="register"], a.find-by-state[href*="active.com"]'
+            )
+            .attr('href') || '';
+        const moreInfoLink =
+          $section.find('a.find-by-state[href*="laxcamps.com"]').attr('href') ||
+          campUrl;
 
         if (campName && campName.length > 3) {
           camps.push({
@@ -88,7 +76,6 @@ export async function GET() {
         }
       });
 
-      // If no individual camps found, add the state as a single entry
       if (campSections.length === 0 || !campSections[0]) {
         camps.push({
           id: `laxcamp-${camps.length + 1}`,
@@ -106,10 +93,10 @@ export async function GET() {
       }
     });
 
-    console.log(`✅ Successfully scraped ${camps.length} lacrosse camps`);
+    console.log(`✅ Lax Camps: Scraped ${camps.length} camps`);
     return NextResponse.json({ success: true, camps });
   } catch (error) {
-    console.error('Laxcamps scraping error:', error);
+    console.error('❌ Lax Camps scraping error:', error);
     return NextResponse.json({
       success: true,
       camps: [],

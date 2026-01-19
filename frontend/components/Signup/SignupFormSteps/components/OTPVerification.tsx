@@ -173,11 +173,9 @@ export default function OTPVerification({
       };
 
       // Call backend to resend OTP
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/start`, {
+      const { apiRequestUnauthenticated } = await import('@/utils/api');
+      const response = await apiRequestUnauthenticated('/signup/start', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(signupData),
       });
 

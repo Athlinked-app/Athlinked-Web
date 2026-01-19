@@ -298,7 +298,7 @@ export default function AcademicBackgroundPopup({
     showDropdown: boolean;
     setShowDropdown: (show: boolean) => void;
     onSelect: (value: string) => void;
-    ref: React.RefObject<HTMLDivElement | null>;
+    ref: React.RefObject<HTMLDivElement>; // ✅ Changed from HTMLDivElement | null
   }) => (
     <div className="relative" ref={ref}>
       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -337,7 +337,6 @@ export default function AcademicBackgroundPopup({
       )}
     </div>
   );
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div

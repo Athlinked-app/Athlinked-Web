@@ -47,8 +47,6 @@ export default function ShareModal({
   const [linkCopied, setLinkCopied] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
-
-
   const initializeSocket = (): Promise<void> => {
     return new Promise((resolve, reject) => {
       if (!currentUserId) {
@@ -386,7 +384,6 @@ export default function ShareModal({
         {/* Share Options */}
         <div className="border-b border-gray-200 p-4 flex-shrink-0">
           <div className="flex gap-3">
-      
             <button
               onClick={handleCopyLink}
               className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"

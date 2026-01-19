@@ -245,49 +245,40 @@ export default function OpportunitiesPage() {
   const [opportunities, setOpportunities] =
     useState<OpportunityItem[]>(staticOpportunities);
 
+  useEffect(() => {
+    const fetchAllCamps = async () => {
+      setLoadingCamps(true);
+      try {
+        const [playNSportsResponse, laxCampsResponse] = await Promise.all([
+          fetch('/api/scrape-camps'),
+          fetch('/api/scrape-laxcamps'),
+        ]);
 
-useEffect(() => {
-  const fetchAllCamps = async () => {
-    console.log('🔍 Starting to fetch camps from all sources...');
-    setLoadingCamps(true);
-    try {
-      // Fetch from only two sources: Play N Sports and Lax Camps
-      const [playNSportsResponse, laxCampsResponse] = await Promise.all([
-        fetch('/api/scrape-camps'),
-        fetch('/api/scrape-laxcamps'),
-      ]);
+        const [playNSportsData, laxCampsData] = await Promise.all([
+          playNSportsResponse.json(),
+          laxCampsResponse.json(),
+        ]);
 
-      const [playNSportsData, laxCampsData] = await Promise.all([
-        playNSportsResponse.json(),
-        laxCampsResponse.json(),
-      ]);
+        const allScrapedCamps = [
+          ...(playNSportsData.success && playNSportsData.camps
+            ? playNSportsData.camps
+            : []),
+          ...(laxCampsData.success && laxCampsData.camps
+            ? laxCampsData.camps
+            : []),
+        ];
 
-      console.log('📦 Play N Sports data:', playNSportsData);
-      console.log('📦 Lax Camps data:', laxCampsData);
+        console.log(`✅ Total camps loaded: ${allScrapedCamps.length}`);
+        setScrapedCamps(allScrapedCamps);
+      } catch (error) {
+        console.error('❌ Error fetching camps:', error);
+      } finally {
+        setLoadingCamps(false);
+      }
+    };
 
-      // Combine only the two scraped sources
-      const allScrapedCamps = [
-        ...(playNSportsData.success && playNSportsData.camps
-          ? playNSportsData.camps
-          : []),
-        ...(laxCampsData.success && laxCampsData.camps
-          ? laxCampsData.camps
-          : []),
-      ];
-
-      console.log('✅ Total scraped camps:', allScrapedCamps.length);
-      setScrapedCamps(allScrapedCamps);
-    } catch (error) {
-      console.error('❌ Error fetching camps:', error);
-    } finally {
-      setLoadingCamps(false);
-      console.log('✅ Finished loading camps');
-    }
-  };
-
-  fetchAllCamps();
-}, []);
-
+    fetchAllCamps();
+  }, []);
 
   const allOpportunities = [...opportunities, ...scrapedCamps];
 
@@ -476,13 +467,6 @@ useEffect(() => {
 
   const filteredData = getFilteredData();
 
-  console.log('=== OPPORTUNITIES DEBUG ===');
-  console.log('Active Tab:', activeTab);
-  console.log('Scraped Camps:', scrapedCamps);
-  console.log('All Opportunities:', allOpportunities);
-  console.log('Filtered Data:', filteredData);
-  console.log('==========================');
-
   const getProfileUrl = (profileUrl?: string | null): string | undefined => {
     if (!profileUrl || profileUrl.trim() === '') {
       return undefined;
@@ -599,16 +583,16 @@ useEffect(() => {
                       />
                     </div>
 
-                  <div className="flex-1">
-  <p className="text-xs text-gray-500 mb-0.5">
-    {opportunity.category}
-    {opportunity.sport && ` • ${opportunity.sport}`}
-    {opportunity.website && ` • ${opportunity.website}`}
-  </p>
-  <h3 className="text-base font-medium text-gray-900">
-    {opportunity.title}
-  </h3>
-</div>
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 mb-0.5">
+                        {opportunity.category}
+                        {opportunity.sport && ` • ${opportunity.sport}`}
+                        {opportunity.website && ` • ${opportunity.website}`}
+                      </p>
+                      <h3 className="text-base font-medium text-gray-900">
+                        {opportunity.title}
+                      </h3>
+                    </div>
 
                     <button
                       onClick={e => {

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 
-// Allowed sports filter
 const ALLOWED_SPORTS = [
   'baseball',
   'basketball',
@@ -9,28 +8,24 @@ const ALLOWED_SPORTS = [
   'softball',
   'swimming',
   'ice hockey',
-  'hockey', // Sometimes "ice hockey" is just "hockey"
+  'hockey',
 ];
 
-// Function to extract sport from title
 function extractSport(title: string): string | null {
   const lowerTitle = title.toLowerCase();
-  
+
   for (const sport of ALLOWED_SPORTS) {
     if (lowerTitle.includes(sport)) {
-      // Return proper capitalization
       if (sport === 'ice hockey' || sport === 'hockey') return 'Ice Hockey';
       return sport.charAt(0).toUpperCase() + sport.slice(1);
     }
   }
-  
+
   return null;
 }
 
 export async function GET() {
   try {
-    console.log('Starting to scrape camps from playnsports.com...');
-
     const response = await fetch(
       'https://www.playnsports.com/find-camps-clinics/',
       {
@@ -46,8 +41,6 @@ export async function GET() {
     }
 
     const html = await response.text();
-    console.log('Fetched HTML, length:', html.length);
-
     const $ = cheerio.load(html);
     const camps: any[] = [];
 
@@ -66,10 +59,6 @@ export async function GET() {
     for (const selector of possibleSelectors) {
       const elements = $(selector);
       if (elements.length > 0) {
-        console.log(
-          `Found ${elements.length} elements with selector: ${selector}`
-        );
-
         elements.each((index, element) => {
           const $el = $(element);
 
@@ -80,13 +69,10 @@ export async function GET() {
             $el.find('[class*="title"]').first().text().trim() ||
             $el.find('a').first().text().trim();
 
-          // Extract sport from title
           const sport = extractSport(title);
-          
-          // Skip if sport is not in allowed list
+
           if (!sport) {
-            console.log(`Skipping "${title}" - sport not in allowed list`);
-            return; // Continue to next iteration
+            return;
           }
 
           const img = $el.find('img').first();
@@ -115,10 +101,10 @@ export async function GET() {
 
           if (title && link) {
             camps.push({
-              id: `camp-${camps.length + 1}`, // Use camps.length to avoid duplicate IDs
+              id: `camp-${camps.length + 1}`,
               title,
-              sport, // Add sport field
-              website: 'Play N Sports', // Add website field
+              sport,
+              website: 'Play N Sports',
               image:
                 image ||
                 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=100&h=100&fit=crop',
@@ -136,18 +122,10 @@ export async function GET() {
       }
     }
 
-    if (!foundElements || camps.length === 0) {
-      console.log('No valid camps found. Returning empty array.');
-      return NextResponse.json({
-        success: true,
-        camps: [],
-      });
-    }
-
-    console.log(`Successfully scraped ${camps.length} filtered camps`);
+    console.log(`✅ Play N Sports: Scraped ${camps.length} camps`);
     return NextResponse.json({ success: true, camps });
   } catch (error) {
-    console.error('Scraping error:', error);
+    console.error('❌ Play N Sports scraping error:', error);
     return NextResponse.json({
       success: true,
       camps: [],

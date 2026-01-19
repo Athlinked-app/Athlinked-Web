@@ -150,6 +150,77 @@ router.post(
 
 /**
  * @swagger
+ * /api/user/stats:
+ *   post:
+ *     summary: Save stats combined (optimized endpoint)
+ *     description: |
+ *       Optimized endpoint that reduces API calls from 6 to 1.
+ *       Accepts sport name, position name, and stats object.
+ *       Handles all lookups (sport ID, position ID, field IDs) internally.
+ *       Auto-creates user-sport-profile if it doesn't exist.
+ *       Returns updated profiles list.
+ *     tags: [Stats]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - sportName
+ *               - positionName
+ *               - stats
+ *             properties:
+ *               user_id:
+ *                 type: string
+ *                 description: User ID (optional if authenticated)
+ *               sportName:
+ *                 type: string
+ *                 example: "Football"
+ *               positionName:
+ *                 type: string
+ *                 example: "Quarterback"
+ *               year:
+ *                 type: string
+ *                 example: "2024"
+ *               stats:
+ *                 type: object
+ *                 description: Stats object with field labels as keys
+ *                 example:
+ *                   "Passing Yards": "3500"
+ *                   "Touchdowns": "28"
+ *                   "Interceptions": "5"
+ *     responses:
+ *       200:
+ *         description: Stats saved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 message:
+ *                   type: string
+ *                 userSportProfileId:
+ *                   type: string
+ *                 updatedProfiles:
+ *                   type: array
+ *       400:
+ *         description: Bad request (missing fields or invalid data)
+ *       401:
+ *         description: Unauthorized
+ */
+router.post(
+  '/user/stats',
+  authenticateToken,
+  statsController.saveStatsCombined
+);
+
+/**
+ * @swagger
  * /api/user/position-stats:
  *   post:
  *     summary: Save user position stats

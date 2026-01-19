@@ -80,7 +80,9 @@ export default function StatsPage() {
   const [editingYear, setEditingYear] = useState<string>('');
   const [athleticPerformance, setAthleticPerformance] =
     useState<AthleticPerformance | null>(null);
-  const [allAthleticPerformance, setAllAthleticPerformance] = useState<AthleticPerformance[]>([]); // Cache all performance data
+  const [allAthleticPerformance, setAllAthleticPerformance] = useState<
+    AthleticPerformance[]
+  >([]); // Cache all performance data
 
   // Get initials for placeholder
   const getInitials = (name?: string) => {
@@ -217,7 +219,8 @@ export default function StatsPage() {
 
           // Set active sport to user's primary sport if available, otherwise first sport
           if (combinedData.user?.primary_sport) {
-            const primarySportLower = combinedData.user.primary_sport.toLowerCase();
+            const primarySportLower =
+              combinedData.user.primary_sport.toLowerCase();
             const primaryInList = sportsList.some(
               s => s.toLowerCase() === primarySportLower
             );
@@ -438,7 +441,8 @@ export default function StatsPage() {
 
     // Filter from cached data by active sport
     const sportMatch = allAthleticPerformance.find(
-      perf => perf.sport && perf.sport.toLowerCase() === activeSport.toLowerCase()
+      perf =>
+        perf.sport && perf.sport.toLowerCase() === activeSport.toLowerCase()
     );
 
     if (sportMatch) {
@@ -1236,340 +1240,116 @@ export default function StatsPage() {
 
                   setSaving(true);
                   try {
-                    // Step 1: Get all sports to find sport ID
-                    const sportsData = await apiGet<{
-                      success: boolean;
-                      sports?: any[];
-                    }>('/sports');
+                    // OPTIMIZED: Single API call using combined endpoint
+                    // This replaces 6 separate API calls with 1 call
 
-                    if (!sportsData.success || !sportsData.sports) {
-                      throw new Error('Failed to fetch sports');
-                    }
+                    // Get sport display name
+                    const sportName = getSportDisplayName(activeSport);
 
-                    // Find the sport ID by name
-                    const sportName =
-                      activeSport === 'basketball'
-                        ? 'Basketball'
-                        : activeSport === 'football'
-                          ? 'Football'
-                          : activeSport === 'golf'
-                            ? 'Golf'
-                            : activeSport.charAt(0).toUpperCase() +
-                              activeSport.slice(1);
-                    const sport = sportsData.sports.find(
-                      (s: any) =>
-                        s.name.toLowerCase() === sportName.toLowerCase()
-                    );
+                    // Prepare stats object from formData
+                    // Map formData keys to field labels (backend matches by label)
+                    const statsObject: Record<string, string> = {};
 
-                    if (!sport) {
-                      throw new Error(`Sport "${sportName}" not found`);
-                    }
-
-                    // Step 2: Get positions for the sport
-                    const positionsData = await apiGet<{
-                      success: boolean;
-                      positions?: any[];
-                      message?: string;
-                    }>(`/sports/${sport.id}/positions`);
-
-                    if (!positionsData.success || !positionsData.positions) {
-                      throw new Error('Failed to fetch positions');
-                    }
-
-                    // Find the position ID by name
-                    const position = positionsData.positions.find(
-                      (p: any) => p.name === formData.position
-                    );
-
-                    if (!position) {
-                      throw new Error(
-                        `Position "${formData.position}" not found`
-                      );
-                    }
-
-                    // Step 3: Get fields for the position
-                    let fieldsData = await apiGet<{
-                      success: boolean;
-                      fields?: any[];
-                      message?: string;
-                    }>(`/positions/${position.id}/fields`);
-
-                    // If no fields from API, try to use fallback and match with database
-                    if (
-                      !fieldsData.success ||
-                      !fieldsData.fields ||
-                      fieldsData.fields.length === 0
-                    ) {
-                      const fallbackFields = getFieldsForPosition(
-                        activeSport,
-                        formData.position
-                      );
-                      if (fallbackFields.length > 0) {
-                        // Re-fetch fields one more time (in case they were just added)
-                        const retryFieldsData = await apiGet<{
-                          success: boolean;
-                          fields?: any[];
-                        }>(`/positions/${position.id}/fields`);
-
+                    if (availableFields && availableFields.length > 0) {
+                      // Use availableFields to map formData keys to field labels
+                      for (const field of availableFields) {
+                        // Skip Year field (handled separately)
                         if (
-                          retryFieldsData.success &&
-                          retryFieldsData.fields &&
-                          retryFieldsData.fields.length > 0
+                          field.field_label === 'Year' ||
+                          field.field_key === 'year'
                         ) {
-                          // Match fallback fields with database fields by label
-                          const matchedFields = fallbackFields
-                            .map(fallbackLabel => {
-                              const dbField = retryFieldsData.fields?.find(
-                                (f: any) =>
-                                  f.field_label.toLowerCase().trim() ===
-                                  fallbackLabel.toLowerCase().trim()
-                              );
-                              return dbField || null;
-                            })
-                            .filter(Boolean);
-
-                          if (matchedFields.length > 0) {
-                            fieldsData = {
-                              success: true,
-                              fields: matchedFields,
-                            };
-                          } else {
-                            // No matches found - fields don't exist in database
-                            console.warn(
-                              `No matching database fields found for position "${formData.position}". Fields need to be added to the database.`
-                            );
-                            throw new Error(
-                              `No database fields configured for position "${formData.position}". Please contact support to add fields for this position.`
-                            );
-                          }
-                        } else {
-                          // No fields in database at all
-                          console.warn(
-                            `No database fields found for position "${formData.position}". Fields need to be added to the database.`
-                          );
-                          throw new Error(
-                            `No database fields configured for position "${formData.position}". Please contact support to add fields for this position.`
-                          );
+                          continue;
                         }
-                      } else {
-                        throw new Error(
-                          `No fields available for position "${formData.position}"`
-                        );
-                      }
-                    }
 
-                    // Step 4: Create or update user sport profile
-                    // If editing, use existing profile ID, otherwise create new
-                    let userSportProfileId: string;
-                    if (editingProfile) {
-                      // The backend creates entry IDs like "profileId_year", so we need to extract the original profile ID
-                      // Check if editingProfile has the original profile ID stored, or extract it from the id
-                      const uuidRegex =
-                        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                        const fieldLabel = field.field_label;
+                        if (!fieldLabel) continue;
 
-                      // Try to use user_sport_profile_id if available (original profile ID)
-                      if (
-                        editingProfile.user_sport_profile_id &&
-                        uuidRegex.test(editingProfile.user_sport_profile_id)
-                      ) {
-                        userSportProfileId =
-                          editingProfile.user_sport_profile_id;
-                      } else if (uuidRegex.test(editingProfile.id)) {
-                        // If id is a valid UUID, use it
-                        userSportProfileId = editingProfile.id;
-                      } else {
-                        // If id has format "uuid_year", extract just the UUID part
-                        const uuidMatch = editingProfile.id.match(
-                          /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i
-                        );
-                        if (uuidMatch && uuidMatch[1]) {
-                          userSportProfileId = uuidMatch[1];
-                        } else {
-                          throw new Error(
-                            `Invalid profile ID format: ${editingProfile.id}. Cannot extract valid UUID.`
-                          );
-                        }
-                      }
-                    } else {
-                      const profileData = await apiPost<{
-                        success: boolean;
-                        profileId?: string;
-                        user_sport_profile_id?: string;
-                        message?: string;
-                      }>('/user-sport-profile', {
-                        user_id: userId,
-                        sportId: sport.id,
-                        positionId: position.id,
-                      });
-
-                      if (!profileData.success) {
-                        throw new Error(
-                          profileData.message || 'Failed to create profile'
-                        );
-                      }
-                      userSportProfileId =
-                        profileData.user_sport_profile_id ||
-                        profileData.profileId ||
-                        '';
-                    }
-
-                    // Step 5: Map form data to field IDs and prepare stats
-                    const stats = [];
-                    if (!fieldsData.fields || fieldsData.fields.length === 0) {
-                      throw new Error('No fields available for this position');
-                    }
-
-                    // Filter out fallback fields - only use fields with valid UUID field IDs from database
-                    const validFields = fieldsData.fields.filter((f: any) => {
-                      // Check if field_id is a valid UUID (not a fallback ID)
-                      const uuidRegex =
-                        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-                      return f.field_id && uuidRegex.test(f.field_id);
-                    });
-
-                    if (validFields.length === 0) {
-                      throw new Error(
-                        'No valid database fields found for this position. Please contact support.'
-                      );
-                    }
-
-                    // First, find the Year field and add it first (important for backend update logic)
-                    const yearField = validFields.find(
-                      (f: any) =>
-                        f.field_label === 'Year' || f.field_key === 'year'
-                    );
-
-                    if (yearField && formData.year) {
-                      stats.push({
-                        fieldId: yearField.field_id,
-                        value: String(formData.year),
-                      });
-                    }
-
-                    // Then add all other fields
-                    for (const field of validFields) {
-                      // Skip Year field as we already added it
-                      if (
-                        field.field_label === 'Year' ||
-                        field.field_key === 'year'
-                      ) {
-                        continue;
-                      }
-
-                      // Try to find the value in formData using field_key first, then field_label
-                      let value = formData[field.field_key];
-
-                      // If not found by field_key, try by converting field_label to key format
-                      if (
-                        value === undefined ||
-                        value === null ||
-                        value === ''
-                      ) {
-                        const fieldKeyFromLabel = field.field_label
+                        // Try multiple key formats to find the value in formData
+                        const fieldKey = field.field_key;
+                        const normalizedLabel = fieldLabel
                           .toLowerCase()
                           .replace(/\s+/g, '_')
                           .replace(/[^a-z0-9_]/g, '');
-                        value = formData[fieldKeyFromLabel];
-                      }
 
-                      // Also check direct field_label match
-                      if (
-                        (value === undefined ||
-                          value === null ||
-                          value === '') &&
-                        formData[field.field_label]
-                      ) {
-                        value = formData[field.field_label];
-                      }
+                        // Check formData for this field's value
+                        const value =
+                          formData[fieldKey] ||
+                          formData[fieldLabel] ||
+                          formData[normalizedLabel] ||
+                          formData[fieldKey?.toLowerCase()] ||
+                          formData[fieldLabel.toLowerCase()];
 
-                      // Include the value if it exists (even if empty, but not undefined/null)
-                      if (
-                        value !== undefined &&
-                        value !== null &&
-                        value !== ''
-                      ) {
-                        stats.push({
-                          fieldId: field.field_id,
-                          value: String(value),
-                        });
+                        // If value exists and is not empty, add to stats object using field label as key
+                        if (value && value.toString().trim() !== '') {
+                          statsObject[fieldLabel] = String(value).trim();
+                        }
+                      }
+                    } else {
+                      // Fallback: if no availableFields, use formData directly (excluding year/position)
+                      for (const [key, value] of Object.entries(formData)) {
+                        if (
+                          key !== 'year' &&
+                          key !== 'position' &&
+                          value &&
+                          value.toString().trim() !== ''
+                        ) {
+                          // Use key as-is (backend will try to match)
+                          statsObject[key] = String(value).trim();
+                        }
                       }
                     }
 
-                    // Ensure Year field is included if it wasn't in fieldsData but exists in form
-                    if (!yearField && formData.year) {
-                      // Try to find Year field in position fields
-                      try {
-                        const yearFieldsData = await apiGet<{
-                          success: boolean;
-                          fields?: any[];
-                        }>(`/positions/${position.id}/fields`);
+                    // Call optimized combined endpoint
+                    // When editing, pass the existing user_sport_profile_id to ensure we update the correct profile
+                    const requestBody: any = {
+                      user_id: userId,
+                      sportName: sportName,
+                      positionName: formData.position,
+                      year: formData.year,
+                      stats: statsObject,
+                    };
 
-                        if (yearFieldsData.success && yearFieldsData.fields) {
-                          const yearFieldFromDb = yearFieldsData.fields.find(
-                            (f: any) =>
-                              f.field_label === 'Year' || f.field_key === 'year'
-                          );
-                          if (yearFieldFromDb) {
-                            // Insert Year at the beginning
-                            stats.unshift({
-                              fieldId: yearFieldFromDb.field_id,
-                              value: String(formData.year),
-                            });
-                          }
-                        }
-                      } catch (error) {
-                        console.warn(
-                          'Could not fetch Year field separately:',
-                          error
+                    // If editing, pass the existing profile ID to ensure we update the correct profile
+                    // Use user_sport_profile_id if available (original profile ID), otherwise try id
+                    if (editingProfile) {
+                      // Check if id is a UUID (original profile ID) or composite (profile_id_year)
+                      const profileId =
+                        editingProfile.user_sport_profile_id ||
+                        (editingProfile.id && editingProfile.id.includes('_')
+                          ? editingProfile.id.split('_')[0]
+                          : editingProfile.id);
+
+                      if (profileId) {
+                        requestBody.userSportProfileId = profileId;
+                        console.log(
+                          '[Stats Edit] Using profile ID:',
+                          profileId
                         );
                       }
                     }
 
-                    // Step 6: Save position stats (this will update if year matches existing entry)
-                    if (stats.length > 0) {
-                      // Validate userSportProfileId is a valid UUID
-                      const uuidRegex =
-                        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-                      if (!uuidRegex.test(userSportProfileId)) {
-                        console.error(
-                          'Invalid userSportProfileId:',
-                          userSportProfileId
-                        );
-                        throw new Error(
-                          `Invalid userSportProfileId format: ${userSportProfileId}`
-                        );
-                      }
+                    const result = await apiPost<{
+                      success: boolean;
+                      message?: string;
+                      userSportProfileId?: string;
+                      updatedProfiles?: any[];
+                    }>('/user/stats', requestBody);
 
-                      // Validate all fieldIds are valid UUIDs
-                      for (const stat of stats) {
-                        if (!uuidRegex.test(stat.fieldId)) {
-                          console.error('Invalid fieldId found:', stat);
-                          throw new Error(
-                            `Invalid fieldId format: ${stat.fieldId}. Field may not exist in database. Please ensure all fields are properly configured.`
-                          );
-                        }
-                      }
+                    if (!result.success) {
+                      throw new Error(result.message || 'Failed to save stats');
+                    }
 
-                      // Debug: Log the data being sent
-                      console.log('Saving stats with:', {
-                        userSportProfileId,
-                        statsCount: stats.length,
-                        fieldIds: stats.map(s => s.fieldId),
-                      });
-
-                      const statsData = await apiPost<{
+                    // Update UI with returned profiles (no need for separate refresh call)
+                    if (result.updatedProfiles) {
+                      setUserProfiles(result.updatedProfiles);
+                    } else {
+                      // Fallback: refresh if profiles not returned
+                      const refreshData = await apiGet<{
                         success: boolean;
-                        message?: string;
-                      }>('/user/position-stats', {
-                        user_id: userId,
-                        userSportProfileId: userSportProfileId,
-                        stats: stats,
-                      });
-
-                      if (!statsData.success) {
-                        throw new Error(
-                          statsData.message || 'Failed to save stats'
-                        );
+                        profiles?: any[];
+                      }>(`/user/${userId}/sport-profiles`);
+                      if (refreshData.success && refreshData.profiles) {
+                        setUserProfiles(refreshData.profiles);
                       }
                     }
 
@@ -1587,15 +1367,6 @@ export default function StatsPage() {
                     setAvailableFields([]);
                     setEditingProfile(null);
                     setEditingYear('');
-                    // Refresh stats data
-                    const refreshData = await apiGet<{
-                      success: boolean;
-                      profiles?: any[];
-                      message?: string;
-                    }>(`/user/${userId}/sport-profiles`);
-                    if (refreshData.success && refreshData.profiles) {
-                      setUserProfiles(refreshData.profiles);
-                    }
                   } catch (error: any) {
                     console.error('Error saving stats:', error);
                     alert(

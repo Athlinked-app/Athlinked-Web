@@ -110,7 +110,7 @@ function ProfileContent() {
 
   const targetUserId = viewUserId || currentUserId;
   const isViewingOwnProfile = !viewUserId || viewUserId === currentUserId;
-  
+
   // Track previous targetUserId to prevent unnecessary state clears
   const prevTargetUserIdRef = useRef<string | null>(null);
 
@@ -205,15 +205,23 @@ function ProfileContent() {
     // Only clear state if targetUserId actually changed (not on every render)
     const prevTargetUserId = prevTargetUserIdRef.current;
     const targetUserIdChanged = prevTargetUserId !== targetUserId;
-    
+
     if (targetUserIdChanged) {
-      console.log('Profile page: targetUserId changed from', prevTargetUserId, 'to', targetUserId);
+      console.log(
+        'Profile page: targetUserId changed from',
+        prevTargetUserId,
+        'to',
+        targetUserId
+      );
       console.log('Profile page: Clearing state and fetching fresh data');
       setUserBio('');
       setSportsPlayed('');
       prevTargetUserIdRef.current = targetUserId;
     } else {
-      console.log('Profile page: targetUserId unchanged, skipping state clear:', targetUserId);
+      console.log(
+        'Profile page: targetUserId unchanged, skipping state clear:',
+        targetUserId
+      );
     }
 
     // Always fetch profile data (it will update state with fresh data from database)
@@ -301,7 +309,10 @@ function ProfileContent() {
 
     // Prevent multiple simultaneous fetches for the same userId
     const currentTargetId = targetUserId;
-    console.log('fetchProfileData: Starting fetch for userId:', currentTargetId);
+    console.log(
+      'fetchProfileData: Starting fetch for userId:',
+      currentTargetId
+    );
 
     try {
       const { apiGet } = await import('@/utils/api');
@@ -317,10 +328,12 @@ function ProfileContent() {
         sportsPlayed?: string | string[] | null;
         dob?: string | null;
       }>(`/profile/${currentTargetId}`);
-      
+
       // Verify we're still fetching for the same userId (prevent race conditions)
       if (currentTargetId !== targetUserId) {
-        console.log('fetchProfileData: targetUserId changed during fetch, ignoring response');
+        console.log(
+          'fetchProfileData: targetUserId changed during fetch, ignoring response'
+        );
         return;
       }
 
@@ -333,12 +346,15 @@ function ProfileContent() {
           type: typeof data.sportsPlayed,
           isArray: Array.isArray(data.sportsPlayed),
         });
-        
+
         if (Array.isArray(data.sportsPlayed)) {
           // PostgreSQL array format - join all sports with comma and space
           const sportsArray = data.sportsPlayed.filter(Boolean);
           processedSportsPlayed = sportsArray.join(', ');
-          console.log('Frontend: Converted array to string:', { array: sportsArray, result: processedSportsPlayed });
+          console.log('Frontend: Converted array to string:', {
+            array: sportsArray,
+            result: processedSportsPlayed,
+          });
         } else if (typeof data.sportsPlayed === 'string') {
           let sportsString = data.sportsPlayed.trim();
           // Handle PostgreSQL array string format: {sport1,sport2,sport3}
@@ -346,24 +362,36 @@ function ProfileContent() {
             sportsString = sportsString.slice(1, -1);
           }
           // Remove quotes, split by comma, trim each, and rejoin
-          const sportsArray = sportsString.replace(/["']/g, '').split(',').map(s => s.trim()).filter(Boolean);
+          const sportsArray = sportsString
+            .replace(/["']/g, '')
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
           processedSportsPlayed = sportsArray.join(', ');
-          console.log('Frontend: Processed string array:', { original: data.sportsPlayed, array: sportsArray, result: processedSportsPlayed });
+          console.log('Frontend: Processed string array:', {
+            original: data.sportsPlayed,
+            array: sportsArray,
+            result: processedSportsPlayed,
+          });
         }
       } else {
         console.log('Frontend: No sports_played in API response');
       }
-      
-      console.log('Frontend: Final processed sports_played:', processedSportsPlayed);
+
+      console.log(
+        'Frontend: Final processed sports_played:',
+        processedSportsPlayed
+      );
       console.log('Frontend: primarySport from API:', data.primarySport);
       console.log('Frontend: sportsPlayed from API:', data.sportsPlayed);
 
       // IMPORTANT: Ensure sportsPlayed is NOT the same as primarySport
       // If sportsPlayed is null/empty but primarySport exists, don't use primarySport as sportsPlayed
       // They are separate fields - sportsPlayed should be the full list, primarySport is just one sport
-      const finalSportsPlayed = processedSportsPlayed !== null && processedSportsPlayed !== '' 
-        ? processedSportsPlayed 
-        : null; // Don't fallback to primarySport - they're different fields
+      const finalSportsPlayed =
+        processedSportsPlayed !== null && processedSportsPlayed !== ''
+          ? processedSportsPlayed
+          : null; // Don't fallback to primarySport - they're different fields
 
       setProfileData({
         userId: data.userId || targetUserId || '',
@@ -377,7 +405,7 @@ function ProfileContent() {
         sportsPlayed: finalSportsPlayed, // Use processed sports_played (list of all sports)
         dob: data.dob ?? null,
       });
-      
+
       console.log('Frontend: Set profileData with:', {
         primarySport: data.primarySport ?? null,
         sportsPlayed: finalSportsPlayed,
@@ -396,19 +424,27 @@ function ProfileContent() {
         // This ensures that after refresh, we show what's actually in the database
         const finalSports = processedSportsPlayed.trim();
         setSportsPlayed(finalSports);
-        console.log('fetchProfileData: Updated sportsPlayed state from database:', {
-          processed: processedSportsPlayed,
-          final: finalSports,
-          count: finalSports ? finalSports.split(',').length : 0,
-          primarySport: data.primarySport, // Log to compare
-          areTheyDifferent: finalSports !== (data.primarySport || ''),
-        });
+        console.log(
+          'fetchProfileData: Updated sportsPlayed state from database:',
+          {
+            processed: processedSportsPlayed,
+            final: finalSports,
+            count: finalSports ? finalSports.split(',').length : 0,
+            primarySport: data.primarySport, // Log to compare
+            areTheyDifferent: finalSports !== (data.primarySport || ''),
+          }
+        );
       } else {
         // Profile data returned null/undefined for sports, which means no sports in database
         // DO NOT fallback to primarySport - they are different fields
         setSportsPlayed('');
-        console.log('fetchProfileData: No sports_played in database, cleared sportsPlayed state');
-        console.log('fetchProfileData: primarySport value (for reference):', data.primarySport);
+        console.log(
+          'fetchProfileData: No sports_played in database, cleared sportsPlayed state'
+        );
+        console.log(
+          'fetchProfileData: primarySport value (for reference):',
+          data.primarySport
+        );
       }
     } catch (error) {
       console.error('Error fetching profile data:', error);
@@ -671,14 +707,16 @@ function ProfileContent() {
               profile_url: profileData?.profileImage
                 ? profileData.profileImage.startsWith('http')
                   ? profileData.profileImage
-                  : getResourceUrl(profileData.profileImage) || profileData.profileImage
+                  : getResourceUrl(profileData.profileImage) ||
+                    profileData.profileImage
                 : viewUserId
                   ? viewUser?.profile_url || null
                   : currentUser?.profile_url || null,
               background_image_url: profileData?.coverImage
                 ? profileData.coverImage.startsWith('http')
                   ? profileData.coverImage
-                  : getResourceUrl(profileData.coverImage) || profileData.coverImage
+                  : getResourceUrl(profileData.coverImage) ||
+                    profileData.coverImage
                 : null,
               user_type: viewUserId
                 ? viewUser?.user_type || 'athlete'
@@ -703,22 +741,34 @@ function ProfileContent() {
                   }
                   cleaned = cleaned.replace(/["']/g, '');
                   // Split and rejoin to ensure proper formatting
-                  const sportsArray = cleaned.split(',').map((s: string) => s.trim()).filter((s: string) => Boolean(s));
+                  const sportsArray = cleaned
+                    .split(',')
+                    .map((s: string) => s.trim())
+                    .filter((s: string) => Boolean(s));
                   result = sportsArray.join(', ');
-                  console.log('Profile page: Processing sports_played for EditProfileModal:', {
-                    original: sports,
-                    cleaned: cleaned,
-                    sportsArray: sportsArray,
-                    result: result,
-                    count: sportsArray.length,
-                  });
+                  console.log(
+                    'Profile page: Processing sports_played for EditProfileModal:',
+                    {
+                      original: sports,
+                      cleaned: cleaned,
+                      sportsArray: sportsArray,
+                      result: result,
+                      count: sportsArray.length,
+                    }
+                  );
                 } else if (sportsPlayed && sportsPlayed.trim() !== '') {
                   // Priority 2: Use sportsPlayed state (fallback)
                   result = sportsPlayed.trim();
-                  console.log('Profile page: Using sportsPlayed state as fallback:', result);
+                  console.log(
+                    'Profile page: Using sportsPlayed state as fallback:',
+                    result
+                  );
                 }
-                
-                console.log('Profile page: Final sports_played passed to EditProfileModal:', result);
+
+                console.log(
+                  'Profile page: Final sports_played passed to EditProfileModal:',
+                  result
+                );
                 return result;
               })(),
               primary_sport: profileData?.primarySport || '',
@@ -802,7 +852,7 @@ function ProfileContent() {
                     profileData.primarySport = '';
                   }
                 }
-                
+
                 console.log('Profile data being sent to API:', profileData);
                 if (data.profile_url instanceof File) {
                   const formData = new FormData();
@@ -851,15 +901,21 @@ function ProfileContent() {
                 console.log('=== FRONTEND: Sending profile update to API ===');
                 console.log('Profile data object:', profileData);
                 console.log('Profile data keys:', Object.keys(profileData));
-                console.log('Profile data values:', Object.entries(profileData).map(([k, v]) => {
-                  if (typeof v === 'string') {
-                    return [k, v.length > 50 ? v.substring(0, 50) + '...' : v];
-                  }
-                  return [k, v];
-                }));
+                console.log(
+                  'Profile data values:',
+                  Object.entries(profileData).map(([k, v]) => {
+                    if (typeof v === 'string') {
+                      return [
+                        k,
+                        v.length > 50 ? v.substring(0, 50) + '...' : v,
+                      ];
+                    }
+                    return [k, v];
+                  })
+                );
                 console.log('API endpoint: /profile');
                 console.log('Request method: POST');
-                
+
                 try {
                   const result = await apiPost<{
                     success: boolean;
@@ -868,7 +924,10 @@ function ProfileContent() {
                   }>('/profile', profileData);
 
                   console.log('=== FRONTEND: API Response Received ===');
-                  console.log('Full API response:', JSON.stringify(result, null, 2));
+                  console.log(
+                    'Full API response:',
+                    JSON.stringify(result, null, 2)
+                  );
                   console.log('API response success:', result.success);
                   console.log('API response message:', result.message);
                   console.log('API response profile:', result.profile);
@@ -885,7 +944,7 @@ function ProfileContent() {
 
                   console.log('=== FRONTEND: Profile saved successfully ===');
                   console.log('Updated profile data:', result.profile);
-                  
+
                   // Show success message
                   alert('Profile saved successfully!');
                 } catch (error: any) {
@@ -895,8 +954,11 @@ function ProfileContent() {
                   console.error('Error stack:', error.stack);
                   console.error('Error response:', error.response);
                   console.error('Error status:', error.status);
-                  
-                  const errorMessage = error.response?.data?.message || error.message || 'Network error. Please check your connection and try again.';
+
+                  const errorMessage =
+                    error.response?.data?.message ||
+                    error.message ||
+                    'Network error. Please check your connection and try again.';
                   alert('Error saving profile: ' + errorMessage);
                   return;
                 }

@@ -52,10 +52,35 @@ const { upload, uploadToS3Middleware } = require('../utils/upload-resources');
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
+// Error handling middleware for multer
+const handleMulterError = (err, req, res, next) => {
+  if (err) {
+    console.error('Multer error:', err);
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: 'File too large. Maximum size is 100MB.',
+      });
+    }
+    if (err.message) {
+      return res.status(400).json({
+        success: false,
+        message: err.message,
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      message: 'File upload error: ' + err.toString(),
+    });
+  }
+  next();
+};
+
 router.post(
   '/',
   authenticateToken,
   upload.single('file'),
+  handleMulterError,
   uploadToS3Middleware,
   templatesController.createTemplate
 );

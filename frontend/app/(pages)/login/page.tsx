@@ -93,11 +93,9 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/login`, {
+      const { apiRequestUnauthenticated } = await import('@/utils/api');
+      const response = await apiRequestUnauthenticated('/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ email: identifier, password }), // Backend still expects 'email' field
       });
 
@@ -184,11 +182,9 @@ export default function LoginPage() {
     setShowDeletedAccountToast(false);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/auth/google`, {
+      const { apiRequestUnauthenticated } = await import('@/utils/api');
+      const response = await apiRequestUnauthenticated('/auth/google', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           google_id: userData.google_id,
           email: userData.email,

@@ -5,7 +5,14 @@ import { Plus, Trash2, FileText, Pencil, X } from 'lucide-react';
 import AcademicBackgroundPopup, {
   type AcademicBackground,
 } from '../AcademicBackgroundPopup';
-import { apiGet, apiPost, apiPut, apiDelete, apiUpload, apiRequest } from '@/utils/api';
+import {
+  apiGet,
+  apiPost,
+  apiPut,
+  apiDelete,
+  apiUpload,
+  apiRequest,
+} from '@/utils/api';
 import { getCurrentUserId } from '@/utils/auth';
 
 export type { AcademicBackground };
@@ -106,7 +113,7 @@ export default function AcademicBackgrounds({
               }
             }
           });
-          
+
           // Use apiRequest directly for PUT with FormData
           const response = await apiRequest(
             `/profile/academic-backgrounds/${existingBg.id}`,
@@ -168,7 +175,7 @@ export default function AcademicBackgrounds({
               }
             }
           });
-          
+
           result = await apiUpload<{
             success: boolean;
             data?: AcademicBackground;

@@ -72,6 +72,43 @@ async function getSportAndPositionNames(sportId, positionId) {
 }
 
 /**
+ * Get sport by name (case-insensitive, handles spaces)
+ */
+async function getSportByName(sportName) {
+  const normalizedName = sportName.toLowerCase().replace(/\s+/g, '');
+  const query = `
+    SELECT 
+      id,
+      name
+    FROM sports
+    WHERE LOWER(REPLACE(name, ' ', '')) = $1
+    LIMIT 1
+  `;
+  const result = await pool.query(query, [normalizedName]);
+  return result.rows[0] || null;
+}
+
+/**
+ * Get position by name and sport ID (case-insensitive, handles spaces)
+ */
+async function getPositionByName(sportId, positionName) {
+  const normalizedName = positionName.toLowerCase().replace(/\s+/g, '');
+  const query = `
+    SELECT 
+      sp.id,
+      sp.name as position_name,
+      s.name as sport_name
+    FROM sport_positions sp
+    INNER JOIN sports s ON sp.sport_id = s.id
+    WHERE sp.sport_id = $1 
+      AND LOWER(REPLACE(sp.name, ' ', '')) = $2
+    LIMIT 1
+  `;
+  const result = await pool.query(query, [sportId, normalizedName]);
+  return result.rows[0] || null;
+}
+
+/**
  * Create user sport profile
  * Always creates a new profile entry to allow multiple entries per sport/position combination.
  * If a unique constraint violation occurs on (user_id, sport_id), we check for existing profiles
@@ -481,37 +518,52 @@ async function upsertUserPositionStats(userSportProfileId, stats, fieldData) {
     // If year is provided, delete stats for that specific year to allow updating
     // This preserves stats from other years
     if (yearValue) {
-      // First, find the created_at timestamp of the year stat for this year
+      console.log(`[upsertUserPositionStats] Deleting existing stats for year: ${yearValue}, profile: ${userSportProfileId}`);
+      
+      // Find all year stats for this profile and year to get their timestamps
+      // Convert yearValue to string for consistent comparison
+      const yearValueStr = String(yearValue).trim();
       const yearStatQuery = `
-        SELECT created_at
+        SELECT DISTINCT created_at
         FROM user_position_stats
         WHERE user_sport_profile_id = $1
         AND field_label = 'Year'
-        AND value = $2
+        AND TRIM(value) = $2
         ORDER BY created_at DESC
-        LIMIT 1
       `;
       const yearStatResult = await client.query(yearStatQuery, [
         userSportProfileId,
-        yearValue,
+        yearValueStr,
       ]);
 
       if (yearStatResult.rows.length > 0) {
-        // Year entry exists - delete all stats created at the same time (within 5 seconds)
-        const yearCreatedAt = yearStatResult.rows[0].created_at;
-        const deleteYearEntryQuery = `
-          DELETE FROM user_position_stats
-          WHERE user_sport_profile_id = $1
-          AND ABS(EXTRACT(EPOCH FROM (created_at - $2::timestamp))) < 5
-        `;
-        await client.query(deleteYearEntryQuery, [
-          userSportProfileId,
-          yearCreatedAt,
-        ]);
+        console.log(`[upsertUserPositionStats] Found ${yearStatResult.rows.length} year entry/entries to delete`);
+        
+        // Collect all timestamps that need to be deleted
+        const timestampsToDelete = yearStatResult.rows.map(row => row.created_at);
+        
+        // For each timestamp, delete all stats created within 15 seconds
+        // Using a larger window (15 seconds) to ensure we catch all related stats
+        // even if there were slight delays in insertion
+        for (const yearCreatedAt of timestampsToDelete) {
+          const deleteYearEntryQuery = `
+            DELETE FROM user_position_stats
+            WHERE user_sport_profile_id = $1
+            AND ABS(EXTRACT(EPOCH FROM (created_at - $2::timestamp))) <= 15
+          `;
+          const deleteResult = await client.query(deleteYearEntryQuery, [
+            userSportProfileId,
+            yearCreatedAt,
+          ]);
+          console.log(`[upsertUserPositionStats] Deleted ${deleteResult.rowCount} stats for timestamp: ${yearCreatedAt}`);
+        }
+      } else {
+        console.log(`[upsertUserPositionStats] No existing year entry found for year: ${yearValue}`);
       }
     } else {
       // No year provided - just append new stats (allows multiple entries)
       // Don't delete anything
+      console.log('[upsertUserPositionStats] No year provided, appending new stats without deletion');
     }
 
     // Insert new stats
@@ -747,6 +799,8 @@ module.exports = {
   getPositionsBySport,
   getFieldsByPosition,
   getSportAndPositionNames,
+  getSportByName,
+  getPositionByName,
   getOrCreateUserSportProfile,
   upsertUserPositionStats,
   getUserStatsByProfile,
