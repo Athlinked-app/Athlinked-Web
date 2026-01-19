@@ -181,10 +181,57 @@ async function getUserProfileWithStats(req, res) {
   }
 }
 
+/**
+ * Get complete user profile with all sections
+ * GET /api/profile/:userId/complete
+ */
+async function getUserProfileComplete(req, res) {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.user?.id || null; // Get from auth token if available
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required',
+      });
+    }
+
+    const result = await profileService.getUserProfileCompleteService(userId, currentUserId);
+
+    if (!result.success) {
+      return res.status(404).json(result);
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Get user profile complete controller error:', error);
+    console.error('Error stack:', error.stack);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint,
+      position: error.position,
+    });
+    return res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.message : 'An error occurred',
+      ...(process.env.NODE_ENV === 'development' && {
+        stack: error.stack,
+        code: error.code,
+        detail: error.detail,
+      }),
+    });
+  }
+}
+
 module.exports = {
   getUserProfile,
   upsertUserProfile,
   updateProfileImages,
   getCurrentUserProfile,
   getUserProfileWithStats,
+  getUserProfileComplete,
 };

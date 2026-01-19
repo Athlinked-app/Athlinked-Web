@@ -482,10 +482,17 @@ async function getOrCreateUserSportProfile(
       await client.query('ROLLBACK');
     } catch (rollbackError) {
       // Ignore rollback errors if transaction is already closed
+      console.error('Error during rollback:', rollbackError);
     }
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -603,10 +610,20 @@ async function upsertUserPositionStats(userSportProfileId, stats, fieldData) {
     await client.query('COMMIT');
     return { success: true };
   } catch (error) {
-    await client.query('ROLLBACK');
+    try {
+      await client.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error during rollback:', rollbackError);
+    }
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 

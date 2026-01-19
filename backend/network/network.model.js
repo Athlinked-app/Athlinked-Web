@@ -79,11 +79,21 @@ async function followUser(followerId, followingId) {
     await dbClient.query('COMMIT');
     return true;
   } catch (error) {
-    await dbClient.query('ROLLBACK');
+    try {
+      await dbClient.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error during rollback:', rollbackError);
+    }
     console.error('Error following user:', error);
     throw error;
   } finally {
-    dbClient.release();
+    if (dbClient) {
+      try {
+        dbClient.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -110,10 +120,11 @@ async function unfollowUser(followerId, followingId) {
       return false;
     }
 
-    await dbClient.query(
+    const deleteFollowResult = await dbClient.query(
       'DELETE FROM user_follows WHERE follower_id = $1 AND following_id = $2',
       [followerId, followingId]
     );
+    console.log(`[unfollowUser] Follow relationship deleted: ${deleteFollowResult.rowCount} row(s) removed from user_follows table`);
 
     await dbClient.query(
       'UPDATE users SET following = GREATEST(following - 1, 0) WHERE id = $1',
@@ -125,14 +136,126 @@ async function unfollowUser(followerId, followingId) {
       [followingId]
     );
 
+    // Verify follow was deleted from database
+    const verifyFollowQuery = `
+      SELECT id FROM user_follows 
+      WHERE follower_id = $1 AND following_id = $2
+    `;
+    const verifyFollow = await dbClient.query(verifyFollowQuery, [followerId, followingId]);
+    if (verifyFollow.rows.length === 0) {
+      console.log(`[unfollowUser] ✅ Verified: Follow relationship removed from database`);
+    } else {
+      console.error(`[unfollowUser] ❌ ERROR: Follow relationship still exists in database!`);
+    }
+
+    // IMPORTANT: If users are connected, remove the connection AND reverse follow when unfollowing
+    // Business Rule: When two users are mutually connected and one unfollows the other:
+    // 1. Remove the follow relationship (User A → User B)
+    // 2. Remove the reverse follow relationship (User B → User A) if it exists
+    // 3. Remove the connection (affects both users)
+    // This ensures the connection is completely cut for BOTH users
+    const connectionCheckQuery = `
+      SELECT id FROM user_connections 
+      WHERE (user_id_1 = $1 AND user_id_2 = $2) 
+         OR (user_id_1 = $2 AND user_id_2 = $1)
+    `;
+    const connectionCheck = await dbClient.query(connectionCheckQuery, [
+      followerId,
+      followingId,
+    ]);
+
+    if (connectionCheck.rows.length > 0) {
+      console.log(`[unfollowUser] Users are connected. Removing connection and reverse follow for BOTH users.`);
+      
+      // Remove the reverse follow relationship (User B → User A) if it exists
+      // When connected users unfollow, we remove both directions to completely cut the connection
+      const reverseFollowCheckQuery = `
+        SELECT id FROM user_follows 
+        WHERE follower_id = $1 AND following_id = $2
+      `;
+      const reverseFollowCheck = await dbClient.query(reverseFollowCheckQuery, [
+        followingId, // Reverse: the person being unfollowed
+        followerId,  // Reverse: the person doing the unfollowing
+      ]);
+
+      if (reverseFollowCheck.rows.length > 0) {
+        console.log(`[unfollowUser] Removing reverse follow relationship (${followingId.substring(0, 8)}... → ${followerId.substring(0, 8)}...)`);
+        const reverseFollowDeleteResult = await dbClient.query(
+          'DELETE FROM user_follows WHERE follower_id = $1 AND following_id = $2',
+          [followingId, followerId]
+        );
+        console.log(`[unfollowUser] Reverse follow deleted: ${reverseFollowDeleteResult.rowCount} row(s) removed from user_follows table`);
+
+        // Update counts for reverse follow removal
+        await dbClient.query(
+          'UPDATE users SET following = GREATEST(following - 1, 0) WHERE id = $1',
+          [followingId]
+        );
+
+        await dbClient.query(
+          'UPDATE users SET followers = GREATEST(followers - 1, 0) WHERE id = $1',
+          [followerId]
+        );
+
+        // Verify reverse follow was deleted from database
+        const verifyReverseFollowQuery = `
+          SELECT id FROM user_follows 
+          WHERE follower_id = $1 AND following_id = $2
+        `;
+        const verifyReverseFollow = await dbClient.query(verifyReverseFollowQuery, [followingId, followerId]);
+        if (verifyReverseFollow.rows.length === 0) {
+          console.log(`[unfollowUser] ✅ Verified: Reverse follow relationship removed from database`);
+        } else {
+          console.error(`[unfollowUser] ❌ ERROR: Reverse follow still exists in database!`);
+        }
+      }
+
+      // IMPORTANT: Connections are mutual - stored as a single record with normalized order (user_id_1 < user_id_2)
+      // When we delete the connection, it removes it for BOTH users simultaneously
+      // This ensures that if User A unfollows User B, the connection is cut for both User A and User B
+      console.log(`[unfollowUser] Removing mutual connection between ${followerId.substring(0, 8)}... and ${followingId.substring(0, 8)}... (connection removed for BOTH users)`);
+      const deleteConnectionQuery = `
+        DELETE FROM user_connections 
+        WHERE (user_id_1 = $1 AND user_id_2 = $2) 
+           OR (user_id_1 = $2 AND user_id_2 = $1)
+      `;
+      const deleteResult = await dbClient.query(deleteConnectionQuery, [followerId, followingId]);
+      console.log(`[unfollowUser] Connection deleted: ${deleteResult.rowCount} row(s) removed from user_connections table (connection cut for both users)`);
+
+      // Verify connection was deleted from database
+      const verifyConnectionQuery = `
+        SELECT id FROM user_connections 
+        WHERE (user_id_1 = $1 AND user_id_2 = $2) 
+           OR (user_id_1 = $2 AND user_id_2 = $1)
+      `;
+      const verifyConnection = await dbClient.query(verifyConnectionQuery, [followerId, followingId]);
+      if (verifyConnection.rows.length === 0) {
+        console.log(`[unfollowUser] ✅ Verified: Connection removed from database for BOTH users`);
+      } else {
+        console.error(`[unfollowUser] ❌ ERROR: Connection still exists in database!`);
+      }
+    }
+
     await dbClient.query('COMMIT');
+    console.log(`[unfollowUser] ✅ Transaction committed successfully. All database changes persisted.`);
     return true;
   } catch (error) {
-    await dbClient.query('ROLLBACK');
+    try {
+      await dbClient.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error during rollback:', rollbackError);
+    }
     console.error('Error unfollowing user:', error);
     throw error;
   } finally {
-    dbClient.release();
+    // Always release connection, even if there was an error
+    if (dbClient) {
+      try {
+        dbClient.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -166,25 +289,48 @@ async function getFollowers(userId) {
 
 /**
  * Get following list for a user
+ * Includes both direct follows and connected users (connected users are automatically considered as following)
+ * 
+ * Business Rule: Connected users automatically appear in the following list
+ * This ensures UI shows "Following" button for connected users without needing separate follow action
+ * 
  * @param {string} userId - User ID
  * @returns {Promise<Array>} Array of following user data
  */
 async function getFollowing(userId) {
   const query = `
-    SELECT 
+    SELECT DISTINCT
       u.id,
       u.username,
       u.full_name,
       u.user_type,
       u.profile_url
     FROM users u
-    INNER JOIN user_follows uf ON u.id = uf.following_id
-    WHERE uf.follower_id = $1
-    ORDER BY uf.created_at DESC
+    WHERE u.id IN (
+      -- Direct follows
+      SELECT following_id 
+      FROM user_follows 
+      WHERE follower_id = $1
+      
+      UNION
+      
+      -- Connected users (automatically considered as following)
+      -- Business Rule: If users are connected, they are automatically following each other
+      SELECT 
+        CASE 
+          WHEN user_id_1 = $1 THEN user_id_2 
+          ELSE user_id_1 
+        END as connected_user_id
+      FROM user_connections 
+      WHERE user_id_1 = $1 OR user_id_2 = $1
+    )
+    AND u.id != $1
+    ORDER BY u.full_name ASC
   `;
 
   try {
     const result = await pool.query(query, [userId]);
+    console.log(`[getFollowing] Found ${result.rows.length} users (includes direct follows and connections) for user ${userId.substring(0, 8)}...`);
     return result.rows;
   } catch (error) {
     console.error('Error fetching following:', error);
@@ -219,15 +365,40 @@ async function getFollowCounts(userId) {
  * Check if a user is following another user
  * @param {string} followerId - User ID of the potential follower
  * @param {string} followingId - User ID of the potential following
- * @returns {Promise<boolean>} True if following, false otherwise
+ * @returns {Promise<boolean>} True if following OR connected, false otherwise
+ * 
+ * Business Rules:
+ * 1. If users are connected, they are automatically considered as following each other
+ * 2. This means connected users will show "Following" button instead of "Follow" button
+ * 3. No need to manually follow someone you're already connected with
  */
 async function isFollowing(followerId, followingId) {
-  const query =
-    'SELECT id FROM user_follows WHERE follower_id = $1 AND following_id = $2';
-
   try {
-    const result = await pool.query(query, [followerId, followingId]);
-    return result.rows.length > 0;
+    // First check if there's a direct follow relationship
+    const followQuery =
+      'SELECT id FROM user_follows WHERE follower_id = $1 AND following_id = $2';
+    const followResult = await pool.query(followQuery, [followerId, followingId]);
+
+    if (followResult.rows.length > 0) {
+      return true;
+    }
+
+    // If not directly following, check if they are connected
+    // Connected users are automatically considered as following each other
+    // This means UI will show "Following" button instead of "Follow" button
+    const connectionQuery = `
+      SELECT id FROM user_connections 
+      WHERE (user_id_1 = $1 AND user_id_2 = $2) 
+         OR (user_id_1 = $2 AND user_id_2 = $1)
+    `;
+    const connectionResult = await pool.query(connectionQuery, [followerId, followingId]);
+
+    if (connectionResult.rows.length > 0) {
+      console.log(`[isFollowing] Users ${followerId.substring(0, 8)}... and ${followingId.substring(0, 8)}... are connected, returning true (auto-follow)`);
+      return true;
+    }
+
+    return false;
   } catch (error) {
     console.error('Error checking follow status:', error);
     throw error;
@@ -244,28 +415,50 @@ async function sendConnectionRequest(requesterId, receiverId) {
       throw new Error('Cannot send connection request to yourself');
     }
 
-    const checkExistingQuery = `
-      SELECT id, status FROM connection_requests 
-      WHERE (requester_id = $1 AND receiver_id = $2) 
-         OR (requester_id = $2 AND receiver_id = $1)
+    // IMPORTANT: Check if users are already connected in user_connections table
+    // This is the source of truth for actual connections
+    const checkConnectionQuery = `
+      SELECT id FROM user_connections 
+      WHERE (user_id_1 = $1 AND user_id_2 = $2) 
+         OR (user_id_1 = $2 AND user_id_2 = $1)
     `;
-    const checkResult = await dbClient.query(checkExistingQuery, [
+    const connectionCheck = await dbClient.query(checkConnectionQuery, [
       requesterId,
       receiverId,
     ]);
 
-    if (checkResult.rows.length > 0) {
-      const existing = checkResult.rows[0];
+    if (connectionCheck.rows.length > 0) {
+      await dbClient.query('ROLLBACK');
+      console.log(`[sendConnectionRequest] Users ${requesterId.substring(0, 8)}... and ${receiverId.substring(0, 8)}... are already connected`);
+      return { success: false, message: 'Already connected' };
+    }
+
+    // Check for pending connection requests
+    const checkRequestQuery = `
+      SELECT id, status FROM connection_requests 
+      WHERE (requester_id = $1 AND receiver_id = $2) 
+         OR (requester_id = $2 AND receiver_id = $1)
+    `;
+    const requestCheck = await dbClient.query(checkRequestQuery, [
+      requesterId,
+      receiverId,
+    ]);
+
+    if (requestCheck.rows.length > 0) {
+      const existing = requestCheck.rows[0];
       if (existing.status === 'pending') {
         await dbClient.query('ROLLBACK');
+        console.log(`[sendConnectionRequest] Connection request already pending between ${requesterId.substring(0, 8)}... and ${receiverId.substring(0, 8)}...`);
         return {
           success: false,
           message: 'Connection request already pending',
         };
       }
+      // If status is 'accepted' but no connection exists, allow creating a new request
+      // This handles data inconsistency where request is accepted but connection wasn't created
       if (existing.status === 'accepted') {
-        await dbClient.query('ROLLBACK');
-        return { success: false, message: 'Already connected' };
+        console.warn(`[sendConnectionRequest] Found accepted request but no connection exists. Allowing new request.`);
+        // Continue to create a new request - this will overwrite the old one
       }
     }
 
@@ -308,14 +501,24 @@ async function sendConnectionRequest(requesterId, receiverId) {
 
     return { success: true, request: result.rows[0] };
   } catch (error) {
-    await dbClient.query('ROLLBACK');
+    try {
+      await dbClient.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error during rollback:', rollbackError);
+    }
     if (error.code === '23505') {
       return { success: false, message: 'Connection request already exists' };
     }
     console.error('Error sending connection request:', error);
     throw error;
   } finally {
-    dbClient.release();
+    if (dbClient) {
+      try {
+        dbClient.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -453,24 +656,50 @@ async function acceptConnectionRequest(requestId, receiverId) {
         ? requesterResult.rows[0].full_name || requesterUsername
         : receiverResult.rows[0].full_name || receiverUsername;
 
-    const connectionId = uuidv4();
-    const insertConnectionQuery = `
-      INSERT INTO user_connections (id, user_id_1, user_id_2, full_name_1, full_name_2, created_at)
-      VALUES ($1, $2, $3, $4, $5, NOW())
-      ON CONFLICT (user_id_1, user_id_2) DO NOTHING
+    // Check if connection already exists before creating
+    const checkExistingConnectionQuery = `
+      SELECT id FROM user_connections 
+      WHERE (user_id_1 = $1 AND user_id_2 = $2) 
+         OR (user_id_1 = $2 AND user_id_2 = $1)
     `;
-    await dbClient.query(insertConnectionQuery, [
-      connectionId,
+    const existingConnectionCheck = await dbClient.query(checkExistingConnectionQuery, [
       normalizedUserId1,
       normalizedUserId2,
-      normalizedUser1Name,
-      normalizedUser2Name,
     ]);
 
-    // Note: Connection counts are separate from follower counts
-    // Connections don't affect the followers/following counts in the users table
+    if (existingConnectionCheck.rows.length > 0) {
+      console.log(`[acceptConnectionRequest] Connection already exists between ${requesterId.substring(0, 8)}... and ${receiverId.substring(0, 8)}...`);
+      // Connection already exists, just commit the request status update
+      await dbClient.query('COMMIT');
+    } else {
+      // Create connection entry in user_connections table
+      // Normalize order: always store with user_id_1 < user_id_2 (lexicographically)
+      const connectionId = uuidv4();
+      const insertConnectionQuery = `
+        INSERT INTO user_connections (id, user_id_1, user_id_2, full_name_1, full_name_2, created_at)
+        VALUES ($1, $2, $3, $4, $5, NOW())
+        ON CONFLICT (user_id_1, user_id_2) DO NOTHING
+        RETURNING id
+      `;
+      const connectionResult = await dbClient.query(insertConnectionQuery, [
+        connectionId,
+        normalizedUserId1,
+        normalizedUserId2,
+        normalizedUser1Name,
+        normalizedUser2Name,
+      ]);
 
-    await dbClient.query('COMMIT');
+      if (connectionResult.rows.length === 0) {
+        console.warn(`[acceptConnectionRequest] Failed to create connection (possibly due to conflict) between ${requesterId.substring(0, 8)}... and ${receiverId.substring(0, 8)}...`);
+      } else {
+        console.log(`[acceptConnectionRequest] Connection created successfully: ${connectionResult.rows[0].id} between ${requesterId.substring(0, 8)}... and ${receiverId.substring(0, 8)}...`);
+      }
+
+      // Note: Connection counts are separate from follower counts
+      // Connections don't affect the followers/following counts in the users table
+
+      await dbClient.query('COMMIT');
+    }
 
     const receiverName =
       receiverResult.rows[0].full_name ||
@@ -493,11 +722,21 @@ async function acceptConnectionRequest(requestId, receiverId) {
 
     return { success: true };
   } catch (error) {
-    await dbClient.query('ROLLBACK');
+    try {
+      await dbClient.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error during rollback:', rollbackError);
+    }
     console.error('Error accepting connection request:', error);
     throw error;
   } finally {
-    dbClient.release();
+    if (dbClient) {
+      try {
+        dbClient.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -526,11 +765,21 @@ async function rejectConnectionRequest(requestId, receiverId) {
     await dbClient.query('COMMIT');
     return { success: true };
   } catch (error) {
-    await dbClient.query('ROLLBACK');
+    try {
+      await dbClient.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error during rollback:', rollbackError);
+    }
     console.error('Error rejecting connection request:', error);
     throw error;
   } finally {
-    dbClient.release();
+    if (dbClient) {
+      try {
+        dbClient.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -708,7 +957,11 @@ async function createConnection(userId1, userId2) {
     await dbClient.query('COMMIT');
     return true;
   } catch (error) {
-    await dbClient.query('ROLLBACK');
+    try {
+      await dbClient.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error during rollback:', rollbackError);
+    }
     // If it's a unique constraint violation, connection already exists
     if (error.code === '23505') {
       return false;
@@ -716,7 +969,13 @@ async function createConnection(userId1, userId2) {
     console.error('Error creating connection:', error);
     throw error;
   } finally {
-    dbClient.release();
+    if (dbClient) {
+      try {
+        dbClient.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -741,11 +1000,21 @@ async function removeConnection(userId1, userId2) {
     await dbClient.query('COMMIT');
     return result.rowCount > 0;
   } catch (error) {
-    await dbClient.query('ROLLBACK');
+    try {
+      await dbClient.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error during rollback:', rollbackError);
+    }
     console.error('Error removing connection:', error);
     throw error;
   } finally {
-    dbClient.release();
+    if (dbClient) {
+      try {
+        dbClient.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 

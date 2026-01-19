@@ -134,6 +134,11 @@ async function getAllUsers(excludeUserId = null, limit = 10, currentUserId = nul
 
   // If currentUserId is provided, include follow status in the query
   if (currentUserId && excludeUserId) {
+    console.log('[getAllUsers] Using query with currentUserId and excludeUserId:', {
+      currentUserId: currentUserId.substring(0, 8) + '...',
+      excludeUserId: excludeUserId.substring(0, 8) + '...',
+      limit
+    });
     query = `
       SELECT 
         u.id, 
@@ -156,6 +161,10 @@ async function getAllUsers(excludeUserId = null, limit = 10, currentUserId = nul
     `;
     values = [currentUserId, excludeUserId, limit];
   } else if (currentUserId && !excludeUserId) {
+    console.log('[getAllUsers] Using query with currentUserId only:', {
+      currentUserId: currentUserId.substring(0, 8) + '...',
+      limit
+    });
     query = `
       SELECT 
         u.id, 
@@ -214,6 +223,17 @@ async function getAllUsers(excludeUserId = null, limit = 10, currentUserId = nul
   }
 
   const result = await pool.query(query, values);
+  
+  // Debug: Log follow status results
+  if (currentUserId) {
+    const followingCount = result.rows.filter(r => r.is_following === true).length;
+    console.log('[getAllUsers] Query result:', {
+      totalUsers: result.rows.length,
+      followingCount,
+      currentUserId: currentUserId.substring(0, 8) + '...'
+    });
+  }
+  
   return result.rows;
 }
 

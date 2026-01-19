@@ -240,7 +240,18 @@ async function getAllUsers(req, res) {
     const limit = parseInt(req.query.limit) || 10;
     // Accept currentUserId to check follow status in the same query
     // This reduces API calls from 12 to 2 (one for user lookup, one for users list)
-    const currentUserId = req.query.currentUserId || req.query.follower_id || null;
+    // Priority: 1) query param, 2) authenticated user, 3) null
+    const currentUserId = req.query.currentUserId || 
+                          req.query.follower_id || 
+                          req.user?.id || 
+                          null;
+
+    console.log('[getAllUsers] Request params:', {
+      excludeUserId,
+      limit,
+      currentUserId: currentUserId ? currentUserId.substring(0, 8) + '...' : null,
+      hasAuthUser: !!req.user?.id
+    });
 
     const result = await signupService.getAllUsersService(excludeUserId, limit, currentUserId);
 
@@ -261,21 +272,42 @@ async function getAllUsers(req, res) {
  */
 async function getMyChildren(req, res) {
   try {
-    // Get parent email from authenticated user
-    const parentEmail = req.user?.email;
+    // Get user ID from authenticated token
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID not found in token',
+      });
+    }
+
+    // Verify user exists and is a parent by checking database (more reliable than token)
+    const signupModel = require('./signup.model');
+    const user = await signupModel.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Verify user is a parent (check from database, not token)
+    if (user.user_type !== 'parent') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only parents can access their children',
+      });
+    }
+
+    // Get parent email from database (more reliable than token)
+    const parentEmail = user.email;
 
     if (!parentEmail) {
       return res.status(400).json({
         success: false,
-        message: 'Parent email not found in token',
-      });
-    }
-
-    // Verify user is a parent
-    if (req.user?.user_type !== 'parent') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only parents can access their children',
+        message: 'Parent email not found',
       });
     }
 

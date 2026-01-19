@@ -102,11 +102,21 @@ async function deleteArticle(articleId, userId) {
     await dbClient.query('COMMIT');
     return result.rows.length > 0;
   } catch (error) {
-    await dbClient.query('ROLLBACK');
+    try {
+      await dbClient.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error during rollback:', rollbackError);
+    }
     console.error('Error deleting article:', error);
     throw error;
   } finally {
-    dbClient.release();
+    if (dbClient) {
+      try {
+        dbClient.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
