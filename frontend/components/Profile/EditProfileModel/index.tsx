@@ -154,11 +154,11 @@ export default function EditProfileModal({
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(username)}`
+            `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
+            `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -294,11 +294,11 @@ export default function EditProfileModal({
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(username)}`
+            `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
+            `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 

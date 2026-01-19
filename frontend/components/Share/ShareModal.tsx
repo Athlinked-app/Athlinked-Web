@@ -86,7 +86,7 @@ export default function ShareModal({
         socketRef.current.disconnect();
       }
 
-      const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001', {
+      const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'https://athlinked-api.randomw.dev', {
         transports: ['websocket'],
       });
 
