@@ -211,7 +211,7 @@ export default function AthleticAndPerformancePopup({
     showDropdown: boolean;
     setShowDropdown: (show: boolean) => void;
     onSelect: (value: string) => void;
-    ref: React.RefObject<HTMLDivElement>;
+    ref: React.RefObject<HTMLDivElement | null>;
   }) => (
     <div className="relative" ref={ref}>
       <label className="block text-sm font-medium text-gray-700 mb-2">

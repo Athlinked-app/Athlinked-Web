@@ -306,6 +306,50 @@ router.get('/my-children', authenticateToken, signupController.getMyChildren);
 
 /**
  * @swagger
+ * /api/signup/my-children/activities:
+ *   get:
+ *     summary: Get all activities for parent's children
+ *     description: Get posts, clips, articles, videos, and templates for all children of the authenticated parent. Includes content from dedicated tables (videos, templates) and resources table (videos/templates uploaded via resources page).
+ *     tags: [Signup]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Activities retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 activities:
+ *                   type: object
+ *                   additionalProperties:
+ *                     type: object
+ *                     properties:
+ *                       posts:
+ *                         type: array
+ *                       clips:
+ *                         type: array
+ *                       articles:
+ *                         type: array
+ *                       videos:
+ *                         type: array
+ *                         description: Videos from videos table and resources table (resource_type='video')
+ *                       templates:
+ *                         type: array
+ *                         description: Templates from templates table and resources table (resource_type='template')
+ *       403:
+ *         description: Forbidden - Only parents can access this endpoint
+ *       500:
+ *         description: Internal server error
+ */
+router.get('/my-children/activities', authenticateToken, signupController.getChildrenActivities);
+
+/**
+ * @swagger
  * /api/signup/delete-account:
  *   delete:
  *     summary: Delete user account

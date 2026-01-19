@@ -125,12 +125,36 @@ async function verifyOtpService(email, otp) {
       password: hashedPassword,
     };
 
+    // Normalize parent_email if it exists
+    if (userDataToCreate.parent_email) {
+      userDataToCreate.parent_email = userDataToCreate.parent_email.toLowerCase().trim();
+      console.log('Creating user with parent_email:', userDataToCreate.parent_email);
+    }
+
     if (signupData.username || signupData._isUsernameSignup) {
       userDataToCreate.email = null;
       delete userDataToCreate._isUsernameSignup;
     }
 
     const createdUser = await signupModel.createUser(userDataToCreate);
+    
+    // Verify parent_email was saved correctly
+    if (userDataToCreate.parent_email) {
+      const verifyUser = createdUser.email
+        ? await signupModel.findByEmail(createdUser.email)
+        : createdUser.username
+          ? await signupModel.findByUsername(createdUser.username)
+          : null;
+      
+      if (verifyUser) {
+        console.log('User created - parent_email verification:', {
+          userId: createdUser.id,
+          requested_parent_email: userDataToCreate.parent_email,
+          saved_parent_email: verifyUser.parent_email,
+          match: verifyUser.parent_email?.toLowerCase().trim() === userDataToCreate.parent_email,
+        });
+      }
+    }
 
     const completeUser = createdUser.email
       ? await signupModel.findByEmail(createdUser.email)
@@ -388,11 +412,170 @@ async function deleteAccountService(userId) {
   }
 }
 
+/**
+ * Get all activities (posts, clips, articles) for parent's children
+ * @param {string} parentEmail - Parent's email address
+ * @returns {Promise<object>} Service result with activities grouped by athlete
+ */
+async function getChildrenActivitiesService(parentEmail) {
+  try {
+    if (!parentEmail) {
+      throw new Error('Parent email is required');
+    }
+
+    console.log('getChildrenActivitiesService - Starting with parentEmail:', parentEmail);
+    
+    // Get all children
+    const children = await signupModel.getChildrenByParentEmail(parentEmail.toLowerCase().trim());
+    console.log('getChildrenActivitiesService - Found children:', children?.length || 0);
+    
+    // Handle case where children is not an array or is empty
+    if (!Array.isArray(children) || children.length === 0) {
+      return {
+        success: true,
+        activities: {},
+      };
+    }
+
+    const childrenIds = children.map(child => child.id).filter(id => id); // Filter out any null/undefined IDs
+    
+    // Get activities for all children in parallel
+    const postsModel = require('../profile/profile.model');
+    const clipsModel = require('../clips/clips.model');
+    const articlesModel = require('../articles/articles.model');
+    const videosModel = require('../videos/videos.model');
+    const templatesModel = require('../templates/templates.model');
+    const resourcesModel = require('../resources/resources.model');
+    
+    // Fetch all activities in parallel for all children
+    const activityPromises = childrenIds.map(async (childId) => {
+      try {
+        // Wrap each call in a try-catch to handle individual errors
+        let posts = [];
+        let clips = [];
+        let articles = [];
+        let videos = [];
+        let templates = [];
+        let resources = [];
+        
+        try {
+          posts = await postsModel.getUserPosts(childId, 50);
+          if (!Array.isArray(posts)) posts = [];
+          console.log(`getChildrenActivitiesService - Fetched ${posts.length} posts for child ${childId}`);
+        } catch (err) {
+          console.error(`Error fetching posts for child ${childId}:`, err.message || err);
+          console.error(`Error stack:`, err.stack);
+          posts = [];
+        }
+        
+        try {
+          clips = await clipsModel.getClipsByUserId(childId, 50);
+          if (!Array.isArray(clips)) clips = [];
+        } catch (err) {
+          console.error(`Error fetching clips for child ${childId}:`, err.message || err);
+          clips = [];
+        }
+        
+        try {
+          articles = await articlesModel.getAllArticles(childId);
+          if (!Array.isArray(articles)) articles = [];
+        } catch (err) {
+          console.error(`Error fetching articles for child ${childId}:`, err.message || err);
+          articles = [];
+        }
+        
+        try {
+          videos = await videosModel.getAllVideos(childId);
+          if (!Array.isArray(videos)) videos = [];
+        } catch (err) {
+          console.error(`Error fetching videos for child ${childId}:`, err.message || err);
+          videos = [];
+        }
+        
+        try {
+          templates = await templatesModel.getAllTemplates(childId);
+          if (!Array.isArray(templates)) templates = [];
+        } catch (err) {
+          console.error(`Error fetching templates for child ${childId}:`, err.message || err);
+          templates = [];
+        }
+        
+        // Fetch resources (videos and templates from resources page)
+        try {
+          resources = await resourcesModel.getAllResources(childId);
+          if (!Array.isArray(resources)) resources = [];
+          
+          // Separate resources into videos and templates
+          const resourceVideos = resources.filter(r => r.resource_type === 'video' || r.video_url);
+          const resourceTemplates = resources.filter(r => r.resource_type === 'template' || r.file_url);
+          
+          // Merge with existing videos and templates
+          videos = [...videos, ...resourceVideos];
+          templates = [...templates, ...resourceTemplates];
+        } catch (err) {
+          console.error(`Error fetching resources for child ${childId}:`, err.message || err);
+        }
+        
+        return {
+          athleteId: childId,
+          posts: posts || [],
+          clips: clips || [],
+          articles: articles || [],
+          videos: videos || [],
+          templates: templates || [],
+        };
+      } catch (error) {
+        console.error(`Error processing activities for child ${childId}:`, error.message || error);
+        console.error(`Error stack:`, error.stack);
+        // Return empty activities for this child if there's an error
+        return {
+          athleteId: childId,
+          posts: [],
+          clips: [],
+          articles: [],
+        };
+      }
+    });
+    
+    const activitiesResults = await Promise.all(activityPromises);
+    
+    // Group activities by athlete ID
+    const activities = {};
+    activitiesResults.forEach(result => {
+      activities[result.athleteId] = {
+        posts: result.posts || [],
+        clips: result.clips || [],
+        articles: result.articles || [],
+        videos: result.videos || [],
+        templates: result.templates || [],
+      };
+      console.log(`getChildrenActivitiesService - Activities for ${result.athleteId}:`, {
+        posts: result.posts?.length || 0,
+        clips: result.clips?.length || 0,
+        articles: result.articles?.length || 0,
+        videos: result.videos?.length || 0,
+        templates: result.templates?.length || 0,
+      });
+    });
+
+    console.log('getChildrenActivitiesService - Returning activities for', Object.keys(activities).length, 'children');
+    return {
+      success: true,
+      activities,
+    };
+  } catch (error) {
+    console.error('Get children activities service error:', error.message);
+    console.error('Error stack:', error.stack);
+    throw error;
+  }
+}
+
 module.exports = {
   startSignupService,
   verifyOtpService,
   parentCompleteService,
   getAllUsersService,
   getChildrenByParentEmailService,
+  getChildrenActivitiesService,
   deleteAccountService,
 };

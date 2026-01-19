@@ -452,19 +452,49 @@ async function deletePostService(postId, userId) {
       throw new Error('Post not found');
     }
 
-    if (post.user_id !== userId) {
-      throw new Error('Unauthorized: You can only delete your own posts');
+    // Check if user is the post owner
+    if (post.user_id === userId) {
+      // User owns the post, allow deletion
+      const deleted = await postsModel.deletePost(postId, userId);
+      if (!deleted) {
+        throw new Error('Failed to delete post');
+      }
+
+      return {
+        success: true,
+        message: 'Post deleted successfully',
+      };
     }
 
-    const deleted = await postsModel.deletePost(postId, userId);
-    if (!deleted) {
-      throw new Error('Failed to delete post');
+    // Check if user is a parent of the post author
+    const signupModel = require('../signup/signup.model');
+    const currentUser = await signupModel.findById(userId);
+    
+    if (!currentUser) {
+      throw new Error('User not found');
     }
 
-    return {
-      success: true,
-      message: 'Post deleted successfully',
-    };
+    // If current user is a parent, check if post author is their child
+    if (currentUser.user_type === 'parent' && currentUser.email) {
+      const postAuthor = await signupModel.findById(post.user_id);
+      
+      if (postAuthor && postAuthor.parent_email && 
+          postAuthor.parent_email.toLowerCase().trim() === currentUser.email.toLowerCase().trim()) {
+        // Parent is deleting their child's post - allow it
+        const deleted = await postsModel.deletePost(postId, userId);
+        if (!deleted) {
+          throw new Error('Failed to delete post');
+        }
+
+        return {
+          success: true,
+          message: 'Post deleted successfully',
+        };
+      }
+    }
+
+    // User is neither the post owner nor the parent of the post author
+    throw new Error('Unauthorized: You can only delete your own posts or posts from your athletes');
   } catch (error) {
     console.error('Delete post service error:', error);
     throw error;

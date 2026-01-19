@@ -63,19 +63,49 @@ async function deleteVideoService(videoId, userId) {
       throw new Error('Video not found');
     }
 
-    if (video.user_id !== userId) {
-      throw new Error('Unauthorized: You can only delete your own videos');
+    // Check if user is the video owner
+    if (video.user_id === userId) {
+      // User owns the video, allow deletion
+      const deleted = await videosModel.deleteVideo(videoId, userId);
+      if (!deleted) {
+        throw new Error('Failed to delete video');
+      }
+
+      return {
+        success: true,
+        message: 'Video deleted successfully',
+      };
     }
 
-    const deleted = await videosModel.deleteVideo(videoId, userId);
-    if (!deleted) {
-      throw new Error('Failed to delete video');
+    // Check if user is a parent of the video author
+    const signupModel = require('../signup/signup.model');
+    const currentUser = await signupModel.findById(userId);
+    
+    if (!currentUser) {
+      throw new Error('User not found');
     }
 
-    return {
-      success: true,
-      message: 'Video deleted successfully',
-    };
+    // If current user is a parent, check if video author is their child
+    if (currentUser.user_type === 'parent' && currentUser.email) {
+      const videoAuthor = await signupModel.findById(video.user_id);
+      
+      if (videoAuthor && videoAuthor.parent_email && 
+          videoAuthor.parent_email.toLowerCase().trim() === currentUser.email.toLowerCase().trim()) {
+        // Parent is deleting their child's video - allow it
+        const deleted = await videosModel.deleteVideo(videoId, userId);
+        if (!deleted) {
+          throw new Error('Failed to delete video');
+        }
+
+        return {
+          success: true,
+          message: 'Video deleted successfully',
+        };
+      }
+    }
+
+    // User is neither the video owner nor the parent of the video author
+    throw new Error('Unauthorized: You can only delete your own videos or videos from your athletes');
   } catch (error) {
     console.error('Delete video service error:', error);
     throw error;

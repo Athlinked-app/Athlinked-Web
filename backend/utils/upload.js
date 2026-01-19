@@ -35,10 +35,33 @@ const upload = multer({
 const uploadToS3Middleware = async (req, res, next) => {
   if (req.file) {
     try {
+      // Check if buffer exists (should always be available with memoryStorage)
+      if (!req.file.buffer) {
+        console.error('File buffer is missing:', {
+          file: req.file.originalname,
+          mimetype: req.file.mimetype,
+          size: req.file.size,
+        });
+        return res.status(500).json({
+          success: false,
+          message: 'File buffer is missing. Please ensure file was uploaded correctly.',
+        });
+      }
+
+      // Determine prefix based on route or body
       let prefix = 'posts';
-      if (req.body && req.body.post_type) {
+      if (req.path && req.path.includes('/clips')) {
+        prefix = 'clips';
+      } else if (req.body && req.body.post_type) {
         prefix = req.body.post_type === 'video' ? 'posts' : 'posts';
       }
+
+      console.log('Uploading to S3:', {
+        prefix,
+        originalname: req.file.originalname,
+        mimetype: req.file.mimetype,
+        size: req.file.buffer.length,
+      });
 
       const s3Key = generateS3Key(prefix, req.file.originalname, req.file.mimetype);
       const s3Url = await uploadToS3(req.file.buffer, s3Key, req.file.mimetype);
@@ -46,7 +69,16 @@ const uploadToS3Middleware = async (req, res, next) => {
       // Store S3 URL in req.file.location for controllers to use
       req.file.location = s3Url;
       req.file.s3Key = s3Key;
+      
+      console.log('File uploaded successfully to S3:', s3Url);
     } catch (error) {
+      console.error('S3 upload error in middleware:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        name: error.name,
+        stack: error.stack,
+      });
       return res.status(500).json({
         success: false,
         message: `Failed to upload file to S3: ${error.message}`,

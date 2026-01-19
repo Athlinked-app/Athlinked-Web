@@ -45,22 +45,25 @@ const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) {
-      console.log('CORS: Allowing request with no origin');
+      // Only log in production for security monitoring
+      if (process.env.NODE_ENV === 'production') {
+        console.log('CORS: Allowing request with no origin');
+      }
       return callback(null, true);
     }
     
     const normalizedOrigin = normalizeOrigin(origin);
     const normalizedAllowedOrigins = allowedOrigins.map(normalizeOrigin);
     
-    // In development, allow all origins
+    // In development, allow all origins (silently)
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`CORS: Development mode - allowing origin: ${origin}`);
+      // Removed verbose logging - only log warnings/errors
       return callback(null, true);
     }
     
     // In production, check if origin is in allowed list
     if (normalizedAllowedOrigins.includes(normalizedOrigin)) {
-      console.log(`CORS: Allowing origin: ${origin}`);
+      // Only log first time or on errors
       callback(null, true);
     } else {
       // Log but allow for now to prevent breaking (can be stricter later)

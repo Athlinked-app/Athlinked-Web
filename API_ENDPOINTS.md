@@ -36,6 +36,11 @@ Complete list of all API endpoints in the AthLinked project.
 - **GET** `/api/signup/my-children` - Get my children (for parents)
   - Auth: Required
 
+- **GET** `/api/signup/my-children/activities` - Get all activities for parent's children (NEW ⭐)
+  - Returns: `{ success, activities: { [athleteId]: { posts, clips, articles, videos, templates } } }`
+  - Includes posts, clips, articles, videos, and templates from both dedicated tables and resources table
+  - Auth: Required (Parent only)
+
 - **DELETE** `/api/signup/delete-account` - Delete user account
   - Auth: Required
 
@@ -314,6 +319,7 @@ Complete list of all API endpoints in the AthLinked project.
 
 - **DELETE** `/api/clips/:clipId` - Delete a clip
   - Auth: Required
+  - Note: Parents can delete clips from their athletes
 
 ---
 
@@ -337,6 +343,7 @@ Complete list of all API endpoints in the AthLinked project.
 
 - **DELETE** `/api/articles/:id` - Delete an article (soft delete)
   - Auth: Required
+  - Note: Parents can delete articles from their athletes
 
 ---
 
@@ -353,6 +360,7 @@ Complete list of all API endpoints in the AthLinked project.
 
 - **DELETE** `/api/videos/:id` - Delete a video (soft delete)
   - Auth: Required
+  - Note: Parents can delete videos from their athletes
 
 ---
 
@@ -369,6 +377,7 @@ Complete list of all API endpoints in the AthLinked project.
 
 - **DELETE** `/api/templates/:id` - Delete a template (soft delete)
   - Auth: Required
+  - Note: Parents can delete templates from their athletes
 
 ---
 
@@ -380,11 +389,12 @@ Complete list of all API endpoints in the AthLinked project.
   - Auth: Required
 
 - **GET** `/api/resources` - Get all active resources
-  - Query: `type`, `page`, `limit`
+  - Query: `type` (article|video|template), `user_id` (filter by user), `page`, `limit`
   - Auth: None
 
 - **DELETE** `/api/resources/:id` - Delete a resource (soft delete)
   - Auth: Required
+  - Note: Parents can delete resources (videos/templates) from their athletes
 
 ---
 
@@ -601,8 +611,8 @@ Complete list of all API endpoints in the AthLinked project.
 
 ### Total Endpoints by Category:
 
-- **Authentication & Authorization**: 18 endpoints
-  - Signup: 8 endpoints
+- **Authentication & Authorization**: 19 endpoints
+  - Signup: 9 endpoints
   - Login: 1 endpoint
   - Auth (Google OAuth & Token Management): 8 endpoints
   - Forgot Password: 2 endpoints
@@ -648,7 +658,7 @@ Complete list of all API endpoints in the AthLinked project.
 
 - **API Documentation**: 1 endpoint
 
-### **Grand Total: 127 API Endpoints**
+### **Grand Total: 128 API Endpoints**
 
 ### File Upload Endpoints:
 - Profile image upload: 1 endpoint

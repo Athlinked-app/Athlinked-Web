@@ -54,6 +54,8 @@ interface PostProps {
   currentUserProfileUrl?: string;
   currentUsername?: string;
   currentUserId?: string;
+  currentUserType?: string;
+  athleteIds?: string[]; // Array of athlete IDs if current user is a parent
   onCommentCountUpdate?: () => void;
   onPostDeleted?: () => void;
 }
@@ -64,6 +66,8 @@ export default function Post({
   currentUserProfileUrl,
   currentUsername = 'You',
   currentUserId,
+  currentUserType,
+  athleteIds = [],
   onCommentCountUpdate,
   onPostDeleted,
 }: PostProps) {
@@ -294,15 +298,20 @@ export default function Post({
   };
 
   const handleDelete = async () => {
-    if (!currentUserId || post.user_id !== currentUserId) {
+    // Check if user owns the post or is a parent of the post author
+    const canDelete = 
+      (currentUserId && post.user_id && currentUserId === post.user_id) ||
+      (currentUserType === 'parent' && post.user_id && athleteIds.includes(post.user_id));
+
+    if (!canDelete) {
       return;
     }
 
-    if (
-      !confirm(
-        'Are you sure you want to delete this post? This action cannot be undone.'
-      )
-    ) {
+    const confirmMessage = currentUserType === 'parent' && post.user_id !== currentUserId
+      ? 'Are you sure you want to delete this athlete\'s post? This action cannot be undone.'
+      : 'Are you sure you want to delete this post? This action cannot be undone.';
+
+    if (!confirm(confirmMessage)) {
       return;
     }
 
@@ -325,9 +334,10 @@ export default function Post({
       } else {
         alert(result.message || 'Failed to delete post');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error deleting post:', error);
-      alert('Failed to delete post. Please try again.');
+      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to delete post. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsDeleting(false);
       setShowDeleteMenu(false);
@@ -336,6 +346,15 @@ export default function Post({
 
   const isOwnPost =
     currentUserId && post.user_id && currentUserId === post.user_id;
+  
+  // Check if current user is a parent and this post belongs to their athlete
+  const isAthletePost = 
+    currentUserType === 'parent' && 
+    post.user_id && 
+    athleteIds.includes(post.user_id);
+  
+  // Show delete option if user owns the post or is a parent of the post author
+  const canDeletePost = isOwnPost || isAthletePost;
 
   const handleDownloadPDF = () => {
     if (!post.article_title || !post.article_body) return;
@@ -436,7 +455,7 @@ export default function Post({
             {post.username}
           </p>
         </div>
-        {isOwnPost && (
+        {canDeletePost && (
           <div className="relative">
             <button
               onClick={() => setShowDeleteMenu(!showDeleteMenu)}

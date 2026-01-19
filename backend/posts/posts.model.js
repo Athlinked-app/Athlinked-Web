@@ -344,9 +344,10 @@ async function deletePost(postId, userId) {
     ]);
     await dbClient.query('DELETE FROM post_saves WHERE post_id = $1', [postId]);
 
-    const deleteQuery =
-      'DELETE FROM posts WHERE id = $1 AND user_id = $2 RETURNING id';
-    const result = await dbClient.query(deleteQuery, [postId, userId]);
+    // Allow deletion if user_id matches OR if the deleter is a parent of the post author
+    // The authorization check is done in the service layer, here we just delete
+    const deleteQuery = 'DELETE FROM posts WHERE id = $1 RETURNING id';
+    const result = await dbClient.query(deleteQuery, [postId]);
 
     await dbClient.query('COMMIT');
     return result.rows.length > 0;

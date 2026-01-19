@@ -318,7 +318,7 @@ function ProfileContent() {
           setViewUser({
             id: data.profile.userId || viewUserId,
             full_name: data.profile.fullName || 'User',
-            profile_url: data.profile.profileImage || null,
+            profile_url: data.profile.profileImage || undefined,
             username: data.profile.username,
             user_type: data.profile.userType || 'athlete',
           });

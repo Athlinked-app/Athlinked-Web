@@ -64,19 +64,49 @@ async function deleteTemplateService(templateId, userId) {
       throw new Error('Template not found');
     }
 
-    if (template.user_id !== userId) {
-      throw new Error('Unauthorized: You can only delete your own templates');
+    // Check if user is the template owner
+    if (template.user_id === userId) {
+      // User owns the template, allow deletion
+      const deleted = await templatesModel.deleteTemplate(templateId, userId);
+      if (!deleted) {
+        throw new Error('Failed to delete template');
+      }
+
+      return {
+        success: true,
+        message: 'Template deleted successfully',
+      };
     }
 
-    const deleted = await templatesModel.deleteTemplate(templateId, userId);
-    if (!deleted) {
-      throw new Error('Failed to delete template');
+    // Check if user is a parent of the template author
+    const signupModel = require('../signup/signup.model');
+    const currentUser = await signupModel.findById(userId);
+    
+    if (!currentUser) {
+      throw new Error('User not found');
     }
 
-    return {
-      success: true,
-      message: 'Template deleted successfully',
-    };
+    // If current user is a parent, check if template author is their child
+    if (currentUser.user_type === 'parent' && currentUser.email) {
+      const templateAuthor = await signupModel.findById(template.user_id);
+      
+      if (templateAuthor && templateAuthor.parent_email && 
+          templateAuthor.parent_email.toLowerCase().trim() === currentUser.email.toLowerCase().trim()) {
+        // Parent is deleting their child's template - allow it
+        const deleted = await templatesModel.deleteTemplate(templateId, userId);
+        if (!deleted) {
+          throw new Error('Failed to delete template');
+        }
+
+        return {
+          success: true,
+          message: 'Template deleted successfully',
+        };
+      }
+    }
+
+    // User is neither the template owner nor the parent of the template author
+    throw new Error('Unauthorized: You can only delete your own templates or templates from your athletes');
   } catch (error) {
     console.error('Delete template service error:', error);
     throw error;

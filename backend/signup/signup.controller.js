@@ -1,4 +1,5 @@
 const signupService = require('./signup.service');
+const signupModel = require('./signup.model');
 const { validateSignup } = require('./signup.validation');
 
 /**
@@ -311,8 +312,22 @@ async function getMyChildren(req, res) {
       });
     }
 
+    // Normalize parent email for querying
+    const normalizedParentEmail = parentEmail.toLowerCase().trim();
+    
+    console.log('getMyChildren - Parent info:', {
+      userId,
+      parentEmail: normalizedParentEmail,
+      userEmail: user.email,
+    });
+
     const result =
-      await signupService.getChildrenByParentEmailService(parentEmail);
+      await signupService.getChildrenByParentEmailService(normalizedParentEmail);
+
+    console.log('getMyChildren - Result:', {
+      success: result.success,
+      childrenCount: result.children?.length || 0,
+    });
 
     return res.status(200).json(result);
   } catch (error) {
@@ -320,6 +335,71 @@ async function getMyChildren(req, res) {
     return res.status(500).json({
       success: false,
       message: error.message || 'Internal server error',
+    });
+  }
+}
+
+/**
+ * Controller to get all activities for parent's children
+ * @param {object} req - Express request object
+ * @param {object} res - Express response object
+ */
+async function getChildrenActivities(req, res) {
+  try {
+    // Get user ID from authenticated token
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID not found in token',
+      });
+    }
+
+    // Verify user exists and is a parent by checking database
+    const user = await signupModel.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Verify user is a parent
+    if (user.user_type !== 'parent') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only parents can access their children activities',
+      });
+    }
+
+    // Get parent email from database
+    const parentEmail = user.email;
+
+    if (!parentEmail) {
+      return res.status(400).json({
+        success: false,
+        message: 'Parent email not found',
+      });
+    }
+
+    // Normalize parent email for querying
+    const normalizedParentEmail = parentEmail.toLowerCase().trim();
+
+    console.log('getChildrenActivities - Calling service with parentEmail:', normalizedParentEmail);
+    const result = await signupService.getChildrenActivitiesService(normalizedParentEmail);
+    console.log('getChildrenActivities - Service returned successfully');
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Get children activities error:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     });
   }
 }
@@ -368,5 +448,6 @@ module.exports = {
   parentComplete,
   getAllUsers,
   getMyChildren,
+  getChildrenActivities,
   deleteAccount,
 };

@@ -747,16 +747,18 @@ async function getUserPosts(userId, limit = 50) {
       (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comment_count,
       (SELECT COUNT(*) FROM post_saves WHERE post_id = p.id) as save_count
     FROM posts p
-    WHERE p.user_id = $1
+    WHERE p.user_id = $1 AND (p.is_active = true OR p.is_active IS NULL)
     ORDER BY p.created_at DESC
     LIMIT $2
   `;
 
   try {
     const result = await pool.query(postsQuery, [userId, limit]);
+    console.log(`getUserPosts - Found ${result.rows.length} posts for user ${userId}`);
     return result.rows;
   } catch (error) {
     console.error('Error fetching user posts:', error);
+    console.error('Error details:', error.message, error.stack);
     throw error;
   }
 }

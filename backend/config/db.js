@@ -59,7 +59,7 @@ pool.on('error', err => {
   }
 });
 
-// Aggressive connection pool monitoring and cleanup
+// Connection pool monitoring - only log when there are issues
 setInterval(() => {
   const stats = {
     total: pool.totalCount,
@@ -69,11 +69,10 @@ setInterval(() => {
     usagePercent: ((pool.totalCount / SAFE_POOL_MAX) * 100).toFixed(1),
   };
   
+  // Only log if there are issues - don't spam logs with normal operation
   // Warn if pool usage is high (more than 60% = 12 connections)
   if (stats.total > 12) {
-    console.warn('⚠️ [DB Pool Stats] High usage:', stats);
-  } else if (process.env.NODE_ENV === 'development') {
-    console.log('[DB Pool Stats]', stats);
+    console.warn('⚠️ [DB Pool] High usage:', stats);
   }
   
   // CRITICAL: If pool is nearly exhausted, log error
@@ -88,7 +87,7 @@ setInterval(() => {
     console.error('🚨 [DB Pool] Requests are waiting for connections!', stats);
     console.error('🚨 [DB Pool] This indicates connection leaks or pool too small');
   }
-}, 10000); // Check every 10 seconds (more frequent monitoring)
+}, 10000); // Check every 10 seconds
 
 // Helper function to execute queries with timeout
 pool.queryWithTimeout = async function(text, params, timeoutMs = 10000) {

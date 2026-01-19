@@ -95,9 +95,10 @@ async function deleteArticle(articleId, userId) {
   try {
     await dbClient.query('BEGIN');
 
-    const deleteQuery =
-      'DELETE FROM articles WHERE id = $1 AND user_id = $2 RETURNING id';
-    const result = await dbClient.query(deleteQuery, [articleId, userId]);
+    // Allow deletion if user_id matches OR if the deleter is a parent of the article author
+    // The authorization check is done in the service layer, here we just delete
+    const deleteQuery = 'DELETE FROM articles WHERE id = $1 RETURNING id';
+    const result = await dbClient.query(deleteQuery, [articleId]);
 
     await dbClient.query('COMMIT');
     return result.rows.length > 0;

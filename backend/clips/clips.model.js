@@ -248,6 +248,39 @@ async function getClipComments(clipId) {
 }
 
 /**
+ * Get clips by user ID
+ * @param {string} userId - User ID
+ * @param {number} limit - Limit of clips to return
+ * @returns {Promise<Array>} Array of clips
+ */
+async function getClipsByUserId(userId, limit = 50) {
+  const query = `
+    SELECT 
+      id,
+      user_id,
+      video_url,
+      description,
+      like_count,
+      comment_count,
+      username,
+      user_profile_url,
+      created_at
+    FROM clips
+    WHERE user_id = $1
+    ORDER BY created_at DESC
+    LIMIT $2
+  `;
+
+  try {
+    const result = await pool.query(query, [userId, limit]);
+    return result.rows;
+  } catch (error) {
+    console.error('Error fetching user clips:', error);
+    throw error;
+  }
+}
+
+/**
  * Get user by ID (for fetching username and profile_url)
  * @param {string} userId - User UUID
  * @returns {Promise<object|null>} User data or null
@@ -284,9 +317,10 @@ async function deleteClip(clipId, userId) {
       clipId,
     ]);
 
-    const deleteQuery =
-      'DELETE FROM clips WHERE id = $1 AND user_id = $2 RETURNING id';
-    const result = await dbClient.query(deleteQuery, [clipId, userId]);
+    // Allow deletion if user_id matches OR if the deleter is a parent of the clip author
+    // The authorization check is done in the service layer, here we just delete
+    const deleteQuery = 'DELETE FROM clips WHERE id = $1 RETURNING id';
+    const result = await dbClient.query(deleteQuery, [clipId]);
 
     await dbClient.query('COMMIT');
     return result.rows.length > 0;
@@ -313,6 +347,7 @@ module.exports = {
   createClip,
   getClipsFeed,
   getClipById,
+  getClipsByUserId,
   addComment,
   incrementCommentCount,
   getClipComments,

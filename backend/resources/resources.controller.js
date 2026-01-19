@@ -134,12 +134,13 @@ async function createResource(req, res) {
 async function getAllResources(req, res) {
   try {
     const { type } = req.query;
+    const userId = req.query.user_id || req.user?.id || null;
 
     let result;
     if (type) {
       result = await resourcesService.getResourcesByTypeService(type);
     } else {
-      result = await resourcesService.getAllResourcesService();
+      result = await resourcesService.getAllResourcesService(userId);
     }
 
     return res.status(200).json(result);

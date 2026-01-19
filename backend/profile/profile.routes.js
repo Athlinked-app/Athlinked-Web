@@ -1821,15 +1821,16 @@ router.get(
  *       Optimized endpoint that returns ALL profile data in one call:
  *       - User basic info
  *       - Follow counts
- *       - Connection status (if viewing another user)
+ *       - Connection status (if viewing another user) - requires optional authentication
  *       - All 8 profile sections (social handles, academic, achievements, etc.)
  *       - User posts (limit 50)
  *       
  *       This reduces API calls from 15+ to 1 for the profile page.
  *       Uses only 2 database queries (executed in parallel).
+ *       Authentication is optional - provides connection status if authenticated.
  *     tags: [Profile]
  *     security:
- *       - bearerAuth: [] (optional - for connection status)
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: userId
