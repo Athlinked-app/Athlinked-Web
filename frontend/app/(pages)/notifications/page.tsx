@@ -267,24 +267,24 @@ export default function NotificationsPage() {
 
       <div className="flex flex-1 w-full mt-5 overflow-hidden">
         {/* Navigation Bar */}
-        <div className="hidden md:flex px-6">
+        <div className="hidden md:flex px-3">
           <NavigationBar activeItem="notifications" />
         </div>
 
-        <div className="flex-1 flex gap-5 overflow-y-auto">
+        <div className="flex-1 flex gap-3 overflow-y-auto">
           {/* Main Content */}
           <div className="flex-1 bg-white rounded-xl p-6">
             {/* Tabs Section */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-2xl font-bold text-black">Notifications</h1>
-                <button
+                {/* <button
                   onClick={fetchNotifications}
                   disabled={loading}
                   className="px-4 py-2 text-sm bg-[#CB9729] text-white rounded-lg hover:bg-[#b78322] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Refreshing...' : 'Refresh'}
-                </button>
+                </button> */}
               </div>
               <div className="flex border-b border-gray-200 mb-6">
                 <button
@@ -390,7 +390,7 @@ export default function NotificationsPage() {
           </div>
 
           {/* Right Sidebar */}
-          <div className="hidden lg:flex">
+          <div className="hidden lg:flex pr-3">
             <RightSideBar />
           </div>
         </div>

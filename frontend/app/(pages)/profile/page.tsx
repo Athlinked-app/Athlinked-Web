@@ -22,6 +22,7 @@ import type { CharacterAndLeadership } from '@/components/Profile/CharacterandLe
 import HealthAndReadinessComponent from '@/components/Profile/HealthandReadiness';
 import type { HealthAndReadiness } from '@/components/Profile/HealthandReadiness';
 import VideoAndMediaComponent from '@/components/Profile/VideoandMedia';
+import AthleticData from '@/components/Profile/AthleticData';
 import type { VideoAndMedia } from '@/components/Profile/VideoandMedia';
 import Posts from '@/components/Activity/Posts';
 import Clips from '@/components/Activity/Clips';
@@ -107,9 +108,16 @@ function ProfileContent() {
     exists: boolean;
     status: string | null;
   } | null>(null);
+  const [openAthleticPopup, setOpenAthleticPopup] = useState(false);
 
   const targetUserId = viewUserId || currentUserId;
   const isViewingOwnProfile = !viewUserId || viewUserId === currentUserId;
+  
+  // Determine the user type for the profile being viewed
+  const profileUserType = viewUserId
+    ? viewUser?.user_type || 'athlete'
+    : currentUser?.user_type || 'athlete';
+  const isAthlete = profileUserType === 'athlete';
 
   // Track previous targetUserId to prevent unnecessary state clears
   const prevTargetUserIdRef = useRef<string | null>(null);
@@ -1062,6 +1070,19 @@ function ProfileContent() {
               }
             }}
           />
+
+          {isAthlete && (
+            <AthleticData
+              athleticAndPerformance={athleticAndPerformance}
+              onClick={() => {
+                if (isViewingOwnProfile && isAthlete) {
+                  setOpenAthleticPopup(true);
+                }
+              }}
+              isEditable={isViewingOwnProfile && isAthlete}
+            />
+          )}
+
           <div className="bg-white mt-2 rounded-lg flex flex-col flex-1 min-h-0">
             <div className="flex items-center border-b border-gray-200 flex-shrink-0">
               <button
@@ -1114,7 +1135,7 @@ function ProfileContent() {
                       <div className="h-6 w-px bg-gray-200"></div>
                       <button
                         onClick={() => setActiveTab('favourites')}
-                        className={`px-6 py-3 font-medium text-xl transition-colors relative ${
+                        className={`px-6 py-3 font-medium text-sm transition-colors relative ${
                           activeTab === 'favourites'
                             ? 'text-[#CB9729]'
                             : 'text-gray-500 hover:text-gray-700'
@@ -1150,12 +1171,16 @@ function ProfileContent() {
                     onAchievementsChange={setAchievements}
                     userId={targetUserId}
                   />
-                  <AthleticAndPerformanceComponent
-                    athleticAndPerformance={athleticAndPerformance}
-                    onAthleticAndPerformanceChange={setAthleticAndPerformance}
-                    sportsPlayed={sportsPlayed}
-                    userId={targetUserId}
-                  />
+                  {isAthlete && (
+                    <AthleticAndPerformanceComponent
+                      athleticAndPerformance={athleticAndPerformance}
+                      onAthleticAndPerformanceChange={setAthleticAndPerformance}
+                      sportsPlayed={sportsPlayed}
+                      userId={targetUserId}
+                      openForEdit={openAthleticPopup}
+                      onEditRequested={() => setOpenAthleticPopup(false)}
+                    />
+                  )}
                   <CompetitionAndClubComponent
                     clubs={competitionAndClubs}
                     onClubsChange={setCompetitionAndClubs}
@@ -1179,8 +1204,8 @@ function ProfileContent() {
                 </>
               )}
               {activeTab === 'activity' && (
-                <div className="w-full bg-white rounded-lg p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                <div className="w-full bg-white rounded-lg px-6">
+                  <h2 className="text-lg font-bold text-gray-900 mb-4">
                     Activity
                   </h2>
 
@@ -1188,17 +1213,17 @@ function ProfileContent() {
                   <div className="flex gap-3 mb-6">
                     <button
                       onClick={() => setActiveFilter('posts')}
-                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-lg font-medium text-xs  transition-colors ${
                         activeFilter === 'posts'
                           ? 'bg-gray-800 text-white'
-                          : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
+                          : 'bg-white text-gray-800 border  border-gray-300 hover:bg-gray-50'
                       }`}
                     >
                       Posts
                     </button>
                     <button
                       onClick={() => setActiveFilter('clips')}
-                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-lg font-medium text-xs transition-colors ${
                         activeFilter === 'clips'
                           ? 'bg-gray-800 text-white'
                           : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
@@ -1208,7 +1233,7 @@ function ProfileContent() {
                     </button>
                     <button
                       onClick={() => setActiveFilter('article')}
-                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-lg font-medium text-xs transition-colors ${
                         activeFilter === 'article'
                           ? 'bg-gray-800 text-white'
                           : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
@@ -1218,7 +1243,7 @@ function ProfileContent() {
                     </button>
                     <button
                       onClick={() => setActiveFilter('event')}
-                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-lg font-medium text-xs transition-colors ${
                         activeFilter === 'event'
                           ? 'bg-gray-800 text-white'
                           : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
@@ -1307,8 +1332,8 @@ function ProfileContent() {
                 </div>
               )}
               {activeTab === 'mysave' && (
-                <div className="w-full bg-white rounded-lg p-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                <div className="w-full bg-white rounded-lg px-6">
+                  <h2 className="text-lg font-bold text-gray-900 mb-4">
                     My Save
                   </h2>
 
@@ -1316,7 +1341,7 @@ function ProfileContent() {
                   <div className="flex gap-3 mb-6">
                     <button
                       onClick={() => setActiveSaveFilter('posts')}
-                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-lg font-medium text-xs transition-colors ${
                         activeSaveFilter === 'posts'
                           ? 'bg-gray-800 text-white'
                           : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
@@ -1326,7 +1351,7 @@ function ProfileContent() {
                     </button>
                     <button
                       onClick={() => setActiveSaveFilter('clips')}
-                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-lg font-medium text-xs transition-colors ${
                         activeSaveFilter === 'clips'
                           ? 'bg-gray-800 text-white'
                           : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
@@ -1336,7 +1361,7 @@ function ProfileContent() {
                     </button>
                     <button
                       onClick={() => setActiveSaveFilter('article')}
-                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-lg font-medium text-xs transition-colors ${
                         activeSaveFilter === 'article'
                           ? 'bg-gray-800 text-white'
                           : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
@@ -1346,7 +1371,7 @@ function ProfileContent() {
                     </button>
                     <button
                       onClick={() => setActiveSaveFilter('opportunities')}
-                      className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-lg font-medium text-xs transition-colors ${
                         activeSaveFilter === 'opportunities'
                           ? 'bg-gray-800 text-white'
                           : 'bg-white text-gray-800 border border-gray-300 hover:bg-gray-50'
