@@ -34,7 +34,7 @@ function ForgotPasswordContent() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/forgot-password/request`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/forgot-password/request`,
         {
           method: 'POST',
           headers: {
@@ -90,7 +90,7 @@ function ForgotPasswordContent() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/forgot-password/reset`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/forgot-password/reset`,
         {
           method: 'POST',
           headers: {

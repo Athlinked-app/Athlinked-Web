@@ -154,11 +154,11 @@ export default function EditProfileModal({
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/signup/user-by-username/${encodeURIComponent(username)}`
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -182,13 +182,15 @@ export default function EditProfileModal({
             if (data.user.profile_url) {
               const profileUrl = data.user.profile_url.startsWith('http')
                 ? data.user.profile_url
-                : getResourceUrl(data.user.profile_url) || data.user.profile_url;
+                : getResourceUrl(data.user.profile_url) ||
+                  data.user.profile_url;
               setProfileImagePreview(profileUrl);
             }
             if (data.user.background_image_url) {
               const bgUrl = data.user.background_image_url.startsWith('http')
                 ? data.user.background_image_url
-                : getResourceUrl(data.user.background_image_url) || data.user.background_image_url;
+                : getResourceUrl(data.user.background_image_url) ||
+                  data.user.background_image_url;
               setBackgroundImagePreview(bgUrl);
             }
             if (data.user.sports_played) {
@@ -232,13 +234,15 @@ export default function EditProfileModal({
             if (profileData.profileImage) {
               const profileUrl = profileData.profileImage.startsWith('http')
                 ? profileData.profileImage
-                : getResourceUrl(profileData.profileImage) || profileData.profileImage;
+                : getResourceUrl(profileData.profileImage) ||
+                  profileData.profileImage;
               setProfileImagePreview(profileUrl);
             }
             if (profileData.coverImage) {
               const bgUrl = profileData.coverImage.startsWith('http')
                 ? profileData.coverImage
-                : getResourceUrl(profileData.coverImage) || profileData.coverImage;
+                : getResourceUrl(profileData.coverImage) ||
+                  profileData.coverImage;
               setBackgroundImagePreview(bgUrl);
             }
             // IMPORTANT: Keep primarySport and sportsPlayed separate!
@@ -294,11 +298,11 @@ export default function EditProfileModal({
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/signup/user-by-username/${encodeURIComponent(username)}`
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -377,12 +381,13 @@ export default function EditProfileModal({
           type: typeof primaryValue,
         });
       }
-      
+
       // Verify they're different
       console.log('EditProfileModal: Sports state after update:', {
         sportsPlayed: userData.sports_played || '',
         primarySport: userData.primary_sport || '',
-        areTheyDifferent: (userData.sports_played || '') !== (userData.primary_sport || ''),
+        areTheyDifferent:
+          (userData.sports_played || '') !== (userData.primary_sport || ''),
       });
       if (userData.bio !== undefined) setBio(userData.bio || '');
       if (userData.education !== undefined)
@@ -401,7 +406,8 @@ export default function EditProfileModal({
         const bgUrl = userData.background_image_url
           ? userData.background_image_url.startsWith('http')
             ? userData.background_image_url
-            : getResourceUrl(userData.background_image_url) || userData.background_image_url
+            : getResourceUrl(userData.background_image_url) ||
+              userData.background_image_url
           : null;
         setBackgroundImagePreview(bgUrl);
       }
@@ -550,7 +556,10 @@ export default function EditProfileModal({
   // This recalculates on every render when any field changes
   const calculateCompletion = () => {
     let completed = 0;
-    const totalSections = 12; // Total number of profile sections
+    const isAthlete = userData?.user_type === 'athlete';
+    // For athletes: 12 sections (includes athletic performance)
+    // For other user types: 11 sections (excludes athletic performance)
+    const totalSections = isAthlete ? 12 : 11;
 
     // Basic Profile Information (3 sections)
     if (fullName && fullName.trim() !== '') completed++;
@@ -558,7 +567,7 @@ export default function EditProfileModal({
     if ((location && location.trim() !== '') || (age && age.trim() !== ''))
       completed++;
 
-    // Profile Sections (9 sections)
+    // Profile Sections (9 sections, but athletic performance only for athletes)
     if (profileSections?.bio && profileSections.bio.trim() !== '') completed++;
     if (
       profileSections?.socialHandles &&
@@ -575,11 +584,14 @@ export default function EditProfileModal({
       profileSections.achievements.length > 0
     )
       completed++;
-    if (
-      profileSections?.athleticAndPerformance &&
-      profileSections.athleticAndPerformance.length > 0
-    )
-      completed++;
+    // Only count athletic performance for athletes
+    if (isAthlete) {
+      if (
+        profileSections?.athleticAndPerformance &&
+        profileSections.athleticAndPerformance.length > 0
+      )
+        completed++;
+    }
     if (
       profileSections?.competitionAndClubs &&
       profileSections.competitionAndClubs.length > 0

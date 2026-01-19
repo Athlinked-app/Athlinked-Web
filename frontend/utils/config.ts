@@ -4,7 +4,7 @@
 
 // Base URL for API endpoints
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api';
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 // Log API URL in development for debugging
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
@@ -13,18 +13,20 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
 
 // Base URL for non-API resources (images, static files, etc.)
 export const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL || 'https://athlinked-api.randomw.dev';
+  process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
 
 // Socket URL
 export const SOCKET_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL || 'https://athlinked-api.randomw.dev';
+  process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
 
 /**
  * Get the full URL for a resource (image, file, etc.)
  * @param path - Relative path (e.g., '/uploads/profile/image.jpg')
  * @returns Full URL or undefined if path is invalid
  */
-export function getResourceUrl(path: string | null | undefined): string | undefined {
+export function getResourceUrl(
+  path: string | null | undefined
+): string | undefined {
   if (!path || path.trim() === '') return undefined;
   if (path.startsWith('http')) return path;
   if (path.startsWith('/') && !path.startsWith('/assets')) {

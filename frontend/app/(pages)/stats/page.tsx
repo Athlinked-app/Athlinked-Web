@@ -80,7 +80,9 @@ export default function StatsPage() {
   const [editingYear, setEditingYear] = useState<string>('');
   const [athleticPerformance, setAthleticPerformance] =
     useState<AthleticPerformance | null>(null);
-  const [allAthleticPerformance, setAllAthleticPerformance] = useState<AthleticPerformance[]>([]); // Cache all performance data
+  const [allAthleticPerformance, setAllAthleticPerformance] = useState<
+    AthleticPerformance[]
+  >([]); // Cache all performance data
 
   // Get initials for placeholder
   const getInitials = (name?: string) => {
@@ -217,7 +219,8 @@ export default function StatsPage() {
 
           // Set active sport to user's primary sport if available, otherwise first sport
           if (combinedData.user?.primary_sport) {
-            const primarySportLower = combinedData.user.primary_sport.toLowerCase();
+            const primarySportLower =
+              combinedData.user.primary_sport.toLowerCase();
             const primaryInList = sportsList.some(
               s => s.toLowerCase() === primarySportLower
             );
@@ -438,7 +441,8 @@ export default function StatsPage() {
 
     // Filter from cached data by active sport
     const sportMatch = allAthleticPerformance.find(
-      perf => perf.sport && perf.sport.toLowerCase() === activeSport.toLowerCase()
+      perf =>
+        perf.sport && perf.sport.toLowerCase() === activeSport.toLowerCase()
     );
 
     if (sportMatch) {

@@ -97,6 +97,44 @@ export default function ClipsPage() {
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({});
   const playPromisesRef = useRef<{ [key: string]: Promise<void> | null }>({});
+  const lastWheelTimeRef = useRef(0);
+
+  const handleWheelScroll = (event: React.WheelEvent<HTMLDivElement>) => {
+    const container = scrollContainerRef.current;
+    if (!container || reels.length === 0) return;
+
+    const deltaY = event.deltaY;
+
+    // Ignore very small scrolls
+    if (Math.abs(deltaY) < 10) return;
+
+    // Throttle wheel-based snapping so we don't jump multiple reels at once
+    const now = Date.now();
+    const COOLDOWN_MS = 400;
+    if (now - lastWheelTimeRef.current < COOLDOWN_MS) {
+      event.preventDefault();
+      return;
+    }
+
+    event.preventDefault();
+
+    const reelHeight = container.clientHeight;
+    let targetIndex = currentReelIndex;
+
+    if (deltaY > 0 && currentReelIndex < reels.length - 1) {
+      targetIndex = currentReelIndex + 1;
+    } else if (deltaY < 0 && currentReelIndex > 0) {
+      targetIndex = currentReelIndex - 1;
+    }
+
+    if (targetIndex !== currentReelIndex) {
+      lastWheelTimeRef.current = now;
+      container.scrollTo({
+        top: targetIndex * reelHeight,
+        behavior: 'smooth',
+      });
+    }
+  };
 
   const [reels, setReels] = useState<Reel[]>([]);
   useEffect(() => {
@@ -1012,26 +1050,22 @@ export default function ClipsPage() {
         >
           {/* Scrollable Reels Container - Always has space for comments on the right */}
           {/* Scrollable Reels Container - Always has space for comments on the right */}
-          <div className="absolute inset-0 flex items-center justify-center right-0 lg:right-[calc(280px+0.5rem)]">
+          <div className="absolute inset-0 flex items-center justify-center right-0 lg:right-[calc(350px+1rem)] xl:right-[calc(380px+1rem)] 2xl:right-[calc(500px+1rem)]">
             {/* Create Button - Fixed on video container when videos exist */}
             {reels.length > 0 && (
-              <div
-                className="absolute top-4 z-30
-             lg:left-[12%] 
-             2xl:left-[34%]
-             -translate-x-1/2"
-              >
+              <div className="absolute top-2 sm:top-3 md:top-4 lg:top-4 left-30 xl-left-502xl:left-100 -translate-x-1/2 z-30">
                 <button
                   onClick={() => setShowUploadModal(true)}
-                  className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-4 py-2 flex items-center gap-2 shadow-lg transition-colors"
+                  className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-1.5 sm:gap-2 shadow-lg transition-colors"
                 >
-                  <Plus size={18} />
-                  <span className="text-sm font-medium">Create</span>
+                  <Plus size={16} className="sm:w-[18px] sm:h-[18px]" />
+                  <span className="text-xs sm:text-sm font-medium">Create</span>
                 </button>
               </div>
             )}
             <div
               ref={scrollContainerRef}
+              onWheel={handleWheelScroll}
               className={`w-full h-full ${reels.length > 0 ? 'overflow-y-scroll snap-y snap-mandatory hide-scrollbar' : 'overflow-hidden'}`}
               style={{
                 scrollBehavior: 'smooth',
@@ -1043,14 +1077,22 @@ export default function ClipsPage() {
                 reels.map((reel, index) => (
                   <div
                     key={reel.id}
-                    className="w-full flex  2xl:justify-center px-4 relative snap-start"
+                    className="w-full flex items-center justify-center px-2 sm:px-3 md:px-4 lg:px-6 relative snap-start"
                     style={{ minHeight: '100%' }}
                   >
                     <div
-                      className="relative bg-black rounded-lg overflow-hidden shadow-2xl cursor-pointer w-[280px] sm:w-[320px] md:w-[400px] lg:w-[450px] xl:w-[550px]   "
-                      style={{ aspectRatio: '9/12' }}
-                      onClick={e => handleVideoClick(e, reel.id)}
-                    >
+  className="
+    relative bg-black rounded-lg overflow-hidden shadow-2xl cursor-pointer w-full
+    max-w-[280px] sm:max-w-[320px] md:max-w-[400px] lg:max-w-[480px]
+    xl:max-w-[700px] 2xl:max-w-[1000px]
+
+    aspect-[9/12]
+    xl:aspect-[9/12]
+    2xl:aspect-[10/12]
+  "
+  onClick={e => handleVideoClick(e, reel.id)}
+>
+
                       <video
                         ref={el => {
                           if (el) {
@@ -1064,7 +1106,7 @@ export default function ClipsPage() {
                           }
                         }}
                         src={reel.videoUrl}
-                        className="w-full h-full object-top  mt-20 "
+                        className="w-full h-[90%] 2xl:h-[80%] object-top  mt-0 "
                         playsInline
                         loop
                         preload="auto"
@@ -1072,7 +1114,7 @@ export default function ClipsPage() {
                       />
 
                       {/* Top Right - More Options Menu (Save for all, Delete only for owned clips) */}
-                      <div className="absolute top-2 sm:top-4 md:top-6 lg:top-8 right-2 sm:right-3 md:right-4 z-20">
+                      <div className="absolute top-1.5 sm:top-2 md:top-3 lg:top-4 xl:top-6 right-1.5 sm:right-2 md:right-3 lg:right-4 z-20">
                         <div className="relative">
                           <button
                             onClick={() =>
@@ -1081,29 +1123,29 @@ export default function ClipsPage() {
                                 [reel.id]: !prev[reel.id],
                               }))
                             }
-                            className="p-1.5 sm:p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors backdrop-blur-sm"
+                            className="p-1 sm:p-1.5 md:p-2 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors backdrop-blur-sm"
                           >
                             <MoreVertical
-                              size={16}
-                              className="sm:w-4 sm:h-4 md:w-5 md:h-5"
+                              size={14}
+                              className="sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-5 lg:h-5"
                             />
                           </button>
                           {showDeleteMenu[reel.id] && (
-                            <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg overflow-hidden z-30 min-w-[120px] sm:min-w-[150px]">
+                            <div className="absolute top-full right-0 mt-1.5 sm:mt-2 bg-white rounded-lg shadow-lg overflow-hidden z-30 min-w-[110px] sm:min-w-[130px] md:min-w-[150px]">
                               <button
                                 onClick={() => handleSaveClip(reel.id)}
-                                className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-gray-700 hover:bg-gray-50 transition-colors w-full text-left border-b border-gray-200"
+                                className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 text-gray-700 hover:bg-gray-50 transition-colors w-full text-left border-b border-gray-200"
                               >
                                 <Bookmark
-                                  size={14}
-                                  className="sm:w-4 sm:h-4 md:w-[18px] md:h-[18px]"
+                                  size={12}
+                                  className="sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-[18px] lg:h-[18px]"
                                   fill={
                                     savedClips[reel.id]
                                       ? 'currentColor'
                                       : 'none'
                                   }
                                 />
-                                <span className="text-xs sm:text-sm font-medium">
+                                <span className="text-[10px] sm:text-xs md:text-sm font-medium">
                                   {savedClips[reel.id] ? 'Saved' : 'Save Clip'}
                                 </span>
                               </button>
@@ -1114,13 +1156,13 @@ export default function ClipsPage() {
                                     handleDelete(reel.id);
                                   }}
                                   disabled={isDeleting}
-                                  className="flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-red-600 hover:bg-red-50 transition-colors w-full text-left"
+                                  className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 text-red-600 hover:bg-red-50 transition-colors w-full text-left"
                                 >
                                   <Trash2
-                                    size={14}
-                                    className="sm:w-4 sm:h-4 md:w-[18px] md:h-[18px]"
+                                    size={12}
+                                    className="sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 lg:w-[18px] lg:h-[18px]"
                                   />
-                                  <span className="text-xs sm:text-sm font-medium">
+                                  <span className="text-[10px] sm:text-xs md:text-sm font-medium">
                                     {isDeleting ? 'Deleting...' : 'Delete Clip'}
                                   </span>
                                 </button>
@@ -1130,14 +1172,14 @@ export default function ClipsPage() {
                         </div>
                       </div>
                       <div
-                        className="absolute bottom-12 sm:bottom-16 left-0 right-0 p-2 sm:p-3 md:p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10"
+                        className="absolute bottom-8 sm:bottom-10 md:bottom-12 lg:bottom-14 xl:bottom-20 2xl:bottom-56 left-0 right-0 p-1.5 sm:p-2 md:p-3 lg:p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10"
                         style={{ pointerEvents: 'none' }}
                       >
                         <div
-                          className="flex items-start gap-2 sm:gap-2.5 md:gap-3"
+                          className="flex items-start gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3"
                           style={{ pointerEvents: 'auto' }}
                         >
-                          <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-gray-300 overflow-hidden shrink-0 border-2 border-white flex items-center justify-center">
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full bg-gray-300 overflow-hidden shrink-0 border-2 border-white flex items-center justify-center">
                             {reel.authorAvatar ? (
                               <img
                                 src={reel.authorAvatar}
@@ -1145,7 +1187,7 @@ export default function ClipsPage() {
                                 className="w-full h-full object-cover"
                               />
                             ) : (
-                              <span className="text-white font-semibold text-[10px] sm:text-xs">
+                              <span className="text-white font-semibold text-[9px] sm:text-[10px] md:text-xs">
                                 {reel.author
                                   .split(' ')
                                   .map(word => word[0])
@@ -1157,11 +1199,11 @@ export default function ClipsPage() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="mb-0.5 sm:mb-1">
-                              <span className="font-semibold text-white text-xs sm:text-sm truncate block">
+                              <span className="font-semibold text-white text-[10px] sm:text-xs md:text-sm truncate block">
                                 {reel.author}
                               </span>
                             </div>
-                            <p className="text-white text-xs sm:text-sm leading-relaxed line-clamp-2 sm:line-clamp-3">
+                            <p className="text-white text-[10px] sm:text-xs md:text-sm leading-relaxed line-clamp-2 sm:line-clamp-3">
                               {reel.caption}
                             </p>
                           </div>
@@ -1170,7 +1212,7 @@ export default function ClipsPage() {
 
                       {/* Right Side - Interaction Buttons */}
                       <div
-                        className="absolute right-2 sm:right-3 md:right-4 bottom-32 sm:bottom-40 md:bottom-48 lg:bottom-44 flex flex-col items-center gap-3 sm:gap-4 md:gap-5 lg:gap-6"
+                        className="absolute right-1.5 sm:right-2 md:right-3 lg:right-4 bottom-24 sm:bottom-28 md:bottom-32 lg:bottom-36 xl:bottom-40 2xl:bottom-90 flex flex-col items-center gap-2 sm:gap-2.5 md:gap-3 lg:gap-4 xl:gap-5"
                         style={{ pointerEvents: 'auto' }}
                       >
                         <button
@@ -1181,11 +1223,11 @@ export default function ClipsPage() {
                           className="flex flex-col items-center gap-0.5 sm:gap-1 text-white hover:scale-110 transition-transform"
                         >
                           <Heart
-                            size={18}
-                            className="sm:w-5 sm:h-5 md:w-6 md:h-6"
+                            size={16}
+                            className="sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6"
                             fill={likedReels[reel.id] ? 'currentColor' : 'none'}
                           />
-                          <span className="text-[10px] sm:text-xs font-medium">
+                          <span className="text-[9px] sm:text-[10px] md:text-xs font-medium">
                             {reel.likes}
                           </span>
                         </button>
@@ -1195,10 +1237,10 @@ export default function ClipsPage() {
                           className="flex flex-col items-center gap-0.5 sm:gap-1 text-white hover:scale-110 transition-transform"
                         >
                           <Share2
-                            size={18}
-                            className="sm:w-5 sm:h-5 md:w-6 md:h-6"
+                            size={16}
+                            className="sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6"
                           />
-                          <span className="text-[10px] sm:text-xs font-medium">
+                          <span className="text-[9px] sm:text-[10px] md:text-xs font-medium">
                             {reel.shares}
                           </span>
                         </button>
@@ -1209,13 +1251,13 @@ export default function ClipsPage() {
                         >
                           {mutedReels[reel.id] ? (
                             <VolumeX
-                              size={18}
-                              className="sm:w-5 sm:h-5 md:w-6 md:h-6"
+                              size={16}
+                              className="sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6"
                             />
                           ) : (
                             <Volume2
-                              size={18}
-                              className="sm:w-5 sm:h-5 md:w-6 md:h-6"
+                              size={16}
+                              className="sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6"
                             />
                           )}
                         </button>
@@ -1251,8 +1293,9 @@ export default function ClipsPage() {
           {reels.length > 0 && (
             <div
               className="hidden lg:flex absolute bg-white border-l border-gray-200 flex-col z-10 shadow-lg rounded-lg
-                         lg:right-4 lg:w-[350px] lg:top-[38%]
-                         2xl:right-16 2xl:w-[500px] 2xl:top-[38%]
+                         lg:right-4 lg:w-[320px] lg:top-[38%]
+                         xl:right-4 xl:w-[360px] xl:top-[38%]
+                         2xl:right-8 2xl:w-[480px] 2xl:top-[38%]
                          -translate-y-1/2"
               style={{
                 height: 'calc(66.666667vh)',
@@ -1602,9 +1645,9 @@ export default function ClipsPage() {
           {/* Navigation Arrows - Below the comments box on the left side */}
           {reels.length > 0 && (
             <div
-              className="hidden lg:flex absolute flex-col gap-2 sm:gap-3 md:gap-4"
+              className="hidden lg:flex absolute flex-col gap-2 md:gap-3 lg:gap-4"
               style={{
-                right: 'calc(1rem + 280px + 0.5rem)',
+                right: 'calc(1rem + 320px)',
                 top: 'calc(50% + calc(66.666667vh / 3) + 0.5rem)',
                 transform: 'translateX(-10%)',
               }}

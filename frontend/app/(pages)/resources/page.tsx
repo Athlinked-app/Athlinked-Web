@@ -438,7 +438,7 @@ export default function ManageResourcesPage() {
                 
                 // Provide more specific error messages
                 if (uploadError.isNetworkError) {
-                  errorMessage = `Network error: Unable to connect to the server.\n\nPlease ensure:\n1. Backend server is running on https://athlinked-api.randomw.dev\n2. Check browser console for details`;
+                  errorMessage = `Network error: Unable to connect to the server.\n\nPlease ensure:\n1. Backend server is running on http://localhost:3001\n2. Check browser console for details`;
                 } else if (uploadError.message) {
                   errorMessage = uploadError.message;
                 }
@@ -480,7 +480,7 @@ export default function ManageResourcesPage() {
                 
                 // Provide more specific error messages
                 if (uploadError.isNetworkError) {
-                  errorMessage = `Network error: Unable to connect to the server.\n\nPlease ensure:\n1. Backend server is running on https://athlinked-api.randomw.dev\n2. Check browser console for details`;
+                  errorMessage = `Network error: Unable to connect to the server.\n\nPlease ensure:\n1. Backend server is running on http://localhost:3001\n2. Check browser console for details`;
                 } else if (uploadError.message) {
                   errorMessage = uploadError.message;
                 }
@@ -637,12 +637,13 @@ export default function ManageResourcesPage() {
                     {resources.length === 0 && (
                       <div className="text-center py-16">
                         <p className="text-black text-base mb-2">
-                          No resources available
+                          No Forms and Documents yet, Upload your first Form and
+                          Document
                         </p>
                         <p className="text-black text-sm">
                           {activeTab === 'guides'
                             ? 'Click Upload to add article URL'
-                            : 'Click Upload to add new content'}
+                            : ''}
                         </p>
                       </div>
                     )}

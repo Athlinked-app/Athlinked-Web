@@ -48,7 +48,7 @@ export default function MySaveClips({
       try {
         setLoading(true);
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/clips?page=1&limit=50`
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/clips?page=1&limit=50`
         );
 
         if (!response.ok) {

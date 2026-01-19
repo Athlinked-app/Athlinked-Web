@@ -45,11 +45,13 @@ export default function EditProfilePopup({
     userData?.background_image_url || null
   );
   // Initialize sportsPlayed and selectedSports from userData
-  const parseSportsFromString = (sportsString: string | undefined): { sportsArray: string[]; sportsString: string } => {
+  const parseSportsFromString = (
+    sportsString: string | undefined
+  ): { sportsArray: string[]; sportsString: string } => {
     if (!sportsString || sportsString.trim() === '') {
       return { sportsArray: [], sportsString: '' };
     }
-    
+
     let cleaned = sportsString.trim();
     // Handle PostgreSQL array format: {sport1,sport2,sport3}
     if (cleaned.startsWith('{') && cleaned.endsWith('}')) {
@@ -57,13 +59,13 @@ export default function EditProfilePopup({
     }
     // Remove quotes
     cleaned = cleaned.replace(/["']/g, '');
-    
+
     // Split by comma and process each sport
     const sportsArray = cleaned
       .split(',')
       .map(s => s.trim())
       .filter(Boolean);
-    
+
     return {
       sportsArray,
       sportsString: sportsArray.join(', '),
@@ -72,8 +74,10 @@ export default function EditProfilePopup({
 
   const initialSports = parseSportsFromString(userData?.sports_played);
   const [sportsPlayed, setSportsPlayed] = useState(initialSports.sportsString);
-  const [selectedSports, setSelectedSports] = useState<string[]>(initialSports.sportsArray);
-  
+  const [selectedSports, setSelectedSports] = useState<string[]>(
+    initialSports.sportsArray
+  );
+
   const [education, setEducation] = useState(userData?.education || '');
   const [city, setCity] = useState(userData?.city || '');
   const [bio, setBio] = useState(userData?.bio || '');
@@ -85,9 +89,41 @@ export default function EditProfilePopup({
   const coverImageInputRef = useRef<HTMLInputElement>(null);
   const sportsDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch sports from API when popup opens
+  // Reset and populate all fields when popup opens
   useEffect(() => {
     if (open) {
+      // Reset file selections
+      setProfileImage(null);
+      setCoverImage(null);
+      
+      // Populate all fields from userData
+      if (userData?.profile_url) {
+        setProfileImagePreview(userData.profile_url);
+      } else {
+        setProfileImagePreview(null);
+      }
+      
+      if (userData?.background_image_url) {
+        setCoverImagePreview(userData.background_image_url);
+      } else {
+        setCoverImagePreview(null);
+      }
+      
+      // Populate text fields
+      setEducation(userData?.education || '');
+      setCity(userData?.city || '');
+      setBio(userData?.bio || '');
+      
+      // Populate sports
+      if (userData?.sports_played) {
+        const parsed = parseSportsFromString(userData.sports_played);
+        setSelectedSports(parsed.sportsArray);
+        setSportsPlayed(parsed.sportsString);
+      } else {
+        setSelectedSports([]);
+        setSportsPlayed('');
+      }
+      
       fetchSports();
     }
   }, [open]);
@@ -100,7 +136,7 @@ export default function EditProfilePopup({
         sports_played: userData?.sports_played,
         type: typeof userData?.sports_played,
       });
-      
+
       if (userData?.sports_played !== undefined) {
         // Handle empty string - clear sports
         if (!userData.sports_played || userData.sports_played.trim() === '') {
@@ -114,26 +150,29 @@ export default function EditProfilePopup({
             cleaned = cleaned.slice(1, -1);
           }
           cleaned = cleaned.replace(/["']/g, '');
-          
+
           // Split by comma, trim each sport, and filter out empty strings
           const sportsArray = cleaned
             .split(',')
             .map(s => s.trim())
             .filter(Boolean);
-          
+
           console.log('EditProfilePopup: Parsed sports array:', {
             original: userData.sports_played,
             cleaned: cleaned,
             sportsArray: sportsArray,
             count: sportsArray.length,
           });
-          
+
           // Always update both states to ensure consistency
           setSelectedSports(sportsArray);
           setSportsPlayed(sportsArray.join(', '));
-          
+
           console.log('EditProfilePopup: Updated selectedSports:', sportsArray);
-          console.log('EditProfilePopup: Updated sportsPlayed:', sportsArray.join(', '));
+          console.log(
+            'EditProfilePopup: Updated sportsPlayed:',
+            sportsArray.join(', ')
+          );
         }
       } else {
         console.log('EditProfilePopup: No sports_played in userData');
@@ -153,6 +192,26 @@ export default function EditProfilePopup({
       setBio(userData.bio || '');
     }
   }, [userData?.city, userData?.education, userData?.bio]);
+
+  // Update profile image preview when userData changes
+  useEffect(() => {
+    if (open && userData?.profile_url !== undefined) {
+      // Only update if we don't have a newly selected file
+      if (!profileImage) {
+        setProfileImagePreview(userData.profile_url || null);
+      }
+    }
+  }, [open, userData?.profile_url, profileImage]);
+
+  // Update cover image preview when userData changes
+  useEffect(() => {
+    if (open && userData?.background_image_url !== undefined) {
+      // Only update if we don't have a newly selected file
+      if (!coverImage) {
+        setCoverImagePreview(userData.background_image_url || null);
+      }
+    }
+  }, [open, userData?.background_image_url, coverImage]);
 
   const fetchSports = async () => {
     setLoadingSports(true);

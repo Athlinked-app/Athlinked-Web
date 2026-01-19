@@ -15,6 +15,8 @@ interface AthleticAndPerformanceProps {
   onAthleticAndPerformanceChange?: (data: AthleticAndPerformance[]) => void;
   sportsPlayed?: string; // Comma-separated string of sports
   userId?: string | null;
+  openForEdit?: boolean; // External control to open popup in edit mode
+  onEditRequested?: () => void; // Callback when edit is requested
 }
 
 export default function AthleticAndPerformanceComponent({
@@ -22,6 +24,8 @@ export default function AthleticAndPerformanceComponent({
   onAthleticAndPerformanceChange,
   sportsPlayed = '',
   userId,
+  openForEdit = false,
+  onEditRequested,
 }: AthleticAndPerformanceProps) {
   const [athleticAndPerformanceList, setAthleticAndPerformanceList] = useState<
     AthleticAndPerformance[]
@@ -32,6 +36,22 @@ export default function AthleticAndPerformanceComponent({
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+
+  // Handle external request to open popup for editing
+  useEffect(() => {
+    if (openForEdit) {
+      // If there's existing data, edit the first entry, otherwise create new
+      if (athleticAndPerformanceList.length > 0) {
+        setEditingIndex(0);
+      } else {
+        setEditingIndex(null);
+      }
+      setShowPopup(true);
+      if (onEditRequested) {
+        onEditRequested(); // Notify parent that we've handled the request
+      }
+    }
+  }, [openForEdit, athleticAndPerformanceList.length, onEditRequested]);
 
   // Check if viewing own profile (client-side only to avoid hydration issues)
   useEffect(() => {
