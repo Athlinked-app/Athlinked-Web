@@ -185,20 +185,15 @@ function ProfileContent() {
 
   useEffect(() => {
     fetchCurrentUser();
-    // Only fetch view user if viewing another user's profile (not your own)
-    if (viewUserId && viewUserId !== currentUserId) {
-      fetchViewUser();
-    }
+    // OPTIMIZED: View user data is now included in fetchProfileComplete
+    // No need for separate fetchViewUser call
   }, [viewUserId, currentUserId]);
 
-  useEffect(() => {
-    if (targetUserId) {
-      fetchPosts();
-    }
-  }, [targetUserId]);
+  // OPTIMIZED: Posts are now included in fetchProfileComplete
+  // Keep fetchPosts function for manual refresh (e.g., after adding a comment)
+  // useEffect removed - posts loaded via fetchProfileComplete
 
-  // Main effect: Fetch profile data when targetUserId changes
-  // This is the ONLY effect that should fetch profile data to prevent race conditions
+  // OPTIMIZED: Single effect to fetch all profile data in one API call
   useEffect(() => {
     if (!targetUserId) return;
 
@@ -216,83 +211,165 @@ function ProfileContent() {
       console.log('Profile page: targetUserId unchanged, skipping state clear:', targetUserId);
     }
 
-    // Always fetch profile data (it will update state with fresh data from database)
-    // This is the authoritative source for sports_played
-    fetchProfileData();
-    fetchFollowCounts();
+    // OPTIMIZED: Single API call replaces fetchProfileData, fetchFollowCounts, 
+    // checkConnectionRequestStatus, and all profile section fetches
+    fetchProfileComplete();
   }, [targetUserId]); // Only depend on targetUserId, not viewUserId or currentUserId
 
-  // Separate effect: Fetch view user data (doesn't affect sports)
-  useEffect(() => {
-    // Only fetch view user if viewing another user's profile (not your own)
-    if (viewUserId && viewUserId !== currentUserId && targetUserId) {
-      fetchViewUser();
+  // OPTIMIZED: Single function to fetch all profile data (replaces multiple functions)
+  const fetchProfileComplete = async () => {
+    if (!targetUserId) {
+      console.log('fetchProfileComplete: No targetUserId, skipping fetch');
+      return;
     }
-  }, [viewUserId, currentUserId, targetUserId]);
 
-  useEffect(() => {
-    if (currentUserId && viewUserId && currentUserId !== viewUserId) {
-      checkConnectionRequestStatus();
-    } else {
-      setConnectionRequestStatus(null);
-    }
-  }, [currentUserId, viewUserId, followersCount]);
-
-  const fetchViewUser = async () => {
-    if (!viewUserId) return;
+    const currentTargetId = targetUserId;
+    console.log('fetchProfileComplete: Starting fetch for userId:', currentTargetId);
 
     try {
+      setLoading(true);
       const { apiGet } = await import('@/utils/api');
+      
+      // Single API call to get ALL profile data
       const data = await apiGet<{
         success: boolean;
-        users?: any[];
-      }>('/signup/users?limit=1000');
+        profile?: {
+          userId?: string;
+          fullName?: string | null;
+          profileImage?: string | null;
+          coverImage?: string | null;
+          bio?: string | null;
+          education?: string | null;
+          city?: string | null;
+          primarySport?: string | null;
+          sportsPlayed?: string | null;
+          dob?: string | null;
+          userType?: string;
+          username?: string;
+          email?: string;
+        };
+        followCounts?: { followers: number; following: number };
+        connectionStatus?: { exists: boolean; status: string | null } | null;
+        socialHandles?: SocialHandle[];
+        academicBackgrounds?: AcademicBackground[];
+        achievements?: Achievement[];
+        athleticPerformance?: AthleticAndPerformance[];
+        competitionClubs?: CompetitionAndClub[];
+        characterLeadership?: CharacterAndLeadership[];
+        healthReadiness?: HealthAndReadiness[];
+        videoMedia?: VideoAndMedia[];
+        posts?: any[];
+      }>(`/profile/${currentTargetId}/complete`);
 
-      if (data.success && data.users) {
-        const user = data.users.find((u: any) => u.id === viewUserId);
-        if (user) {
+      // Verify we're still fetching for the same userId (prevent race conditions)
+      if (currentTargetId !== targetUserId) {
+        console.log('fetchProfileComplete: targetUserId changed during fetch, ignoring response');
+        return;
+      }
+
+      if (!data.success) {
+        console.error('Profile complete API returned unsuccessful response:', data);
+        return;
+      }
+
+      console.log('Profile complete data fetched:', data);
+
+      // Set profile data
+      if (data.profile) {
+        setProfileData({
+          userId: data.profile.userId || targetUserId || '',
+          fullName: data.profile.fullName ?? null,
+          profileImage: data.profile.profileImage ?? null,
+          coverImage: data.profile.coverImage ?? null,
+          bio: data.profile.bio ?? null,
+          education: data.profile.education ?? null,
+          city: data.profile.city ?? null,
+          primarySport: data.profile.primarySport ?? null,
+          sportsPlayed: data.profile.sportsPlayed ?? null,
+          dob: data.profile.dob ?? null,
+        });
+        setUserBio(data.profile.bio || '');
+        
+        // Process sports_played
+        if (data.profile.sportsPlayed) {
+          setSportsPlayed(data.profile.sportsPlayed);
+        } else {
+          setSportsPlayed('');
+        }
+
+        // Set viewUser if viewing another user
+        if (viewUserId && viewUserId !== currentUserId) {
           setViewUser({
-            id: user.id,
-            full_name: user.full_name || user.username || 'User',
-            profile_url: user.profile_url,
-            username: user.username,
-            user_type: user.user_type,
+            id: data.profile.userId || viewUserId,
+            full_name: data.profile.fullName || 'User',
+            profile_url: data.profile.profileImage || null,
+            username: data.profile.username,
+            user_type: data.profile.userType || 'athlete',
           });
-          // Only update sports_played if:
-          // 1. The user object has sports_played data
-          // 2. We're viewing another user's profile (not our own)
-          // 3. We don't already have sports data from profile API
-          // This prevents overwriting correct profile data with incomplete data from /signup/users
-          if (user.sports_played && viewUserId !== currentUserId) {
-            setSportsPlayed(prevSports => {
-              // If we already have sports data from profile API, don't overwrite it
-              // The /signup/users endpoint doesn't reliably return sports_played
-              if (prevSports && prevSports.trim() !== '') {
-                return prevSports;
-              }
-
-              let sportsString = user.sports_played;
-              if (typeof sportsString === 'string') {
-                if (
-                  sportsString.startsWith('{') &&
-                  sportsString.endsWith('}')
-                ) {
-                  sportsString = sportsString.slice(1, -1).replace(/["']/g, '');
-                }
-                return sportsString;
-              } else if (Array.isArray(sportsString)) {
-                return sportsString.join(', ');
-              }
-              return '';
-            });
-          }
         }
       }
+
+      // Set follow counts
+      if (data.followCounts) {
+        setFollowersCount(data.followCounts.followers || 0);
+        setFollowingCount(data.followCounts.following || 0);
+      }
+
+      // Set connection status
+      if (data.connectionStatus) {
+        setConnectionRequestStatus(data.connectionStatus);
+      } else {
+        setConnectionRequestStatus(null);
+      }
+
+      // Set all profile sections
+      if (data.socialHandles) setSocialHandles(data.socialHandles);
+      if (data.academicBackgrounds) setAcademicBackgrounds(data.academicBackgrounds);
+      if (data.achievements) setAchievements(data.achievements);
+      if (data.athleticPerformance) setAthleticAndPerformance(data.athleticPerformance);
+      if (data.competitionClubs) setCompetitionAndClubs(data.competitionClubs);
+      if (data.characterLeadership) setCharacterAndLeadership(data.characterLeadership);
+      if (data.healthReadiness) setHealthAndReadiness(data.healthReadiness);
+      if (data.videoMedia) setVideoAndMedia(data.videoMedia);
+
+      // Set posts
+      if (data.posts) {
+        const transformedPosts: PostData[] = data.posts.map((post: any) => ({
+          id: post.id,
+          username: post.username || 'User',
+          user_profile_url: post.user_profile_url && post.user_profile_url.trim() !== '' ? post.user_profile_url : null,
+          user_id: post.user_id,
+          user_type: post.user_type || 'athlete',
+          post_type: post.post_type,
+          caption: post.caption,
+          media_url: post.media_url,
+          article_title: post.article_title,
+          article_body: post.article_body,
+          event_title: post.event_title,
+          event_date: post.event_date,
+          event_location: post.event_location,
+          like_count: post.like_count || 0,
+          comment_count: post.comment_count || 0,
+          save_count: post.save_count || 0,
+          created_at: post.created_at,
+        }));
+        setPosts(transformedPosts);
+      }
+
     } catch (error) {
-      console.error('Error fetching view user:', error);
+      console.error('Error fetching profile complete:', error);
+      // Only clear state if we're still fetching for the same userId
+      if (currentTargetId === targetUserId) {
+        setProfileData(null);
+        setUserBio('');
+        setSportsPlayed('');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Keep fetchProfileData for backward compatibility (used in onSave)
   const fetchProfileData = async () => {
     if (!targetUserId) {
       console.log('fetchProfileData: No targetUserId, skipping fetch');
@@ -421,6 +498,7 @@ function ProfileContent() {
     }
   };
 
+  // Keep fetchFollowCounts for backward compatibility (if needed elsewhere)
   const fetchFollowCounts = async () => {
     if (!targetUserId) return;
 
@@ -446,38 +524,6 @@ function ProfileContent() {
       setFollowingCount(0);
     }
   };
-
-  const checkConnectionRequestStatus = async () => {
-    if (!currentUserId || !viewUserId || currentUserId === viewUserId) {
-      setConnectionRequestStatus(null);
-      return;
-    }
-
-    try {
-      const { apiGet } = await import('@/utils/api');
-      const data = await apiGet<{
-        success: boolean;
-        exists?: boolean;
-        status?: string | null;
-      }>(
-        `/network/connection-status/${viewUserId}?requester_id=${currentUserId}`
-      );
-      if (data.success) {
-        setConnectionRequestStatus({
-          exists: data.exists || false,
-          status: data.status || null,
-        });
-      }
-    } catch (error) {
-      console.error('Error checking connection request status:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (currentUserId && viewUserId && currentUserId !== viewUserId) {
-      checkConnectionRequestStatus();
-    }
-  }, [currentUserId, viewUserId, followersCount]);
 
   const handleSendConnectionRequest = async () => {
     if (!currentUserId || !viewUserId) {
@@ -901,10 +947,10 @@ function ProfileContent() {
                   return;
                 }
 
-                // Refresh profile data from server FIRST to get latest values from database
-                // This ensures we have the most up-to-date data including sports_played
+                // OPTIMIZED: Refresh complete profile data from server to get latest values
+                // This ensures we have the most up-to-date data including all sections
                 if (targetUserId) {
-                  await fetchProfileData();
+                  await fetchProfileComplete();
                 }
 
                 // Also update local state immediately for better UX
@@ -990,9 +1036,9 @@ function ProfileContent() {
                 }
 
                 await fetchCurrentUser();
-                await fetchProfileData();
-                if (viewUserId) {
-                  await fetchViewUser();
+                // OPTIMIZED: Refresh complete profile data (includes all sections and viewUser data)
+                if (targetUserId) {
+                  await fetchProfileComplete();
                 }
               } catch (error) {
                 console.error('Error saving profile:', error);

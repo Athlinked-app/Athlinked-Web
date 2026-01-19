@@ -46,34 +46,9 @@ export default function AthleticAndPerformanceComponent({
     }
   }, [athleticAndPerformance]);
 
-  // Fetch athletic performance data when component mounts or userId changes
-  useEffect(() => {
-    if (userId) {
-      fetchAthleticPerformance();
-    }
-  }, [userId]);
-
-  const fetchAthleticPerformance = async () => {
-    if (!userId) return;
-
-    try {
-      setLoading(true);
-      const data = await apiGet<{
-        success: boolean;
-        data?: AthleticAndPerformance[];
-      }>(`/profile/${userId}/athletic-performance`);
-      if (data.success && data.data) {
-        setAthleticAndPerformanceList(data.data);
-        if (onAthleticAndPerformanceChange) {
-          onAthleticAndPerformanceChange(data.data);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching athletic performance:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // OPTIMIZED: Data is now passed as props from parent (fetchProfileComplete)
+  // No need to fetch here - parent component handles all data fetching
+  // This component only manages add/edit/delete operations
 
   const handleAdd = async (newData: AthleticAndPerformance) => {
     if (editingIndex !== null) {

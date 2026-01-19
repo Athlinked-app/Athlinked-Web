@@ -42,34 +42,9 @@ export default function CompetitionAndClub({
     }
   }, [clubs]);
 
-  // Fetch competition clubs when component mounts or userId changes
-  useEffect(() => {
-    if (userId) {
-      fetchCompetitionClubs();
-    }
-  }, [userId]);
-
-  const fetchCompetitionClubs = async () => {
-    if (!userId) return;
-
-    try {
-      setLoading(true);
-      const data = await apiGet<{
-        success: boolean;
-        data?: CompetitionAndClub[];
-      }>(`/profile/${userId}/competition-clubs`);
-      if (data.success && data.data) {
-        setClubsList(data.data);
-        if (onClubsChange) {
-          onClubsChange(data.data);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching competition clubs:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // OPTIMIZED: Data is now passed as props from parent (fetchProfileComplete)
+  // No need to fetch here - parent component handles all data fetching
+  // This component only manages add/edit/delete operations
 
   const handleAdd = async (newClub: CompetitionAndClub) => {
     if (editingIndex !== null) {

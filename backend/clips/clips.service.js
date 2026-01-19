@@ -34,20 +34,30 @@ async function createClipService(clipData) {
       const createdClip = await clipsModel.createClip(clipDataWithUser, client);
 
       await client.query('COMMIT');
-      client.release();
 
       return {
         success: true,
         clip: createdClip,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
-      client.release();
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Create clip service error:', error.message);
     throw error;
+  } finally {
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -109,20 +119,30 @@ async function addCommentService(clipId, commentData) {
       await clipsModel.incrementCommentCount(clipId, client);
 
       await client.query('COMMIT');
-      client.release();
 
       return {
         success: true,
         comment: newComment,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
-      client.release();
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Add comment service error:', error.message);
     throw error;
+  } finally {
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -164,20 +184,30 @@ async function replyToCommentService(commentId, replyData) {
       await clipsModel.incrementCommentCount(clipId, client);
 
       await client.query('COMMIT');
-      client.release();
 
       return {
         success: true,
         comment: reply,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
-      client.release();
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Reply to comment service error:', error.message);
     throw error;
+  } finally {
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -266,14 +296,24 @@ async function likeClipService(clipId, userId) {
         like_count: likeResult.like_count,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Like clip service error:', error);
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -295,13 +335,23 @@ async function unlikeClipService(clipId, userId) {
         like_count: unlikeResult.like_count,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Unlike clip service error:', error);
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }

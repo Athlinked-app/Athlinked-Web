@@ -44,34 +44,9 @@ export default function CharacterAndLeadershipComponent({
     }
   }, [characterAndLeadership]);
 
-  // Fetch character and leadership data when component mounts or userId changes
-  useEffect(() => {
-    if (userId) {
-      fetchCharacterLeadership();
-    }
-  }, [userId]);
-
-  const fetchCharacterLeadership = async () => {
-    if (!userId) return;
-
-    try {
-      setLoading(true);
-      const data = await apiGet<{
-        success: boolean;
-        data?: CharacterAndLeadership[];
-      }>(`/profile/${userId}/character-leadership`);
-      if (data.success && data.data) {
-        setCharacterAndLeadershipList(data.data);
-        if (onCharacterAndLeadershipChange) {
-          onCharacterAndLeadershipChange(data.data);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching character and leadership:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // OPTIMIZED: Data is now passed as props from parent (fetchProfileComplete)
+  // No need to fetch here - parent component handles all data fetching
+  // This component only manages add/edit/delete operations
 
   const handleAdd = async (newData: CharacterAndLeadership) => {
     if (editingIndex !== null) {

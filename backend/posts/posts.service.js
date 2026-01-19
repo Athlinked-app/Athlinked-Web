@@ -192,14 +192,24 @@ async function likePostService(postId, userId) {
         like_count: likeResult.like_count,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Like post service error:', error);
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -222,14 +232,24 @@ async function unlikePostService(postId, userId) {
         like_count: unlikeResult.like_count,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Unlike post service error:', error);
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -307,14 +327,24 @@ async function addCommentService(postId, userId, comment) {
         comment_count: commentResult.comment_count,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Add comment service error:', error);
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -337,14 +367,24 @@ async function replyToCommentService(commentId, userId, comment) {
         comment_count: replyResult.comment_count,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Reply to comment service error:', error);
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -366,14 +406,24 @@ async function savePostService(postId, userId) {
         save_count: saveResult.save_count,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Save post service error:', error);
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 

@@ -41,34 +41,9 @@ export default function VideoAndMediaComponent({
     }
   }, [videoAndMedia]);
 
-  // Fetch video and media data when component mounts or userId changes
-  useEffect(() => {
-    if (userId) {
-      fetchVideoMedia();
-    }
-  }, [userId]);
-
-  const fetchVideoMedia = async () => {
-    if (!userId) return;
-
-    try {
-      setLoading(true);
-      const data = await apiGet<{
-        success: boolean;
-        data?: VideoAndMedia[];
-      }>(`/profile/${userId}/video-media`);
-      if (data.success && data.data) {
-        setVideoAndMediaList(data.data);
-        if (onVideoAndMediaChange) {
-          onVideoAndMediaChange(data.data);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching video and media:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // OPTIMIZED: Data is now passed as props from parent (fetchProfileComplete)
+  // No need to fetch here - parent component handles all data fetching
+  // This component only manages add/edit/delete operations
 
   const handleAdd = async (newData: VideoAndMedia) => {
     if (editingIndex !== null) {

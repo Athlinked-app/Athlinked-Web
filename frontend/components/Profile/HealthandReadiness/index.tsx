@@ -43,34 +43,9 @@ export default function HealthAndReadinessComponent({
     }
   }, [healthAndReadiness]);
 
-  // Fetch health and readiness data when component mounts or userId changes
-  useEffect(() => {
-    if (userId) {
-      fetchHealthReadiness();
-    }
-  }, [userId]);
-
-  const fetchHealthReadiness = async () => {
-    if (!userId) return;
-
-    try {
-      setLoading(true);
-      const data = await apiGet<{
-        success: boolean;
-        data?: HealthAndReadiness[];
-      }>(`/profile/${userId}/health-readiness`);
-      if (data.success && data.data) {
-        setHealthAndReadinessList(data.data);
-        if (onHealthAndReadinessChange) {
-          onHealthAndReadinessChange(data.data);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching health and readiness:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // OPTIMIZED: Data is now passed as props from parent (fetchProfileComplete)
+  // No need to fetch here - parent component handles all data fetching
+  // This component only manages add/edit/delete operations
 
   const handleAdd = async (newData: HealthAndReadiness) => {
     if (editingIndex !== null) {
