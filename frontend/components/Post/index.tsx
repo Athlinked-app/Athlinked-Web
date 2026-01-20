@@ -317,17 +317,20 @@ export default function Post({
 
   const handleDelete = async () => {
     // Check if user owns the post or is a parent of the post author
-    const canDelete = 
+    const canDelete =
       (currentUserId && post.user_id && currentUserId === post.user_id) ||
-      (currentUserType === 'parent' && post.user_id && athleteIds.includes(post.user_id));
+      (currentUserType === 'parent' &&
+        post.user_id &&
+        athleteIds.includes(post.user_id));
 
     if (!canDelete) {
       return;
     }
 
-    const confirmMessage = currentUserType === 'parent' && post.user_id !== currentUserId
-      ? 'Are you sure you want to delete this athlete\'s post? This action cannot be undone.'
-      : 'Are you sure you want to delete this post? This action cannot be undone.';
+    const confirmMessage =
+      currentUserType === 'parent' && post.user_id !== currentUserId
+        ? "Are you sure you want to delete this athlete's post? This action cannot be undone."
+        : 'Are you sure you want to delete this post? This action cannot be undone.';
 
     if (!confirm(confirmMessage)) {
       return;
@@ -354,7 +357,10 @@ export default function Post({
       }
     } catch (error: any) {
       console.error('Error deleting post:', error);
-      const errorMessage = error?.response?.data?.message || error?.message || 'Failed to delete post. Please try again.';
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Failed to delete post. Please try again.';
       alert(errorMessage);
     } finally {
       setIsDeleting(false);
@@ -364,13 +370,13 @@ export default function Post({
 
   const isOwnPost =
     currentUserId && post.user_id && currentUserId === post.user_id;
-  
+
   // Check if current user is a parent and this post belongs to their athlete
-  const isAthletePost = 
-    currentUserType === 'parent' && 
-    post.user_id && 
+  const isAthletePost =
+    currentUserType === 'parent' &&
+    post.user_id &&
     athleteIds.includes(post.user_id);
-  
+
   // Show delete option if user owns the post or is a parent of the post author
   const canDeletePost = isOwnPost || isAthletePost;
 

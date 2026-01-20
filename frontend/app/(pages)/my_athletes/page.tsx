@@ -5,7 +5,14 @@ import { useRouter } from 'next/navigation';
 import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import Header from '@/components/Header';
-import { MoreVertical, ChevronDown, ChevronUp, Trash2, Play, X } from 'lucide-react';
+import {
+  MoreVertical,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+  Play,
+  X,
+} from 'lucide-react';
 import { apiGet, apiDelete } from '@/utils/api';
 import { getResourceUrl } from '@/utils/config';
 import Post, { type PostData } from '@/components/Post';
@@ -31,11 +38,17 @@ export default function MyAthletesPage() {
   const [myAthletes, setMyAthletes] = useState<Athlete[]>([]);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activities, setActivities] = useState<Record<string, AthleteActivities>>({});
-  const [expandedAthletes, setExpandedAthletes] = useState<Set<string>>(new Set());
+  const [activities, setActivities] = useState<
+    Record<string, AthleteActivities>
+  >({});
+  const [expandedAthletes, setExpandedAthletes] = useState<Set<string>>(
+    new Set()
+  );
   const [athleteIds, setAthleteIds] = useState<string[]>([]);
   const [selectedClip, setSelectedClip] = useState<any>(null);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'posts' | 'clips' | 'articles' | 'videos' | 'templates'>('all');
+  const [activeFilter, setActiveFilter] = useState<
+    'all' | 'posts' | 'clips' | 'articles' | 'videos' | 'templates'
+  >('all');
   const router = useRouter();
 
   async function fetchChildren() {
@@ -64,7 +77,7 @@ export default function MyAthletesPage() {
         }));
         setMyAthletes(children);
         setAthleteIds(children.map((c: any) => c.id));
-        
+
         // Fetch activities for all children
         await fetchChildrenActivities(children.map((c: any) => c.id));
       } else {
@@ -95,7 +108,9 @@ export default function MyAthletesPage() {
 
       console.log('fetchChildrenActivities - API response:', {
         success: data.success,
-        activitiesCount: data.activities ? Object.keys(data.activities).length : 0,
+        activitiesCount: data.activities
+          ? Object.keys(data.activities).length
+          : 0,
         activities: data.activities,
       });
 
@@ -110,12 +125,19 @@ export default function MyAthletesPage() {
           });
         });
       } else {
-        console.warn('fetchChildrenActivities - No activities or unsuccessful response');
+        console.warn(
+          'fetchChildrenActivities - No activities or unsuccessful response'
+        );
         setActivities({});
       }
     } catch (error: any) {
       console.error('Error fetching children activities:', error);
-      console.error('Error details:', error.message, error.status, error.response);
+      console.error(
+        'Error details:',
+        error.message,
+        error.status,
+        error.response
+      );
       // Don't show error to user, just set empty activities
       // The error is likely due to no children or permission issues
       setActivities({});
@@ -123,12 +145,18 @@ export default function MyAthletesPage() {
   }
 
   const handleDeletePost = async (postId: string) => {
-    if (!confirm('Are you sure you want to delete this post? This action cannot be undone.')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete this post? This action cannot be undone.'
+      )
+    ) {
       return;
     }
 
     try {
-      const result = await apiDelete<{ success: boolean; message?: string }>(`/posts/${postId}`);
+      const result = await apiDelete<{ success: boolean; message?: string }>(
+        `/posts/${postId}`
+      );
       if (result.success) {
         // Refresh activities
         await fetchChildrenActivities(athleteIds);
@@ -137,17 +165,26 @@ export default function MyAthletesPage() {
       }
     } catch (error: any) {
       console.error('Error deleting post:', error);
-      alert(error?.response?.data?.message || 'Failed to delete post. Please try again.');
+      alert(
+        error?.response?.data?.message ||
+          'Failed to delete post. Please try again.'
+      );
     }
   };
 
   const handleDeleteClip = async (clipId: string) => {
-    if (!confirm('Are you sure you want to delete this clip? This action cannot be undone.')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete this clip? This action cannot be undone.'
+      )
+    ) {
       return;
     }
 
     try {
-      const result = await apiDelete<{ success: boolean; message?: string }>(`/clips/${clipId}`);
+      const result = await apiDelete<{ success: boolean; message?: string }>(
+        `/clips/${clipId}`
+      );
       if (result.success) {
         // Refresh activities
         await fetchChildrenActivities(athleteIds);
@@ -156,17 +193,26 @@ export default function MyAthletesPage() {
       }
     } catch (error: any) {
       console.error('Error deleting clip:', error);
-      alert(error?.response?.data?.message || 'Failed to delete clip. Please try again.');
+      alert(
+        error?.response?.data?.message ||
+          'Failed to delete clip. Please try again.'
+      );
     }
   };
 
   const handleDeleteArticle = async (articleId: string) => {
-    if (!confirm('Are you sure you want to delete this article? This action cannot be undone.')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete this article? This action cannot be undone.'
+      )
+    ) {
       return;
     }
 
     try {
-      const result = await apiDelete<{ success: boolean; message?: string }>(`/articles/${articleId}`);
+      const result = await apiDelete<{ success: boolean; message?: string }>(
+        `/articles/${articleId}`
+      );
       if (result.success) {
         // Refresh activities
         await fetchChildrenActivities(athleteIds);
@@ -175,17 +221,26 @@ export default function MyAthletesPage() {
       }
     } catch (error: any) {
       console.error('Error deleting article:', error);
-      alert(error?.response?.data?.message || 'Failed to delete article. Please try again.');
+      alert(
+        error?.response?.data?.message ||
+          'Failed to delete article. Please try again.'
+      );
     }
   };
 
   const handleDeleteVideo = async (videoId: string) => {
-    if (!confirm('Are you sure you want to delete this video? This action cannot be undone.')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete this video? This action cannot be undone.'
+      )
+    ) {
       return;
     }
 
     try {
-      const result = await apiDelete<{ success: boolean; message?: string }>(`/videos/${videoId}`);
+      const result = await apiDelete<{ success: boolean; message?: string }>(
+        `/videos/${videoId}`
+      );
       if (result.success) {
         // Refresh activities
         await fetchChildrenActivities(athleteIds);
@@ -194,17 +249,26 @@ export default function MyAthletesPage() {
       }
     } catch (error: any) {
       console.error('Error deleting video:', error);
-      alert(error?.response?.data?.message || 'Failed to delete video. Please try again.');
+      alert(
+        error?.response?.data?.message ||
+          'Failed to delete video. Please try again.'
+      );
     }
   };
 
   const handleDeleteTemplate = async (templateId: string) => {
-    if (!confirm('Are you sure you want to delete this template? This action cannot be undone.')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete this template? This action cannot be undone.'
+      )
+    ) {
       return;
     }
 
     try {
-      const result = await apiDelete<{ success: boolean; message?: string }>(`/templates/${templateId}`);
+      const result = await apiDelete<{ success: boolean; message?: string }>(
+        `/templates/${templateId}`
+      );
       if (result.success) {
         // Refresh activities
         await fetchChildrenActivities(athleteIds);
@@ -213,17 +277,26 @@ export default function MyAthletesPage() {
       }
     } catch (error: any) {
       console.error('Error deleting template:', error);
-      alert(error?.response?.data?.message || 'Failed to delete template. Please try again.');
+      alert(
+        error?.response?.data?.message ||
+          'Failed to delete template. Please try again.'
+      );
     }
   };
 
   const handleDeleteResource = async (resourceId: string) => {
-    if (!confirm('Are you sure you want to delete this resource? This action cannot be undone.')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete this resource? This action cannot be undone.'
+      )
+    ) {
       return;
     }
 
     try {
-      const result = await apiDelete<{ success: boolean; message?: string }>(`/resources/${resourceId}`);
+      const result = await apiDelete<{ success: boolean; message?: string }>(
+        `/resources/${resourceId}`
+      );
       if (result.success) {
         // Refresh activities
         await fetchChildrenActivities(athleteIds);
@@ -232,7 +305,10 @@ export default function MyAthletesPage() {
       }
     } catch (error: any) {
       console.error('Error deleting resource:', error);
-      alert(error?.response?.data?.message || 'Failed to delete resource. Please try again.');
+      alert(
+        error?.response?.data?.message ||
+          'Failed to delete resource. Please try again.'
+      );
     }
   };
 
@@ -436,10 +512,14 @@ export default function MyAthletesPage() {
                     {myAthletes.map(athlete => {
                       const profileImageUrl = getProfileUrl(athlete.profileUrl);
                       const isExpanded = expandedAthletes.has(athlete.id);
-                      const athleteActivities = activities[athlete.id] || { posts: [], clips: [], articles: [] };
-                      const totalActivities = 
-                        (athleteActivities.posts?.length || 0) + 
-                        (athleteActivities.clips?.length || 0) + 
+                      const athleteActivities = activities[athlete.id] || {
+                        posts: [],
+                        clips: [],
+                        articles: [],
+                      };
+                      const totalActivities =
+                        (athleteActivities.posts?.length || 0) +
+                        (athleteActivities.clips?.length || 0) +
                         (athleteActivities.articles?.length || 0);
 
                       return (
@@ -472,21 +552,26 @@ export default function MyAthletesPage() {
                                     ? athlete.primary_sport
                                         .charAt(0)
                                         .toUpperCase() +
-                                      athlete.primary_sport.slice(1).toLowerCase()
+                                      athlete.primary_sport
+                                        .slice(1)
+                                        .toLowerCase()
                                     : 'Athlete'}
                                 </p>
                                 <p className="text-sm font-semibold text-gray-900">
                                   {athlete.name}
                                 </p>
                                 <p className="text-xs text-gray-400 mt-1">
-                                  {totalActivities} {totalActivities === 1 ? 'activity' : 'activities'}
+                                  {totalActivities}{' '}
+                                  {totalActivities === 1
+                                    ? 'activity'
+                                    : 'activities'}
                                 </p>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
                               <button
                                 className="text-gray-400 hover:text-gray-600"
-                                onClick={(e) => {
+                                onClick={e => {
                                   e.stopPropagation();
                                   handleAthleteClick(athlete.id);
                                 }}
@@ -496,7 +581,7 @@ export default function MyAthletesPage() {
                               </button>
                               <button
                                 className="text-gray-400 hover:text-gray-600"
-                                onClick={(e) => {
+                                onClick={e => {
                                   e.stopPropagation();
                                   toggleAthleteExpanded(athlete.id);
                                 }}
@@ -520,298 +605,474 @@ export default function MyAthletesPage() {
                               ) : (
                                 <div className="space-y-6">
                                   {/* Posts */}
-                                  {(activeFilter === 'all' || activeFilter === 'posts') && 
-                                   athleteActivities.posts && athleteActivities.posts.length > 0 && (
-                                    <div>
-                                      {activeFilter === 'all' && (
-                                        <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                                          Posts ({athleteActivities.posts.length})
-                                        </h3>
-                                      )}
-                                      <div className="space-y-2">
-                                        {athleteActivities.posts.map((post: PostData) => (
-                                          <div key={post.id} className="bg-white rounded-lg p-2 border border-gray-200 flex items-start gap-3">
-                                            {/* Compact post preview */}
-                                            <div className="flex-shrink-0 w-16 h-16 rounded overflow-hidden bg-gray-100">
-                                              {post.media_url || post.image_url ? (
-                                                post.post_type === 'video' || (post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ? (
-                                                  <video
-                                                    src={post.media_url?.startsWith('http') ? post.media_url : getResourceUrl(post.media_url || post.image_url || '') || ''}
-                                                    className="w-full h-full object-cover"
-                                                    muted
-                                                  />
-                                                ) : (
-                                                  <img
-                                                    src={post.media_url?.startsWith('http') ? post.media_url : getResourceUrl(post.media_url || post.image_url || '') || ''}
-                                                    alt="Post"
-                                                    className="w-full h-full object-cover"
-                                                  />
-                                                )
-                                              ) : (
-                                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                                                  {post.post_type === 'article' ? '📄' : post.post_type === 'event' ? '📅' : '📝'}
-                                                </div>
-                                              )}
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                              <p className="text-xs text-gray-500 mb-1">
-                                                {post.post_type ? post.post_type.charAt(0).toUpperCase() + post.post_type.slice(1) : 'Post'}
-                                              </p>
-                                              <p className="text-sm text-gray-900 line-clamp-2 mb-1">
-                                                {post.caption || post.article_title || post.event_title || 'No caption'}
-                                              </p>
-                                              <p className="text-xs text-gray-400">
-                                                {post.created_at ? new Date(post.created_at).toLocaleDateString() : ''}
-                                              </p>
-                                            </div>
-                                            <div className="flex-shrink-0 flex flex-col gap-1">
-                                              <button
-                                                onClick={() => handleDeletePost(post.id)}
-                                                className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
-                                                title="Delete post"
+                                  {(activeFilter === 'all' ||
+                                    activeFilter === 'posts') &&
+                                    athleteActivities.posts &&
+                                    athleteActivities.posts.length > 0 && (
+                                      <div>
+                                        {activeFilter === 'all' && (
+                                          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                                            Posts (
+                                            {athleteActivities.posts.length})
+                                          </h3>
+                                        )}
+                                        <div className="space-y-2">
+                                          {athleteActivities.posts.map(
+                                            (post: PostData) => (
+                                              <div
+                                                key={post.id}
+                                                className="bg-white rounded-lg p-2 border border-gray-200 flex items-start gap-3"
                                               >
-                                                <Trash2 size={14} />
-                                              </button>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Clips */}
-                                  {(activeFilter === 'all' || activeFilter === 'clips') && 
-                                   athleteActivities.clips && athleteActivities.clips.length > 0 && (
-                                    <div>
-                                      {activeFilter === 'all' && (
-                                        <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                                          Clips ({athleteActivities.clips.length})
-                                        </h3>
-                                      )}
-                                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                                        {athleteActivities.clips.map((clip: any) => {
-                                          const clipVideoUrl = clip.video_url?.startsWith('http') ? clip.video_url : getResourceUrl(clip.video_url) || clip.video_url;
-                                          return (
-                                            <div 
-                                              key={clip.id} 
-                                              className="relative group bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer"
-                                              onClick={() => setSelectedClip(clip)}
-                                            >
-                                              <video
-                                                src={clipVideoUrl}
-                                                className="w-full h-full object-cover"
-                                                muted
-                                                playsInline
-                                              />
-                                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                                <Play className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="white" />
-                                              </div>
-                                              <div className="absolute top-2 right-2">
-                                                <button
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleDeleteClip(clip.id);
-                                                  }}
-                                                  className="opacity-0 group-hover:opacity-100 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all"
-                                                  title="Delete clip"
-                                                >
-                                                  <Trash2 size={14} />
-                                                </button>
-                                              </div>
-                                              {clip.description && (
-                                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                                                  <p className="text-white text-xs line-clamp-2">{clip.description}</p>
-                                                </div>
-                                              )}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Articles */}
-                                  {(activeFilter === 'all' || activeFilter === 'articles') && 
-                                   athleteActivities.articles && athleteActivities.articles.length > 0 && (
-                                    <div>
-                                      {activeFilter === 'all' && (
-                                        <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                                          Articles ({athleteActivities.articles.length})
-                                        </h3>
-                                      )}
-                                      <div className="space-y-3">
-                                        {athleteActivities.articles.map((article: any) => (
-                                          <div key={article.id} className="bg-white rounded-lg p-4 border border-gray-200 flex items-center justify-between">
-                                            <div className="flex-1">
-                                              <h4 className="font-semibold text-gray-900">{article.title}</h4>
-                                              {article.description && (
-                                                <p className="text-sm text-gray-600 mt-1 line-clamp-2">{article.description}</p>
-                                              )}
-                                              {article.article_link && (
-                                                <a
-                                                  href={article.article_link}
-                                                  target="_blank"
-                                                  rel="noopener noreferrer"
-                                                  className="text-xs text-blue-600 hover:underline mt-1 inline-block"
-                                                >
-                                                  View Article →
-                                                </a>
-                                              )}
-                                            </div>
-                                            <button
-                                              onClick={() => handleDeleteArticle(article.id)}
-                                              className="ml-4 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                              title="Delete article"
-                                            >
-                                              <Trash2 size={18} />
-                                            </button>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Videos */}
-                                  {(activeFilter === 'all' || activeFilter === 'videos') && 
-                                   athleteActivities.videos && athleteActivities.videos.length > 0 && (
-                                    <div>
-                                      {activeFilter === 'all' && (
-                                        <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                                          Videos ({athleteActivities.videos.length})
-                                        </h3>
-                                      )}
-                                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                                        {athleteActivities.videos.map((video: any) => {
-                                          const videoUrl = video.video_url?.startsWith('http') ? video.video_url : getResourceUrl(video.video_url) || video.video_url;
-                                          const isResource = video.resource_type === 'video' || (video.resource_type && video.video_url);
-                                          return (
-                                            <div 
-                                              key={video.id} 
-                                              className="relative group bg-gray-100 rounded-lg overflow-hidden aspect-video cursor-pointer"
-                                              onClick={() => {
-                                                // Open video in modal or new tab
-                                                if (videoUrl) {
-                                                  window.open(videoUrl, '_blank');
-                                                }
-                                              }}
-                                            >
-                                              <video
-                                                src={videoUrl}
-                                                className="w-full h-full object-cover"
-                                                muted
-                                                playsInline
-                                              />
-                                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                                <Play className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="white" />
-                                              </div>
-                                              <div className="absolute top-2 right-2">
-                                                <button
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    if (isResource) {
-                                                      handleDeleteResource(video.id);
-                                                    } else {
-                                                      handleDeleteVideo(video.id);
-                                                    }
-                                                  }}
-                                                  className="opacity-0 group-hover:opacity-100 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all"
-                                                  title="Delete video"
-                                                >
-                                                  <Trash2 size={14} />
-                                                </button>
-                                              </div>
-                                              {video.title && (
-                                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-                                                  <p className="text-white text-xs line-clamp-2 font-semibold">{video.title}</p>
-                                                </div>
-                                              )}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  )}
-
-                                  {/* Templates */}
-                                  {(activeFilter === 'all' || activeFilter === 'templates') && 
-                                   athleteActivities.templates && athleteActivities.templates.length > 0 && (
-                                    <div>
-                                      {activeFilter === 'all' && (
-                                        <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                                          Templates ({athleteActivities.templates.length})
-                                        </h3>
-                                      )}
-                                      <div className="space-y-3">
-                                        {athleteActivities.templates.map((template: any) => {
-                                          const isResource = template.resource_type === 'template' || (template.resource_type && template.file_url);
-                                          return (
-                                            <div key={template.id} className="bg-white rounded-lg p-4 border border-gray-200 flex items-center justify-between">
-                                              <div className="flex items-center gap-3 flex-1">
-                                                <div className="flex-shrink-0 w-12 h-12 rounded bg-gray-100 flex items-center justify-center">
-                                                  <span className="text-2xl">📄</span>
+                                                {/* Compact post preview */}
+                                                <div className="flex-shrink-0 w-16 h-16 rounded overflow-hidden bg-gray-100">
+                                                  {post.media_url ||
+                                                  post.image_url ? (
+                                                    post.post_type ===
+                                                      'video' ||
+                                                    (post.media_url &&
+                                                      post.media_url.match(
+                                                        /\.(mp4|mov)$/i
+                                                      )) ? (
+                                                      <video
+                                                        src={
+                                                          post.media_url?.startsWith(
+                                                            'http'
+                                                          )
+                                                            ? post.media_url
+                                                            : getResourceUrl(
+                                                                post.media_url ||
+                                                                  post.image_url ||
+                                                                  ''
+                                                              ) || ''
+                                                        }
+                                                        className="w-full h-full object-cover"
+                                                        muted
+                                                      />
+                                                    ) : (
+                                                      <img
+                                                        src={
+                                                          post.media_url?.startsWith(
+                                                            'http'
+                                                          )
+                                                            ? post.media_url
+                                                            : getResourceUrl(
+                                                                post.media_url ||
+                                                                  post.image_url ||
+                                                                  ''
+                                                              ) || ''
+                                                        }
+                                                        alt="Post"
+                                                        className="w-full h-full object-cover"
+                                                      />
+                                                    )
+                                                  ) : (
+                                                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                                                      {post.post_type ===
+                                                      'article'
+                                                        ? '📄'
+                                                        : post.post_type ===
+                                                            'event'
+                                                          ? '📅'
+                                                          : '📝'}
+                                                    </div>
+                                                  )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                  <h4 className="font-semibold text-gray-900">{template.title || 'Untitled Template'}</h4>
-                                                  {template.description && (
-                                                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{template.description}</p>
-                                                  )}
-                                                  {template.file_type && (
-                                                    <p className="text-xs text-gray-400 mt-1">
-                                                      Type: {template.file_type}
-                                                    </p>
-                                                  )}
-                                                  {template.created_at && (
-                                                    <p className="text-xs text-gray-400 mt-1">
-                                                      {new Date(template.created_at).toLocaleDateString()}
-                                                    </p>
-                                                  )}
+                                                  <p className="text-xs text-gray-500 mb-1">
+                                                    {post.post_type
+                                                      ? post.post_type
+                                                          .charAt(0)
+                                                          .toUpperCase() +
+                                                        post.post_type.slice(1)
+                                                      : 'Post'}
+                                                  </p>
+                                                  <p className="text-sm text-gray-900 line-clamp-2 mb-1">
+                                                    {post.caption ||
+                                                      post.article_title ||
+                                                      post.event_title ||
+                                                      'No caption'}
+                                                  </p>
+                                                  <p className="text-xs text-gray-400">
+                                                    {post.created_at
+                                                      ? new Date(
+                                                          post.created_at
+                                                        ).toLocaleDateString()
+                                                      : ''}
+                                                  </p>
+                                                </div>
+                                                <div className="flex-shrink-0 flex flex-col gap-1">
+                                                  <button
+                                                    onClick={() =>
+                                                      handleDeletePost(post.id)
+                                                    }
+                                                    className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                    title="Delete post"
+                                                  >
+                                                    <Trash2 size={14} />
+                                                  </button>
                                                 </div>
                                               </div>
-                                              <div className="flex items-center gap-2">
-                                                {template.file_url && (
-                                                  <a
-                                                    href={template.file_url?.startsWith('http') ? template.file_url : getResourceUrl(template.file_url) || template.file_url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                  >
-                                                    View
-                                                  </a>
-                                                )}
+                                            )
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                  {/* Clips */}
+                                  {(activeFilter === 'all' ||
+                                    activeFilter === 'clips') &&
+                                    athleteActivities.clips &&
+                                    athleteActivities.clips.length > 0 && (
+                                      <div>
+                                        {activeFilter === 'all' && (
+                                          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                                            Clips (
+                                            {athleteActivities.clips.length})
+                                          </h3>
+                                        )}
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                          {athleteActivities.clips.map(
+                                            (clip: any) => {
+                                              const clipVideoUrl =
+                                                clip.video_url?.startsWith(
+                                                  'http'
+                                                )
+                                                  ? clip.video_url
+                                                  : getResourceUrl(
+                                                      clip.video_url
+                                                    ) || clip.video_url;
+                                              return (
+                                                <div
+                                                  key={clip.id}
+                                                  className="relative group bg-gray-100 rounded-lg overflow-hidden aspect-square cursor-pointer"
+                                                  onClick={() =>
+                                                    setSelectedClip(clip)
+                                                  }
+                                                >
+                                                  <video
+                                                    src={clipVideoUrl}
+                                                    className="w-full h-full object-cover"
+                                                    muted
+                                                    playsInline
+                                                  />
+                                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                                    <Play
+                                                      className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                                      fill="white"
+                                                    />
+                                                  </div>
+                                                  <div className="absolute top-2 right-2">
+                                                    <button
+                                                      onClick={e => {
+                                                        e.stopPropagation();
+                                                        handleDeleteClip(
+                                                          clip.id
+                                                        );
+                                                      }}
+                                                      className="opacity-0 group-hover:opacity-100 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all"
+                                                      title="Delete clip"
+                                                    >
+                                                      <Trash2 size={14} />
+                                                    </button>
+                                                  </div>
+                                                  {clip.description && (
+                                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                                                      <p className="text-white text-xs line-clamp-2">
+                                                        {clip.description}
+                                                      </p>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              );
+                                            }
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                  {/* Articles */}
+                                  {(activeFilter === 'all' ||
+                                    activeFilter === 'articles') &&
+                                    athleteActivities.articles &&
+                                    athleteActivities.articles.length > 0 && (
+                                      <div>
+                                        {activeFilter === 'all' && (
+                                          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                                            Articles (
+                                            {athleteActivities.articles.length})
+                                          </h3>
+                                        )}
+                                        <div className="space-y-3">
+                                          {athleteActivities.articles.map(
+                                            (article: any) => (
+                                              <div
+                                                key={article.id}
+                                                className="bg-white rounded-lg p-4 border border-gray-200 flex items-center justify-between"
+                                              >
+                                                <div className="flex-1">
+                                                  <h4 className="font-semibold text-gray-900">
+                                                    {article.title}
+                                                  </h4>
+                                                  {article.description && (
+                                                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                                      {article.description}
+                                                    </p>
+                                                  )}
+                                                  {article.article_link && (
+                                                    <a
+                                                      href={
+                                                        article.article_link
+                                                      }
+                                                      target="_blank"
+                                                      rel="noopener noreferrer"
+                                                      className="text-xs text-blue-600 hover:underline mt-1 inline-block"
+                                                    >
+                                                      View Article →
+                                                    </a>
+                                                  )}
+                                                </div>
                                                 <button
-                                                  onClick={() => {
-                                                    if (isResource) {
-                                                      handleDeleteResource(template.id);
-                                                    } else {
-                                                      handleDeleteTemplate(template.id);
-                                                    }
-                                                  }}
-                                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                  title="Delete template"
+                                                  onClick={() =>
+                                                    handleDeleteArticle(
+                                                      article.id
+                                                    )
+                                                  }
+                                                  className="ml-4 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                  title="Delete article"
                                                 >
                                                   <Trash2 size={18} />
                                                 </button>
                                               </div>
-                                            </div>
-                                          );
-                                        })}
+                                            )
+                                          )}
+                                        </div>
                                       </div>
-                                    </div>
-                                  )}
+                                    )}
+
+                                  {/* Videos */}
+                                  {(activeFilter === 'all' ||
+                                    activeFilter === 'videos') &&
+                                    athleteActivities.videos &&
+                                    athleteActivities.videos.length > 0 && (
+                                      <div>
+                                        {activeFilter === 'all' && (
+                                          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                                            Videos (
+                                            {athleteActivities.videos.length})
+                                          </h3>
+                                        )}
+                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                          {athleteActivities.videos.map(
+                                            (video: any) => {
+                                              const videoUrl =
+                                                video.video_url?.startsWith(
+                                                  'http'
+                                                )
+                                                  ? video.video_url
+                                                  : getResourceUrl(
+                                                      video.video_url
+                                                    ) || video.video_url;
+                                              const isResource =
+                                                video.resource_type ===
+                                                  'video' ||
+                                                (video.resource_type &&
+                                                  video.video_url);
+                                              return (
+                                                <div
+                                                  key={video.id}
+                                                  className="relative group bg-gray-100 rounded-lg overflow-hidden aspect-video cursor-pointer"
+                                                  onClick={() => {
+                                                    // Open video in modal or new tab
+                                                    if (videoUrl) {
+                                                      window.open(
+                                                        videoUrl,
+                                                        '_blank'
+                                                      );
+                                                    }
+                                                  }}
+                                                >
+                                                  <video
+                                                    src={videoUrl}
+                                                    className="w-full h-full object-cover"
+                                                    muted
+                                                    playsInline
+                                                  />
+                                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                                    <Play
+                                                      className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                                      fill="white"
+                                                    />
+                                                  </div>
+                                                  <div className="absolute top-2 right-2">
+                                                    <button
+                                                      onClick={e => {
+                                                        e.stopPropagation();
+                                                        if (isResource) {
+                                                          handleDeleteResource(
+                                                            video.id
+                                                          );
+                                                        } else {
+                                                          handleDeleteVideo(
+                                                            video.id
+                                                          );
+                                                        }
+                                                      }}
+                                                      className="opacity-0 group-hover:opacity-100 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all"
+                                                      title="Delete video"
+                                                    >
+                                                      <Trash2 size={14} />
+                                                    </button>
+                                                  </div>
+                                                  {video.title && (
+                                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                                                      <p className="text-white text-xs line-clamp-2 font-semibold">
+                                                        {video.title}
+                                                      </p>
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              );
+                                            }
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                  {/* Templates */}
+                                  {(activeFilter === 'all' ||
+                                    activeFilter === 'templates') &&
+                                    athleteActivities.templates &&
+                                    athleteActivities.templates.length > 0 && (
+                                      <div>
+                                        {activeFilter === 'all' && (
+                                          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                                            Templates (
+                                            {athleteActivities.templates.length}
+                                            )
+                                          </h3>
+                                        )}
+                                        <div className="space-y-3">
+                                          {athleteActivities.templates.map(
+                                            (template: any) => {
+                                              const isResource =
+                                                template.resource_type ===
+                                                  'template' ||
+                                                (template.resource_type &&
+                                                  template.file_url);
+                                              return (
+                                                <div
+                                                  key={template.id}
+                                                  className="bg-white rounded-lg p-4 border border-gray-200 flex items-center justify-between"
+                                                >
+                                                  <div className="flex items-center gap-3 flex-1">
+                                                    <div className="flex-shrink-0 w-12 h-12 rounded bg-gray-100 flex items-center justify-center">
+                                                      <span className="text-2xl">
+                                                        📄
+                                                      </span>
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                      <h4 className="font-semibold text-gray-900">
+                                                        {template.title ||
+                                                          'Untitled Template'}
+                                                      </h4>
+                                                      {template.description && (
+                                                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                                          {template.description}
+                                                        </p>
+                                                      )}
+                                                      {template.file_type && (
+                                                        <p className="text-xs text-gray-400 mt-1">
+                                                          Type:{' '}
+                                                          {template.file_type}
+                                                        </p>
+                                                      )}
+                                                      {template.created_at && (
+                                                        <p className="text-xs text-gray-400 mt-1">
+                                                          {new Date(
+                                                            template.created_at
+                                                          ).toLocaleDateString()}
+                                                        </p>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                  <div className="flex items-center gap-2">
+                                                    {template.file_url && (
+                                                      <a
+                                                        href={
+                                                          template.file_url?.startsWith(
+                                                            'http'
+                                                          )
+                                                            ? template.file_url
+                                                            : getResourceUrl(
+                                                                template.file_url
+                                                              ) ||
+                                                              template.file_url
+                                                        }
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                                        onClick={e =>
+                                                          e.stopPropagation()
+                                                        }
+                                                      >
+                                                        View
+                                                      </a>
+                                                    )}
+                                                    <button
+                                                      onClick={() => {
+                                                        if (isResource) {
+                                                          handleDeleteResource(
+                                                            template.id
+                                                          );
+                                                        } else {
+                                                          handleDeleteTemplate(
+                                                            template.id
+                                                          );
+                                                        }
+                                                      }}
+                                                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                      title="Delete template"
+                                                    >
+                                                      <Trash2 size={18} />
+                                                    </button>
+                                                  </div>
+                                                </div>
+                                              );
+                                            }
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
 
                                   {/* No results message when filtered */}
-                                  {activeFilter !== 'all' && (
-                                    (activeFilter === 'posts' && (!athleteActivities.posts || athleteActivities.posts.length === 0)) ||
-                                    (activeFilter === 'clips' && (!athleteActivities.clips || athleteActivities.clips.length === 0)) ||
-                                    (activeFilter === 'articles' && (!athleteActivities.articles || athleteActivities.articles.length === 0)) ||
-                                    (activeFilter === 'videos' && (!athleteActivities.videos || athleteActivities.videos.length === 0)) ||
-                                    (activeFilter === 'templates' && (!athleteActivities.templates || athleteActivities.templates.length === 0))
-                                  ) && (
-                                    <div className="text-center py-8 text-gray-500">
-                                      <p>No {activeFilter} found for this athlete.</p>
-                                    </div>
-                                  )}
+                                  {activeFilter !== 'all' &&
+                                    ((activeFilter === 'posts' &&
+                                      (!athleteActivities.posts ||
+                                        athleteActivities.posts.length ===
+                                          0)) ||
+                                      (activeFilter === 'clips' &&
+                                        (!athleteActivities.clips ||
+                                          athleteActivities.clips.length ===
+                                            0)) ||
+                                      (activeFilter === 'articles' &&
+                                        (!athleteActivities.articles ||
+                                          athleteActivities.articles.length ===
+                                            0)) ||
+                                      (activeFilter === 'videos' &&
+                                        (!athleteActivities.videos ||
+                                          athleteActivities.videos.length ===
+                                            0)) ||
+                                      (activeFilter === 'templates' &&
+                                        (!athleteActivities.templates ||
+                                          athleteActivities.templates.length ===
+                                            0))) && (
+                                      <div className="text-center py-8 text-gray-500">
+                                        <p>
+                                          No {activeFilter} found for this
+                                          athlete.
+                                        </p>
+                                      </div>
+                                    )}
                                 </div>
                               )}
                             </div>
@@ -853,7 +1114,12 @@ export default function MyAthletesPage() {
                 {/* Video Player */}
                 <div className="w-full">
                   <video
-                    src={selectedClip.video_url?.startsWith('http') ? selectedClip.video_url : getResourceUrl(selectedClip.video_url) || selectedClip.video_url}
+                    src={
+                      selectedClip.video_url?.startsWith('http')
+                        ? selectedClip.video_url
+                        : getResourceUrl(selectedClip.video_url) ||
+                          selectedClip.video_url
+                    }
                     controls
                     className="w-full h-auto rounded-lg"
                   />
@@ -863,17 +1129,27 @@ export default function MyAthletesPage() {
                 <div className="space-y-2">
                   {selectedClip.description && (
                     <div>
-                      <p className="text-sm font-semibold text-gray-700 mb-1">Description</p>
-                      <p className="text-gray-700">{selectedClip.description}</p>
+                      <p className="text-sm font-semibold text-gray-700 mb-1">
+                        Description
+                      </p>
+                      <p className="text-gray-700">
+                        {selectedClip.description}
+                      </p>
                     </div>
                   )}
 
                   <div className="flex items-center gap-6 text-gray-600 text-sm">
                     <span className="flex items-center gap-1">
-                      <span className="font-semibold">{selectedClip.like_count || 0}</span> likes
+                      <span className="font-semibold">
+                        {selectedClip.like_count || 0}
+                      </span>{' '}
+                      likes
                     </span>
                     <span className="flex items-center gap-1">
-                      <span className="font-semibold">{selectedClip.comment_count || 0}</span> comments
+                      <span className="font-semibold">
+                        {selectedClip.comment_count || 0}
+                      </span>{' '}
+                      comments
                     </span>
                     {selectedClip.created_at && (
                       <span className="text-gray-500">
@@ -885,7 +1161,11 @@ export default function MyAthletesPage() {
                   <div className="pt-4 border-t border-gray-200 flex gap-2">
                     <button
                       onClick={() => {
-                        if (confirm('Are you sure you want to delete this clip? This action cannot be undone.')) {
+                        if (
+                          confirm(
+                            'Are you sure you want to delete this clip? This action cannot be undone.'
+                          )
+                        ) {
                           handleDeleteClip(selectedClip.id);
                           setSelectedClip(null);
                         }

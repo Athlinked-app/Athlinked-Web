@@ -124,7 +124,10 @@ export default function Landing() {
     }
   };
 
-  const calculateProfileCompletion = async (userId: string, userType?: string) => {
+  const calculateProfileCompletion = async (
+    userId: string,
+    userType?: string
+  ) => {
     try {
       const { apiGet } = await import('@/utils/api');
       let completed = 0;
@@ -139,7 +142,7 @@ export default function Landing() {
         bio?: string | null;
         userType?: string;
       }>(`/profile/${userId}`);
-      
+
       // Use userType from parameter or profile data, default to 'athlete' if not available
       const finalUserType = userType || profileData.userType || 'athlete';
       const isAthlete = finalUserType === 'athlete';

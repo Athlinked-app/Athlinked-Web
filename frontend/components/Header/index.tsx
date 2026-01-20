@@ -163,7 +163,7 @@ export default function Header({
     <nav className="flex items-center justify-between px-2 sm:px-3 md:px-4 lg:px-6 py-2 md:py-3 bg-white">
       <div className="flex items-center">
         <Link href="/" className="flex items-center gap-1 sm:gap-2">
-        <Image
+          <Image
             src="/assets/Homescreen/Logo.png"
             alt="ATHLINKED Logo"
             width={180}

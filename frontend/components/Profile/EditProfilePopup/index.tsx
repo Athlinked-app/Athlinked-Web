@@ -95,25 +95,25 @@ export default function EditProfilePopup({
       // Reset file selections
       setProfileImage(null);
       setCoverImage(null);
-      
+
       // Populate all fields from userData
       if (userData?.profile_url) {
         setProfileImagePreview(userData.profile_url);
       } else {
         setProfileImagePreview(null);
       }
-      
+
       if (userData?.background_image_url) {
         setCoverImagePreview(userData.background_image_url);
       } else {
         setCoverImagePreview(null);
       }
-      
+
       // Populate text fields
       setEducation(userData?.education || '');
       setCity(userData?.city || '');
       setBio(userData?.bio || '');
-      
+
       // Populate sports
       if (userData?.sports_played) {
         const parsed = parseSportsFromString(userData.sports_played);
@@ -123,7 +123,7 @@ export default function EditProfilePopup({
         setSelectedSports([]);
         setSportsPlayed('');
       }
-      
+
       fetchSports();
     }
   }, [open]);

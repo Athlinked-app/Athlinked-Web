@@ -1081,7 +1081,7 @@ export default function ClipsPage() {
                     style={{ minHeight: '100%' }}
                   >
                     <div
-  className="
+                      className="
     relative bg-black rounded-lg overflow-hidden shadow-2xl cursor-pointer w-full
     max-w-[280px] sm:max-w-[320px] md:max-w-[400px] lg:max-w-[480px]
     xl:max-w-[700px] 2xl:max-w-[1000px]
@@ -1090,9 +1090,8 @@ export default function ClipsPage() {
     xl:aspect-[9/12]
     2xl:aspect-[10/12]
   "
-  onClick={e => handleVideoClick(e, reel.id)}
->
-
+                      onClick={e => handleVideoClick(e, reel.id)}
+                    >
                       <video
                         ref={el => {
                           if (el) {
