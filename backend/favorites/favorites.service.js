@@ -1,4 +1,5 @@
 const favoritesModel = require('./favorites.model');
+const { convertKeyToPresignedUrl } = require('../utils/s3');
 
 /**
  * Service to add an athlete to coach's favorites
@@ -103,21 +104,26 @@ async function getFavoritesService(coachId) {
 
     const favorites = await favoritesModel.getFavorites(coachId);
 
-    return {
-      success: true,
-      favorites: favorites.map(fav => ({
+    // Convert profile URLs to presigned URLs
+    const favoritesWithPresignedUrls = await Promise.all(
+      favorites.map(async (fav) => ({
         id: fav.id,
         username: fav.username,
         full_name: fav.full_name,
         user_type: fav.user_type,
-        profile_url: fav.profile_url,
+        profile_url: fav.profile_url ? await convertKeyToPresignedUrl(fav.profile_url) : null,
         bio: fav.bio,
         primary_sport: fav.primary_sport,
         sports_played: fav.sports_played,
         city: fav.city,
         education: fav.education,
         favorited_at: fav.favorited_at,
-      })),
+      }))
+    );
+
+    return {
+      success: true,
+      favorites: favoritesWithPresignedUrls,
     };
   } catch (error) {
     console.error('Get favorites service error:', error);

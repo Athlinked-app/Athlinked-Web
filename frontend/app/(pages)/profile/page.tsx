@@ -892,19 +892,9 @@ function ProfileContent() {
 
                 if (data.sports_played !== undefined) {
                   profileData.sportsPlayed = data.sports_played;
-                  if (data.sports_played && data.sports_played.trim() !== '') {
-                    const sports = data.sports_played
-                      .split(',')
-                      .map(s => s.trim())
-                      .filter(Boolean);
-                    if (sports.length > 0) {
-                      profileData.primarySport = sports[0];
-                    } else {
-                      profileData.primarySport = '';
-                    }
-                  } else {
-                    profileData.primarySport = '';
-                  }
+                  // DO NOT update primarySport when sports_played changes
+                  // They are separate fields - sports_played is a list, primary_sport is a single sport
+                  // Only update sportsPlayed, leave primarySport unchanged
                 }
 
                 console.log('Profile data being sent to API:', profileData);
