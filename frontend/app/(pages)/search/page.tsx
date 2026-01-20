@@ -1047,13 +1047,13 @@ export default function SearchPage() {
         userProfileUrl={getProfileUrl(currentUser?.profile_url)}
       />
 
-      <main className="flex flex-1 w-full mt-5 overflow-hidden">
-        <div className="hidden md:flex px-6">
+      <main className="flex flex-1 w-full mt-4 overflow-hidden">
+        {' '}
+        <div className="hidden md:flex px-3">
           <NavigationBar activeItem="search" />
         </div>
-
-        <div className="flex-1 flex flex-col px-4 overflow-hidden min-w-0">
-          <div className="flex-1 overflow-y-auto pr-2 min-h-0">
+        <div className="flex-1 flex flex-col  overflow-hidden min-w-0">
+          <div className="flex-1 overflow-y-auto pr-3 min-h-0">
             <div className="flex flex-col gap-4 pb-4">
               {/* Search Header */}
               <div className="bg-white rounded-lg shadow-sm p-6">
@@ -1115,8 +1115,7 @@ export default function SearchPage() {
             </div>
           </div>
         </div>
-
-        <div className="hidden lg:flex">
+        <div className="hidden lg:flex pr-3">
           <RightSideBar />
         </div>
       </main>

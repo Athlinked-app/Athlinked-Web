@@ -346,11 +346,11 @@ export default function NetworkPage() {
 
       <div className="flex flex-1 w-full mt-5 overflow-hidden">
         {/* Navigation Bar */}
-        <div className="hidden md:flex px-6">
+        <div className="hidden md:flex px-3">
           <NavigationBar activeItem="network" />
         </div>
 
-        <div className="flex-1 flex gap-5 overflow-y-auto">
+        <div className="flex-1 flex gap-3 overflow-y-auto">
           {/* Main Content */}
           <div className="flex-1 bg-white rounded-xl p-6">
             {/* Followers/Followings Section */}
@@ -521,7 +521,7 @@ export default function NetworkPage() {
           </div>
 
           {/* Right Sidebar */}
-          <div className="hidden lg:flex">
+          <div className="hidden lg:flex pr-3">
             <RightSideBar />
           </div>
         </div>

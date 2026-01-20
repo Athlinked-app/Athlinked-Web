@@ -7,7 +7,13 @@ import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import ResourceCard from '@/components/Resources/ResourceCard';
 import ResourceModals from '@/components/Resources/ResourceModals';
-import { BASE_URL, getResourceUrl, apiGet, apiDelete, apiUpload } from '@/utils/api';
+import {
+  BASE_URL,
+  getResourceUrl,
+  apiGet,
+  apiDelete,
+  apiUpload,
+} from '@/utils/api';
 
 type TabType = 'guides' | 'videos' | 'templates';
 
@@ -418,35 +424,36 @@ export default function ManageResourcesPage() {
 
                 formData.append('video_duration', duration.toString());
 
-              try {
-                // Use apiUpload for file uploads (handles authentication automatically)
-                const data = await apiUpload<{
-                  success: boolean;
-                  message?: string;
-                }>('/videos', formData);
+                try {
+                  // Use apiUpload for file uploads (handles authentication automatically)
+                  const data = await apiUpload<{
+                    success: boolean;
+                    message?: string;
+                  }>('/videos', formData);
 
-                if (data.success) {
-                  // Refresh resources after successful upload
-                  await fetchResources();
-                  alert('Video uploaded successfully!');
-                } else {
-                  alert(data.message || 'Failed to upload video');
+                  if (data.success) {
+                    // Refresh resources after successful upload
+                    await fetchResources();
+                    alert('Video uploaded successfully!');
+                  } else {
+                    alert(data.message || 'Failed to upload video');
+                  }
+                } catch (uploadError: any) {
+                  console.error('Error uploading video:', uploadError);
+                  let errorMessage =
+                    'Failed to upload video. Please try again.';
+
+                  // Provide more specific error messages
+                  if (uploadError.isNetworkError) {
+                    errorMessage = `Network error: Unable to connect to the server.\n\nPlease ensure:\n1. Backend server is running on http://localhost:3001\n2. Check browser console for details`;
+                  } else if (uploadError.message) {
+                    errorMessage = uploadError.message;
+                  }
+
+                  alert(errorMessage);
+                } finally {
+                  setIsLoading(false);
                 }
-              } catch (uploadError: any) {
-                console.error('Error uploading video:', uploadError);
-                let errorMessage = 'Failed to upload video. Please try again.';
-                
-                // Provide more specific error messages
-                if (uploadError.isNetworkError) {
-                  errorMessage = `Network error: Unable to connect to the server.\n\nPlease ensure:\n1. Backend server is running on http://localhost:3001\n2. Check browser console for details`;
-                } else if (uploadError.message) {
-                  errorMessage = uploadError.message;
-                }
-                
-                alert(errorMessage);
-              } finally {
-                setIsLoading(false);
-              }
               };
 
               video.onerror = () => {
@@ -476,15 +483,16 @@ export default function ManageResourcesPage() {
                 }
               } catch (uploadError: any) {
                 console.error('Error uploading template:', uploadError);
-                let errorMessage = 'Failed to upload template. Please try again.';
-                
+                let errorMessage =
+                  'Failed to upload template. Please try again.';
+
                 // Provide more specific error messages
                 if (uploadError.isNetworkError) {
                   errorMessage = `Network error: Unable to connect to the server.\n\nPlease ensure:\n1. Backend server is running on http://localhost:3001\n2. Check browser console for details`;
                 } else if (uploadError.message) {
                   errorMessage = uploadError.message;
                 }
-                
+
                 alert(errorMessage);
               } finally {
                 setIsLoading(false);
@@ -540,7 +548,7 @@ export default function ManageResourcesPage() {
 
       <div className="flex flex-1 w-full mt-5 overflow-hidden">
         {/* Navigation Bar */}
-        <div className="hidden md:flex px-6">
+        <div className="hidden md:flex px-3">
           <NavigationBar activeItem="resource" />
         </div>
 
@@ -653,7 +661,7 @@ export default function ManageResourcesPage() {
             </div>
           </div>
 
-          <div className="hidden lg:flex ml-5">
+          <div className="hidden lg:flex ml-4 pr-3">
             <RightSideBar />
           </div>
         </div>
