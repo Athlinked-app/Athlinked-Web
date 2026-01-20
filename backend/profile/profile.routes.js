@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, optionalAuth } = require('../middleware/auth');
 const profileController = require('./profile.controller');
 const socialHandlesController = require('./social-handles.controller');
 const academicBackgroundsController = require('./academic-backgrounds.controller');
@@ -1810,6 +1810,44 @@ router.delete(
 router.get(
   '/:userId/stats-summary',
   profileController.getUserProfileWithStats
+);
+
+/**
+ * @swagger
+ * /api/profile/{userId}/complete:
+ *   get:
+ *     summary: Get complete user profile with all sections (optimized)
+ *     description: |
+ *       Optimized endpoint that returns ALL profile data in one call:
+ *       - User basic info
+ *       - Follow counts
+ *       - Connection status (if viewing another user) - requires optional authentication
+ *       - All 8 profile sections (social handles, academic, achievements, etc.)
+ *       - User posts (limit 50)
+ *       
+ *       This reduces API calls from 15+ to 1 for the profile page.
+ *       Uses only 2 database queries (executed in parallel).
+ *       Authentication is optional - provides connection status if authenticated.
+ *     tags: [Profile]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: Complete profile retrieved successfully
+ *       404:
+ *         description: User not found
+ */
+router.get(
+  '/:userId/complete',
+  optionalAuth, // Optional authentication - works with or without token
+  profileController.getUserProfileComplete
 );
 
 router.get('/:userId', profileController.getUserProfile);

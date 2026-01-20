@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, optionalAuth } = require('../middleware/auth');
 const postsController = require('./posts.controller');
 const { upload, uploadToS3Middleware } = require('../utils/upload');
 
@@ -60,9 +60,10 @@ router.post(
  * /api/posts:
  *   get:
  *     summary: Get posts feed
- *     description: Retrieve a feed of posts
+ *     description: Retrieve a feed of posts. Only shows posts from users the authenticated user follows (or their own posts). Unauthenticated users see no posts. Users can see posts from: 1) themselves, 2) users they follow, 3) users they're connected with.
  *     tags: [Posts]
- *     security: []
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: page
@@ -92,7 +93,7 @@ router.post(
  *                   items:
  *                     type: object
  */
-router.get('/', postsController.getPostsFeed);
+router.get('/', optionalAuth, postsController.getPostsFeed);
 
 /**
  * @swagger

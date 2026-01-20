@@ -65,19 +65,27 @@ async function createResource(resourceData, client = null) {
 
 /**
  * Get all active resources
+ * @param {string} userId - Optional user ID to filter by
  * @param {object} client - Optional database client for transactions
  * @returns {Promise<Array>} Array of resource data
  */
-async function getAllResources(client = null) {
-  const query = `
+async function getAllResources(userId = null, client = null) {
+  let query = `
     SELECT *
     FROM resources
     WHERE is_active = true
-    ORDER BY created_at DESC
   `;
+  const values = [];
+
+  if (userId) {
+    query += ` AND user_id = $1`;
+    values.push(userId);
+  }
+
+  query += ` ORDER BY created_at DESC`;
 
   const dbClient = client || pool;
-  const result = await dbClient.query(query);
+  const result = await dbClient.query(query, values);
   return result.rows;
 }
 
@@ -156,18 +164,19 @@ async function getResourcesByType(resourceType, client = null) {
  * @returns {Promise<object|null>} Updated resource data or null
  */
 async function softDeleteResource(resourceId, userId, client = null) {
+  // Allow deletion if user_id matches OR if the deleter is a parent of the resource author
+  // The authorization check is done in the service layer, here we just soft delete
   const query = `
     UPDATE resources
     SET is_active = false,
         updated_at = NOW()
     WHERE id = $1
-      AND user_id = $2
       AND is_active = true
     RETURNING *
   `;
 
   const dbClient = client || pool;
-  const result = await dbClient.query(query, [resourceId, userId]);
+  const result = await dbClient.query(query, [resourceId]);
   return result.rows[0] || null;
 }
 

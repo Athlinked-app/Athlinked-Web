@@ -48,34 +48,9 @@ export default function Achievements({
     }
   }, [achievements]);
 
-  // Fetch achievements when component mounts or userId changes
-  useEffect(() => {
-    if (userId) {
-      fetchAchievements();
-    }
-  }, [userId]);
-
-  const fetchAchievements = async () => {
-    if (!userId) return;
-
-    try {
-      setLoading(true);
-      const data = await apiGet<{
-        success: boolean;
-        data?: Achievement[];
-      }>(`/profile/${userId}/achievements`);
-      if (data.success && data.data) {
-        setAchievementsList(data.data);
-        if (onAchievementsChange) {
-          onAchievementsChange(data.data);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching achievements:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // OPTIMIZED: Data is now passed as props from parent (fetchProfileComplete)
+  // No need to fetch here - parent component handles all data fetching
+  // This component only manages add/edit/delete operations
 
   const handleAdd = async (newAchievement: Achievement) => {
     // Check if there's a PDF file to upload

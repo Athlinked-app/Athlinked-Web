@@ -85,11 +85,11 @@ async function createUser(userData) {
     formatDate(dob),
     sportsArray,
     primary_sport || null,
-    email || null, // Email can be null if username is used
+    email ? email.toLowerCase().trim() : null, // Email can be null if username is used
     username ? username.toLowerCase() : null, // Username can be null if email is used
     password,
     parent_name || null,
-    parent_email || null,
+    parent_email ? parent_email.toLowerCase().trim() : null, // Normalize parent_email
     parent_dob ? formatDate(parent_dob) : null,
   ];
 
@@ -134,6 +134,11 @@ async function getAllUsers(excludeUserId = null, limit = 10, currentUserId = nul
 
   // If currentUserId is provided, include follow status in the query
   if (currentUserId && excludeUserId) {
+    console.log('[getAllUsers] Using query with currentUserId and excludeUserId:', {
+      currentUserId: currentUserId.substring(0, 8) + '...',
+      excludeUserId: excludeUserId.substring(0, 8) + '...',
+      limit
+    });
     query = `
       SELECT 
         u.id, 
@@ -156,6 +161,10 @@ async function getAllUsers(excludeUserId = null, limit = 10, currentUserId = nul
     `;
     values = [currentUserId, excludeUserId, limit];
   } else if (currentUserId && !excludeUserId) {
+    console.log('[getAllUsers] Using query with currentUserId only:', {
+      currentUserId: currentUserId.substring(0, 8) + '...',
+      limit
+    });
     query = `
       SELECT 
         u.id, 
@@ -214,6 +223,17 @@ async function getAllUsers(excludeUserId = null, limit = 10, currentUserId = nul
   }
 
   const result = await pool.query(query, values);
+  
+  // Debug: Log follow status results
+  if (currentUserId) {
+    const followingCount = result.rows.filter(r => r.is_following === true).length;
+    console.log('[getAllUsers] Query result:', {
+      totalUsers: result.rows.length,
+      followingCount,
+      currentUserId: currentUserId.substring(0, 8) + '...'
+    });
+  }
+  
   return result.rows;
 }
 
@@ -223,6 +243,10 @@ async function getAllUsers(excludeUserId = null, limit = 10, currentUserId = nul
  * @returns {Promise<Array>} Array of child user data
  */
 async function getChildrenByParentEmail(parentEmail) {
+  // Normalize the search email
+  const normalizedParentEmail = parentEmail.toLowerCase().trim();
+  
+  // Use case-insensitive comparison to handle any existing data that might not be normalized
   const query = `
     SELECT 
       id, 
@@ -237,11 +261,23 @@ async function getChildrenByParentEmail(parentEmail) {
       sports_played,
       created_at
     FROM users
-    WHERE parent_email = $1 AND user_type != 'parent'
+    WHERE LOWER(TRIM(COALESCE(parent_email, ''))) = $1 
+      AND user_type != 'parent'
     ORDER BY created_at DESC
   `;
 
-  const result = await pool.query(query, [parentEmail.toLowerCase().trim()]);
+  const result = await pool.query(query, [normalizedParentEmail]);
+  
+  console.log('getChildrenByParentEmail query:', {
+    searchingFor: normalizedParentEmail,
+    found: result.rows.length,
+    children: result.rows.map(r => ({
+      id: r.id,
+      full_name: r.full_name,
+      email: r.email,
+    })),
+  });
+  
   return result.rows;
 }
 

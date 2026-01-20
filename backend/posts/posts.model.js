@@ -92,10 +92,16 @@ async function createPost(postData, client = null) {
   }
 }
 
-async function getPostsFeed(page = 1, limit = 50) {
+async function getPostsFeed(page = 1, limit = 50, viewerUserId = null) {
   const offset = (page - 1) * limit;
+  
+  // If no viewer is authenticated, return empty array (strict privacy)
+  if (!viewerUserId) {
+    return [];
+  }
+
   const query = `
-    SELECT 
+    SELECT DISTINCT
       p.*,
       COALESCE(u.profile_url, p.user_profile_url) as user_profile_url,
       COALESCE(u.full_name, p.username) as username,
@@ -103,12 +109,32 @@ async function getPostsFeed(page = 1, limit = 50) {
     FROM posts p
     LEFT JOIN users u ON p.user_id = u.id
     WHERE p.is_active = true
+      AND (
+        -- User sees their own posts
+        p.user_id = $1
+        OR
+        -- User follows the post author (direct follow)
+        EXISTS (
+          SELECT 1 
+          FROM user_follows uf 
+          WHERE uf.follower_id = $1 
+            AND uf.following_id = p.user_id
+        )
+        OR
+        -- User is connected to the post author (connections count as follows)
+        EXISTS (
+          SELECT 1 
+          FROM user_connections uc 
+          WHERE (uc.user_id_1 = $1 AND uc.user_id_2 = p.user_id)
+             OR (uc.user_id_1 = p.user_id AND uc.user_id_2 = $1)
+        )
+      )
     ORDER BY p.created_at DESC
-    LIMIT $1 OFFSET $2
+    LIMIT $2 OFFSET $3
   `;
 
   try {
-    const result = await pool.query(query, [limit, offset]);
+    const result = await pool.query(query, [viewerUserId, limit, offset]);
     return result.rows;
   } catch (error) {
     console.error('Error fetching posts feed:', error);
@@ -344,18 +370,29 @@ async function deletePost(postId, userId) {
     ]);
     await dbClient.query('DELETE FROM post_saves WHERE post_id = $1', [postId]);
 
-    const deleteQuery =
-      'DELETE FROM posts WHERE id = $1 AND user_id = $2 RETURNING id';
-    const result = await dbClient.query(deleteQuery, [postId, userId]);
+    // Allow deletion if user_id matches OR if the deleter is a parent of the post author
+    // The authorization check is done in the service layer, here we just delete
+    const deleteQuery = 'DELETE FROM posts WHERE id = $1 RETURNING id';
+    const result = await dbClient.query(deleteQuery, [postId]);
 
     await dbClient.query('COMMIT');
     return result.rows.length > 0;
   } catch (error) {
-    await dbClient.query('ROLLBACK');
+    try {
+      await dbClient.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error during rollback:', rollbackError);
+    }
     console.error('Error deleting post:', error);
     throw error;
   } finally {
-    dbClient.release();
+    if (dbClient) {
+      try {
+        dbClient.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 

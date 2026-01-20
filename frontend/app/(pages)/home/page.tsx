@@ -117,18 +117,17 @@ export default function Landing() {
         });
 
         // Fetch profile data to calculate completion
-        await calculateProfileCompletion(data.user.id);
+        await calculateProfileCompletion(data.user.id, data.user.user_type);
       }
     } catch (error) {
       console.error('Error fetching current user:', error);
     }
   };
 
-  const calculateProfileCompletion = async (userId: string) => {
+  const calculateProfileCompletion = async (userId: string, userType?: string) => {
     try {
       const { apiGet } = await import('@/utils/api');
       let completed = 0;
-      const totalSections = 12;
 
       // Fetch profile data - API returns data directly, not wrapped in success/profile
       const profileData = await apiGet<{
@@ -138,7 +137,15 @@ export default function Landing() {
         city?: string | null;
         dob?: string | null;
         bio?: string | null;
+        userType?: string;
       }>(`/profile/${userId}`);
+      
+      // Use userType from parameter or profile data, default to 'athlete' if not available
+      const finalUserType = userType || profileData.userType || 'athlete';
+      const isAthlete = finalUserType === 'athlete';
+      // For athletes: 12 sections (includes athletic performance)
+      // For other user types: 11 sections (excludes athletic performance)
+      const totalSections = isAthlete ? 12 : 11;
 
       // Basic Profile Information (3 sections) - matching EditProfileModel logic
       // EditProfileModel uses: fullName, profileImagePreview, location/age
@@ -216,13 +223,16 @@ export default function Landing() {
       )
         completed++;
 
-      if (
-        athleticAndPerformanceRes.status === 'fulfilled' &&
-        athleticAndPerformanceRes.value.success &&
-        athleticAndPerformanceRes.value.data &&
-        athleticAndPerformanceRes.value.data.length > 0
-      )
-        completed++;
+      // Only count athletic performance for athletes
+      if (isAthlete) {
+        if (
+          athleticAndPerformanceRes.status === 'fulfilled' &&
+          athleticAndPerformanceRes.value.success &&
+          athleticAndPerformanceRes.value.data &&
+          athleticAndPerformanceRes.value.data.length > 0
+        )
+          completed++;
+      }
 
       if (
         competitionAndClubsRes.status === 'fulfilled' &&

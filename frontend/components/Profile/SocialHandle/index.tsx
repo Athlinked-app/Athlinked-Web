@@ -82,33 +82,9 @@ export default function SocialHandles({
     }
   }, [handles]);
 
-  // Fetch social handles when component mounts or userId changes
-  useEffect(() => {
-    if (userId) {
-      fetchSocialHandles();
-    }
-  }, [userId]);
-
-  const fetchSocialHandles = async () => {
-    if (!userId) return;
-
-    try {
-      setLoading(true);
-      const data = await apiGet<{ success: boolean; data?: SocialHandle[] }>(
-        `/profile/${userId}/social-handles`
-      );
-      if (data.success && data.data) {
-        setSocialHandles(data.data);
-        if (onHandlesChange) {
-          onHandlesChange(data.data);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching social handles:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // OPTIMIZED: Data is now passed as props from parent (fetchProfileComplete)
+  // No need to fetch here - parent component handles all data fetching
+  // This component only manages add/edit/delete operations
 
   const handleAdd = async (newHandle: SocialHandle) => {
     if (!userId) {

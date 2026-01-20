@@ -107,9 +107,9 @@ async function createPostService(postData, userId) {
   }
 }
 
-async function getPostsFeedService(page = 1, limit = 50) {
+async function getPostsFeedService(page = 1, limit = 50, viewerUserId = null) {
   try {
-    const posts = await postsModel.getPostsFeed(page, limit);
+    const posts = await postsModel.getPostsFeed(page, limit, viewerUserId);
     return {
       success: true,
       posts,
@@ -192,14 +192,24 @@ async function likePostService(postId, userId) {
         like_count: likeResult.like_count,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Like post service error:', error);
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -222,14 +232,24 @@ async function unlikePostService(postId, userId) {
         like_count: unlikeResult.like_count,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Unlike post service error:', error);
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -307,14 +327,24 @@ async function addCommentService(postId, userId, comment) {
         comment_count: commentResult.comment_count,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Add comment service error:', error);
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -337,14 +367,24 @@ async function replyToCommentService(commentId, userId, comment) {
         comment_count: replyResult.comment_count,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Reply to comment service error:', error);
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -366,14 +406,24 @@ async function savePostService(postId, userId) {
         save_count: saveResult.save_count,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Save post service error:', error);
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -402,19 +452,49 @@ async function deletePostService(postId, userId) {
       throw new Error('Post not found');
     }
 
-    if (post.user_id !== userId) {
-      throw new Error('Unauthorized: You can only delete your own posts');
+    // Check if user is the post owner
+    if (post.user_id === userId) {
+      // User owns the post, allow deletion
+      const deleted = await postsModel.deletePost(postId, userId);
+      if (!deleted) {
+        throw new Error('Failed to delete post');
+      }
+
+      return {
+        success: true,
+        message: 'Post deleted successfully',
+      };
     }
 
-    const deleted = await postsModel.deletePost(postId, userId);
-    if (!deleted) {
-      throw new Error('Failed to delete post');
+    // Check if user is a parent of the post author
+    const signupModel = require('../signup/signup.model');
+    const currentUser = await signupModel.findById(userId);
+    
+    if (!currentUser) {
+      throw new Error('User not found');
     }
 
-    return {
-      success: true,
-      message: 'Post deleted successfully',
-    };
+    // If current user is a parent, check if post author is their child
+    if (currentUser.user_type === 'parent' && currentUser.email) {
+      const postAuthor = await signupModel.findById(post.user_id);
+      
+      if (postAuthor && postAuthor.parent_email && 
+          postAuthor.parent_email.toLowerCase().trim() === currentUser.email.toLowerCase().trim()) {
+        // Parent is deleting their child's post - allow it
+        const deleted = await postsModel.deletePost(postId, userId);
+        if (!deleted) {
+          throw new Error('Failed to delete post');
+        }
+
+        return {
+          success: true,
+          message: 'Post deleted successfully',
+        };
+      }
+    }
+
+    // User is neither the post owner nor the parent of the post author
+    throw new Error('Unauthorized: You can only delete your own posts or posts from your athletes');
   } catch (error) {
     console.error('Delete post service error:', error);
     throw error;

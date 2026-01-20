@@ -7,6 +7,7 @@ const pool = require('../config/db');
  * @returns {Promise<object>} Service result with created clip
  */
 async function createClipService(clipData) {
+  let client = null;
   try {
     const { user_id, video_url, description } = clipData;
 
@@ -19,7 +20,7 @@ async function createClipService(clipData) {
       throw new Error('User not found');
     }
 
-    const client = await pool.connect();
+    client = await pool.connect();
     try {
       await client.query('BEGIN');
 
@@ -34,20 +35,31 @@ async function createClipService(clipData) {
       const createdClip = await clipsModel.createClip(clipDataWithUser, client);
 
       await client.query('COMMIT');
-      client.release();
 
       return {
         success: true,
         clip: createdClip,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
-      client.release();
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Create clip service error:', error.message);
+    console.error('Error stack:', error.stack);
     throw error;
+  } finally {
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -109,20 +121,30 @@ async function addCommentService(clipId, commentData) {
       await clipsModel.incrementCommentCount(clipId, client);
 
       await client.query('COMMIT');
-      client.release();
 
       return {
         success: true,
         comment: newComment,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
-      client.release();
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Add comment service error:', error.message);
     throw error;
+  } finally {
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -164,20 +186,30 @@ async function replyToCommentService(commentId, replyData) {
       await clipsModel.incrementCommentCount(clipId, client);
 
       await client.query('COMMIT');
-      client.release();
 
       return {
         success: true,
         comment: reply,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
-      client.release();
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Reply to comment service error:', error.message);
     throw error;
+  } finally {
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -218,19 +250,49 @@ async function deleteClipService(clipId, userId) {
       throw new Error('Clip not found');
     }
 
-    if (clip.user_id !== userId) {
-      throw new Error('Unauthorized: You can only delete your own clips');
+    // Check if user is the clip owner
+    if (clip.user_id === userId) {
+      // User owns the clip, allow deletion
+      const deleted = await clipsModel.deleteClip(clipId, userId);
+      if (!deleted) {
+        throw new Error('Failed to delete clip');
+      }
+
+      return {
+        success: true,
+        message: 'Clip deleted successfully',
+      };
     }
 
-    const deleted = await clipsModel.deleteClip(clipId, userId);
-    if (!deleted) {
-      throw new Error('Failed to delete clip');
+    // Check if user is a parent of the clip author
+    const signupModel = require('../signup/signup.model');
+    const currentUser = await signupModel.findById(userId);
+    
+    if (!currentUser) {
+      throw new Error('User not found');
     }
 
-    return {
-      success: true,
-      message: 'Clip deleted successfully',
-    };
+    // If current user is a parent, check if clip author is their child
+    if (currentUser.user_type === 'parent' && currentUser.email) {
+      const clipAuthor = await signupModel.findById(clip.user_id);
+      
+      if (clipAuthor && clipAuthor.parent_email && 
+          clipAuthor.parent_email.toLowerCase().trim() === currentUser.email.toLowerCase().trim()) {
+        // Parent is deleting their child's clip - allow it
+        const deleted = await clipsModel.deleteClip(clipId, userId);
+        if (!deleted) {
+          throw new Error('Failed to delete clip');
+        }
+
+        return {
+          success: true,
+          message: 'Clip deleted successfully',
+        };
+      }
+    }
+
+    // User is neither the clip owner nor the parent of the clip author
+    throw new Error('Unauthorized: You can only delete your own clips or clips from your athletes');
   } catch (error) {
     console.error('Delete clip service error:', error);
     throw error;
@@ -266,14 +328,24 @@ async function likeClipService(clipId, userId) {
         like_count: likeResult.like_count,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Like clip service error:', error);
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -295,13 +367,23 @@ async function unlikeClipService(clipId, userId) {
         like_count: unlikeResult.like_count,
       };
     } catch (error) {
-      await client.query('ROLLBACK');
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
       throw error;
     }
   } catch (error) {
     console.error('Unlike clip service error:', error);
     throw error;
   } finally {
-    client.release();
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }

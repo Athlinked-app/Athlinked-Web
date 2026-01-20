@@ -50,34 +50,9 @@ export default function AcademicBackgrounds({
     }
   }, [backgrounds]);
 
-  // Fetch academic backgrounds when component mounts or userId changes
-  useEffect(() => {
-    if (userId) {
-      fetchAcademicBackgrounds();
-    }
-  }, [userId]);
-
-  const fetchAcademicBackgrounds = async () => {
-    if (!userId) return;
-
-    try {
-      setLoading(true);
-      const data = await apiGet<{
-        success: boolean;
-        data?: AcademicBackground[];
-      }>(`/profile/${userId}/academic-backgrounds`);
-      if (data.success && data.data) {
-        setAcademicBackgrounds(data.data);
-        if (onBackgroundsChange) {
-          onBackgroundsChange(data.data);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching academic backgrounds:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // OPTIMIZED: Data is now passed as props from parent (fetchProfileComplete)
+  // No need to fetch here - parent component handles all data fetching
+  // This component only manages add/edit/delete operations
 
   const handleAdd = async (newBackground: AcademicBackground) => {
     // Check if there's a PDF file to upload

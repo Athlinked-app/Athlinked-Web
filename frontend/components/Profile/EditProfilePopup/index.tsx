@@ -89,9 +89,41 @@ export default function EditProfilePopup({
   const coverImageInputRef = useRef<HTMLInputElement>(null);
   const sportsDropdownRef = useRef<HTMLDivElement>(null);
 
-  // Fetch sports from API when popup opens
+  // Reset and populate all fields when popup opens
   useEffect(() => {
     if (open) {
+      // Reset file selections
+      setProfileImage(null);
+      setCoverImage(null);
+      
+      // Populate all fields from userData
+      if (userData?.profile_url) {
+        setProfileImagePreview(userData.profile_url);
+      } else {
+        setProfileImagePreview(null);
+      }
+      
+      if (userData?.background_image_url) {
+        setCoverImagePreview(userData.background_image_url);
+      } else {
+        setCoverImagePreview(null);
+      }
+      
+      // Populate text fields
+      setEducation(userData?.education || '');
+      setCity(userData?.city || '');
+      setBio(userData?.bio || '');
+      
+      // Populate sports
+      if (userData?.sports_played) {
+        const parsed = parseSportsFromString(userData.sports_played);
+        setSelectedSports(parsed.sportsArray);
+        setSportsPlayed(parsed.sportsString);
+      } else {
+        setSelectedSports([]);
+        setSportsPlayed('');
+      }
+      
       fetchSports();
     }
   }, [open]);
@@ -160,6 +192,26 @@ export default function EditProfilePopup({
       setBio(userData.bio || '');
     }
   }, [userData?.city, userData?.education, userData?.bio]);
+
+  // Update profile image preview when userData changes
+  useEffect(() => {
+    if (open && userData?.profile_url !== undefined) {
+      // Only update if we don't have a newly selected file
+      if (!profileImage) {
+        setProfileImagePreview(userData.profile_url || null);
+      }
+    }
+  }, [open, userData?.profile_url, profileImage]);
+
+  // Update cover image preview when userData changes
+  useEffect(() => {
+    if (open && userData?.background_image_url !== undefined) {
+      // Only update if we don't have a newly selected file
+      if (!coverImage) {
+        setCoverImagePreview(userData.background_image_url || null);
+      }
+    }
+  }, [open, userData?.background_image_url, coverImage]);
 
   const fetchSports = async () => {
     setLoadingSports(true);

@@ -14,7 +14,7 @@ const options = {
     },
     servers: [
       {
-        url: process.env.API_URL || 'http://localhost:3001',
+        url: process.env.API_URL || 'https://athlinked-api.randomw.dev',
         description: 'Development server',
       },
       {

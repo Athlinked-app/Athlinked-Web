@@ -50,6 +50,8 @@ async function createClip(req, res) {
     return res.status(201).json(result);
   } catch (error) {
     console.error('Create clip error:', error);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
 
     if (error.message === 'User not found') {
       return res.status(404).json({
@@ -61,6 +63,7 @@ async function createClip(req, res) {
     return res.status(500).json({
       success: false,
       message: error.message || 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     });
   }
 }

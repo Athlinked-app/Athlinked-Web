@@ -70,11 +70,21 @@ async function addFavorite(coachId, athleteId) {
     await dbClient.query('COMMIT');
     return true;
   } catch (error) {
-    await dbClient.query('ROLLBACK');
+    try {
+      await dbClient.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error during rollback:', rollbackError);
+    }
     console.error('Error adding favorite:', error);
     throw error;
   } finally {
-    dbClient.release();
+    if (dbClient) {
+      try {
+        dbClient.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 
@@ -131,11 +141,21 @@ async function removeFavorite(coachId, athleteId) {
     await dbClient.query('COMMIT');
     return true;
   } catch (error) {
-    await dbClient.query('ROLLBACK');
+    try {
+      await dbClient.query('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Error during rollback:', rollbackError);
+    }
     console.error('Error removing favorite:', error);
     throw error;
   } finally {
-    dbClient.release();
+    if (dbClient) {
+      try {
+        dbClient.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
   }
 }
 

@@ -72,8 +72,10 @@ async function getPostsFeed(req, res) {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 50;
+    // Get viewer user ID from token (optional auth - unauthenticated users see no posts)
+    const viewerUserId = req.user?.id || null;
 
-    const result = await postsService.getPostsFeedService(page, limit);
+    const result = await postsService.getPostsFeedService(page, limit, viewerUserId);
     return res.status(200).json(result);
   } catch (error) {
     console.error('Get posts feed controller error:', error);

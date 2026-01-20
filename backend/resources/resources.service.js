@@ -170,11 +170,12 @@ async function createResourceService(resourceData) {
 
 /**
  * Get all active resources
+ * @param {string} userId - Optional user ID to filter by
  * @returns {Promise<object>} Service result with resources array
  */
-async function getAllResourcesService() {
+async function getAllResourcesService(userId = null) {
   try {
-    const resources = await resourcesModel.getAllResources();
+    const resources = await resourcesModel.getAllResources(userId);
     return {
       success: true,
       resources,
@@ -228,21 +229,63 @@ async function softDeleteResourceService(resourceId, userId) {
       throw new Error('User ID is required');
     }
 
-    const resource = await resourcesModel.softDeleteResource(
-      resourceId,
-      userId
-    );
-
+    // Get resource to check ownership
+    const resource = await resourcesModel.getResourceById(resourceId);
     if (!resource) {
-      throw new Error(
-        'Resource not found or you do not have permission to delete it'
-      );
+      throw new Error('Resource not found');
     }
 
-    return {
-      success: true,
-      message: 'Resource deleted successfully',
-    };
+    // Check if user is the resource owner
+    if (resource.user_id === userId) {
+      // User owns the resource, allow deletion
+      const deletedResource = await resourcesModel.softDeleteResource(
+        resourceId,
+        userId
+      );
+
+      if (!deletedResource) {
+        throw new Error('Failed to delete resource');
+      }
+
+      return {
+        success: true,
+        message: 'Resource deleted successfully',
+      };
+    }
+
+    // Check if user is a parent of the resource author
+    const signupModel = require('../signup/signup.model');
+    const currentUser = await signupModel.findById(userId);
+    
+    if (!currentUser) {
+      throw new Error('User not found');
+    }
+
+    // If current user is a parent, check if resource author is their child
+    if (currentUser.user_type === 'parent' && currentUser.email) {
+      const resourceAuthor = await signupModel.findById(resource.user_id);
+      
+      if (resourceAuthor && resourceAuthor.parent_email && 
+          resourceAuthor.parent_email.toLowerCase().trim() === currentUser.email.toLowerCase().trim()) {
+        // Parent is deleting their child's resource - allow it
+        const deletedResource = await resourcesModel.softDeleteResource(
+          resourceId,
+          userId
+        );
+
+        if (!deletedResource) {
+          throw new Error('Failed to delete resource');
+        }
+
+        return {
+          success: true,
+          message: 'Resource deleted successfully',
+        };
+      }
+    }
+
+    // User is neither the resource owner nor the parent of the resource author
+    throw new Error('Unauthorized: You can only delete your own resources or resources from your athletes');
   } catch (error) {
     console.error('Soft delete resource service error:', error.message);
     throw error;

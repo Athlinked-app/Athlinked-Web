@@ -61,19 +61,49 @@ async function deleteArticleService(articleId, userId) {
       throw new Error('Article not found');
     }
 
-    if (article.user_id !== userId) {
-      throw new Error('Unauthorized: You can only delete your own articles');
+    // Check if user is the article owner
+    if (article.user_id === userId) {
+      // User owns the article, allow deletion
+      const deleted = await articlesModel.deleteArticle(articleId, userId);
+      if (!deleted) {
+        throw new Error('Failed to delete article');
+      }
+
+      return {
+        success: true,
+        message: 'Article deleted successfully',
+      };
     }
 
-    const deleted = await articlesModel.deleteArticle(articleId, userId);
-    if (!deleted) {
-      throw new Error('Failed to delete article');
+    // Check if user is a parent of the article author
+    const signupModel = require('../signup/signup.model');
+    const currentUser = await signupModel.findById(userId);
+    
+    if (!currentUser) {
+      throw new Error('User not found');
     }
 
-    return {
-      success: true,
-      message: 'Article deleted successfully',
-    };
+    // If current user is a parent, check if article author is their child
+    if (currentUser.user_type === 'parent' && currentUser.email) {
+      const articleAuthor = await signupModel.findById(article.user_id);
+      
+      if (articleAuthor && articleAuthor.parent_email && 
+          articleAuthor.parent_email.toLowerCase().trim() === currentUser.email.toLowerCase().trim()) {
+        // Parent is deleting their child's article - allow it
+        const deleted = await articlesModel.deleteArticle(articleId, userId);
+        if (!deleted) {
+          throw new Error('Failed to delete article');
+        }
+
+        return {
+          success: true,
+          message: 'Article deleted successfully',
+        };
+      }
+    }
+
+    // User is neither the article owner nor the parent of the article author
+    throw new Error('Unauthorized: You can only delete your own articles or articles from your athletes');
   } catch (error) {
     console.error('Delete article service error:', error);
     throw error;

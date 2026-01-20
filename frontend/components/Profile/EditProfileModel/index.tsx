@@ -556,7 +556,10 @@ export default function EditProfileModal({
   // This recalculates on every render when any field changes
   const calculateCompletion = () => {
     let completed = 0;
-    const totalSections = 12; // Total number of profile sections
+    const isAthlete = userData?.user_type === 'athlete';
+    // For athletes: 12 sections (includes athletic performance)
+    // For other user types: 11 sections (excludes athletic performance)
+    const totalSections = isAthlete ? 12 : 11;
 
     // Basic Profile Information (3 sections)
     if (fullName && fullName.trim() !== '') completed++;
@@ -564,7 +567,7 @@ export default function EditProfileModal({
     if ((location && location.trim() !== '') || (age && age.trim() !== ''))
       completed++;
 
-    // Profile Sections (9 sections)
+    // Profile Sections (9 sections, but athletic performance only for athletes)
     if (profileSections?.bio && profileSections.bio.trim() !== '') completed++;
     if (
       profileSections?.socialHandles &&
@@ -581,11 +584,14 @@ export default function EditProfileModal({
       profileSections.achievements.length > 0
     )
       completed++;
-    if (
-      profileSections?.athleticAndPerformance &&
-      profileSections.athleticAndPerformance.length > 0
-    )
-      completed++;
+    // Only count athletic performance for athletes
+    if (isAthlete) {
+      if (
+        profileSections?.athleticAndPerformance &&
+        profileSections.athleticAndPerformance.length > 0
+      )
+        completed++;
+    }
     if (
       profileSections?.competitionAndClubs &&
       profileSections.competitionAndClubs.length > 0
