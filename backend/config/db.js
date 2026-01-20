@@ -1,5 +1,15 @@
-const { Pool } = require('pg');
+const { Pool, types } = require('pg');
 require('dotenv').config();
+
+// Override timestamp parsing to return UTC strings instead of local Date objects
+// Type OID 1114 = TIMESTAMP WITHOUT TIME ZONE
+// Type OID 1184 = TIMESTAMP WITH TIME ZONE
+const TIMESTAMP_OID = 1114;
+const TIMESTAMPTZ_OID = 1184;
+
+// Return timestamps as ISO strings in UTC (don't convert to local time)
+types.setTypeParser(TIMESTAMP_OID, (val) => val);
+types.setTypeParser(TIMESTAMPTZ_OID, (val) => val);
 
 // SSL configuration for cloud databases
 const sslConfig = process.env.DB_SSL === 'true' || process.env.DB_SSL === '1' 
@@ -33,8 +43,9 @@ const pool = new Pool({
   statement_timeout: 30000, // 30 second statement timeout
 });
 
-pool.on('connect', () => {
-  // Database connected
+pool.on('connect', (client) => {
+  // Set timezone to UTC for consistent timestamp handling
+  client.query('SET timezone = \'UTC\'');
 });
 
 pool.on('error', err => {

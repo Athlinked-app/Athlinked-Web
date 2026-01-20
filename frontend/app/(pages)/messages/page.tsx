@@ -138,9 +138,16 @@ function MessagesPageContent() {
 
     if (!newSocket) return;
 
+    // Remove existing listeners first to prevent duplicates
+    newSocket.off('receive_message');
+    newSocket.off('message_delivered');
+    newSocket.off('messages_read');
+    newSocket.off('conversation_updated');
+
     if (newSocket.connected) {
       newSocket.emit('userId', { userId: currentUser.id });
     } else {
+      newSocket.off('connect');
       newSocket.on('connect', () => {
         newSocket.emit('userId', { userId: currentUser.id });
       });
@@ -156,6 +163,8 @@ function MessagesPageContent() {
           message_type?: string;
         }
       ) => {
+        const isOurMessage = data.sender_id === currentUser.id;
+
         // Update conversation list when receiving a message
         setConversations(prev => {
           const updated = prev.map(conv => {
@@ -164,10 +173,9 @@ function MessagesPageContent() {
                 ...conv,
                 last_message: data.message || (data.media_url ? 'Media' : ''),
                 last_message_time: data.created_at,
-                unread_count:
-                  data.sender_id === currentUser.id
-                    ? conv.unread_count
-                    : conv.unread_count + 1,
+                unread_count: isOurMessage
+                  ? conv.unread_count
+                  : conv.unread_count + 1,
               };
             }
             return conv;
@@ -177,7 +185,7 @@ function MessagesPageContent() {
           const exists = updated.some(
             conv => conv.conversation_id === data.conversation_id
           );
-          if (!exists && data.sender_id !== currentUser.id) {
+          if (!exists && !isOurMessage) {
             fetchConversations();
           }
 
@@ -185,28 +193,56 @@ function MessagesPageContent() {
         });
 
         if (selectedConversation?.conversation_id === data.conversation_id) {
-          const isOurMessage = data.sender_id === currentUser.id;
-
           setMessages(prev => {
-            const filtered = prev.filter(msg => {
-              if (!msg.message_id.startsWith('temp-')) return true;
-              if (msg.sender_id === data.sender_id) {
-                if (msg.media_url && data.media_url) {
-                  return false;
-                }
-                if (
-                  msg.message === data.message &&
-                  Math.abs(
-                    new Date(msg.created_at).getTime() -
-                      new Date(data.created_at).getTime()
-                  ) < 5000
-                ) {
-                  return false;
-                }
-              }
-              return true;
-            });
+            // Check if message with this exact ID already exists
+            const existingMessage = prev.find(
+              msg => msg.message_id === data.message_id
+            );
+            if (existingMessage) {
+              // Message already exists, just update delivery status
+              return prev.map(msg =>
+                msg.message_id === data.message_id
+                  ? { ...msg, is_delivered: data.is_delivered || msg.is_delivered }
+                  : msg
+              );
+            }
 
+            // For our own messages, we already have an optimistic temp message
+            // Replace the temp message with the real one instead of adding new
+            if (isOurMessage) {
+              // Find and replace the matching temp message
+              const tempIndex = prev.findIndex(
+                msg =>
+                  msg.message_id.startsWith('temp-') &&
+                  msg.sender_id === data.sender_id
+              );
+
+              if (tempIndex !== -1) {
+                // Replace temp message with real message
+                const newMessages = [...prev];
+                newMessages[tempIndex] = {
+                  message_id: data.message_id,
+                  sender_id: data.sender_id,
+                  message: data.message || '',
+                  created_at: data.created_at,
+                  is_read: false,
+                  is_read_by_recipient: false,
+                  is_delivered: data.is_delivered || false,
+                  media_url: data.media_url || null,
+                  message_type: (data.message_type as any) || 'text',
+                  post_data: data.post_data
+                    ? typeof data.post_data === 'string'
+                      ? JSON.parse(data.post_data)
+                      : data.post_data
+                    : null,
+                };
+                return newMessages;
+              }
+              // No temp message found, don't add duplicate - this shouldn't happen normally
+              return prev;
+            }
+
+            // For messages from others, add the new message
             let messageType = data.message_type as
               | 'text'
               | 'image'
@@ -243,7 +279,7 @@ function MessagesPageContent() {
             }
 
             return [
-              ...filtered,
+              ...prev,
               {
                 message_id: data.message_id,
                 sender_id: data.sender_id,
@@ -251,7 +287,7 @@ function MessagesPageContent() {
                 created_at: data.created_at,
                 is_read: false,
                 is_read_by_recipient: false,
-                is_delivered: isOurMessage ? data.is_delivered || false : true,
+                is_delivered: true,
                 media_url: data.media_url || null,
                 message_type: messageType || 'text',
                 post_data: postData,
@@ -798,42 +834,74 @@ function MessagesPageContent() {
       .slice(0, 2);
   };
 
+  // Get user's timezone dynamically
+  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  // Parse UTC timestamp from database and convert to user's local timezone
+  const parseUTCTimestamp = (timestamp: string): Date => {
+    if (!timestamp) return new Date();
+    
+    let ts = timestamp;
+    
+    // Normalize: replace space with T for ISO format
+    if (ts.includes(' ') && !ts.includes('T')) {
+      ts = ts.replace(' ', 'T');
+    }
+    
+    // Add Z suffix if no timezone indicator (database returns UTC without Z)
+    if (!ts.endsWith('Z') && !ts.includes('+') && !/[+-]\d{2}:\d{2}$/.test(ts)) {
+      ts = ts + 'Z';
+    }
+    
+    return new Date(ts);
+  };
+
   const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
+    const date = parseUTCTimestamp(timestamp);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
+    // Format time in user's local timezone
     const timeString = date.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
+      timeZone: userTimezone,
     });
 
     if (minutes < 1) {
       return 'Just now';
     }
-    if (date.toDateString() === now.toDateString()) {
+    
+    // Compare dates in user's local timezone
+    const nowDateStr = now.toLocaleDateString('en-US', { timeZone: userTimezone });
+    const msgDateStr = date.toLocaleDateString('en-US', { timeZone: userTimezone });
+    
+    if (nowDateStr === msgDateStr) {
       return timeString;
     }
+    
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
-    if (date.toDateString() === yesterday.toDateString()) {
+    const yesterdayStr = yesterday.toLocaleDateString('en-US', { timeZone: userTimezone });
+    
+    if (msgDateStr === yesterdayStr) {
       return 'Yesterday';
     }
     if (days < 7) {
-      return date.toLocaleDateString('en-US', { weekday: 'short' });
+      return date.toLocaleDateString('en-US', { weekday: 'short', timeZone: userTimezone });
     }
     return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
+      timeZone: userTimezone,
     });
   };
 
   const formatMessageTime = (timestamp: string) => {
-    const date = new Date(timestamp);
+    const date = parseUTCTimestamp(timestamp);
     return date.toLocaleString('en-US', {
       month: 'long',
       day: 'numeric',
@@ -841,36 +909,46 @@ function MessagesPageContent() {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
+      timeZone: userTimezone,
     });
   };
 
   const formatMessageTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp);
+    const date = parseUTCTimestamp(timestamp);
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / (1000 * 60));
-    const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
+    // Format time in user's local timezone
     const timeString = date.toLocaleTimeString('en-US', {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
+      timeZone: userTimezone,
     });
 
     if (minutes < 1) {
       return 'Just now';
     }
-    if (date.toDateString() === now.toDateString()) {
+    
+    // Compare dates in user's local timezone
+    const nowDateStr = now.toLocaleDateString('en-US', { timeZone: userTimezone });
+    const msgDateStr = date.toLocaleDateString('en-US', { timeZone: userTimezone });
+    
+    if (nowDateStr === msgDateStr) {
       return timeString;
     }
+    
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
-    if (date.toDateString() === yesterday.toDateString()) {
+    const yesterdayStr = yesterday.toLocaleDateString('en-US', { timeZone: userTimezone });
+    
+    if (msgDateStr === yesterdayStr) {
       return `Yesterday ${timeString}`;
     }
     if (days < 7) {
-      const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+      const dayName = date.toLocaleDateString('en-US', { weekday: 'short', timeZone: userTimezone });
       return `${dayName} ${timeString}`;
     }
     return date.toLocaleString('en-US', {
@@ -879,6 +957,7 @@ function MessagesPageContent() {
       hour: 'numeric',
       minute: '2-digit',
       hour12: true,
+      timeZone: userTimezone,
     });
   };
 
