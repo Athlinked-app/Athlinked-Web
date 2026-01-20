@@ -1,4 +1,5 @@
 const messagesModel = require('./messages.model');
+const { convertKeyToPresignedUrl } = require('../utils/s3');
 const pool = require('../config/db');
 const networkModel = require('../network/network.model');
 
@@ -77,11 +78,41 @@ async function sendMessage(
 }
 
 async function getConversations(userId) {
-  return await messagesModel.getConversationsForUser(userId);
+  const conversations = await messagesModel.getConversationsForUser(userId);
+  
+  // Convert profile URLs to presigned URLs
+  const conversationsWithPresignedUrls = await Promise.all(
+    conversations.map(async (conv) => {
+      if (conv.other_user_profile_image) {
+        conv.other_user_profile_image = await convertKeyToPresignedUrl(conv.other_user_profile_image);
+      }
+      if (conv.media_url) {
+        conv.media_url = await convertKeyToPresignedUrl(conv.media_url);
+      }
+      return conv;
+    })
+  );
+  
+  return conversationsWithPresignedUrls;
 }
 
 async function getMessages(conversationId, userId) {
-  return await messagesModel.getMessagesForConversation(conversationId, userId);
+  const messages = await messagesModel.getMessagesForConversation(conversationId, userId);
+  
+  // Convert profile URLs and media URLs to presigned URLs
+  const messagesWithPresignedUrls = await Promise.all(
+    messages.map(async (msg) => {
+      if (msg.sender_profile_image) {
+        msg.sender_profile_image = await convertKeyToPresignedUrl(msg.sender_profile_image);
+      }
+      if (msg.media_url) {
+        msg.media_url = await convertKeyToPresignedUrl(msg.media_url);
+      }
+      return msg;
+    })
+  );
+  
+  return messagesWithPresignedUrls;
 }
 
 async function markAsRead(conversationId, readerId) {
@@ -167,11 +198,16 @@ async function getOrCreateConversation(userId, otherUserId) {
 
     const otherUser = userResult.rows[0];
 
+    // Convert profile URL to presigned URL
+    const profileImage = otherUser.profile_url 
+      ? await convertKeyToPresignedUrl(otherUser.profile_url) 
+      : null;
+
     return {
       conversation_id: conversation.id,
       other_user_id: otherUser.id,
       other_user_username: otherUser.username || otherUser.full_name || 'User',
-      other_user_profile_image: otherUser.profile_url,
+      other_user_profile_image: profileImage,
       last_message: null,
       last_message_time: null,
       unread_count: 0,

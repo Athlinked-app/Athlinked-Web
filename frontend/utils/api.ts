@@ -259,16 +259,17 @@ export async function apiRequest(
  */
 function formatDatabaseError(errorMessage: string, status: number): string {
   const lowerMessage = errorMessage.toLowerCase();
-
-  // Check for PostgreSQL connection errors
-  if (
-    lowerMessage.includes('remaining connection slots') ||
-    lowerMessage.includes('superuser attribute') ||
-    lowerMessage.includes('too many connections') ||
-    lowerMessage.includes('connection limit') ||
-    lowerMessage.includes('max_connections')
-  ) {
-    return 'Database connection limit reached. The server is experiencing high traffic. Please try again in a few moments.';
+  
+  // For connection limit errors, return a generic message that doesn't alarm users
+  // These errors are usually temporary and will be retried automatically
+  // Include all variations of connection limit errors including SUPERUSER attribute errors
+  if (lowerMessage.includes('remaining connection slots') || 
+      lowerMessage.includes('superuser attribute') ||
+      lowerMessage.includes('reserved for roles') ||
+      lowerMessage.includes('too many connections') ||
+      lowerMessage.includes('connection limit') ||
+      lowerMessage.includes('max_connections')) {
+    return 'Server is temporarily busy. Please try again.';
   }
 
   if (
@@ -295,66 +296,141 @@ function formatDatabaseError(errorMessage: string, status: number): string {
 }
 
 /**
- * Helper function for GET requests
+ * Helper function for GET requests with automatic retry on connection errors
  */
-export async function apiGet<T = any>(endpoint: string): Promise<T> {
-  try {
-    const response = await apiRequest(endpoint, { method: 'GET' });
+export async function apiGet<T = any>(endpoint: string, retries = 5): Promise<T> {
+  let lastError: any;
+  
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await apiRequest(endpoint, { method: 'GET' });
 
-    // Check if response is ok (status 200-299)
-    if (!response.ok) {
-      const errorText = await response.text();
-      let errorData;
-      try {
-        errorData = JSON.parse(errorText);
-      } catch {
-        errorData = {
-          message:
-            errorText || `HTTP ${response.status}: ${response.statusText}`,
-        };
+      // Check if response is ok (status 200-299)
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = {
+            message:
+              errorText || `HTTP ${response.status}: ${response.statusText}`,
+          };
+        }
+        
+        const originalMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+        
+        // Check if it's a connection error that we should retry
+        const isConnectionError = originalMessage.toLowerCase().includes('connection limit') || 
+                                  originalMessage.toLowerCase().includes('remaining connection slots') ||
+                                  originalMessage.toLowerCase().includes('too many connections') ||
+                                  originalMessage.toLowerCase().includes('max_connections') ||
+                                  originalMessage.toLowerCase().includes('superuser attribute') ||
+                                  originalMessage.toLowerCase().includes('reserved for roles');
+        
+        if (isConnectionError && attempt < retries) {
+          // Wait before retrying (exponential backoff with jitter)
+          const baseWaitTime = Math.min(500 * Math.pow(1.5, attempt), 3000);
+          const jitter = Math.random() * 500; // Add random jitter to prevent thundering herd
+          const waitTime = baseWaitTime + jitter;
+          // Silently retry - don't log to avoid alarming users
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          lastError = errorData;
+          continue;
+        }
+        
+        // Only format and throw error if it's not a connection error or all retries exhausted
+        const formattedMessage = formatDatabaseError(originalMessage, response.status);
+        
+        const error: any = new Error(formattedMessage);
+        error.status = response.status;
+        error.response = { data: errorData };
+        error.originalMessage = originalMessage; // Keep original for debugging
+        throw error;
       }
 
-      const originalMessage =
-        errorData.message || `HTTP ${response.status}: ${response.statusText}`;
-      const formattedMessage = formatDatabaseError(
-        originalMessage,
-        response.status
-      );
-
-      const error: any = new Error(formattedMessage);
-      error.status = response.status;
-      error.response = { data: errorData };
-      error.originalMessage = originalMessage; // Keep original for debugging
+      // Check content type before parsing JSON
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return response.json();
+      } else {
+        // If not JSON, return text as error
+        const text = await response.text();
+        throw new Error(
+          `Expected JSON but got ${contentType || 'unknown content type'}: ${text.substring(0, 200)}`
+        );
+      }
+    } catch (error: any) {
+      lastError = error;
+      
+      // Check if it's a connection error that we should retry
+      const errorMsg = (error.message || '').toLowerCase();
+      const originalMsg = (error.originalMessage || '').toLowerCase();
+      const isConnectionError = errorMsg.includes('connection limit') || 
+                                errorMsg.includes('remaining connection slots') ||
+                                errorMsg.includes('too many connections') ||
+                                errorMsg.includes('max_connections') ||
+                                errorMsg.includes('superuser attribute') ||
+                                errorMsg.includes('reserved for roles') ||
+                                originalMsg.includes('connection limit') ||
+                                originalMsg.includes('remaining connection slots') ||
+                                originalMsg.includes('too many connections') ||
+                                originalMsg.includes('superuser attribute') ||
+                                originalMsg.includes('reserved for roles');
+      
+      if (isConnectionError && attempt < retries) {
+        // Wait before retrying (exponential backoff with jitter)
+        const baseWaitTime = Math.min(500 * Math.pow(1.5, attempt), 3000);
+        const jitter = Math.random() * 500; // Add random jitter
+        const waitTime = baseWaitTime + jitter;
+        // Silently retry - don't log to avoid alarming users
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
+      }
+      
+      // Re-throw if it's already our custom error
+      if (error.status) {
+        throw error;
+      }
+      // Handle network errors (Failed to fetch)
+      if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+        const networkError: any = new Error(
+          'Network error: Unable to connect to the server. Please check your connection and ensure the API server is running.'
+        );
+        networkError.isNetworkError = true;
+        networkError.originalError = error;
+        throw networkError;
+      }
       throw error;
     }
-
-    // Check content type before parsing JSON
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      return response.json();
-    } else {
-      // If not JSON, return text as error
-      const text = await response.text();
-      throw new Error(
-        `Expected JSON but got ${contentType || 'unknown content type'}: ${text.substring(0, 200)}`
-      );
-    }
-  } catch (error: any) {
-    // Re-throw if it's already our custom error
-    if (error.status) {
-      throw error;
-    }
-    // Handle network errors (Failed to fetch)
-    if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
-      const networkError: any = new Error(
-        'Network error: Unable to connect to the server. Please check your connection and ensure the API server is running.'
-      );
-      networkError.isNetworkError = true;
-      networkError.originalError = error;
-      throw networkError;
-    }
-    throw error;
   }
+  
+  // If we get here, all retries failed
+  // For connection errors, return a more user-friendly message or suppress completely
+  if (lastError) {
+    const errorMsg = (lastError.message || '').toLowerCase();
+    const originalMsg = (lastError.originalMessage || '').toLowerCase();
+    const isConnectionError = errorMsg.includes('connection limit') || 
+                              errorMsg.includes('remaining connection slots') ||
+                              errorMsg.includes('superuser attribute') ||
+                              errorMsg.includes('reserved for roles') ||
+                              originalMsg.includes('connection limit') ||
+                              originalMsg.includes('remaining connection slots') ||
+                              originalMsg.includes('superuser attribute') ||
+                              originalMsg.includes('reserved for roles');
+    
+    if (isConnectionError) {
+      // For connection errors, return a generic message that doesn't alarm users
+      // These are usually temporary database issues
+      const friendlyError: any = new Error('Server is temporarily busy. Please refresh the page and try again.');
+      friendlyError.status = lastError.status || 500;
+      friendlyError.originalError = lastError;
+      friendlyError.isConnectionError = true; // Flag for silent handling
+      throw friendlyError;
+    }
+  }
+  
+  throw lastError;
 }
 
 /**

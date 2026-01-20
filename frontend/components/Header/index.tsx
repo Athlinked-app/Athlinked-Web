@@ -95,14 +95,29 @@ export default function Header({
       ? userData.profile_url
       : null);
 
-  const userProfileUrl =
-    rawProfileUrl && rawProfileUrl.trim() !== ''
-      ? rawProfileUrl.startsWith('http')
-        ? rawProfileUrl
-        : rawProfileUrl.startsWith('/') && !rawProfileUrl.startsWith('/assets')
-          ? `http://localhost:3001${rawProfileUrl}`
-          : rawProfileUrl
-      : null;
+  // Helper function to validate if a string is a valid URL for Next.js Image
+  const isValidUrl = (urlString: string): boolean => {
+    if (!urlString || typeof urlString !== 'string' || urlString.trim() === '') {
+      return false;
+    }
+    try {
+      // For relative paths starting with /, they're valid for Next.js Image
+      if (urlString.startsWith('/')) {
+        return true;
+      }
+      // For absolute URLs, validate using URL constructor
+      new URL(urlString);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  // Use getResourceUrl for consistent URL construction, then validate
+  const userProfileUrl = rawProfileUrl ? getResourceUrl(rawProfileUrl) : null;
+  
+  // Final validation - ensure the URL is valid before using it with Next.js Image
+  const validUserProfileUrl = userProfileUrl && isValidUrl(userProfileUrl) ? userProfileUrl : null;
 
   const getInitials = (name: string) => {
     return name
@@ -165,9 +180,9 @@ export default function Header({
             onClick={() => setShowPopup(!showPopup)}
             className="focus:outline-none"
           >
-            {userProfileUrl ? (
+            {validUserProfileUrl ? (
               <Image
-                src={userProfileUrl}
+                src={validUserProfileUrl}
                 alt={`${userName} profile avatar`}
                 width={48}
                 height={48}
@@ -200,9 +215,9 @@ export default function Header({
                 }}
               >
                 <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center shrink-0">
-                  {userProfileUrl ? (
+                  {validUserProfileUrl ? (
                     <img
-                      src={userProfileUrl}
+                      src={validUserProfileUrl}
                       alt={userName}
                       className="w-full h-full object-cover"
                     />

@@ -6,33 +6,31 @@ const sslConfig = process.env.DB_SSL === 'true' || process.env.DB_SSL === '1'
   ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' }
   : false;
 
-// ULTRA-CONSERVATIVE connection pool settings to prevent exhaustion
+// Connection pool settings to prevent exhaustion
 // Most PostgreSQL databases have max_connections = 100
-// We use 20 to leave plenty of room for other services, admin tools, and overhead
-// This ensures we NEVER hit the database connection limit
-const DEFAULT_POOL_MAX = 20;
+// We use 30 to leave room for other services, admin tools, and overhead
+// This ensures we don't hit the database connection limit
+const DEFAULT_POOL_MAX = 30;
 const POOL_MAX = parseInt(process.env.DB_POOL_MAX) || DEFAULT_POOL_MAX;
 
-// Hard cap at 20 connections - this is the MAXIMUM we will ever use
-// This leaves 80+ connections for other services even if DB limit is 100
-const SAFE_POOL_MAX = Math.min(POOL_MAX, 20); // Hard cap at 20 - NEVER exceed this
-
-console.log(`[DB Pool] Initialized with max connections: ${SAFE_POOL_MAX} (hard limit - will NEVER exceed this)`);
+// Cap at 30 connections - reasonable limit that leaves 70+ connections for other services
+// If you need more, increase DB_POOL_MAX environment variable
+const SAFE_POOL_MAX = Math.min(POOL_MAX, 50); // Cap at 50 max to prevent abuse
 
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'athlinked',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || '',
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
   ssl: sslConfig,
-  max: SAFE_POOL_MAX, // ULTRA-CONSERVATIVE: 20 connections MAX (hard limit)
-  idleTimeoutMillis: 3000, // VERY aggressive: release idle connections after 3 seconds
-  connectionTimeoutMillis: 2000, // 2 second timeout - fail fast if pool is full
+  max: SAFE_POOL_MAX, // Max connections (default: 30, configurable via DB_POOL_MAX)
+  idleTimeoutMillis: 10000, // Release idle connections after 10 seconds
+  connectionTimeoutMillis: 5000, // 5 second timeout - fail fast if pool is full
   allowExitOnIdle: true, // Allow process to exit when pool is idle
-  min: 0, // Don't keep connections alive - create on demand
+  min: 2, // Keep 2 connections alive for faster response
   // Query timeout to prevent hanging queries
-  statement_timeout: 20000, // 20 second statement timeout
+  statement_timeout: 30000, // 30 second statement timeout
 });
 
 pool.on('connect', () => {
@@ -70,15 +68,16 @@ setInterval(() => {
   };
   
   // Only log if there are issues - don't spam logs with normal operation
-  // Warn if pool usage is high (more than 60% = 12 connections)
-  if (stats.total > 12) {
+  // Warn if pool usage is high (more than 60% of max)
+  const warningThreshold = Math.floor(SAFE_POOL_MAX * 0.6);
+  if (stats.total > warningThreshold) {
     console.warn('⚠️ [DB Pool] High usage:', stats);
   }
   
   // CRITICAL: If pool is nearly exhausted, log error
   if (stats.total >= SAFE_POOL_MAX - 2) {
     console.error('🚨 [DB Pool] CRITICAL: Pool nearly exhausted!', stats);
-    console.error('🚨 [DB Pool] ACTION REQUIRED: Restart backend server immediately');
+    console.error('🚨 [DB Pool] ACTION REQUIRED: Check for connection leaks or increase DB_POOL_MAX');
     console.error('🚨 [DB Pool] Current usage:', `${stats.usagePercent}% (${stats.total}/${SAFE_POOL_MAX})`);
   }
   
