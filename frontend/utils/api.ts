@@ -259,31 +259,38 @@ export async function apiRequest(
  */
 function formatDatabaseError(errorMessage: string, status: number): string {
   const lowerMessage = errorMessage.toLowerCase();
-  
+
   // Check for PostgreSQL connection errors
-  if (lowerMessage.includes('remaining connection slots') || 
-      lowerMessage.includes('superuser attribute') ||
-      lowerMessage.includes('too many connections') ||
-      lowerMessage.includes('connection limit') ||
-      lowerMessage.includes('max_connections')) {
+  if (
+    lowerMessage.includes('remaining connection slots') ||
+    lowerMessage.includes('superuser attribute') ||
+    lowerMessage.includes('too many connections') ||
+    lowerMessage.includes('connection limit') ||
+    lowerMessage.includes('max_connections')
+  ) {
     return 'Database connection limit reached. The server is experiencing high traffic. Please try again in a few moments.';
   }
-  
-  if (lowerMessage.includes('connection refused') || 
-      lowerMessage.includes('connection timeout') ||
-      lowerMessage.includes('connection pool')) {
+
+  if (
+    lowerMessage.includes('connection refused') ||
+    lowerMessage.includes('connection timeout') ||
+    lowerMessage.includes('connection pool')
+  ) {
     return 'Database connection error. The server is temporarily unavailable. Please try again later.';
   }
-  
-  if (lowerMessage.includes('relation') && lowerMessage.includes('does not exist')) {
+
+  if (
+    lowerMessage.includes('relation') &&
+    lowerMessage.includes('does not exist')
+  ) {
     return 'Database configuration error. Please contact support.';
   }
-  
+
   // For 500 errors, provide a generic server error message
   if (status >= 500) {
     return 'Server error. Please try again later or contact support if the problem persists.';
   }
-  
+
   return errorMessage;
 }
 
@@ -306,10 +313,14 @@ export async function apiGet<T = any>(endpoint: string): Promise<T> {
             errorText || `HTTP ${response.status}: ${response.statusText}`,
         };
       }
-      
-      const originalMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
-      const formattedMessage = formatDatabaseError(originalMessage, response.status);
-      
+
+      const originalMessage =
+        errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+      const formattedMessage = formatDatabaseError(
+        originalMessage,
+        response.status
+      );
+
       const error: any = new Error(formattedMessage);
       error.status = response.status;
       error.response = { data: errorData };
@@ -370,8 +381,12 @@ export async function apiPost<T = any>(
       };
     }
 
-    const originalMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
-    const formattedMessage = formatDatabaseError(originalMessage, response.status);
+    const originalMessage =
+      errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+    const formattedMessage = formatDatabaseError(
+      originalMessage,
+      response.status
+    );
 
     const error: any = new Error(formattedMessage);
     error.status = response.status;
@@ -407,8 +422,12 @@ export async function apiPut<T = any>(
       };
     }
 
-    const originalMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
-    const formattedMessage = formatDatabaseError(originalMessage, response.status);
+    const originalMessage =
+      errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+    const formattedMessage = formatDatabaseError(
+      originalMessage,
+      response.status
+    );
 
     const error: any = new Error(formattedMessage);
     error.status = response.status;
@@ -438,8 +457,12 @@ export async function apiDelete<T = any>(endpoint: string): Promise<T> {
       };
     }
 
-    const originalMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
-    const formattedMessage = formatDatabaseError(originalMessage, response.status);
+    const originalMessage =
+      errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+    const formattedMessage = formatDatabaseError(
+      originalMessage,
+      response.status
+    );
 
     const error: any = new Error(formattedMessage);
     error.status = response.status;
@@ -475,8 +498,12 @@ export async function apiPatch<T = any>(
       };
     }
 
-    const originalMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
-    const formattedMessage = formatDatabaseError(originalMessage, response.status);
+    const originalMessage =
+      errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+    const formattedMessage = formatDatabaseError(
+      originalMessage,
+      response.status
+    );
 
     const error: any = new Error(formattedMessage);
     error.status = response.status;
@@ -511,8 +538,11 @@ export async function apiUpload<T = any>(
         // If response is not JSON, use status text
         errorMessage = response.statusText || errorMessage;
       }
-      
-      const formattedMessage = formatDatabaseError(errorMessage, response.status);
+
+      const formattedMessage = formatDatabaseError(
+        errorMessage,
+        response.status
+      );
       const error: any = new Error(formattedMessage);
       error.status = response.status;
       error.originalMessage = errorMessage; // Keep original for debugging
