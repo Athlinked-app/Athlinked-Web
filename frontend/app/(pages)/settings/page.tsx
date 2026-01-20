@@ -34,13 +34,13 @@ export default function SettingsPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(
+          `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/signup/user-by-username/${encodeURIComponent(
             username
           )}`
         );
       } else {
         response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(
+          `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/signup/user/${encodeURIComponent(
             userIdentifier
           )}`
         );

@@ -100,7 +100,7 @@ export default function Header({
       ? rawProfileUrl.startsWith('http')
         ? rawProfileUrl
         : rawProfileUrl.startsWith('/') && !rawProfileUrl.startsWith('/assets')
-          ? `http://localhost:3001${rawProfileUrl}`
+          ? `https://athlinked-api.randomw.dev${rawProfileUrl}`
           : rawProfileUrl
       : null;
 

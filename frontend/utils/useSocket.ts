@@ -7,7 +7,7 @@ import { io, Socket } from 'socket.io-client';
 import { getCurrentUserId } from './auth';
 
 const SOCKET_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
+  process.env.NEXT_PUBLIC_SOCKET_URL || 'https://athlinked-api.randomw.dev';
 
 let globalSocket: Socket | null = null;
 const socketListeners: Map<string, Set<Function>> = new Map();

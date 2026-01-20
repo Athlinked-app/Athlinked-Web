@@ -4,7 +4,7 @@
 
 // Base URL for API endpoints
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api';
 
 // Log API URL in development for debugging
 if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
@@ -13,11 +13,11 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
 
 // Base URL for non-API resources (images, static files, etc.)
 export const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
+  process.env.NEXT_PUBLIC_BASE_URL || 'https://athlinked-api.randomw.dev';
 
 // Socket URL
 export const SOCKET_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
+  process.env.NEXT_PUBLIC_SOCKET_URL || 'https://athlinked-api.randomw.dev';
 
 /**
  * Get the full URL for a resource (image, file, etc.)
