@@ -1242,19 +1242,22 @@ export default function StatsPage() {
                   try {
                     // OPTIMIZED: Single API call using combined endpoint
                     // This replaces 6 separate API calls with 1 call
-                    
+
                     // Get sport display name
                     const sportName = getSportDisplayName(activeSport);
 
                     // Prepare stats object from formData
                     // Map formData keys to field labels (backend matches by label)
                     const statsObject: Record<string, string> = {};
-                    
+
                     if (availableFields && availableFields.length > 0) {
                       // Use availableFields to map formData keys to field labels
                       for (const field of availableFields) {
                         // Skip Year field (handled separately)
-                        if (field.field_label === 'Year' || field.field_key === 'year') {
+                        if (
+                          field.field_label === 'Year' ||
+                          field.field_key === 'year'
+                        ) {
                           continue;
                         }
 
@@ -1263,14 +1266,18 @@ export default function StatsPage() {
 
                         // Try multiple key formats to find the value in formData
                         const fieldKey = field.field_key;
-                        const normalizedLabel = fieldLabel.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
-                        
+                        const normalizedLabel = fieldLabel
+                          .toLowerCase()
+                          .replace(/\s+/g, '_')
+                          .replace(/[^a-z0-9_]/g, '');
+
                         // Check formData for this field's value
-                        const value = formData[fieldKey] || 
-                                   formData[fieldLabel] || 
-                                   formData[normalizedLabel] ||
-                                   formData[fieldKey?.toLowerCase()] ||
-                                   formData[fieldLabel.toLowerCase()];
+                        const value =
+                          formData[fieldKey] ||
+                          formData[fieldLabel] ||
+                          formData[normalizedLabel] ||
+                          formData[fieldKey?.toLowerCase()] ||
+                          formData[fieldLabel.toLowerCase()];
 
                         // If value exists and is not empty, add to stats object using field label as key
                         if (value && value.toString().trim() !== '') {
@@ -1280,7 +1287,12 @@ export default function StatsPage() {
                     } else {
                       // Fallback: if no availableFields, use formData directly (excluding year/position)
                       for (const [key, value] of Object.entries(formData)) {
-                        if (key !== 'year' && key !== 'position' && value && value.toString().trim() !== '') {
+                        if (
+                          key !== 'year' &&
+                          key !== 'position' &&
+                          value &&
+                          value.toString().trim() !== ''
+                        ) {
                           // Use key as-is (backend will try to match)
                           statsObject[key] = String(value).trim();
                         }
@@ -1296,22 +1308,26 @@ export default function StatsPage() {
                       year: formData.year,
                       stats: statsObject,
                     };
-                    
+
                     // If editing, pass the existing profile ID to ensure we update the correct profile
                     // Use user_sport_profile_id if available (original profile ID), otherwise try id
                     if (editingProfile) {
                       // Check if id is a UUID (original profile ID) or composite (profile_id_year)
-                      const profileId = editingProfile.user_sport_profile_id || 
-                                       (editingProfile.id && editingProfile.id.includes('_') 
-                                         ? editingProfile.id.split('_')[0] 
-                                         : editingProfile.id);
-                      
+                      const profileId =
+                        editingProfile.user_sport_profile_id ||
+                        (editingProfile.id && editingProfile.id.includes('_')
+                          ? editingProfile.id.split('_')[0]
+                          : editingProfile.id);
+
                       if (profileId) {
                         requestBody.userSportProfileId = profileId;
-                        console.log('[Stats Edit] Using profile ID:', profileId);
+                        console.log(
+                          '[Stats Edit] Using profile ID:',
+                          profileId
+                        );
                       }
                     }
-                    
+
                     const result = await apiPost<{
                       success: boolean;
                       message?: string;

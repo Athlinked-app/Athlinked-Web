@@ -42,10 +42,10 @@ export async function apiRequestUnauthenticated(
     if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
       const networkError: any = new Error(
         `Network error: Unable to connect to ${url}. Please check:\n` +
-        `1. The API server is running\n` +
-        `2. The API URL is correct (${API_BASE_URL})\n` +
-        `3. CORS is configured correctly\n` +
-        `4. Your network connection is working`
+          `1. The API server is running\n` +
+          `2. The API URL is correct (${API_BASE_URL})\n` +
+          `3. CORS is configured correctly\n` +
+          `4. Your network connection is working`
       );
       networkError.isNetworkError = true;
       networkError.url = url;
@@ -240,10 +240,10 @@ export async function apiRequest(
     if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
       const networkError: any = new Error(
         `Network error: Unable to connect to ${url}. Please check:\n` +
-        `1. The API server is running\n` +
-        `2. The API URL is correct (${API_BASE_URL})\n` +
-        `3. CORS is configured correctly\n` +
-        `4. Your network connection is working`
+          `1. The API server is running\n` +
+          `2. The API URL is correct (${API_BASE_URL})\n` +
+          `3. CORS is configured correctly\n` +
+          `4. Your network connection is working`
       );
       networkError.isNetworkError = true;
       networkError.url = url;
@@ -260,7 +260,7 @@ export async function apiRequest(
 export async function apiGet<T = any>(endpoint: string): Promise<T> {
   try {
     const response = await apiRequest(endpoint, { method: 'GET' });
-    
+
     // Check if response is ok (status 200-299)
     if (!response.ok) {
       const errorText = await response.text();
@@ -268,15 +268,20 @@ export async function apiGet<T = any>(endpoint: string): Promise<T> {
       try {
         errorData = JSON.parse(errorText);
       } catch {
-        errorData = { message: errorText || `HTTP ${response.status}: ${response.statusText}` };
+        errorData = {
+          message:
+            errorText || `HTTP ${response.status}: ${response.statusText}`,
+        };
       }
-      
-      const error: any = new Error(errorData.message || `HTTP ${response.status}: ${response.statusText}`);
+
+      const error: any = new Error(
+        errorData.message || `HTTP ${response.status}: ${response.statusText}`
+      );
       error.status = response.status;
       error.response = { data: errorData };
       throw error;
     }
-    
+
     // Check content type before parsing JSON
     const contentType = response.headers.get('content-type');
     if (contentType && contentType.includes('application/json')) {
@@ -284,7 +289,9 @@ export async function apiGet<T = any>(endpoint: string): Promise<T> {
     } else {
       // If not JSON, return text as error
       const text = await response.text();
-      throw new Error(`Expected JSON but got ${contentType || 'unknown content type'}: ${text.substring(0, 200)}`);
+      throw new Error(
+        `Expected JSON but got ${contentType || 'unknown content type'}: ${text.substring(0, 200)}`
+      );
     }
   } catch (error: any) {
     // Re-throw if it's already our custom error
@@ -293,7 +300,9 @@ export async function apiGet<T = any>(endpoint: string): Promise<T> {
     }
     // Handle network errors (Failed to fetch)
     if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
-      const networkError: any = new Error('Network error: Unable to connect to the server. Please check your connection and ensure the API server is running.');
+      const networkError: any = new Error(
+        'Network error: Unable to connect to the server. Please check your connection and ensure the API server is running.'
+      );
       networkError.isNetworkError = true;
       networkError.originalError = error;
       throw networkError;
@@ -408,7 +417,9 @@ export async function apiUpload<T = any>(
     } else {
       // If not JSON, return text as error
       const text = await response.text();
-      throw new Error(`Expected JSON but got ${contentType || 'unknown content type'}: ${text.substring(0, 200)}`);
+      throw new Error(
+        `Expected JSON but got ${contentType || 'unknown content type'}: ${text.substring(0, 200)}`
+      );
     }
   } catch (error: any) {
     // Re-throw if it's already our custom error with status
@@ -416,13 +427,17 @@ export async function apiUpload<T = any>(
       throw error;
     }
     // Handle network errors (Failed to fetch)
-    if (error.message === 'Failed to fetch' || error.name === 'TypeError' || error.isNetworkError) {
+    if (
+      error.message === 'Failed to fetch' ||
+      error.name === 'TypeError' ||
+      error.isNetworkError
+    ) {
       const networkError: any = new Error(
         `Network error: Unable to upload file to ${endpoint}. Please check:\n` +
-        `1. The API server is running on ${API_BASE_URL}\n` +
-        `2. The backend server is accessible\n` +
-        `3. CORS is configured correctly\n` +
-        `4. Your network connection is working`
+          `1. The API server is running on ${API_BASE_URL}\n` +
+          `2. The backend server is accessible\n` +
+          `3. CORS is configured correctly\n` +
+          `4. Your network connection is working`
       );
       networkError.isNetworkError = true;
       networkError.endpoint = endpoint;

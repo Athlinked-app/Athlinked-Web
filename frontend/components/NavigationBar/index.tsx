@@ -202,16 +202,20 @@ export default function NavigationBar({
   }, []);
 
   const handleLogout = async () => {
+    // Clear session storage BEFORE logout
+    sessionStorage.clear();
+
     // Use the proper logout function from auth utils
     const { logout } = await import('@/utils/auth');
     await logout();
   };
+
   const menuItems = [
     { id: 'search', icon: Search, label: 'Search' },
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'clips', icon: Play, label: 'Clips' },
     { id: 'network', icon: Users, label: 'My Network' },
-    { id: 'my_athletes', icon: UserCheck, label: 'My Athletes' }, // New menu item
+    { id: 'my_athletes', icon: UserCheck, label: 'My Athletes' },
     { id: 'opportunities', icon: Briefcase, label: 'Opportunities' },
     { id: 'message', icon: MessageSquare, label: 'Message' },
     { id: 'notifications', icon: Bell, label: 'Notifications' },
@@ -413,26 +417,7 @@ export default function NavigationBar({
                       {item.label}
                     </span>
                   </Link>
-                ) : (
-                  <a
-                    href={href}
-                    className={`flex items-center justify-center md:justify-start gap-2 md:gap-3 px-2 md:px-3 lg:px-4 py-2 md:py-2.5 lg:py-3 rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-[#CB9729] text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                    title={item.label}
-                  >
-                    <Icon
-                      size={18}
-                      className="md:w-5 md:h-5 shrink-0"
-                      strokeWidth={2}
-                    />
-                    <span className="text-xs md:text-sm font-medium hidden md:inline truncate">
-                      {item.label}
-                    </span>
-                  </a>
-                )}
+                ) : null}
               </li>
             );
           })}
