@@ -72,19 +72,28 @@ async function startSignupService(userData) {
     await sendOTPEmail(emailToSendOTP, otp);
 
     if (parentEmail) {
-      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      const signupLink = username
-        ? `${baseUrl}/parent-signup?username=${encodeURIComponent(username)}`
-        : `${baseUrl}/parent-signup?email=${encodeURIComponent(input.toLowerCase())}`;
+      // Check if parent account already exists
+      const existingParent = await signupModel.findByEmail(parentEmail.toLowerCase().trim());
+      
+      if (existingParent && existingParent.user_type === 'parent') {
+        console.log(
+          `ℹ️ Parent account already exists for ${parentEmail}, skipping parent signup email`
+        );
+      } else {
+        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const signupLink = username
+          ? `${baseUrl}/parent-signup?username=${encodeURIComponent(username)}`
+          : `${baseUrl}/parent-signup?email=${encodeURIComponent(input.toLowerCase())}`;
 
-      console.log(
-        `📧 Attempting to send parent signup link to: ${parentEmail}`
-      );
-      try {
-        await sendParentSignupLink(parentEmail, username || input, signupLink);
-      } catch (error) {
-        console.error('❌ Error: Failed to send parent signup link:', error);
-        console.error('Error details:', error.message, error.stack);
+        console.log(
+          `📧 Attempting to send parent signup link to: ${parentEmail}`
+        );
+        try {
+          await sendParentSignupLink(parentEmail, username || input, signupLink);
+        } catch (error) {
+          console.error('❌ Error: Failed to send parent signup link:', error);
+          console.error('Error details:', error.message, error.stack);
+        }
       }
     } else {
     }
