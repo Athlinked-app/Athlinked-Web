@@ -53,9 +53,9 @@ const PRESIGNED_URL_EXPIRATION = Math.min(
 /**
  * Upload a file to S3
  * @param {Buffer} fileBuffer - File buffer
- * @param {string} fileName - File name with path
+ * @param {string} fileName - File name with path (S3 key)
  * @param {string} contentType - MIME type of the file
- * @returns {Promise<string>} - S3 URL of the uploaded file
+ * @returns {Promise<string>} - S3 key (not presigned URL - store this in DB)
  */
 async function uploadToS3(fileBuffer, fileName, contentType) {
   try {
@@ -87,13 +87,11 @@ async function uploadToS3(fileBuffer, fileName, contentType) {
 
     await getS3Client().send(command);
     console.log('✓ File uploaded successfully to S3:', fileName);
-
-    // Generate presigned URL for the uploaded file
-    const presignedUrl = await generatePresignedUrl(fileName);
-    const expirationDays = Math.floor(PRESIGNED_URL_EXPIRATION / 86400);
-    console.log(`✓ Presigned URL generated (expires in ${expirationDays} days)`);
+    console.log('✓ Returning S3 key (not presigned URL) for database storage');
     
-    return presignedUrl;
+    // Return the S3 key instead of presigned URL
+    // Presigned URLs will be generated when fetching
+    return fileName;
   } catch (error) {
     console.error('Error uploading to S3:', error);
     console.error('Error details:', {
@@ -235,11 +233,78 @@ function generateS3Key(prefix, originalName, mimeType) {
   return `${prefix}/${subfolder}/${prefix}-${uniqueSuffix}${ext}`;
 }
 
+/**
+ * Convert S3 key to presigned URL if it's an S3 key
+ * If it's already a presigned URL or not an S3 key, return as-is
+ * @param {string} keyOrUrl - S3 key or existing URL
+ * @param {number} expirationSeconds - Optional expiration time in seconds
+ * @returns {Promise<string|null>} - Presigned URL or original value
+ */
+async function convertKeyToPresignedUrl(keyOrUrl, expirationSeconds = PRESIGNED_URL_EXPIRATION) {
+  if (!keyOrUrl || typeof keyOrUrl !== 'string' || keyOrUrl.trim() === '') {
+    return null;
+  }
+
+  // If it's already a presigned URL (contains amazonaws.com and has query params), return as-is
+  if (keyOrUrl.includes('amazonaws.com') && keyOrUrl.includes('?')) {
+    return keyOrUrl;
+  }
+
+  // If it's a relative path starting with /assets, return as-is (local asset)
+  if (keyOrUrl.startsWith('/assets')) {
+    return keyOrUrl;
+  }
+
+  // If it's a relative path starting with /, it might be an old local path
+  // Check if it looks like an S3 key (contains /profile/, /posts/, etc.)
+  if (keyOrUrl.startsWith('/')) {
+    // Try to convert it - remove leading slash
+    const key = keyOrUrl.substring(1);
+    try {
+      return await generatePresignedUrl(key, expirationSeconds);
+    } catch (error) {
+      console.warn('Failed to generate presigned URL for:', keyOrUrl, error.message);
+      return keyOrUrl; // Return original if conversion fails
+    }
+  }
+
+  // If it doesn't start with http and doesn't start with /, assume it's an S3 key
+  if (!keyOrUrl.startsWith('http')) {
+    try {
+      return await generatePresignedUrl(keyOrUrl, expirationSeconds);
+    } catch (error) {
+      console.warn('Failed to generate presigned URL for:', keyOrUrl, error.message);
+      return keyOrUrl; // Return original if conversion fails
+    }
+  }
+
+  // If it starts with http but is not a presigned URL, return as-is
+  return keyOrUrl;
+}
+
+/**
+ * Convert multiple S3 keys to presigned URLs (batch processing)
+ * @param {Array<string>} keysOrUrls - Array of S3 keys or URLs
+ * @param {number} expirationSeconds - Optional expiration time in seconds
+ * @returns {Promise<Array<string|null>>} - Array of presigned URLs or original values
+ */
+async function convertKeysToPresignedUrls(keysOrUrls, expirationSeconds = PRESIGNED_URL_EXPIRATION) {
+  if (!Array.isArray(keysOrUrls)) {
+    return [];
+  }
+
+  return Promise.all(
+    keysOrUrls.map(keyOrUrl => convertKeyToPresignedUrl(keyOrUrl, expirationSeconds))
+  );
+}
+
 module.exports = {
   uploadToS3,
   deleteFromS3,
   generateS3Key,
   generatePresignedUrl,
+  convertKeyToPresignedUrl,
+  convertKeysToPresignedUrls,
   BUCKET_NAME,
   PRESIGNED_URL_EXPIRATION,
 };

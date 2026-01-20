@@ -1,4 +1,5 @@
 const profileModel = require('./profile.model');
+const { convertKeyToPresignedUrl } = require('../utils/s3');
 
 async function getUserProfileService(userId) {
   try {
@@ -61,11 +62,19 @@ async function getUserProfileService(userId) {
 
     // IMPORTANT: Keep primary_sport and sports_played separate
     // primary_sport is a single sport, sports_played is a list of all sports
+    // Convert S3 keys to presigned URLs for images
+    const profileImage = profile.profile_image_url 
+      ? await convertKeyToPresignedUrl(profile.profile_image_url) 
+      : null;
+    const coverImage = profile.cover_image_url 
+      ? await convertKeyToPresignedUrl(profile.cover_image_url) 
+      : null;
+
     const result = {
       userId: profile.user_id,
       fullName: profile.full_name || null,
-      profileImage: profile.profile_image_url || null,
-      coverImage: profile.cover_image_url || null,
+      profileImage: profileImage,
+      coverImage: coverImage,
       bio: profile.bio || null,
       education: profile.education || null,
       city: profile.city || null,
@@ -138,13 +147,21 @@ async function upsertUserProfileService(userId, profileData) {
     }
 
     console.log('Service: Profile updated successfully');
+    // Convert S3 keys to presigned URLs for images
+    const profileImage = updatedProfile.profile_image_url 
+      ? await convertKeyToPresignedUrl(updatedProfile.profile_image_url) 
+      : null;
+    const coverImage = updatedProfile.cover_image_url 
+      ? await convertKeyToPresignedUrl(updatedProfile.cover_image_url) 
+      : null;
+
     return {
       success: true,
       message: 'Profile saved successfully',
       profile: {
         userId: updatedProfile.user_id,
-        profileImage: updatedProfile.profile_image_url,
-        coverImage: updatedProfile.cover_image_url,
+        profileImage: profileImage,
+        coverImage: coverImage,
         bio: updatedProfile.bio,
         education: updatedProfile.education,
         city: updatedProfile.city,
@@ -171,13 +188,21 @@ async function updateProfileImagesService(userId, imageData) {
       imageData
     );
 
+    // Convert S3 keys to presigned URLs for images
+    const profileImage = updatedProfile.profile_image_url 
+      ? await convertKeyToPresignedUrl(updatedProfile.profile_image_url) 
+      : null;
+    const coverImage = updatedProfile.cover_image_url 
+      ? await convertKeyToPresignedUrl(updatedProfile.cover_image_url) 
+      : null;
+
     return {
       success: true,
       message: 'Profile images updated successfully',
       profile: {
         userId: updatedProfile.user_id,
-        profileImage: updatedProfile.profile_image_url,
-        coverImage: updatedProfile.cover_image_url,
+        profileImage: profileImage,
+        coverImage: coverImage,
       },
     };
   } catch (error) {
@@ -216,6 +241,14 @@ async function getCurrentUserProfileService(userId) {
       }
     }
 
+    // Convert S3 keys to presigned URLs for images
+    const profileUrl = user.profile_url 
+      ? await convertKeyToPresignedUrl(user.profile_url) 
+      : null;
+    const coverUrl = user.cover_url 
+      ? await convertKeyToPresignedUrl(user.cover_url) 
+      : null;
+
     return {
       success: true,
       user: {
@@ -223,8 +256,8 @@ async function getCurrentUserProfileService(userId) {
         email: user.email || null,
         username: user.username || null,
         full_name: user.full_name || null,
-        profile_url: user.profile_url || null,
-        cover_url: user.cover_url || null,
+        profile_url: profileUrl,
+        cover_url: coverUrl,
         bio: user.bio || null,
         education: user.education || null,
         city: user.city || null,
@@ -268,13 +301,21 @@ async function getUserProfileWithStatsService(userId, activeSport = null) {
       sportsPlayed = combinedData.sports_played_array.join(', ');
     }
 
+    // Convert S3 keys to presigned URLs for images
+    const profileUrl = combinedData.profile_image_url 
+      ? await convertKeyToPresignedUrl(combinedData.profile_image_url) 
+      : null;
+    const coverUrl = combinedData.cover_image_url 
+      ? await convertKeyToPresignedUrl(combinedData.cover_image_url) 
+      : null;
+
     return {
       success: true,
       user: {
         id: combinedData.user_id,
         full_name: combinedData.full_name,
-        profile_url: combinedData.profile_image_url,
-        cover_url: combinedData.cover_image_url,
+        profile_url: profileUrl,
+        cover_url: coverUrl,
         bio: combinedData.bio,
         education: combinedData.education,
         city: combinedData.city,
@@ -317,6 +358,19 @@ async function getUserProfileCompleteService(userId, currentUserId = null) {
       profileModel.getUserProfileComplete(userId, currentUserId),
       profileModel.getUserPosts(userId, 50)
     ]);
+
+    // Convert S3 keys to presigned URLs for posts
+    const postsWithPresignedUrls = await Promise.all(
+      posts.map(async (post) => {
+        if (post.user_profile_url) {
+          post.user_profile_url = await convertKeyToPresignedUrl(post.user_profile_url);
+        }
+        if (post.media_url) {
+          post.media_url = await convertKeyToPresignedUrl(post.media_url);
+        }
+        return post;
+      })
+    );
 
     if (!completeData) {
       return {
@@ -427,9 +481,21 @@ async function getUserProfileCompleteService(userId, currentUserId = null) {
       }));
     };
 
+    // Convert S3 keys to presigned URLs for profile images
+    const profileImage = completeData.user.profileImage 
+      ? await convertKeyToPresignedUrl(completeData.user.profileImage) 
+      : null;
+    const coverImage = completeData.user.coverImage 
+      ? await convertKeyToPresignedUrl(completeData.user.coverImage) 
+      : null;
+
     return {
       success: true,
-      profile: completeData.user,
+      profile: {
+        ...completeData.user,
+        profileImage: profileImage,
+        coverImage: coverImage,
+      },
       followCounts: completeData.followCounts,
       connectionStatus: completeData.connectionStatus,
       socialHandles: completeData.socialHandles || [],
@@ -440,7 +506,7 @@ async function getUserProfileCompleteService(userId, currentUserId = null) {
       characterLeadership: transformCharacterLeadership(completeData.characterLeadership),
       healthReadiness: transformHealthReadiness(completeData.healthReadiness),
       videoMedia: transformVideoMedia(completeData.videoMedia),
-      posts: posts
+      posts: postsWithPresignedUrls
     };
   } catch (error) {
     console.error('Get user profile complete service error:', error.message);

@@ -1,6 +1,7 @@
 const postsModel = require('./posts.model');
 const pool = require('../config/db');
 const { createNotification } = require('../notifications/notifications.helper');
+const { convertKeyToPresignedUrl, convertKeysToPresignedUrls } = require('../utils/s3');
 
 /**
  * Extract mentions from text (format: @fullname)
@@ -110,9 +111,23 @@ async function createPostService(postData, userId) {
 async function getPostsFeedService(page = 1, limit = 50, viewerUserId = null) {
   try {
     const posts = await postsModel.getPostsFeed(page, limit, viewerUserId);
+    
+    // Convert user_profile_url S3 keys to presigned URLs
+    const postsWithPresignedUrls = await Promise.all(
+      posts.map(async (post) => {
+        if (post.user_profile_url) {
+          post.user_profile_url = await convertKeyToPresignedUrl(post.user_profile_url);
+        }
+        if (post.media_url) {
+          post.media_url = await convertKeyToPresignedUrl(post.media_url);
+        }
+        return post;
+      })
+    );
+    
     return {
       success: true,
-      posts,
+      posts: postsWithPresignedUrls,
       page,
       limit,
     };
@@ -435,9 +450,20 @@ async function getCommentsByPostIdService(postId) {
     }
 
     const comments = await postsModel.getCommentsByPostId(postId);
+    
+    // Convert user_profile_url S3 keys to presigned URLs in comments
+    const commentsWithPresignedUrls = await Promise.all(
+      comments.map(async (comment) => {
+        if (comment.user_profile_url) {
+          comment.user_profile_url = await convertKeyToPresignedUrl(comment.user_profile_url);
+        }
+        return comment;
+      })
+    );
+    
     return {
       success: true,
-      comments,
+      comments: commentsWithPresignedUrls,
     };
   } catch (error) {
     console.error('Get comments service error:', error);

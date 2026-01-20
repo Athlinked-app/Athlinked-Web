@@ -1,10 +1,6 @@
 // Load environment variables FIRST before anything else
 require('dotenv').config();
 
-console.log('ENV CHECK - JWT_SECRET:', process.env.JWT_SECRET);
-console.log('ENV CHECK - JWT_REFRESH_SECRET:', process.env.JWT_REFRESH_SECRET);
-console.log('ENV CHECK - AWS_ACCESS_KEY_ID:', process.env.AWS_ACCESS_KEY_ID ? process.env.AWS_ACCESS_KEY_ID.substring(0, 8) + '...' : 'NOT SET');
-console.log('ENV CHECK - AWS_S3_BUCKET_NAME:', process.env.AWS_S3_BUCKET_NAME || 'NOT SET');
 
 const app = require('./app');
 const { Server } = require('socket.io');
