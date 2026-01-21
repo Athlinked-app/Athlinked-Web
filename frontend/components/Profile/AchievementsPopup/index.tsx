@@ -220,7 +220,7 @@ export default function AchievementsPopup({
     showDropdown,
     setShowDropdown,
     onSelect,
-    ref,
+    dropdownRef,
   }: {
     label: string;
     value: string;
@@ -229,9 +229,9 @@ export default function AchievementsPopup({
     showDropdown: boolean;
     setShowDropdown: (show: boolean) => void;
     onSelect: (value: string) => void;
-    ref: React.RefObject<HTMLDivElement>;
+    dropdownRef: React.RefObject<HTMLDivElement | null>;
   }) => (
-    <div className="relative" ref={ref}>
+    <div className="relative" ref={dropdownRef}>
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {label}
       </label>
@@ -336,7 +336,7 @@ export default function AchievementsPopup({
             showDropdown={showSportDropdown}
             setShowDropdown={setShowSportDropdown}
             onSelect={setSport}
-            ref={sportRef}
+            dropdownRef={sportRef}
           />
 
           <div>
@@ -360,7 +360,7 @@ export default function AchievementsPopup({
             showDropdown={showAchievementTypeDropdown}
             setShowDropdown={setShowAchievementTypeDropdown}
             onSelect={setAchievementType}
-            ref={achievementTypeRef}
+            dropdownRef={achievementTypeRef}
           />
 
           <DropdownField
@@ -371,7 +371,7 @@ export default function AchievementsPopup({
             showDropdown={showLevelDropdown}
             setShowDropdown={setShowLevelDropdown}
             onSelect={setLevel}
-            ref={levelRef}
+            dropdownRef={levelRef}
           />
 
           <div>
