@@ -88,16 +88,23 @@ export default function NotificationsPage() {
 
     try {
       setLoading(true);
-      // Get user ID from JWT token
-      const { apiGet } = await import('@/utils/api');
+      const { apiGet, apiPost } = await import('@/utils/api');
       const data = await apiGet<{
         success: boolean;
         notifications?: Notification[];
         message?: string;
       }>(`/notifications?limit=50&offset=0`);
 
-      if (data.success && data.notifications) {
-        setNotifications(data.notifications);
+      if (data.success) {
+        const list = data.notifications || [];
+        setNotifications(list.map(n => ({ ...n, isRead: true })));
+        // Visiting the page = seen: mark all as read so the nav badge clears
+        try {
+          await apiPost<{ success?: boolean }>('/notifications/read-all', {});
+          window.dispatchEvent(new Event('notification-updated'));
+        } catch {
+          // non-critical
+        }
       } else {
         setNotifications([]);
       }
@@ -277,7 +284,7 @@ export default function NotificationsPage() {
             {/* Tabs Section */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl font-bold text-black">Notificationds</h1>
+                <h1 className="text-2xl font-bold text-black">Notifications</h1>
                 {/* <button
                   onClick={fetchNotifications}
                   disabled={loading}

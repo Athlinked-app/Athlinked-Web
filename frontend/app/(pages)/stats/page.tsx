@@ -95,6 +95,9 @@ export default function StatsPage() {
       .slice(0, 2);
   };
 
+  const [showYearPicker, setShowYearPicker] = useState(false);
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: 100 }, (_, i) => currentYear - i); 
   // Construct profile URL - return undefined if no profileUrl exists
   const getProfileUrl = (profileUrl?: string | null): string | undefined => {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
@@ -759,7 +762,7 @@ export default function StatsPage() {
       {/* Content Area with Navigation and Main Content */}
       <div className="flex flex-1 overflow-hidden mt-5 overflow-hidden ">
         {/* Navigation Sidebar */}
-        <div className="hidden md:flex px-6 ">
+        <div className="hidden md:flex px-3 ">
           <NavigationBar
             activeItem="stats"
             userName={userData?.full_name || ''}
@@ -767,97 +770,96 @@ export default function StatsPage() {
         </div>
         {/* Main Content Area */}
 
-        <div className="flex-1 flex flex-col px-3 gap-4 overflow-hidden min-w-0">
+        <div className="flex-1 flex flex-col pr-3 gap-4 overflow-hidden min-w-0">
+        <div className="bg-[#CB9729] rounded-lg p-5 flex items-center justify-between shadow-sm">
+  <div className="flex items-center gap-6">
+    <div className="w-24 h-24 rounded-full bg-white overflow-hidden border-2 border-white shadow-md flex items-center justify-center">
+      {getProfileUrl(userData?.profile_url) ? (
+        <img
+          src={getProfileUrl(userData?.profile_url) || ''}
+          alt={displayName}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <span className="text-black font-semibold text-lg">
+          {getInitials(userData?.full_name || 'User')}
+        </span>
+      )}
+    </div>
+    <div>
+      <h1 className="text-3xl font-bold text-white mb-1">
+        {displayName}
+      </h1>
+      <p className="text-white text-base">
+        {primarySport}
+        {athleticPerformance?.jerseyNumber &&
+          ` • #${athleticPerformance.jerseyNumber}`}
+      </p>
+    </div>
+  </div>
+  <div className="text-white mr-44">
+    <div className="grid grid-cols-2 gap-x-32 gap-y-2 text-lg font-semibold">
+      {athleticPerformance?.height ? (
+        <div>Height: {athleticPerformance.height}</div>
+      ) : (
+        <div className="text-gray-300">Height: —</div>
+      )}
+      {athleticPerformance?.hand ? (
+        <div>Hand: {athleticPerformance.hand}</div>
+      ) : (
+        <div className="text-gray-300">Hand: —</div>
+      )}
+      {athleticPerformance?.weight ? (
+        <div>Weight: {athleticPerformance.weight}</div>
+      ) : (
+        <div className="text-gray-300">Weight: —</div>
+      )}
+      {athleticPerformance?.arm ? (
+        <div>Arm: {athleticPerformance.arm}</div>
+      ) : (
+        <div className="text-gray-300">Arm: —</div>
+      )}
+    </div>
+  </div>
+</div>
           <div className="flex-1 flex flex-col bg-white overflow-auto rounded-lg">
             <main className="flex-1 p-6 bg-white">
-              <div className="bg-[#CB9729] rounded-lg p-6 mb-6 flex items-center justify-between shadow-sm">
-                <div className="flex items-center gap-6">
-                  <div className="w-24 h-24 rounded-full bg-white overflow-hidden border-2 border-white shadow-md flex items-center justify-center">
-                    {getProfileUrl(userData?.profile_url) ? (
-                      <img
-                        src={getProfileUrl(userData?.profile_url) || ''}
-                        alt={displayName}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-black font-semibold text-lg">
-                        {getInitials(userData?.full_name || 'User')}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <h1 className="text-3xl font-bold text-white mb-1">
-                      {displayName}
-                    </h1>
-                    <p className="text-white text-base">
-                      {primarySport}
-                      {athleticPerformance?.jerseyNumber &&
-                        ` • #${athleticPerformance.jerseyNumber}`}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-white space-y-1.5 text-right">
-                  {athleticPerformance?.height && (
-                    <div className="text-sm">
-                      Height: {athleticPerformance.height}
-                    </div>
-                  )}
-                  {athleticPerformance?.weight && (
-                    <div className="text-sm">
-                      Weight: {athleticPerformance.weight}
-                    </div>
-                  )}
-                  {athleticPerformance?.hand && (
-                    <div className="text-sm">
-                      Hand: {athleticPerformance.hand}
-                    </div>
-                  )}
-                  {athleticPerformance?.arm && (
-                    <div className="text-sm">
-                      Arm: {athleticPerformance.arm}
-                    </div>
-                  )}
-                  {!athleticPerformance && (
-                    <>
-                      <div className="text-sm text-gray-300">Height: —</div>
-                      <div className="text-sm text-gray-300">Weight: —</div>
-                      <div className="text-sm text-gray-300">Hand: —</div>
-                      <div className="text-sm text-gray-300">Arm: —</div>
-                    </>
-                  )}
-                </div>
-              </div>
+             
 
               {/* Sport Tabs */}
-              <div className="flex gap-2 mb-6">
-                {sports.map(sport => {
-                  const sportKey = sport.toLowerCase();
-                  const displayName = getSportDisplayName(sport);
-                  return (
-                    <button
-                      key={sportKey}
-                      onClick={() => setActiveSport(sportKey)}
-                      className={`px-6 py-2.5 rounded-lg font-medium transition-colors ${
-                        activeSport === sportKey
-                          ? 'bg-[#CB9729] text-white shadow-sm'
-                          : 'bg-white text-black hover:bg-gray-100 border border-gray-200'
-                      }`}
-                    >
-                      {displayName}
-                    </button>
-                  );
-                })}
-              </div>
+              <div className="flex mb-6 border-b border-gray-200">
+  {sports.map((sport, index) => {
+    const sportKey = sport.toLowerCase();
+    const displayName = getSportDisplayName(sport);
+    return (
+      <button
+        key={sportKey}
+        onClick={() => setActiveSport(sportKey)}
+        className={`pb-3 px-8 font-medium transition-colors relative ${
+          activeSport === sportKey
+            ? 'text-[#CB9729]'
+            : 'text-gray-600 hover:text-gray-900'
+        } ${index !== 0 ? 'border-l  border-gray-200' : ''}`}
+      >
+        {displayName}
+        {activeSport === sportKey && (
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]" />
+        )}
+      </button>
+    );
+  })}
+</div>
 
               {/* Football Stats Section */}
-              <div className="bg-white rounded-lg shadow-sm">
-                <div className="p-6 border-b border-gray-200">
-                  <h2 className="text-xl font-bold text-black mb-4">
-                    {getSportDisplayName(activeSport)} Stats
-                  </h2>
+             
+                
+                 
 
                   {/* Action Bar */}
                   <div className="flex items-center gap-4">
+                  <h2 className="text-lg font-medium text-black mb-4">
+                    {getSportDisplayName(activeSport)} Stats
+                  </h2>
                     <div className="flex-1 relative">
                       <Search
                         className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black"
@@ -935,7 +937,7 @@ export default function StatsPage() {
                       <span>Add Data</span>
                     </button>
                   </div>
-                </div>
+                
 
                 {/* Statistics Table */}
                 <div className="overflow-x-auto">
@@ -1015,7 +1017,7 @@ export default function StatsPage() {
                     </div>
                   )}
                 </div>
-              </div>
+              
             </main>
           </div>
         </div>
@@ -1087,20 +1089,51 @@ export default function StatsPage() {
                   Year
                 </label>
                 <div className="relative">
-                  <input
-                    type="text"
-                    value={formData.year}
-                    onChange={e =>
-                      setFormData({ ...formData, year: e.target.value })
-                    }
-                    placeholder="Select Year (e.g., 2024)"
-                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black"
-                  />
-                  <Calendar
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black"
-                    size={20}
-                  />
-                </div>
+  <input
+    type="text"
+    value={formData.year}
+    onChange={e =>
+      setFormData({ ...formData, year: e.target.value })
+    }
+    placeholder="Select Year (e.g., 2024)"
+    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black"
+    readOnly
+    onClick={() => setShowYearPicker(!showYearPicker)}
+  />
+  <Calendar
+    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black cursor-pointer"
+    size={20}
+    onClick={() => setShowYearPicker(!showYearPicker)}
+  />
+  
+  {showYearPicker && (
+    <>
+      <div
+        className="fixed inset-0 z-10"
+        onClick={() => setShowYearPicker(false)}
+      />
+      <div className="absolute z-20 mt-2 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+        {years.map(year => (
+          <button
+            key={year}
+            type="button"
+            onClick={() => {
+              setFormData({ ...formData, year: year.toString() });
+              setShowYearPicker(false);
+            }}
+            className={`w-full px-4 py-2.5 text-left hover:bg-gray-100 transition-colors ${
+              formData.year === year.toString()
+                ? 'bg-[#CB9729] text-white hover:bg-[#CB9729]'
+                : 'text-black'
+            }`}
+          >
+            {year}
+          </button>
+        ))}
+      </div>
+    </>
+  )}
+</div>
               </div>
 
               {/* Position Field */}

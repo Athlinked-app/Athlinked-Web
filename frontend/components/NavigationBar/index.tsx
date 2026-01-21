@@ -79,6 +79,12 @@ export default function NavigationBar({
     // Initial fetch
     fetchNotificationCount();
 
+    // When notifications are marked read/deleted on the notifications page, refresh the badge
+    const handleNotificationUpdated = () => {
+      fetchNotificationCount();
+    };
+    window.addEventListener('notification-updated', handleNotificationUpdated);
+
     // Fetch message count - completely silent error handling for non-critical feature
     const fetchMessageCount = async () => {
       try {
@@ -158,6 +164,7 @@ export default function NavigationBar({
     setupWebSocket();
 
     return () => {
+      window.removeEventListener('notification-updated', handleNotificationUpdated);
       if (socket) {
         if (handleNotificationCountUpdate) {
           socket.off(

@@ -340,12 +340,21 @@ export async function apiGet<T = any>(endpoint: string, retries = 5): Promise<T>
         }
         
         // Only format and throw error if it's not a connection error or all retries exhausted
-        const formattedMessage = formatDatabaseError(originalMessage, response.status);
+        let formattedMessage = formatDatabaseError(originalMessage, response.status);
+        
+        // For 404 "Route not found", include the requested URL to help debug
+        if (response.status === 404 && /route\s*not\s*found/i.test(originalMessage)) {
+          const url = endpoint.startsWith('http')
+            ? endpoint
+            : `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+          formattedMessage = `Route not found: ${endpoint}. Full URL: ${url}. Check that API_BASE_URL (${API_BASE_URL}) includes /api and the endpoint path is correct.`;
+        }
         
         const error: any = new Error(formattedMessage);
         error.status = response.status;
         error.response = { data: errorData };
         error.originalMessage = originalMessage; // Keep original for debugging
+        error.url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
         throw error;
       }
 
