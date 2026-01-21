@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import GoogleSignInButton from '../../GoogleSignInButton';
 
@@ -17,11 +17,61 @@ export default function UserTypeSelection({
 }: UserTypeSelectionProps) {
   const router = useRouter();
 
+  // Use state to properly track if user came from Google login
+  const [isFromGoogleLogin, setIsFromGoogleLogin] = useState(false);
+
+  // Check on mount if google_temp_data exists
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const googleData = localStorage.getItem('google_temp_data');
+      setIsFromGoogleLogin(!!googleData);
+
+      // Debug log
+      console.log('Google temp data exists:', !!googleData);
+    }
+  }, []);
+
+  // Handle Continue button click
+  const handleContinue = () => {
+    // If coming from Google login, automatically trigger Google flow
+    if (isFromGoogleLogin && selectedUserType) {
+      const googleDataStr = localStorage.getItem('google_temp_data');
+      if (googleDataStr) {
+        try {
+          const googleData = JSON.parse(googleDataStr);
+
+          console.log(
+            'Auto-triggering Google flow with user type:',
+            selectedUserType
+          );
+
+          // Trigger the Google sign-in handler with user type
+          onGoogleSignIn?.({
+            success: true,
+            needs_user_type: true,
+            user: {
+              google_id: googleData.google_id,
+              email: googleData.email,
+              full_name: googleData.full_name,
+              profile_picture: googleData.profile_picture,
+              email_verified: googleData.email_verified,
+              user_type: selectedUserType,
+            },
+          });
+          return;
+        } catch (e) {
+          console.error('Error parsing Google data:', e);
+        }
+      }
+    }
+
+    // Normal continue flow (non-Google signup)
+    onContinue();
+  };
+
   const handleGoogleSuccess = async (data: any) => {
     console.log('Google sign-in response:', data);
 
-    //   NEW: Just store Google data locally, don't call backend yet
-    // We'll create the user when they complete all steps
     if (data.needs_user_type) {
       // Pass data to parent with the selected user type
       onGoogleSignIn?.({
@@ -170,29 +220,34 @@ export default function UserTypeSelection({
         </div>
       </div>
 
-      {/* Show Continue button AND Google button when user type is selected */}
+      {/* Show Continue button when user type is selected */}
       {selectedUserType ? (
         <>
           <button
-            onClick={onContinue}
+            onClick={handleContinue}
             className="w-full bg-[#CB9729] text-white py-3 rounded-lg font-medium hover:bg-[#B8861F] transition-colors mb-4"
           >
             Continue
           </button>
 
-          <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or</span>
-            </div>
-          </div>
+          {/* Only show Google button if NOT coming from Google login redirect */}
+          {!isFromGoogleLogin && (
+            <>
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">Or</span>
+                </div>
+              </div>
 
-          <GoogleSignInButton
-            onSuccess={handleGoogleSuccess}
-            buttonText="Continue with Google"
-          />
+              <GoogleSignInButton
+                onSuccess={handleGoogleSuccess}
+                buttonText="Continue with Google"
+              />
+            </>
+          )}
         </>
       ) : (
         <p className="text-center text-sm text-gray-500 py-3"></p>

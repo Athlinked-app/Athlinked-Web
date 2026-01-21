@@ -122,7 +122,7 @@ export default function VideoAndMediaPopup({
     showDropdown: boolean;
     setShowDropdown: (show: boolean) => void;
     onSelect: (value: string) => void;
-    dropdownRef: React.RefObject<HTMLDivElement | null>;
+    dropdownRef: React.RefObject<HTMLDivElement>;
     helperText?: string;
   }) => (
     <div className="relative" ref={dropdownRef}>

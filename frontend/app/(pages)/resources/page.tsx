@@ -1,8 +1,7 @@
 'use client';
-
 import { useState, useEffect } from 'react';
-import { Upload } from 'lucide-react';
 import Header from '@/components/Header';
+import { Upload, X } from 'lucide-react';
 import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import ResourceCard from '@/components/Resources/ResourceCard';
@@ -702,44 +701,49 @@ export default function ManageResourcesPage() {
       />
 
       {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <>
-          {/* Backdrop */}
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          onClick={handleDeleteCancel}
+        >
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-50"
-            onClick={handleDeleteCancel}
-          ></div>
-
-          {/* Modal */}
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div
-              className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 p-6"
-              onClick={e => e.stopPropagation()}
-            >
-              <h3 className="text-xl font-semibold text-black mb-4">
+            className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">
                 Confirm Delete
-              </h3>
-              <p className="text-black mb-6">
-                Are you sure you want to delete this resource? This action
-                cannot be undone.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleDeleteCancel}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-black"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleDeleteConfirm}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
-                >
-                  Delete
-                </button>
-              </div>
+              </h2>
+              <button
+                onClick={handleDeleteCancel}
+                className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            <p className="text-gray-700 mb-6">
+              Are you sure you want to delete this resource? This action cannot
+              be undone.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleDeleteCancel}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-gray-700"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+              >
+                Delete
+              </button>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
