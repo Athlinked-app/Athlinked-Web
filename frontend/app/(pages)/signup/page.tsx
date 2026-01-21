@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import SignupHero from '@/components/Signup/SignupHero';
 import ProgressStepper from '@/components/Signup/ProgressStepper';
 import SignupFormSteps from '@/components/Signup/SignupFormSteps';
 import { isAuthenticated } from '@/utils/auth';
 
-export default function SignupPage() {
+// Separate the component that uses useSearchParams
+function SignupContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedUserType, setSelectedUserType] = useState<string>('');
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [showPassword, setShowPassword] = useState(false);
@@ -16,18 +18,22 @@ export default function SignupPage() {
   const [isLoadingOTP, setIsLoadingOTP] = useState(false);
   const [isGoogleUser, setIsGoogleUser] = useState(false);
 
-  // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated()) {
       router.push('/home');
     }
   }, [router]);
 
-  //  Clear stale Google data on page load
+  // Clear stale Google data ONLY if NOT coming from login redirect
   useEffect(() => {
-    // Clear any leftover Google signup data from previous sessions
-    localStorage.removeItem('google_temp_data');
-  }, []);
+    const fromLogin = searchParams.get('from') === 'login';
+
+    if (!fromLogin) {
+      // User navigated directly to signup page - clear any old Google data
+      localStorage.removeItem('google_temp_data');
+    }
+    // If fromLogin is true, keep the google_temp_data for the flow
+  }, [searchParams]);
 
   // Form data
   const [formData, setFormData] = useState({
@@ -50,9 +56,23 @@ export default function SignupPage() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const googleData = localStorage.getItem('google_temp_data');
-      setIsGoogleUser(!!googleData);
+      if (googleData) {
+        setIsGoogleUser(true);
+
+        // Auto-fill email and name from Google data
+        try {
+          const data = JSON.parse(googleData);
+          setFormData(prev => ({
+            ...prev,
+            fullName: data.full_name || '',
+            email: data.email || '',
+          }));
+        } catch (e) {
+          console.error('Error parsing Google data:', e);
+        }
+      }
     }
-  }, [selectedUserType, currentStep]);
+  }, []);
 
   // Define steps for each user type
   // For regular signup (with OTP)
@@ -103,6 +123,9 @@ export default function SignupPage() {
         user_type: userData.user?.user_type,
       })
     );
+
+    // IMPORTANT: Set isGoogleUser to true
+    setIsGoogleUser(true);
 
     // Set the user type
     setSelectedUserType(userData.user?.user_type || '');
@@ -328,7 +351,7 @@ export default function SignupPage() {
             showPassword={showPassword}
             showConfirmPassword={showConfirmPassword}
             isLoadingOTP={isLoadingOTP}
-            isGoogleUser={isGoogleUser} //   PASS THIS
+            isGoogleUser={isGoogleUser}
             onFormDataChange={setFormData}
             onUserTypeSelect={setSelectedUserType}
             onContinue={handleContinue}
@@ -341,5 +364,23 @@ export default function SignupPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// Main component with Suspense wrapper
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mb-4"></div>
+            <p className="text-gray-600">Loading...</p>
+          </div>
+        </div>
+      }
+    >
+      <SignupContent />
+    </Suspense>
   );
 }
