@@ -3,7 +3,7 @@
  */
 
 // Import from config for consistency
-import { API_BASE_URL, getResourceUrl } from './config';
+import { API_BASE_URL, getApiUrl, getResourceUrl } from './config';
 
 // Re-export for backward compatibility
 export { getResourceUrl };
@@ -27,9 +27,7 @@ export async function apiRequestUnauthenticated(
     headers['Content-Type'] = 'application/json';
   }
 
-  const url = endpoint.startsWith('http')
-    ? endpoint
-    : `${API_BASE_URL}/api${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  const url = getApiUrl(endpoint);
 
   try {
     const response = await fetch(url, {
@@ -130,7 +128,7 @@ export async function refreshAccessToken(): Promise<string | null> {
   // Create refresh promise
   refreshPromise = (async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+      const response = await fetch(getApiUrl('/auth/refresh'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -214,9 +212,7 @@ export async function apiRequest(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const url = endpoint.startsWith('http')
-    ? endpoint
-    : `${API_BASE_URL}/api${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+  const url = getApiUrl(endpoint);
 
   try {
     const response = await fetch(url, {
@@ -357,17 +353,15 @@ export async function apiGet<T = any>(
         
         // For 404 "Route not found", include the requested URL to help debug
         if (response.status === 404 && /route\s*not\s*found/i.test(originalMessage)) {
-          const url = endpoint.startsWith('http')
-            ? endpoint
-            : `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
-          formattedMessage = `Route not found: ${endpoint}. Full URL: ${url}. Check that API_BASE_URL (${API_BASE_URL}) includes /api and the endpoint path is correct.`;
+          const url = getApiUrl(endpoint);
+          formattedMessage = `Route not found: ${endpoint}. Full URL: ${url}. Check that the endpoint path is correct.`;
         }
         
         const error: any = new Error(formattedMessage);
         error.status = response.status;
         error.response = { data: errorData };
         error.originalMessage = originalMessage; // Keep original for debugging
-        error.url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+        error.url = getApiUrl(endpoint);
         throw error;
       }
 

@@ -123,7 +123,7 @@ export default function SearchPage() {
       if (teamLevel) params.append('teamLevel', teamLevel);
       if (teamCaptain) params.append('teamCaptain', teamCaptain);
 
-      const searchUrl = `${API_BASE_URL}/api/api/search?${params.toString()}`;
+      const searchUrl = `${API_BASE_URL}/api/search?${params.toString()}`;
       console.log('Search URL:', searchUrl);
       console.log('Sort By:', sortBy);
 
@@ -154,7 +154,7 @@ export default function SearchPage() {
               if (currentUserId) {
                 try {
                   const isFollowingResponse = await fetch(
-                    `${API_BASE_URL}/api/api/network/is-following/${user.id}?follower_id=${currentUserId}`
+                    `${API_BASE_URL}/api/network/is-following/${user.id}?follower_id=${currentUserId}`
                   );
                   if (isFollowingResponse.ok) {
                     const isFollowingData = await isFollowingResponse.json();

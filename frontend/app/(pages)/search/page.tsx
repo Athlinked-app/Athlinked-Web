@@ -5,9 +5,11 @@ import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import Header from '@/components/Header';
 import Post, { type PostData } from '@/components/Post';
-import { Search as SearchIcon, X, Play } from 'lucide-react';
+import { Search as SearchIcon, X, Play, Bookmark } from 'lucide-react';
 import { getResourceUrl } from '@/utils/api';
 import { API_BASE_URL } from '@/utils/config';
+import CampDetailsPopup from '@/components/opportunities/CampDetailsPopup';
+import OpportunityDetailsPopup from '@/components/opportunities/CampDetailsPopup/OpportunityDetailsPopup';
 
 interface SearchResult {
   id: string;
@@ -555,11 +557,11 @@ export default function SearchPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `${API_BASE_URL}/api/api/signup/user-by-username/${encodeURIComponent(username)}`
+          `${API_BASE_URL}/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         response = await fetch(
-          `${API_BASE_URL}/api/api/signup/user/${encodeURIComponent(userIdentifier)}`
+          `${API_BASE_URL}/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -680,10 +682,10 @@ export default function SearchPage() {
       // Fetch all content types in parallel
       const [usersResponse, postsResponse, clipsResponse, articlesResponse] =
         await Promise.all([
-          fetch(`${API_BASE_URL}/api/api/signup/users?limit=100`).catch(() => null),
-          fetch(`${API_BASE_URL}/api/api/posts?page=1&limit=100`).catch(() => null),
-          fetch(`${API_BASE_URL}/api/api/clips?page=1&limit=100`).catch(() => null),
-          fetch(`${API_BASE_URL}/api/api/articles`).catch(() => null),
+          fetch(`${API_BASE_URL}/api/signup/users?limit=100`).catch(() => null),
+          fetch(`${API_BASE_URL}/api/posts?page=1&limit=100`).catch(() => null),
+          fetch(`${API_BASE_URL}/api/clips?page=1&limit=100`).catch(() => null),
+          fetch(`${API_BASE_URL}/api/articles`).catch(() => null),
         ]);
 
       // Process users
@@ -706,7 +708,7 @@ export default function SearchPage() {
               if (currentUserId) {
                 try {
                   const isFollowingResponse = await fetch(
-                    `${API_BASE_URL}/api/api/network/is-following/${user.id}?follower_id=${currentUserId}`
+                    `${API_BASE_URL}/api/network/is-following/${user.id}?follower_id=${currentUserId}`
                   );
                   if (isFollowingResponse.ok) {
                     const isFollowingData = await isFollowingResponse.json();

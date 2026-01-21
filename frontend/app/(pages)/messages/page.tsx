@@ -822,7 +822,7 @@ function MessagesPageContent() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001/${profileUrl}`;
+      return `https://athlinked-api.randomw.dev/${profileUrl}`;
     }
     return profileUrl;
   };
@@ -1256,7 +1256,7 @@ function MessagesPageContent() {
                                               'http'
                                             )
                                               ? msg.post_data.user_profile_url
-                                              : `http://localhost:3001${msg.post_data.user_profile_url}`
+                                              : `https://athlinked-api.randomw.dev${msg.post_data.user_profile_url}`
                                           }
                                           alt={msg.post_data.username || 'User'}
                                           className="w-full h-full object-cover"
@@ -1280,7 +1280,7 @@ function MessagesPageContent() {
                                           'http'
                                         )
                                           ? msg.post_data.media_url
-                                          : `http://localhost:3001${msg.post_data.media_url}`;
+                                          : `https://athlinked-api.randomw.dev${msg.post_data.media_url}`;
                                       const isVideo =
                                         msg.post_data.post_type === 'video' ||
                                         msg.post_data.media_url.match(
@@ -1371,7 +1371,7 @@ function MessagesPageContent() {
                                     'http'
                                   )
                                     ? msg.media_url
-                                    : `http://localhost:3001${msg.media_url}`;
+                                    : `https://athlinked-api.randomw.dev${msg.media_url}`;
                                   const urlLower = msg.media_url.toLowerCase();
                                   const isImage =
                                     msg.message_type === 'image' ||
