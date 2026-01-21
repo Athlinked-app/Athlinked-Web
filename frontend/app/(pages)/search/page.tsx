@@ -5,9 +5,11 @@ import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import Header from '@/components/Header';
 import Post, { type PostData } from '@/components/Post';
-import { Search as SearchIcon, X, Play } from 'lucide-react';
+import { Search as SearchIcon, X, Play, Bookmark } from 'lucide-react';
 import { getResourceUrl } from '@/utils/api';
 import { API_BASE_URL } from '@/utils/config';
+import CampDetailsPopup from '@/components/opportunities/CampDetailsPopup';
+import OpportunityDetailsPopup from '@/components/opportunities/CampDetailsPopup/OpportunityDetailsPopup';
 
 interface SearchResult {
   id: string;
