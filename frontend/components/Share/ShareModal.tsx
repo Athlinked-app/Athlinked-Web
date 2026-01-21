@@ -14,6 +14,7 @@ import {
 import io, { Socket } from 'socket.io-client';
 import type { PostData } from '../Post';
 import { apiPost, apiGet } from '@/utils/api';
+import { getResourceUrl } from '@/utils/config';
 
 export interface UserData {
   id: string;
@@ -142,7 +143,7 @@ export default function ShareModal({
   const getProfileUrl = (url: string | null | undefined) => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
-    return `http://localhost:3001${url}`;
+    return getResourceUrl(url) || url;
   };
 
   const handleShareToWhatsApp = () => {
@@ -356,7 +357,7 @@ export default function ShareModal({
       {/* Modal */}
       <div className="relative z-10 w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 shrink-0">
           <button
             type="button"
             onClick={handleClose}
@@ -377,7 +378,7 @@ export default function ShareModal({
         </div>
 
         {/* Search Bar */}
-        <div className="p-4 border-b border-gray-200 flex-shrink-0">
+        <div className="p-4 border-b border-gray-200 shrink-0">
           <div className="flex items-center w-full border border-gray-200 rounded-lg px-3 py-2 bg-white">
             <Search className="w-5 h-5 text-gray-500 mr-3" />
             <input
@@ -391,7 +392,7 @@ export default function ShareModal({
         </div>
 
         {/* Share Options */}
-        <div className="border-b border-gray-200 p-4 flex-shrink-0">
+        <div className="border-b border-gray-200 p-4 shrink-0">
           <div className="flex gap-3">
             <button
               onClick={handleCopyLink}
@@ -436,7 +437,7 @@ export default function ShareModal({
                       className="flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg cursor-pointer"
                       onClick={() => toggleUserSelection(user.id)}
                     >
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0 flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
                         {getProfileUrl(user.profile_url) ? (
                           <img
                             src={getProfileUrl(user.profile_url) || ''}
@@ -460,7 +461,7 @@ export default function ShareModal({
                         )}
                       </div>
                       <div
-                        className={`w-5 h-5 border-2 rounded flex items-center justify-center flex-shrink-0 ${
+                        className={`w-5 h-5 border-2 rounded flex items-center justify-center shrink-0 ${
                           isSelected
                             ? 'bg-blue-600 border-blue-600'
                             : 'border-gray-300'
@@ -490,7 +491,7 @@ export default function ShareModal({
 
         {/* Message Input and Send Button */}
         {selectedUsers.size > 0 && (
-          <div className="border-t border-gray-200 p-4 flex-shrink-0 space-y-3">
+          <div className="border-t border-gray-200 p-4 shrink-0 space-y-3">
             <input
               type="text"
               value={message}
