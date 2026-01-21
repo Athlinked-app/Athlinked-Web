@@ -289,7 +289,7 @@ export default function AcademicBackgroundPopup({
     showDropdown,
     setShowDropdown,
     onSelect,
-    ref,
+    dropdownRef,
   }: {
     label: string;
     value: string;
@@ -298,9 +298,9 @@ export default function AcademicBackgroundPopup({
     showDropdown: boolean;
     setShowDropdown: (show: boolean) => void;
     onSelect: (value: string) => void;
-    ref: React.RefObject<HTMLDivElement>;
+    dropdownRef: React.RefObject<HTMLDivElement | null>;
   }) => (
-    <div className="relative" ref={ref}>
+    <div className="relative" ref={dropdownRef}>
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {label}
       </label>
@@ -407,7 +407,7 @@ export default function AcademicBackgroundPopup({
                   showDropdown={showQualificationDropdown}
                   setShowDropdown={setShowQualificationDropdown}
                   onSelect={setQualification}
-                  ref={qualificationRef}
+                  dropdownRef={qualificationRef}
                 />
 
                 <div className="grid grid-cols-2 gap-4">
@@ -507,7 +507,7 @@ export default function AcademicBackgroundPopup({
                   showDropdown={showAcademicHonorsDropdown}
                   setShowDropdown={setShowAcademicHonorsDropdown}
                   onSelect={setAcademicHonors}
-                  ref={academicHonorsRef}
+                  dropdownRef={academicHonorsRef}
                 />
 
                 <DropdownField
@@ -518,7 +518,7 @@ export default function AcademicBackgroundPopup({
                   showDropdown={showCollegeEligibilityDropdown}
                   setShowDropdown={setShowCollegeEligibilityDropdown}
                   onSelect={setCollegeEligibilityStatus}
-                  ref={collegeEligibilityRef}
+                  dropdownRef={collegeEligibilityRef}
                 />
               </div>
             )}
@@ -547,7 +547,7 @@ export default function AcademicBackgroundPopup({
                   showDropdown={showGraduationYearDropdown}
                   setShowDropdown={setShowGraduationYearDropdown}
                   onSelect={setGraduationYear}
-                  ref={graduationYearRef}
+                  dropdownRef={graduationYearRef}
                 />
 
                 <div>
@@ -571,7 +571,7 @@ export default function AcademicBackgroundPopup({
                   showDropdown={showPreferredRegionsDropdown}
                   setShowDropdown={setShowPreferredRegionsDropdown}
                   onSelect={setPreferredCollegeRegions}
-                  ref={preferredRegionsRef}
+                  dropdownRef={preferredRegionsRef}
                 />
 
                 <DropdownField
@@ -582,7 +582,7 @@ export default function AcademicBackgroundPopup({
                   showDropdown={showWillingnessDropdown}
                   setShowDropdown={setShowWillingnessDropdown}
                   onSelect={setWillingnessToRelocate}
-                  ref={willingnessRef}
+                  dropdownRef={willingnessRef}
                 />
 
                 <DropdownField
@@ -593,7 +593,7 @@ export default function AcademicBackgroundPopup({
                   showDropdown={showGenderDropdown}
                   setShowDropdown={setShowGenderDropdown}
                   onSelect={setGender}
-                  ref={genderRef}
+                  dropdownRef={genderRef}
                 />
               </div>
             )}
