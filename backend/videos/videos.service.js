@@ -1,4 +1,5 @@
 const videosModel = require('./videos.model');
+const { convertKeyToPresignedUrl } = require('../utils/s3');
 
 /**
  * Create a new video
@@ -40,9 +41,20 @@ async function createVideoService(videoData) {
 async function getAllVideosService(userId = null) {
   try {
     const videos = await videosModel.getAllVideos(userId);
+
+    // Convert video_url S3 keys to presigned URLs
+    const videosWithPresignedUrls = await Promise.all(
+      videos.map(async (video) => {
+        if (video.video_url) {
+          video.video_url = await convertKeyToPresignedUrl(video.video_url);
+        }
+        return video;
+      })
+    );
+
     return {
       success: true,
-      videos,
+      videos: videosWithPresignedUrls,
     };
   } catch (error) {
     console.error('Get all videos service error:', error.message);

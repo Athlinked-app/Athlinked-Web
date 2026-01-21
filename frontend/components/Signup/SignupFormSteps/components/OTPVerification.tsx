@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { API_BASE_URL } from '@/utils/config';
 
 interface OTPVerificationProps {
   formData: any;
@@ -52,7 +53,7 @@ export default function OTPVerification({
 
       // Call backend to verify OTP and create user
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/verify-otp`,
+        `${API_BASE_URL}/api/signup/verify-otp`,
         {
           method: 'POST',
           headers: {

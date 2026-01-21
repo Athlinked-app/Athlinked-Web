@@ -11,14 +11,6 @@ if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
   console.log('API Base URL:', API_BASE_URL);
 }
 
-// Base URL for non-API resources (images, static files, etc.)
-export const BASE_URL =
-  process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3001';
-
-// Socket URL
-export const SOCKET_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
-
 /**
  * Get the full URL for a resource (image, file, etc.)
  * @param path - Relative path (e.g., '/uploads/profile/image.jpg')
@@ -30,7 +22,7 @@ export function getResourceUrl(
   if (!path || path.trim() === '') return undefined;
   if (path.startsWith('http')) return path;
   if (path.startsWith('/') && !path.startsWith('/assets')) {
-    return `${BASE_URL}${path}`;
+    return `${API_BASE_URL}/api${path}`;
   }
   return path;
 }
@@ -43,5 +35,5 @@ export function getResourceUrl(
 export function getApiUrl(endpoint: string): string {
   if (endpoint.startsWith('http')) return endpoint;
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-  return `${API_BASE_URL}${cleanEndpoint}`;
+  return `${API_BASE_URL}/api${cleanEndpoint}`;
 }

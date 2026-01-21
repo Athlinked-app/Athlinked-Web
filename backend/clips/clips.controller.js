@@ -77,8 +77,9 @@ async function getClipsFeed(req, res) {
   try {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 10;
+    const viewerUserId = req.user?.id || null; // Get from auth middleware (optional)
 
-    const result = await clipsService.getClipsFeedService(page, limit);
+    const result = await clipsService.getClipsFeedService(page, limit, viewerUserId);
 
     return res.status(200).json(result);
   } catch (error) {

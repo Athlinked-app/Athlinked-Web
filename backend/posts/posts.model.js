@@ -113,6 +113,9 @@ async function getPostsFeed(page = 1, limit = 50, viewerUserId = null) {
         -- User sees their own posts
         p.user_id = $1
         OR
+        -- Posts from featured users are visible to everyone
+        u.is_featured = true
+        OR
         -- User follows the post author (direct follow)
         EXISTS (
           SELECT 1 

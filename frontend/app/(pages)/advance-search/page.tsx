@@ -5,7 +5,8 @@ import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import Header from '@/components/Header';
 import { Search as SearchIcon, X, ChevronDown } from 'lucide-react';
-import { BASE_URL, getResourceUrl } from '@/utils/api';
+import { getResourceUrl } from '@/utils/api';
+import { API_BASE_URL } from '@/utils/config';
 
 interface SearchResult {
   id: string;
@@ -65,11 +66,11 @@ export default function SearchPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(username)}`
+          `${API_BASE_URL}/api/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
+          `${API_BASE_URL}/api/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -105,7 +106,6 @@ export default function SearchPage() {
 
   const performSearch = async () => {
     setIsSearching(true);
-    const baseUrl = BASE_URL;
 
     try {
       // Build query parameters
@@ -123,7 +123,7 @@ export default function SearchPage() {
       if (teamLevel) params.append('teamLevel', teamLevel);
       if (teamCaptain) params.append('teamCaptain', teamCaptain);
 
-      const searchUrl = `${baseUrl}/api/search?${params.toString()}`;
+      const searchUrl = `${API_BASE_URL}/api/api/search?${params.toString()}`;
       console.log('Search URL:', searchUrl);
       console.log('Sort By:', sortBy);
 
@@ -154,7 +154,7 @@ export default function SearchPage() {
               if (currentUserId) {
                 try {
                   const isFollowingResponse = await fetch(
-                    `${baseUrl}/api/network/is-following/${user.id}?follower_id=${currentUserId}`
+                    `${API_BASE_URL}/api/api/network/is-following/${user.id}?follower_id=${currentUserId}`
                   );
                   if (isFollowingResponse.ok) {
                     const isFollowingData = await isFollowingResponse.json();
@@ -211,8 +211,8 @@ export default function SearchPage() {
 
     try {
       const endpoint = isCurrentlyFollowing
-        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/network/unfollow/${userId}`
-        : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/network/follow/${userId}`;
+        ? `${API_BASE_URL}/api/network/unfollow/${userId}`
+        : `${API_BASE_URL}/api/network/follow/${userId}`;
 
       const response = await fetch(endpoint, {
         method: 'POST',

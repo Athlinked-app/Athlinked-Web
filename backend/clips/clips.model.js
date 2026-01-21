@@ -72,33 +72,119 @@ async function createClip(clipData, client = null) {
  * Get clips feed with pagination
  * @param {number} page - Page number (default: 1)
  * @param {number} limit - Number of clips per page (default: 10)
+ * @param {string} viewerUserId - Optional viewer user ID for privacy filtering
  * @returns {Promise<object>} Clips data with pagination info
  */
-async function getClipsFeed(page = 1, limit = 10) {
+async function getClipsFeed(page = 1, limit = 10, viewerUserId = null) {
   const offset = (page - 1) * limit;
 
-  const query = `
-    SELECT 
-      id,
-      user_id,
-      video_url,
-      description,
-      like_count,
-      comment_count,
-      username,
-      user_profile_url,
-      created_at
-    FROM clips
-    ORDER BY created_at DESC
-    LIMIT $1 OFFSET $2
-  `;
+  // If no viewer is authenticated, only show clips from featured users
+  let query;
+  let countQuery;
+  let queryParams;
+  let countParams;
 
-  const countQuery = 'SELECT COUNT(*) FROM clips';
+  if (!viewerUserId) {
+    // Unauthenticated users only see clips from featured users
+    query = `
+      SELECT 
+        c.id,
+        c.user_id,
+        c.video_url,
+        c.description,
+        c.like_count,
+        c.comment_count,
+        c.username,
+        c.user_profile_url,
+        c.created_at
+      FROM clips c
+      LEFT JOIN users u ON c.user_id = u.id
+      WHERE u.is_featured = true
+      ORDER BY c.created_at DESC
+      LIMIT $1 OFFSET $2
+    `;
+    countQuery = `
+      SELECT COUNT(*) 
+      FROM clips c
+      LEFT JOIN users u ON c.user_id = u.id
+      WHERE u.is_featured = true
+    `;
+    queryParams = [limit, offset];
+    countParams = [];
+  } else {
+    // Authenticated users see:
+    // - Their own clips
+    // - Clips from featured users
+    // - Clips from users they follow
+    // - Clips from users they are connected with
+    query = `
+      SELECT DISTINCT
+        c.id,
+        c.user_id,
+        c.video_url,
+        c.description,
+        c.like_count,
+        c.comment_count,
+        c.username,
+        c.user_profile_url,
+        c.created_at
+      FROM clips c
+      LEFT JOIN users u ON c.user_id = u.id
+      WHERE (
+        -- User sees their own clips
+        c.user_id = $1
+        OR
+        -- Clips from featured users are visible to everyone
+        u.is_featured = true
+        OR
+        -- User follows the clip author
+        EXISTS (
+          SELECT 1 
+          FROM user_follows uf 
+          WHERE uf.follower_id = $1 
+            AND uf.following_id = c.user_id
+        )
+        OR
+        -- User is connected to the clip author
+        EXISTS (
+          SELECT 1 
+          FROM user_connections uc 
+          WHERE (uc.user_id_1 = $1 AND uc.user_id_2 = c.user_id)
+             OR (uc.user_id_1 = c.user_id AND uc.user_id_2 = $1)
+        )
+      )
+      ORDER BY c.created_at DESC
+      LIMIT $2 OFFSET $3
+    `;
+    countQuery = `
+      SELECT COUNT(DISTINCT c.id)
+      FROM clips c
+      LEFT JOIN users u ON c.user_id = u.id
+      WHERE (
+        c.user_id = $1
+        OR u.is_featured = true
+        OR EXISTS (
+          SELECT 1 
+          FROM user_follows uf 
+          WHERE uf.follower_id = $1 
+            AND uf.following_id = c.user_id
+        )
+        OR EXISTS (
+          SELECT 1 
+          FROM user_connections uc 
+          WHERE (uc.user_id_1 = $1 AND uc.user_id_2 = c.user_id)
+             OR (uc.user_id_1 = c.user_id AND uc.user_id_2 = $1)
+        )
+      )
+    `;
+    queryParams = [viewerUserId, limit, offset];
+    countParams = [viewerUserId];
+  }
 
   try {
     const [clipsResult, countResult] = await Promise.all([
-      pool.query(query, [limit, offset]),
-      pool.query(countQuery),
+      pool.query(query, queryParams),
+      pool.query(countQuery, countParams),
     ]);
 
     const totalClips = parseInt(countResult.rows[0].count, 10);

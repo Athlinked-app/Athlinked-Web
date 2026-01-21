@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Play, X } from 'lucide-react';
-import { BASE_URL, getResourceUrl } from '@/utils/api';
+import { getResourceUrl } from '@/utils/api';
+import { API_BASE_URL } from '@/utils/config';
 
 interface Clip {
   id: string;
@@ -48,7 +49,7 @@ export default function MySaveClips({
       try {
         setLoading(true);
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/clips?page=1&limit=50`
+          `${API_BASE_URL}/api/clips?page=1&limit=50`
         );
 
         if (!response.ok) {

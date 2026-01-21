@@ -5,7 +5,8 @@ import Image from 'next/image';
 import { Play, X, Calendar } from 'lucide-react';
 import { type PostData } from '@/components/Post';
 import Post from '@/components/Post';
-import { BASE_URL, getResourceUrl } from '@/utils/api';
+import { getResourceUrl } from '@/utils/api';
+import { API_BASE_URL } from '@/utils/config';
 
 interface MySavePostProps {
   posts: PostData[];
@@ -39,7 +40,7 @@ export default function MySavePost({
         setLoadingSaved(true);
         try {
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/posts/saved/${viewedUserId}`
+            `${API_BASE_URL}/api/posts/saved/${viewedUserId}`
           );
           if (response.ok) {
             const data = await response.json();
