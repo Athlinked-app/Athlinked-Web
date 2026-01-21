@@ -45,7 +45,7 @@ export default function NavigationBar({
   const [notificationCount, setNotificationCount] = useState<number>(0);
   const [messageCount, setMessageCount] = useState<number>(0);
 
-  // Fetch notification count and set up WebSocket
+    // Fetch notification count and set up WebSocket
   useEffect(() => {
     const fetchNotificationCount = async () => {
       try {
@@ -65,35 +65,57 @@ export default function NavigationBar({
           const count = data.unreadCount ?? data.count ?? 0;
           setNotificationCount(count);
         }
-      } catch (error) {
-        console.error('Error fetching notification count:', error);
+      } catch (error: any) {
+        // Silently handle errors for notification count - it's a non-critical feature
+        // Only log in development mode
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Could not fetch notification count:', error?.message || error);
+        }
+        // Set count to 0 on error to avoid showing incorrect counts
+        setNotificationCount(0);
       }
     };
 
     // Initial fetch
     fetchNotificationCount();
 
-    // Fetch message count
+    // Fetch message count - completely silent error handling for non-critical feature
     const fetchMessageCount = async () => {
       try {
         const { apiGet } = await import('@/utils/api');
         const { getCurrentUserId } = await import('@/utils/auth');
         const userId = getCurrentUserId();
 
-        if (!userId) return;
-
-        const data = await apiGet<{
-          success: boolean;
-          unreadCount?: number;
-          count?: number;
-        }>('/messages/unread-count');
-
-        if (data.success) {
-          const count = data.unreadCount ?? data.count ?? 0;
-          setMessageCount(count);
+        if (!userId) {
+          setMessageCount(0);
+          return;
         }
-      } catch (error) {
-        console.error('Error fetching message count:', error);
+
+        // Wrap in additional try-catch to ensure errors are completely swallowed
+        try {
+          const data = await apiGet<{
+            success: boolean;
+            unreadCount?: number;
+            count?: number;
+          }>('/messages/unread-count');
+
+          if (data.success) {
+            const count = data.unreadCount ?? data.count ?? 0;
+            setMessageCount(count);
+          } else {
+            setMessageCount(0);
+          }
+        } catch (apiError: any) {
+          // Completely silent - no logging, no re-throwing
+          // This is a non-critical feature and errors are expected for some user types
+          setMessageCount(0);
+          return; // Exit early to prevent any further error propagation
+        }
+      } catch (error: any) {
+        // Outer catch - completely silent error handling
+        // Set count to 0 and exit - no logging, no error propagation
+        setMessageCount(0);
+        return;
       }
     };
 
@@ -202,16 +224,20 @@ export default function NavigationBar({
   }, []);
 
   const handleLogout = async () => {
+    // Clear session storage BEFORE logout
+    sessionStorage.clear();
+
     // Use the proper logout function from auth utils
     const { logout } = await import('@/utils/auth');
     await logout();
   };
+
   const menuItems = [
     { id: 'search', icon: Search, label: 'Search' },
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'clips', icon: Play, label: 'Clips' },
     { id: 'network', icon: Users, label: 'My Network' },
-    { id: 'my_athletes', icon: UserCheck, label: 'My Athletes' }, // New menu item
+    { id: 'my_athletes', icon: UserCheck, label: 'My Athletes' },
     { id: 'opportunities', icon: Briefcase, label: 'Opportunities' },
     { id: 'message', icon: MessageSquare, label: 'Message' },
     { id: 'notifications', icon: Bell, label: 'Notifications' },
@@ -413,26 +439,7 @@ export default function NavigationBar({
                       {item.label}
                     </span>
                   </Link>
-                ) : (
-                  <a
-                    href={href}
-                    className={`flex items-center justify-center md:justify-start gap-2 md:gap-3 px-2 md:px-3 lg:px-4 py-2 md:py-2.5 lg:py-3 rounded-lg transition-colors ${
-                      isActive
-                        ? 'bg-[#CB9729] text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                    }`}
-                    title={item.label}
-                  >
-                    <Icon
-                      size={18}
-                      className="md:w-5 md:h-5 shrink-0"
-                      strokeWidth={2}
-                    />
-                    <span className="text-xs md:text-sm font-medium hidden md:inline truncate">
-                      {item.label}
-                    </span>
-                  </a>
-                )}
+                ) : null}
               </li>
             );
           })}

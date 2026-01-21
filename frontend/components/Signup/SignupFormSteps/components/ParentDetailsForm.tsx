@@ -1,4 +1,4 @@
-import { User, Mail, Calendar } from 'lucide-react';
+import { User, Mail } from 'lucide-react';
 
 interface ParentDetailsFormProps {
   formData: any;
@@ -13,6 +13,26 @@ export default function ParentDetailsForm({
   isLoadingOTP = false,
   onContinue,
 }: ParentDetailsFormProps) {
+  // Convert MM/DD/YYYY to YYYY-MM-DD for date input
+  const formatDateForInput = (mmddyyyy: string): string => {
+    if (!mmddyyyy || mmddyyyy.length !== 10) return '';
+    const [month, day, year] = mmddyyyy.split('/');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Convert YYYY-MM-DD to MM/DD/YYYY for storage
+  const formatDateForStorage = (yyyymmdd: string): string => {
+    if (!yyyymmdd) return '';
+    const [year, month, day] = yyyymmdd.split('-');
+    return `${month}/${day}/${year}`;
+  };
+
+  const handleDOBChange = (value: string) => {
+    // Value comes in YYYY-MM-DD format from date input
+    const formattedDate = formatDateForStorage(value);
+    onFormDataChange({ ...formData, parentDOB: formattedDate });
+  };
+
   return (
     <>
       <div className="space-y-4 mb-6">
@@ -52,20 +72,15 @@ export default function ParentDetailsForm({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Date of birth (MM/DD/YYYY)
+            Date of birth
           </label>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="MM/DD/YYYY"
-              value={formData.parentDOB}
-              onChange={e =>
-                onFormDataChange({ ...formData, parentDOB: e.target.value })
-              }
-              className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
-            />
-            <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          </div>
+          <input
+            type="date"
+            value={formatDateForInput(formData.parentDOB)}
+            onChange={e => handleDOBChange(e.target.value)}
+            max={new Date().toISOString().split('T')[0]}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 bg-white"
+          />
         </div>
       </div>
 

@@ -47,10 +47,10 @@ const AthleticData: React.FC<AthleticDataProps> = ({
           </div>
         );
       })}
-      
+
       {isEditable && onClick && (
         <button
-          onClick={(e) => {
+          onClick={e => {
             e.stopPropagation();
             onClick();
           }}
@@ -65,4 +65,3 @@ const AthleticData: React.FC<AthleticDataProps> = ({
 };
 
 export default AthleticData;
-

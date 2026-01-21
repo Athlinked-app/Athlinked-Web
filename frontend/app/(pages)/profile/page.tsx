@@ -112,7 +112,7 @@ function ProfileContent() {
 
   const targetUserId = viewUserId || currentUserId;
   const isViewingOwnProfile = !viewUserId || viewUserId === currentUserId;
-  
+
   // Determine the user type for the profile being viewed
   const profileUserType = viewUserId
     ? viewUser?.user_type || 'athlete'
@@ -227,7 +227,7 @@ function ProfileContent() {
       );
     }
 
-    // OPTIMIZED: Single API call replaces fetchProfileData, fetchFollowCounts, 
+    // OPTIMIZED: Single API call replaces fetchProfileData, fetchFollowCounts,
     // checkConnectionRequestStatus, and all profile section fetches
     fetchProfileComplete();
   }, [targetUserId]); // Only depend on targetUserId, not viewUserId or currentUserId
@@ -240,12 +240,15 @@ function ProfileContent() {
     }
 
     const currentTargetId = targetUserId;
-    console.log('fetchProfileComplete: Starting fetch for userId:', currentTargetId);
+    console.log(
+      'fetchProfileComplete: Starting fetch for userId:',
+      currentTargetId
+    );
 
     try {
       setLoading(true);
       const { apiGet } = await import('@/utils/api');
-      
+
       // Single API call to get ALL profile data
       const data = await apiGet<{
         success: boolean;
@@ -279,12 +282,17 @@ function ProfileContent() {
 
       // Verify we're still fetching for the same userId (prevent race conditions)
       if (currentTargetId !== targetUserId) {
-        console.log('fetchProfileComplete: targetUserId changed during fetch, ignoring response');
+        console.log(
+          'fetchProfileComplete: targetUserId changed during fetch, ignoring response'
+        );
         return;
       }
 
       if (!data.success) {
-        console.error('Profile complete API returned unsuccessful response:', data);
+        console.error(
+          'Profile complete API returned unsuccessful response:',
+          data
+        );
         return;
       }
 
@@ -305,7 +313,7 @@ function ProfileContent() {
           dob: data.profile.dob ?? null,
         });
         setUserBio(data.profile.bio || '');
-        
+
         // Process sports_played
         if (data.profile.sportsPlayed) {
           setSportsPlayed(data.profile.sportsPlayed);
@@ -340,11 +348,14 @@ function ProfileContent() {
 
       // Set all profile sections
       if (data.socialHandles) setSocialHandles(data.socialHandles);
-      if (data.academicBackgrounds) setAcademicBackgrounds(data.academicBackgrounds);
+      if (data.academicBackgrounds)
+        setAcademicBackgrounds(data.academicBackgrounds);
       if (data.achievements) setAchievements(data.achievements);
-      if (data.athleticPerformance) setAthleticAndPerformance(data.athleticPerformance);
+      if (data.athleticPerformance)
+        setAthleticAndPerformance(data.athleticPerformance);
       if (data.competitionClubs) setCompetitionAndClubs(data.competitionClubs);
-      if (data.characterLeadership) setCharacterAndLeadership(data.characterLeadership);
+      if (data.characterLeadership)
+        setCharacterAndLeadership(data.characterLeadership);
       if (data.healthReadiness) setHealthAndReadiness(data.healthReadiness);
       if (data.videoMedia) setVideoAndMedia(data.videoMedia);
 
@@ -353,7 +364,10 @@ function ProfileContent() {
         const transformedPosts: PostData[] = data.posts.map((post: any) => ({
           id: post.id,
           username: post.username || 'User',
-          user_profile_url: post.user_profile_url && post.user_profile_url.trim() !== '' ? post.user_profile_url : null,
+          user_profile_url:
+            post.user_profile_url && post.user_profile_url.trim() !== ''
+              ? post.user_profile_url
+              : null,
           user_id: post.user_id,
           user_type: post.user_type || 'athlete',
           post_type: post.post_type,
@@ -371,7 +385,6 @@ function ProfileContent() {
         }));
         setPosts(transformedPosts);
       }
-
     } catch (error) {
       console.error('Error fetching profile complete:', error);
       // Only clear state if we're still fetching for the same userId
@@ -892,19 +905,9 @@ function ProfileContent() {
 
                 if (data.sports_played !== undefined) {
                   profileData.sportsPlayed = data.sports_played;
-                  if (data.sports_played && data.sports_played.trim() !== '') {
-                    const sports = data.sports_played
-                      .split(',')
-                      .map(s => s.trim())
-                      .filter(Boolean);
-                    if (sports.length > 0) {
-                      profileData.primarySport = sports[0];
-                    } else {
-                      profileData.primarySport = '';
-                    }
-                  } else {
-                    profileData.primarySport = '';
-                  }
+                  // DO NOT update primarySport when sports_played changes
+                  // They are separate fields - sports_played is a list, primary_sport is a single sport
+                  // Only update sportsPlayed, leave primarySport unchanged
                 }
 
                 console.log('Profile data being sent to API:', profileData);

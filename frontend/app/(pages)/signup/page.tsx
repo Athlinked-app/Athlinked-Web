@@ -172,10 +172,13 @@ export default function SignupPage() {
         }
 
         const { apiRequestUnauthenticated } = await import('@/utils/api');
-        const response = await apiRequestUnauthenticated('/auth/google/complete-signup-full', {
-          method: 'POST',
-          body: JSON.stringify(profileData),
-        });
+        const response = await apiRequestUnauthenticated(
+          '/auth/google/complete-signup-full',
+          {
+            method: 'POST',
+            body: JSON.stringify(profileData),
+          }
+        );
 
         const data = await response.json();
 

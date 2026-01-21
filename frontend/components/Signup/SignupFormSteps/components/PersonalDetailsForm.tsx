@@ -1,12 +1,4 @@
-import {
-  User,
-  Mail,
-  Calendar,
-  Eye,
-  EyeOff,
-  Building2,
-  Briefcase,
-} from 'lucide-react';
+import { User, Mail, Eye, EyeOff, Building2, Briefcase } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 
 interface PersonalDetailsFormProps {
@@ -146,6 +138,20 @@ export default function PersonalDetailsForm({
     });
   };
 
+  // Convert MM/DD/YYYY to YYYY-MM-DD for date input
+  const formatDateForInput = (mmddyyyy: string): string => {
+    if (!mmddyyyy || mmddyyyy.length !== 10) return '';
+    const [month, day, year] = mmddyyyy.split('/');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Convert YYYY-MM-DD to MM/DD/YYYY for storage
+  const formatDateForStorage = (yyyymmdd: string): string => {
+    if (!yyyymmdd) return '';
+    const [year, month, day] = yyyymmdd.split('-');
+    return `${month}/${day}/${year}`;
+  };
+
   // Validation functions
   const validateName = (name: string): string => {
     const trimmed = name.trim();
@@ -205,13 +211,8 @@ export default function PersonalDetailsForm({
       age--;
     }
 
-    // Check age range (12-21) - only for athlete user type
-    // Skip age validation for coach, parent, and organization
-    if (
-      selectedUserType !== 'coach' &&
-      selectedUserType !== 'parent' &&
-      selectedUserType !== 'organization'
-    ) {
+    // UPDATED: Check age range (12-21) ONLY for athlete user type
+    if (selectedUserType === 'athlete') {
       if (age < 12) {
         return 'Age must be at least 12 years';
       }
@@ -279,23 +280,11 @@ export default function PersonalDetailsForm({
   };
 
   const handleDOBChange = (value: string) => {
-    // Auto-format as user types (MM/DD/YYYY)
-    let formatted = value.replace(/\D/g, ''); // Remove non-digits
-
-    if (formatted.length > 8) {
-      formatted = formatted.slice(0, 8);
-    }
-
-    if (formatted.length > 2) {
-      formatted = formatted.slice(0, 2) + '/' + formatted.slice(2);
-    }
-    if (formatted.length > 5) {
-      formatted = formatted.slice(0, 5) + '/' + formatted.slice(5);
-    }
-
-    onFormDataChange({ ...formData, dateOfBirth: formatted });
-    if (formatted.length === 10) {
-      setErrors(prev => ({ ...prev, dateOfBirth: validateDOB(formatted) }));
+    // Value comes in YYYY-MM-DD format from date input
+    const formattedDate = formatDateForStorage(value);
+    onFormDataChange({ ...formData, dateOfBirth: formattedDate });
+    if (formattedDate.length === 10) {
+      setErrors(prev => ({ ...prev, dateOfBirth: validateDOB(formattedDate) }));
     } else {
       setErrors(prev => ({ ...prev, dateOfBirth: '' }));
     }
@@ -388,26 +377,22 @@ export default function PersonalDetailsForm({
           </div>
         )}
 
-        {/* Date of Birth */}
+        {/* Date of Birth - WITH CALENDAR PICKER */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Date of birth (MM/DD/YYYY)
+            Date of birth
           </label>
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="MM/DD/YYYY"
-              value={formData.dateOfBirth}
-              onChange={e => handleDOBChange(e.target.value)}
-              maxLength={10}
-              className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
-                errors.dateOfBirth
-                  ? 'border-red-500 focus:ring-red-500'
-                  : 'border-gray-300'
-              }`}
-            />
-            <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          </div>
+          <input
+            type="date"
+            value={formatDateForInput(formData.dateOfBirth)}
+            onChange={e => handleDOBChange(e.target.value)}
+            max={new Date().toISOString().split('T')[0]}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 bg-white ${
+              errors.dateOfBirth
+                ? 'border-red-500 focus:ring-red-500'
+                : 'border-gray-300'
+            }`}
+          />
           {errors.dateOfBirth && (
             <p className="mt-1 text-xs text-red-600">{errors.dateOfBirth}</p>
           )}

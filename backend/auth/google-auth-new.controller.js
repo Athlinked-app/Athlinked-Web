@@ -315,21 +315,33 @@ class GoogleAuthController {
       // Send parent signup link for athletes
       if (updatedUser.user_type === 'athlete' && updatedUser.parent_email) {
         try {
-          const { sendParentSignupLink } = require('../utils/email');
-          const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-          const signupLink = updatedUser.email
-            ? `${baseUrl}/parent-signup?email=${encodeURIComponent(updatedUser.email)}`
-            : `${baseUrl}/parent-signup?username=${encodeURIComponent(updatedUser.username || '')}`;
+          const signupModel = require('../signup/signup.model');
+          // Check if parent account already exists
+          const existingParent = await signupModel.findByEmail(
+            updatedUser.parent_email.toLowerCase().trim()
+          );
 
-          console.log(
-            `📧 Sending parent signup link to: ${updatedUser.parent_email}`
-          );
-          await sendParentSignupLink(
-            updatedUser.parent_email,
-            updatedUser.username || updatedUser.email || updatedUser.full_name,
-            signupLink
-          );
-          console.log('✅ Parent signup link sent successfully');
+          if (existingParent && existingParent.user_type === 'parent') {
+            console.log(
+              `ℹ️ Parent account already exists for ${updatedUser.parent_email}, skipping parent signup email`
+            );
+          } else {
+            const { sendParentSignupLink } = require('../utils/email');
+            const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+            const signupLink = updatedUser.email
+              ? `${baseUrl}/parent-signup?email=${encodeURIComponent(updatedUser.email)}`
+              : `${baseUrl}/parent-signup?username=${encodeURIComponent(updatedUser.username || '')}`;
+
+            console.log(
+              `📧 Sending parent signup link to: ${updatedUser.parent_email}`
+            );
+            await sendParentSignupLink(
+              updatedUser.parent_email,
+              updatedUser.username || updatedUser.email || updatedUser.full_name,
+              signupLink
+            );
+            console.log('✅ Parent signup link sent successfully');
+          }
         } catch (emailError) {
           console.error('❌ Error sending parent signup link:', emailError);
         }
@@ -446,21 +458,33 @@ class GoogleAuthController {
       // Send parent signup link for athletes
       if (updatedUser.user_type === 'athlete' && updatedUser.parent_email) {
         try {
-          const { sendParentSignupLink } = require('../utils/email');
-          const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-          const signupLink = updatedUser.email
-            ? `${baseUrl}/parent-signup?email=${encodeURIComponent(updatedUser.email)}`
-            : `${baseUrl}/parent-signup?username=${encodeURIComponent(updatedUser.username || '')}`;
+          const signupModel = require('../signup/signup.model');
+          // Check if parent account already exists
+          const existingParent = await signupModel.findByEmail(
+            updatedUser.parent_email.toLowerCase().trim()
+          );
 
-          console.log(
-            `📧 Sending parent signup link to: ${updatedUser.parent_email}`
-          );
-          await sendParentSignupLink(
-            updatedUser.parent_email,
-            updatedUser.username || updatedUser.email || updatedUser.full_name,
-            signupLink
-          );
-          console.log('✅ Parent signup link sent successfully');
+          if (existingParent && existingParent.user_type === 'parent') {
+            console.log(
+              `ℹ️ Parent account already exists for ${updatedUser.parent_email}, skipping parent signup email`
+            );
+          } else {
+            const { sendParentSignupLink } = require('../utils/email');
+            const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+            const signupLink = updatedUser.email
+              ? `${baseUrl}/parent-signup?email=${encodeURIComponent(updatedUser.email)}`
+              : `${baseUrl}/parent-signup?username=${encodeURIComponent(updatedUser.username || '')}`;
+
+            console.log(
+              `📧 Sending parent signup link to: ${updatedUser.parent_email}`
+            );
+            await sendParentSignupLink(
+              updatedUser.parent_email,
+              updatedUser.username || updatedUser.email || updatedUser.full_name,
+              signupLink
+            );
+            console.log('✅ Parent signup link sent successfully');
+          }
         } catch (emailError) {
           console.error('❌ Error sending parent signup link:', emailError);
           // Don't fail the signup if email fails
@@ -552,15 +576,26 @@ class GoogleAuthController {
       // Send OTP to athlete's email
       await sendOTPEmail(athlete_email.toLowerCase().trim(), otp);
 
-      // Send parent signup link to parent's email
-      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      const signupLink = `${baseUrl}/parent-signup?email=${encodeURIComponent(athlete_email.toLowerCase())}`;
-
-      await sendParentSignupLink(
-        parent_email.toLowerCase().trim(),
-        athlete_name || 'your child',
-        signupLink
+      // Send parent signup link to parent's email (only if parent doesn't exist)
+      const signupModel = require('../signup/signup.model');
+      const existingParent = await signupModel.findByEmail(
+        parent_email.toLowerCase().trim()
       );
+
+      if (existingParent && existingParent.user_type === 'parent') {
+        console.log(
+          `ℹ️ Parent account already exists for ${parent_email}, skipping parent signup email`
+        );
+      } else {
+        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const signupLink = `${baseUrl}/parent-signup?email=${encodeURIComponent(athlete_email.toLowerCase())}`;
+
+        await sendParentSignupLink(
+          parent_email.toLowerCase().trim(),
+          athlete_name || 'your child',
+          signupLink
+        );
+      }
 
       return res.json({
         success: true,

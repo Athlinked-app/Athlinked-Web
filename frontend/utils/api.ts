@@ -42,10 +42,10 @@ export async function apiRequestUnauthenticated(
     if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
       const networkError: any = new Error(
         `Network error: Unable to connect to ${url}. Please check:\n` +
-        `1. The API server is running\n` +
-        `2. The API URL is correct (${API_BASE_URL})\n` +
-        `3. CORS is configured correctly\n` +
-        `4. Your network connection is working`
+          `1. The API server is running\n` +
+          `2. The API URL is correct (${API_BASE_URL})\n` +
+          `3. CORS is configured correctly\n` +
+          `4. Your network connection is working`
       );
       networkError.isNetworkError = true;
       networkError.url = url;
@@ -240,10 +240,10 @@ export async function apiRequest(
     if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
       const networkError: any = new Error(
         `Network error: Unable to connect to ${url}. Please check:\n` +
-        `1. The API server is running\n` +
-        `2. The API URL is correct (${API_BASE_URL})\n` +
-        `3. CORS is configured correctly\n` +
-        `4. Your network connection is working`
+          `1. The API server is running\n` +
+          `2. The API URL is correct (${API_BASE_URL})\n` +
+          `3. CORS is configured correctly\n` +
+          `4. Your network connection is working`
       );
       networkError.isNetworkError = true;
       networkError.url = url;
@@ -260,83 +260,177 @@ export async function apiRequest(
 function formatDatabaseError(errorMessage: string, status: number): string {
   const lowerMessage = errorMessage.toLowerCase();
   
-  // Check for PostgreSQL connection errors
+  // For connection limit errors, return a generic message that doesn't alarm users
+  // These errors are usually temporary and will be retried automatically
+  // Include all variations of connection limit errors including SUPERUSER attribute errors
   if (lowerMessage.includes('remaining connection slots') || 
       lowerMessage.includes('superuser attribute') ||
+      lowerMessage.includes('reserved for roles') ||
       lowerMessage.includes('too many connections') ||
       lowerMessage.includes('connection limit') ||
       lowerMessage.includes('max_connections')) {
-    return 'Database connection limit reached. The server is experiencing high traffic. Please try again in a few moments.';
+    return 'Server is temporarily busy. Please try again.';
   }
-  
-  if (lowerMessage.includes('connection refused') || 
-      lowerMessage.includes('connection timeout') ||
-      lowerMessage.includes('connection pool')) {
+
+  if (
+    lowerMessage.includes('connection refused') ||
+    lowerMessage.includes('connection timeout') ||
+    lowerMessage.includes('connection pool')
+  ) {
     return 'Database connection error. The server is temporarily unavailable. Please try again later.';
   }
-  
-  if (lowerMessage.includes('relation') && lowerMessage.includes('does not exist')) {
+
+  if (
+    lowerMessage.includes('relation') &&
+    lowerMessage.includes('does not exist')
+  ) {
     return 'Database configuration error. Please contact support.';
   }
-  
+
   // For 500 errors, provide a generic server error message
   if (status >= 500) {
     return 'Server error. Please try again later or contact support if the problem persists.';
   }
-  
+
   return errorMessage;
 }
 
 /**
- * Helper function for GET requests
+ * Helper function for GET requests with automatic retry on connection errors
  */
-export async function apiGet<T = any>(endpoint: string): Promise<T> {
-  try {
-    const response = await apiRequest(endpoint, { method: 'GET' });
-    
-    // Check if response is ok (status 200-299)
-    if (!response.ok) {
-      const errorText = await response.text();
-      let errorData;
-      try {
-        errorData = JSON.parse(errorText);
-      } catch {
-        errorData = { message: errorText || `HTTP ${response.status}: ${response.statusText}` };
+export async function apiGet<T = any>(endpoint: string, retries = 5): Promise<T> {
+  let lastError: any;
+  
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await apiRequest(endpoint, { method: 'GET' });
+
+      // Check if response is ok (status 200-299)
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = {
+            message:
+              errorText || `HTTP ${response.status}: ${response.statusText}`,
+          };
+        }
+        
+        const originalMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+        
+        // Check if it's a connection error that we should retry
+        const isConnectionError = originalMessage.toLowerCase().includes('connection limit') || 
+                                  originalMessage.toLowerCase().includes('remaining connection slots') ||
+                                  originalMessage.toLowerCase().includes('too many connections') ||
+                                  originalMessage.toLowerCase().includes('max_connections') ||
+                                  originalMessage.toLowerCase().includes('superuser attribute') ||
+                                  originalMessage.toLowerCase().includes('reserved for roles');
+        
+        if (isConnectionError && attempt < retries) {
+          // Wait before retrying (exponential backoff with jitter)
+          const baseWaitTime = Math.min(500 * Math.pow(1.5, attempt), 3000);
+          const jitter = Math.random() * 500; // Add random jitter to prevent thundering herd
+          const waitTime = baseWaitTime + jitter;
+          // Silently retry - don't log to avoid alarming users
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          lastError = errorData;
+          continue;
+        }
+        
+        // Only format and throw error if it's not a connection error or all retries exhausted
+        const formattedMessage = formatDatabaseError(originalMessage, response.status);
+        
+        const error: any = new Error(formattedMessage);
+        error.status = response.status;
+        error.response = { data: errorData };
+        error.originalMessage = originalMessage; // Keep original for debugging
+        throw error;
+      }
+
+      // Check content type before parsing JSON
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return response.json();
+      } else {
+        // If not JSON, return text as error
+        const text = await response.text();
+        throw new Error(
+          `Expected JSON but got ${contentType || 'unknown content type'}: ${text.substring(0, 200)}`
+        );
+      }
+    } catch (error: any) {
+      lastError = error;
+      
+      // Check if it's a connection error that we should retry
+      const errorMsg = (error.message || '').toLowerCase();
+      const originalMsg = (error.originalMessage || '').toLowerCase();
+      const isConnectionError = errorMsg.includes('connection limit') || 
+                                errorMsg.includes('remaining connection slots') ||
+                                errorMsg.includes('too many connections') ||
+                                errorMsg.includes('max_connections') ||
+                                errorMsg.includes('superuser attribute') ||
+                                errorMsg.includes('reserved for roles') ||
+                                originalMsg.includes('connection limit') ||
+                                originalMsg.includes('remaining connection slots') ||
+                                originalMsg.includes('too many connections') ||
+                                originalMsg.includes('superuser attribute') ||
+                                originalMsg.includes('reserved for roles');
+      
+      if (isConnectionError && attempt < retries) {
+        // Wait before retrying (exponential backoff with jitter)
+        const baseWaitTime = Math.min(500 * Math.pow(1.5, attempt), 3000);
+        const jitter = Math.random() * 500; // Add random jitter
+        const waitTime = baseWaitTime + jitter;
+        // Silently retry - don't log to avoid alarming users
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+        continue;
       }
       
-      const originalMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
-      const formattedMessage = formatDatabaseError(originalMessage, response.status);
-      
-      const error: any = new Error(formattedMessage);
-      error.status = response.status;
-      error.response = { data: errorData };
-      error.originalMessage = originalMessage; // Keep original for debugging
+      // Re-throw if it's already our custom error
+      if (error.status) {
+        throw error;
+      }
+      // Handle network errors (Failed to fetch)
+      if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
+        const networkError: any = new Error(
+          'Network error: Unable to connect to the server. Please check your connection and ensure the API server is running.'
+        );
+        networkError.isNetworkError = true;
+        networkError.originalError = error;
+        throw networkError;
+      }
       throw error;
     }
-    
-    // Check content type before parsing JSON
-    const contentType = response.headers.get('content-type');
-    if (contentType && contentType.includes('application/json')) {
-      return response.json();
-    } else {
-      // If not JSON, return text as error
-      const text = await response.text();
-      throw new Error(`Expected JSON but got ${contentType || 'unknown content type'}: ${text.substring(0, 200)}`);
-    }
-  } catch (error: any) {
-    // Re-throw if it's already our custom error
-    if (error.status) {
-      throw error;
-    }
-    // Handle network errors (Failed to fetch)
-    if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
-      const networkError: any = new Error('Network error: Unable to connect to the server. Please check your connection and ensure the API server is running.');
-      networkError.isNetworkError = true;
-      networkError.originalError = error;
-      throw networkError;
-    }
-    throw error;
   }
+  
+  // If we get here, all retries failed
+  // For connection errors, return a more user-friendly message or suppress completely
+  if (lastError) {
+    const errorMsg = (lastError.message || '').toLowerCase();
+    const originalMsg = (lastError.originalMessage || '').toLowerCase();
+    const isConnectionError = errorMsg.includes('connection limit') || 
+                              errorMsg.includes('remaining connection slots') ||
+                              errorMsg.includes('superuser attribute') ||
+                              errorMsg.includes('reserved for roles') ||
+                              originalMsg.includes('connection limit') ||
+                              originalMsg.includes('remaining connection slots') ||
+                              originalMsg.includes('superuser attribute') ||
+                              originalMsg.includes('reserved for roles');
+    
+    if (isConnectionError) {
+      // For connection errors, return a generic message that doesn't alarm users
+      // These are usually temporary database issues
+      const friendlyError: any = new Error('Server is temporarily busy. Please refresh the page and try again.');
+      friendlyError.status = lastError.status || 500;
+      friendlyError.originalError = lastError;
+      friendlyError.isConnectionError = true; // Flag for silent handling
+      throw friendlyError;
+    }
+  }
+  
+  throw lastError;
 }
 
 /**
@@ -363,8 +457,12 @@ export async function apiPost<T = any>(
       };
     }
 
-    const originalMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
-    const formattedMessage = formatDatabaseError(originalMessage, response.status);
+    const originalMessage =
+      errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+    const formattedMessage = formatDatabaseError(
+      originalMessage,
+      response.status
+    );
 
     const error: any = new Error(formattedMessage);
     error.status = response.status;
@@ -400,8 +498,12 @@ export async function apiPut<T = any>(
       };
     }
 
-    const originalMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
-    const formattedMessage = formatDatabaseError(originalMessage, response.status);
+    const originalMessage =
+      errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+    const formattedMessage = formatDatabaseError(
+      originalMessage,
+      response.status
+    );
 
     const error: any = new Error(formattedMessage);
     error.status = response.status;
@@ -431,8 +533,12 @@ export async function apiDelete<T = any>(endpoint: string): Promise<T> {
       };
     }
 
-    const originalMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
-    const formattedMessage = formatDatabaseError(originalMessage, response.status);
+    const originalMessage =
+      errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+    const formattedMessage = formatDatabaseError(
+      originalMessage,
+      response.status
+    );
 
     const error: any = new Error(formattedMessage);
     error.status = response.status;
@@ -468,8 +574,12 @@ export async function apiPatch<T = any>(
       };
     }
 
-    const originalMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
-    const formattedMessage = formatDatabaseError(originalMessage, response.status);
+    const originalMessage =
+      errorData.message || `HTTP ${response.status}: ${response.statusText}`;
+    const formattedMessage = formatDatabaseError(
+      originalMessage,
+      response.status
+    );
 
     const error: any = new Error(formattedMessage);
     error.status = response.status;
@@ -504,8 +614,11 @@ export async function apiUpload<T = any>(
         // If response is not JSON, use status text
         errorMessage = response.statusText || errorMessage;
       }
-      
-      const formattedMessage = formatDatabaseError(errorMessage, response.status);
+
+      const formattedMessage = formatDatabaseError(
+        errorMessage,
+        response.status
+      );
       const error: any = new Error(formattedMessage);
       error.status = response.status;
       error.originalMessage = errorMessage; // Keep original for debugging
@@ -519,7 +632,9 @@ export async function apiUpload<T = any>(
     } else {
       // If not JSON, return text as error
       const text = await response.text();
-      throw new Error(`Expected JSON but got ${contentType || 'unknown content type'}: ${text.substring(0, 200)}`);
+      throw new Error(
+        `Expected JSON but got ${contentType || 'unknown content type'}: ${text.substring(0, 200)}`
+      );
     }
   } catch (error: any) {
     // Re-throw if it's already our custom error with status
@@ -527,13 +642,17 @@ export async function apiUpload<T = any>(
       throw error;
     }
     // Handle network errors (Failed to fetch)
-    if (error.message === 'Failed to fetch' || error.name === 'TypeError' || error.isNetworkError) {
+    if (
+      error.message === 'Failed to fetch' ||
+      error.name === 'TypeError' ||
+      error.isNetworkError
+    ) {
       const networkError: any = new Error(
         `Network error: Unable to upload file to ${endpoint}. Please check:\n` +
-        `1. The API server is running on ${API_BASE_URL}\n` +
-        `2. The backend server is accessible\n` +
-        `3. CORS is configured correctly\n` +
-        `4. Your network connection is working`
+          `1. The API server is running on ${API_BASE_URL}\n` +
+          `2. The backend server is accessible\n` +
+          `3. CORS is configured correctly\n` +
+          `4. Your network connection is working`
       );
       networkError.isNetworkError = true;
       networkError.endpoint = endpoint;

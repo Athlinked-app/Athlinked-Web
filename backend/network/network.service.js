@@ -1,4 +1,5 @@
 const networkModel = require('./network.model');
+const { convertKeyToPresignedUrl } = require('../utils/s3');
 
 /**
  * Follow a user service
@@ -79,9 +80,19 @@ async function getFollowersService(userId) {
 
     const followers = await networkModel.getFollowers(userId);
 
+    // Convert profile URLs to presigned URLs
+    const followersWithPresignedUrls = await Promise.all(
+      followers.map(async (follower) => {
+        if (follower.profile_url) {
+          follower.profile_url = await convertKeyToPresignedUrl(follower.profile_url);
+        }
+        return follower;
+      })
+    );
+
     return {
       success: true,
-      followers,
+      followers: followersWithPresignedUrls,
     };
   } catch (error) {
     console.error('Get followers service error:', error.message);
@@ -102,9 +113,19 @@ async function getFollowingService(userId) {
 
     const following = await networkModel.getFollowing(userId);
 
+    // Convert profile URLs to presigned URLs
+    const followingWithPresignedUrls = await Promise.all(
+      following.map(async (user) => {
+        if (user.profile_url) {
+          user.profile_url = await convertKeyToPresignedUrl(user.profile_url);
+        }
+        return user;
+      })
+    );
+
     return {
       success: true,
-      following,
+      following: followingWithPresignedUrls,
     };
   } catch (error) {
     console.error('Get following service error:', error.message);

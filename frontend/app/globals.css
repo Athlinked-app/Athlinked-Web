@@ -59,6 +59,48 @@ body {
   scrollbar-color: #d1d5db transparent;
 }
 
+/* Add to your global CSS or component style */
+input[type='date']::-webkit-calendar-picker-indicator {
+  filter: opacity(0.4);
+  cursor: pointer;
+}
+
+input[type='date'] {
+  color-scheme: light;
+}
+
+/* Style the date input placeholder parts */
+input[type='date']::-webkit-datetime-edit-text,
+input[type='date']::-webkit-datetime-edit-month-field,
+input[type='date']::-webkit-datetime-edit-day-field,
+input[type='date']::-webkit-datetime-edit-year-field {
+  color: #9ca3af; /* gray-400 - matches other field placeholders */
+}
+
+/* When the field is focused */
+input[type='date']:focus::-webkit-datetime-edit-text,
+input[type='date']:focus::-webkit-datetime-edit-month-field,
+input[type='date']:focus::-webkit-datetime-edit-day-field,
+input[type='date']:focus::-webkit-datetime-edit-year-field {
+  color: #6b7280; /* gray-500 - slightly darker on focus */
+}
+
+/* For Firefox */
+input[type='date']::-moz-placeholder {
+  color: #9ca3af;
+  opacity: 1;
+}
+
+/* Keep the calendar icon light */
+input[type='date']::-webkit-calendar-picker-indicator {
+  filter: opacity(0.4);
+  cursor: pointer;
+}
+
+input[type='date'] {
+  color-scheme: light;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

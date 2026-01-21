@@ -1,5 +1,6 @@
 const clipsModel = require('./clips.model');
 const pool = require('../config/db');
+const { convertKeyToPresignedUrl } = require('../utils/s3');
 
 /**
  * Create a new clip
@@ -75,6 +76,21 @@ async function getClipsFeedService(page = 1, limit = 10) {
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
 
     const result = await clipsModel.getClipsFeed(pageNum, limitNum);
+
+    // Convert user_profile_url and video_url S3 keys to presigned URLs
+    if (result.clips && Array.isArray(result.clips)) {
+      result.clips = await Promise.all(
+        result.clips.map(async (clip) => {
+          if (clip.user_profile_url) {
+            clip.user_profile_url = await convertKeyToPresignedUrl(clip.user_profile_url);
+          }
+          if (clip.video_url) {
+            clip.video_url = await convertKeyToPresignedUrl(clip.video_url);
+          }
+          return clip;
+        })
+      );
+    }
 
     return {
       success: true,
@@ -227,9 +243,30 @@ async function getClipCommentsService(clipId) {
 
     const comments = await clipsModel.getClipComments(clipId);
 
+    // Convert user_profile_url S3 keys to presigned URLs in comments
+    const commentsWithPresignedUrls = await Promise.all(
+      comments.map(async (comment) => {
+        if (comment.user_profile_url) {
+          comment.user_profile_url = await convertKeyToPresignedUrl(comment.user_profile_url);
+        }
+        // Handle nested replies
+        if (comment.replies && Array.isArray(comment.replies)) {
+          comment.replies = await Promise.all(
+            comment.replies.map(async (reply) => {
+              if (reply.user_profile_url) {
+                reply.user_profile_url = await convertKeyToPresignedUrl(reply.user_profile_url);
+              }
+              return reply;
+            })
+          );
+        }
+        return comment;
+      })
+    );
+
     return {
       success: true,
-      comments,
+      comments: commentsWithPresignedUrls,
     };
   } catch (error) {
     console.error('Get clip comments service error:', error.message);
