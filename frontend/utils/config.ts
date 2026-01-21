@@ -33,9 +33,26 @@ export function getResourceUrl(
   if (!path || path.trim() === '') return undefined;
   if (path.startsWith('http')) return path;
   if (path.startsWith('/') && !path.startsWith('/assets')) {
+    // Legacy compatibility: some older rows stored image paths like
+    // `/profile/images/<file>` or `/posts/images/<file>`.
+    // Backend serves local uploads under `/uploads` (NOT `/api/uploads`).
+    if (path.startsWith('/profile/images/')) {
+      const filename = path.split('/').pop();
+      return filename
+        ? `${API_BASE_URL}/uploads/profile/${filename}`
+        : `${API_BASE_URL}${path}`;
+    }
+    if (path.startsWith('/posts/images/')) {
+      const filename = path.split('/').pop();
+      return filename ? `${API_BASE_URL}/uploads/${filename}` : `${API_BASE_URL}${path}`;
+    }
+
     // If stored paths already include `/api/...`, don't double-prefix
     if (path.startsWith('/api/')) return `${API_BASE_URL}${path}`;
-    return `${API_BASE_URL}/api${path}`;
+
+    // Static resources like `/uploads/...` live at the backend root.
+    // For any other absolute path, prefer backend root as well (resource paths should not be treated as API endpoints).
+    return `${API_BASE_URL}${path}`;
   }
   return path;
 }
