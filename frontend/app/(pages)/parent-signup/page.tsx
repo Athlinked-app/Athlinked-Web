@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import SignupHero from '@/components/Signup/SignupHero';
 import { Eye, EyeOff } from 'lucide-react';
+import { API_BASE_URL } from '@/utils/config';
 
 function ParentSignupContent() {
   const searchParams = useSearchParams();
@@ -32,11 +33,11 @@ function ParentSignupContent() {
         let response;
         if (username) {
           response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(username)}`
+            `${API_BASE_URL}/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else if (email) {
           response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(email)}`
+            `${API_BASE_URL}/api/signup/user/${encodeURIComponent(email)}`
           );
         }
 
@@ -94,7 +95,7 @@ function ParentSignupContent() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/parent-complete`,
+        `${API_BASE_URL}/api/signup/parent-complete`,
         {
           method: 'POST',
           headers: {

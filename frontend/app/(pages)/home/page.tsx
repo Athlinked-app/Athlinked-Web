@@ -9,7 +9,7 @@ import HomeHerosection from '@/components/Home/Herosection';
 import Post, { type PostData } from '@/components/Post';
 import HomePopup from '@/components/Home/Homepopup';
 import { isAuthenticated } from '@/utils/auth';
-import { BASE_URL, getResourceUrl, apiGet } from '@/utils/api';
+import { getResourceUrl, apiGet } from '@/utils/api';
 
 interface CurrentUser {
   id: string;

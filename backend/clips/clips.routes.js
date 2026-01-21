@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, optionalAuth } = require('../middleware/auth');
 const clipsController = require('./clips.controller');
 const { upload, uploadToS3Middleware } = require('../utils/upload');
 
@@ -118,7 +118,7 @@ router.post(
  *                   items:
  *                     type: object
  */
-router.get('/', clipsController.getClipsFeed);
+router.get('/', optionalAuth, clipsController.getClipsFeed);
 
 /**
  * @swagger

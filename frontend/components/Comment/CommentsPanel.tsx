@@ -418,7 +418,7 @@ export default function CommentsPanel({
                             onChange={setReplyText}
                             currentUserId={currentUserId}
                             placeholder={`Reply to ${comment.username}...`}
-                            className="flex-1 px-3 py-1.5 rounded-full text-xs"
+                            className="flex-1 px-3 py-1.5 rounded-full text-xs text-gray-900 dark:text-gray-900 placeholder-gray-500 dark:placeholder-gray-400"
                             type="input"
                             onKeyDown={e => {
                               if (e.key === 'Enter' && !e.shiftKey) {
@@ -440,7 +440,7 @@ export default function CommentsPanel({
                             }}
                             onKeyDown={e => handleReplyKeyPress(e, comment.id)}
                             placeholder={`Reply to ${comment.username}...`}
-                            className="flex-1 px-3 py-1.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-xs text-gray-900"
+                            className="flex-1 px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-xs text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                             disabled={isLoading}
                             onClick={e => e.stopPropagation()}
                           />
@@ -505,7 +505,7 @@ export default function CommentsPanel({
                 onChange={setCommentText}
                 currentUserId={currentUserId}
                 placeholder="Add comment"
-                className="w-full px-4 py-2 rounded-full text-sm"
+                className="w-full px-4 py-2 rounded-full text-sm text-gray-900 dark:text-gray-900 placeholder-gray-500 dark:placeholder-gray-400"
                 type="input"
                 onKeyDown={e => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -533,7 +533,7 @@ export default function CommentsPanel({
                   }
                 }}
                 placeholder="Add comment"
-                className="flex-1 min-w-0 w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-sm text-gray-900"
+                className="flex-1 min-w-0 w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-full focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400"
                 disabled={isLoading}
               />
             )}

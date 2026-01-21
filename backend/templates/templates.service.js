@@ -1,4 +1,5 @@
 const templatesModel = require('./templates.model');
+const { convertKeyToPresignedUrl } = require('../utils/s3');
 
 /**
  * Create a new template
@@ -41,9 +42,20 @@ async function createTemplateService(templateData) {
 async function getAllTemplatesService(userId = null) {
   try {
     const templates = await templatesModel.getAllTemplates(userId);
+
+    // Convert file_url S3 keys to presigned URLs
+    const templatesWithPresignedUrls = await Promise.all(
+      templates.map(async (template) => {
+        if (template.file_url) {
+          template.file_url = await convertKeyToPresignedUrl(template.file_url);
+        }
+        return template;
+      })
+    );
+
     return {
       success: true,
-      templates,
+      templates: templatesWithPresignedUrls,
     };
   } catch (error) {
     console.error('Get all templates service error:', error.message);

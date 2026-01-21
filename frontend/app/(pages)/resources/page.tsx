@@ -7,7 +7,6 @@ import RightSideBar from '@/components/RightSideBar';
 import ResourceCard from '@/components/Resources/ResourceCard';
 import ResourceModals from '@/components/Resources/ResourceModals';
 import {
-  BASE_URL,
   getResourceUrl,
   apiGet,
   apiDelete,

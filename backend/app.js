@@ -28,7 +28,7 @@ const app = express();
 // CORS configuration - allow production frontend and localhost for development
 const allowedOrigins = [
   'http://localhost:3000',
-  'http://localhost:3001',
+  'https://athlinked-api.randomw.dev',
   'https://athlinked.randomw.dev',
   'https://athlinked.randomw.dev/', // With trailing slash
   process.env.FRONTEND_URL,

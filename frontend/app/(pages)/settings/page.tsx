@@ -9,7 +9,8 @@ import SettingsNavigation from '@/components/Settings/Navigation';
 import AboutUs from '@/components/Settings/About us';
 import TermsAndService from '@/components/Settings/Terms&Service';
 import PrivacyPolicy from '@/components/Settings/PrivacyPolicy';
-import { BASE_URL, getResourceUrl } from '@/utils/api';
+import { getResourceUrl } from '@/utils/api';
+import { API_BASE_URL } from '@/utils/config';
 
 interface CurrentUser {
   id: string;
@@ -34,13 +35,13 @@ export default function SettingsPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(
+          `${API_BASE_URL}/api/signup/user-by-username/${encodeURIComponent(
             username
           )}`
         );
       } else {
         response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(
+          `${API_BASE_URL}/api/signup/user/${encodeURIComponent(
             userIdentifier
           )}`
         );
