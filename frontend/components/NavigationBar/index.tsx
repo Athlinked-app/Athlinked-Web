@@ -271,7 +271,7 @@ export default function NavigationBar({
       ? rawProfileUrl.startsWith('http')
         ? rawProfileUrl
         : rawProfileUrl.startsWith('/') && !rawProfileUrl.startsWith('/assets')
-          ? `https://athlinked-api.randomw.dev${rawProfileUrl}`
+          ? `http://localhost:3001${rawProfileUrl}`
           : rawProfileUrl
       : null;
 

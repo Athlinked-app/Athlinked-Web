@@ -14,7 +14,7 @@ function normalizeApiBaseUrl(url: string): string {
 
 // Base URL for API endpoints (without trailing `/api`)
 export const API_BASE_URL = normalizeApiBaseUrl(
-  process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev'
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 );
 
 // Log API URL in development for debugging
