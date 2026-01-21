@@ -64,7 +64,7 @@ export default function ShareModal({
         socketRef.current.disconnect();
       }
 
-      const socket = io('https://athlinked-api.randomw.dev', {
+      const socket = io('http://localhost:3001', {
         transports: ['websocket'],
       });
 
@@ -142,7 +142,7 @@ export default function ShareModal({
   const getProfileUrl = (url: string | null | undefined) => {
     if (!url) return null;
     if (url.startsWith('http')) return url;
-    return `https://athlinked-api.randomw.dev${url}`;
+    return `http://localhost:3001${url}`;
   };
 
   const handleShareToWhatsApp = () => {

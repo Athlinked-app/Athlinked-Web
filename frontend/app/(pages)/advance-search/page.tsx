@@ -65,11 +65,11 @@ export default function SearchPage() {
       if (userIdentifier.startsWith('username:')) {
         const username = userIdentifier.replace('username:', '');
         response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/signup/user-by-username/${encodeURIComponent(username)}`
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(username)}`
         );
       } else {
         response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
         );
       }
 
@@ -211,8 +211,8 @@ export default function SearchPage() {
 
     try {
       const endpoint = isCurrentlyFollowing
-        ? `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/network/unfollow/${userId}`
-        : `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/network/follow/${userId}`;
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/network/unfollow/${userId}`
+        : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/network/follow/${userId}`;
 
       const response = await fetch(endpoint, {
         method: 'POST',

@@ -202,7 +202,10 @@ function MessagesPageContent() {
               // Message already exists, just update delivery status
               return prev.map(msg =>
                 msg.message_id === data.message_id
-                  ? { ...msg, is_delivered: data.is_delivered || msg.is_delivered }
+                  ? {
+                      ...msg,
+                      is_delivered: data.is_delivered || msg.is_delivered,
+                    }
                   : msg
               );
             }
@@ -819,7 +822,7 @@ function MessagesPageContent() {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
     if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `https://athlinked-api.randomw.dev/${profileUrl}`;
+      return `http://localhost:3001/${profileUrl}`;
     }
     return profileUrl;
   };
@@ -840,19 +843,23 @@ function MessagesPageContent() {
   // Parse UTC timestamp from database and convert to user's local timezone
   const parseUTCTimestamp = (timestamp: string): Date => {
     if (!timestamp) return new Date();
-    
+
     let ts = timestamp;
-    
+
     // Normalize: replace space with T for ISO format
     if (ts.includes(' ') && !ts.includes('T')) {
       ts = ts.replace(' ', 'T');
     }
-    
+
     // Add Z suffix if no timezone indicator (database returns UTC without Z)
-    if (!ts.endsWith('Z') && !ts.includes('+') && !/[+-]\d{2}:\d{2}$/.test(ts)) {
+    if (
+      !ts.endsWith('Z') &&
+      !ts.includes('+') &&
+      !/[+-]\d{2}:\d{2}$/.test(ts)
+    ) {
       ts = ts + 'Z';
     }
-    
+
     return new Date(ts);
   };
 
@@ -874,24 +881,33 @@ function MessagesPageContent() {
     if (minutes < 1) {
       return 'Just now';
     }
-    
+
     // Compare dates in user's local timezone
-    const nowDateStr = now.toLocaleDateString('en-US', { timeZone: userTimezone });
-    const msgDateStr = date.toLocaleDateString('en-US', { timeZone: userTimezone });
-    
+    const nowDateStr = now.toLocaleDateString('en-US', {
+      timeZone: userTimezone,
+    });
+    const msgDateStr = date.toLocaleDateString('en-US', {
+      timeZone: userTimezone,
+    });
+
     if (nowDateStr === msgDateStr) {
       return timeString;
     }
-    
+
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toLocaleDateString('en-US', { timeZone: userTimezone });
-    
+    const yesterdayStr = yesterday.toLocaleDateString('en-US', {
+      timeZone: userTimezone,
+    });
+
     if (msgDateStr === yesterdayStr) {
       return 'Yesterday';
     }
     if (days < 7) {
-      return date.toLocaleDateString('en-US', { weekday: 'short', timeZone: userTimezone });
+      return date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        timeZone: userTimezone,
+      });
     }
     return date.toLocaleDateString('en-US', {
       month: 'short',
@@ -931,24 +947,33 @@ function MessagesPageContent() {
     if (minutes < 1) {
       return 'Just now';
     }
-    
+
     // Compare dates in user's local timezone
-    const nowDateStr = now.toLocaleDateString('en-US', { timeZone: userTimezone });
-    const msgDateStr = date.toLocaleDateString('en-US', { timeZone: userTimezone });
-    
+    const nowDateStr = now.toLocaleDateString('en-US', {
+      timeZone: userTimezone,
+    });
+    const msgDateStr = date.toLocaleDateString('en-US', {
+      timeZone: userTimezone,
+    });
+
     if (nowDateStr === msgDateStr) {
       return timeString;
     }
-    
+
     const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toLocaleDateString('en-US', { timeZone: userTimezone });
-    
+    const yesterdayStr = yesterday.toLocaleDateString('en-US', {
+      timeZone: userTimezone,
+    });
+
     if (msgDateStr === yesterdayStr) {
       return `Yesterday ${timeString}`;
     }
     if (days < 7) {
-      const dayName = date.toLocaleDateString('en-US', { weekday: 'short', timeZone: userTimezone });
+      const dayName = date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        timeZone: userTimezone,
+      });
       return `${dayName} ${timeString}`;
     }
     return date.toLocaleString('en-US', {
@@ -1231,7 +1256,7 @@ function MessagesPageContent() {
                                               'http'
                                             )
                                               ? msg.post_data.user_profile_url
-                                              : `https://athlinked-api.randomw.dev${msg.post_data.user_profile_url}`
+                                              : `http://localhost:3001${msg.post_data.user_profile_url}`
                                           }
                                           alt={msg.post_data.username || 'User'}
                                           className="w-full h-full object-cover"
@@ -1255,7 +1280,7 @@ function MessagesPageContent() {
                                           'http'
                                         )
                                           ? msg.post_data.media_url
-                                          : `https://athlinked-api.randomw.dev${msg.post_data.media_url}`;
+                                          : `http://localhost:3001${msg.post_data.media_url}`;
                                       const isVideo =
                                         msg.post_data.post_type === 'video' ||
                                         msg.post_data.media_url.match(
@@ -1346,7 +1371,7 @@ function MessagesPageContent() {
                                     'http'
                                   )
                                     ? msg.media_url
-                                    : `https://athlinked-api.randomw.dev${msg.media_url}`;
+                                    : `http://localhost:3001${msg.media_url}`;
                                   const urlLower = msg.media_url.toLowerCase();
                                   const isImage =
                                     msg.message_type === 'image' ||

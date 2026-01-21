@@ -259,16 +259,18 @@ export async function apiRequest(
  */
 function formatDatabaseError(errorMessage: string, status: number): string {
   const lowerMessage = errorMessage.toLowerCase();
-  
+
   // For connection limit errors, return a generic message that doesn't alarm users
   // These errors are usually temporary and will be retried automatically
   // Include all variations of connection limit errors including SUPERUSER attribute errors
-  if (lowerMessage.includes('remaining connection slots') || 
-      lowerMessage.includes('superuser attribute') ||
-      lowerMessage.includes('reserved for roles') ||
-      lowerMessage.includes('too many connections') ||
-      lowerMessage.includes('connection limit') ||
-      lowerMessage.includes('max_connections')) {
+  if (
+    lowerMessage.includes('remaining connection slots') ||
+    lowerMessage.includes('superuser attribute') ||
+    lowerMessage.includes('reserved for roles') ||
+    lowerMessage.includes('too many connections') ||
+    lowerMessage.includes('connection limit') ||
+    lowerMessage.includes('max_connections')
+  ) {
     return 'Server is temporarily busy. Please try again.';
   }
 
@@ -298,9 +300,12 @@ function formatDatabaseError(errorMessage: string, status: number): string {
 /**
  * Helper function for GET requests with automatic retry on connection errors
  */
-export async function apiGet<T = any>(endpoint: string, retries = 5): Promise<T> {
+export async function apiGet<T = any>(
+  endpoint: string,
+  retries = 5
+): Promise<T> {
   let lastError: any;
-  
+
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
       const response = await apiRequest(endpoint, { method: 'GET' });
@@ -317,17 +322,22 @@ export async function apiGet<T = any>(endpoint: string, retries = 5): Promise<T>
               errorText || `HTTP ${response.status}: ${response.statusText}`,
           };
         }
-        
-        const originalMessage = errorData.message || `HTTP ${response.status}: ${response.statusText}`;
-        
+
+        const originalMessage =
+          errorData.message ||
+          `HTTP ${response.status}: ${response.statusText}`;
+
         // Check if it's a connection error that we should retry
-        const isConnectionError = originalMessage.toLowerCase().includes('connection limit') || 
-                                  originalMessage.toLowerCase().includes('remaining connection slots') ||
-                                  originalMessage.toLowerCase().includes('too many connections') ||
-                                  originalMessage.toLowerCase().includes('max_connections') ||
-                                  originalMessage.toLowerCase().includes('superuser attribute') ||
-                                  originalMessage.toLowerCase().includes('reserved for roles');
-        
+        const isConnectionError =
+          originalMessage.toLowerCase().includes('connection limit') ||
+          originalMessage
+            .toLowerCase()
+            .includes('remaining connection slots') ||
+          originalMessage.toLowerCase().includes('too many connections') ||
+          originalMessage.toLowerCase().includes('max_connections') ||
+          originalMessage.toLowerCase().includes('superuser attribute') ||
+          originalMessage.toLowerCase().includes('reserved for roles');
+
         if (isConnectionError && attempt < retries) {
           // Wait before retrying (exponential backoff with jitter)
           const baseWaitTime = Math.min(500 * Math.pow(1.5, attempt), 3000);
@@ -338,7 +348,7 @@ export async function apiGet<T = any>(endpoint: string, retries = 5): Promise<T>
           lastError = errorData;
           continue;
         }
-        
+
         // Only format and throw error if it's not a connection error or all retries exhausted
         let formattedMessage = formatDatabaseError(originalMessage, response.status);
         
@@ -371,22 +381,23 @@ export async function apiGet<T = any>(endpoint: string, retries = 5): Promise<T>
       }
     } catch (error: any) {
       lastError = error;
-      
+
       // Check if it's a connection error that we should retry
       const errorMsg = (error.message || '').toLowerCase();
       const originalMsg = (error.originalMessage || '').toLowerCase();
-      const isConnectionError = errorMsg.includes('connection limit') || 
-                                errorMsg.includes('remaining connection slots') ||
-                                errorMsg.includes('too many connections') ||
-                                errorMsg.includes('max_connections') ||
-                                errorMsg.includes('superuser attribute') ||
-                                errorMsg.includes('reserved for roles') ||
-                                originalMsg.includes('connection limit') ||
-                                originalMsg.includes('remaining connection slots') ||
-                                originalMsg.includes('too many connections') ||
-                                originalMsg.includes('superuser attribute') ||
-                                originalMsg.includes('reserved for roles');
-      
+      const isConnectionError =
+        errorMsg.includes('connection limit') ||
+        errorMsg.includes('remaining connection slots') ||
+        errorMsg.includes('too many connections') ||
+        errorMsg.includes('max_connections') ||
+        errorMsg.includes('superuser attribute') ||
+        errorMsg.includes('reserved for roles') ||
+        originalMsg.includes('connection limit') ||
+        originalMsg.includes('remaining connection slots') ||
+        originalMsg.includes('too many connections') ||
+        originalMsg.includes('superuser attribute') ||
+        originalMsg.includes('reserved for roles');
+
       if (isConnectionError && attempt < retries) {
         // Wait before retrying (exponential backoff with jitter)
         const baseWaitTime = Math.min(500 * Math.pow(1.5, attempt), 3000);
@@ -396,7 +407,7 @@ export async function apiGet<T = any>(endpoint: string, retries = 5): Promise<T>
         await new Promise(resolve => setTimeout(resolve, waitTime));
         continue;
       }
-      
+
       // Re-throw if it's already our custom error
       if (error.status) {
         throw error;
@@ -413,32 +424,35 @@ export async function apiGet<T = any>(endpoint: string, retries = 5): Promise<T>
       throw error;
     }
   }
-  
+
   // If we get here, all retries failed
   // For connection errors, return a more user-friendly message or suppress completely
   if (lastError) {
     const errorMsg = (lastError.message || '').toLowerCase();
     const originalMsg = (lastError.originalMessage || '').toLowerCase();
-    const isConnectionError = errorMsg.includes('connection limit') || 
-                              errorMsg.includes('remaining connection slots') ||
-                              errorMsg.includes('superuser attribute') ||
-                              errorMsg.includes('reserved for roles') ||
-                              originalMsg.includes('connection limit') ||
-                              originalMsg.includes('remaining connection slots') ||
-                              originalMsg.includes('superuser attribute') ||
-                              originalMsg.includes('reserved for roles');
-    
+    const isConnectionError =
+      errorMsg.includes('connection limit') ||
+      errorMsg.includes('remaining connection slots') ||
+      errorMsg.includes('superuser attribute') ||
+      errorMsg.includes('reserved for roles') ||
+      originalMsg.includes('connection limit') ||
+      originalMsg.includes('remaining connection slots') ||
+      originalMsg.includes('superuser attribute') ||
+      originalMsg.includes('reserved for roles');
+
     if (isConnectionError) {
       // For connection errors, return a generic message that doesn't alarm users
       // These are usually temporary database issues
-      const friendlyError: any = new Error('Server is temporarily busy. Please refresh the page and try again.');
+      const friendlyError: any = new Error(
+        'Server is temporarily busy. Please refresh the page and try again.'
+      );
       friendlyError.status = lastError.status || 500;
       friendlyError.originalError = lastError;
       friendlyError.isConnectionError = true; // Flag for silent handling
       throw friendlyError;
     }
   }
-  
+
   throw lastError;
 }
 

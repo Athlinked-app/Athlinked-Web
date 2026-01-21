@@ -5,7 +5,9 @@ import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import Header from '@/components/Header';
 import Post, { type PostData } from '@/components/Post';
-import { Search as SearchIcon, X, Play } from 'lucide-react';
+import CampDetailsPopup from '@/components/opportunities/CampDetailsPopup';
+import OpportunityDetailsPopup from '@/components/opportunities/CampDetailsPopup/OpportunityDetailsPopup';
+import { Search as SearchIcon, X, Play, Bookmark } from 'lucide-react';
 import { BASE_URL, getResourceUrl } from '@/utils/api';
 
 interface SearchResult {
@@ -28,16 +30,237 @@ interface ClipResult {
   created_at: string;
 }
 
+interface OpportunityItem {
+  id: string;
+  category: string;
+  title: string;
+  sport?: string;
+  website?: string;
+  image: string;
+  link?: string;
+  type: 'tryouts' | 'scholarship' | 'tournament';
+  date?: string;
+  location?: string;
+  eligibility?: string;
+  mustRepresent?: string;
+  dates?: string;
+  venue?: string;
+  format?: string;
+  matchDetails?: string;
+  registrationDeadline?: string;
+  membershipFee?: string;
+  documentsRequired?: string;
+}
+
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searchPosts, setSearchPosts] = useState<PostData[]>([]);
   const [searchClips, setSearchClips] = useState<ClipResult[]>([]);
   const [searchArticles, setSearchArticles] = useState<PostData[]>([]);
+  const [searchOpportunities, setSearchOpportunities] = useState<
+    OpportunityItem[]
+  >([]);
   const [isSearching, setIsSearching] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [scrapedCamps, setScrapedCamps] = useState<OpportunityItem[]>([]);
+  const [loadingCamps, setLoadingCamps] = useState(false);
+  const [showCampPopup, setShowCampPopup] = useState(false);
+  const [campDetails, setCampDetails] = useState<{
+    title: string;
+    image: string;
+    date: string;
+    location: string;
+    description: string;
+    applyLink: string;
+  } | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+  const [showOpportunityPopup, setShowOpportunityPopup] = useState(false);
+  const [selectedOpportunityDetails, setSelectedOpportunityDetails] =
+    useState<OpportunityItem | null>(null);
+  const [savedOpportunities, setSavedOpportunities] = useState<{
+    [key: string]: boolean;
+  }>({});
+
+  // Static opportunities (same as OpportunitiesPage)
+  const staticOpportunities: OpportunityItem[] = [
+    // SCHOLARSHIPS
+    {
+      id: '2',
+      category: 'Scholarship',
+      title: 'Silver Creek Scholarship',
+      image:
+        'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=100&h=100&fit=crop',
+      type: 'scholarship',
+      eligibility: 'High school seniors with GPA above 3.5',
+      mustRepresent: 'Must be enrolled in high school',
+      dates: 'Applications open until August 31, 2025',
+      venue: 'Online Application',
+      format: 'Essay submission and interview',
+      matchDetails: 'N/A',
+      registrationDeadline: 'August 31, 2025',
+      membershipFee: 'Free',
+      documentsRequired: 'Transcripts, recommendation letters, essay',
+    },
+    {
+      id: '6',
+      category: 'Scholarship',
+      title: 'Trine University Athletic Scholarship',
+      image:
+        'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=100&h=100&fit=crop',
+      type: 'scholarship',
+      eligibility: 'International students with SAT scores above 1200',
+      mustRepresent: 'Must apply through official portal',
+      dates: 'Rolling admissions',
+      venue: 'Trine University, USA',
+      format: 'Application review and interview',
+      matchDetails: 'N/A',
+      registrationDeadline: 'December 15, 2025',
+      membershipFee: 'Application fee: $50',
+      documentsRequired: 'SAT scores, transcripts, essays, recommendations',
+    },
+    {
+      id: '7',
+      category: 'Scholarship',
+      title: 'Stanford Athletic Excellence Scholarship',
+      image:
+        'https://images.unsplash.com/photo-1562774053-701939374585?w=100&h=100&fit=crop',
+      type: 'scholarship',
+      eligibility: 'High achieving students with athletic excellence',
+      mustRepresent: 'Must demonstrate leadership',
+      dates: 'Early decision: November 1, 2025',
+      venue: 'Stanford University, California',
+      format: 'Holistic review process',
+      matchDetails: 'N/A',
+      registrationDeadline: 'November 1, 2025',
+      membershipFee: 'Application fee: $90',
+      documentsRequired: 'Common App, essays, test scores, athletic portfolio',
+    },
+    {
+      id: '8',
+      category: 'Scholarship',
+      title: 'National Athletic Merit Award',
+      image:
+        'https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=100&h=100&fit=crop',
+      type: 'scholarship',
+      eligibility: 'Varsity athletes with 3.0+ GPA',
+      mustRepresent: 'Must be currently competing at varsity level',
+      dates: 'Application period: January 1 - March 31, 2025',
+      venue: 'Online Application',
+      format: 'Portfolio submission and coach recommendations',
+      matchDetails: 'N/A',
+      registrationDeadline: 'March 31, 2025',
+      membershipFee: 'Free',
+      documentsRequired:
+        'Transcripts, coach letter, highlight reel, personal statement',
+    },
+    {
+      id: '9',
+      category: 'Scholarship',
+      title: 'State University Sports Scholarship',
+      image:
+        'https://images.unsplash.com/photo-1571260899304-425eee4c7efc?w=100&h=100&fit=crop',
+      type: 'scholarship',
+      eligibility: 'State residents, athletes aged 17-19',
+      mustRepresent: 'Must maintain 2.5+ GPA',
+      dates: 'Apply by June 1, 2025',
+      venue: 'State University Campus',
+      format: 'Tryout and academic review',
+      matchDetails: 'N/A',
+      registrationDeadline: 'June 1, 2025',
+      membershipFee: 'Free for state residents',
+      documentsRequired: 'Proof of residency, transcripts, sports achievements',
+    },
+    // TOURNAMENTS
+    {
+      id: '3',
+      category: 'Tournament',
+      title: 'Golden State Championship',
+      image:
+        'https://images.unsplash.com/photo-1517649763962-0c623066013b?w=100&h=100&fit=crop',
+      type: 'tournament',
+      eligibility: 'Players aged 16-21',
+      mustRepresent: 'Must be part of a registered team',
+      dates: 'September 10 - September 17, 2025',
+      venue: 'Golden Sports Complex, Mumbai',
+      format: 'Knockout rounds followed by finals',
+      matchDetails: 'Standard tournament rules apply',
+      registrationDeadline: 'August 15, 2025',
+      membershipFee: '₹7,500 per team',
+      documentsRequired: 'ID proof, team registration, medical clearance',
+    },
+    {
+      id: '4',
+      category: 'Tournament',
+      title: 'Palmetto Basketball Invitational',
+      image:
+        'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=100&h=100&fit=crop',
+      type: 'tournament',
+      eligibility: 'College athletes only',
+      mustRepresent: 'Must represent a college team',
+      dates: 'October 5 - October 12, 2025',
+      venue: 'Palmetto Arena, Hyderabad',
+      format: 'Round-robin then playoffs',
+      matchDetails: 'NCAA rules, 4 quarters, 12 mins each',
+      registrationDeadline: 'September 1, 2025',
+      membershipFee: '₹8,000 per team',
+      documentsRequired: 'College ID, age proof, medical fitness',
+    },
+    {
+      id: '10',
+      category: 'Tournament',
+      title: 'National Youth Soccer Cup',
+      image:
+        'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=100&h=100&fit=crop',
+      type: 'tournament',
+      eligibility: 'Youth teams U-18',
+      mustRepresent: 'Must represent registered youth club',
+      dates: 'July 20 - July 28, 2025',
+      venue: 'National Stadium, Delhi',
+      format: 'Group stage, quarter-finals, semi-finals, finals',
+      matchDetails: 'FIFA youth rules, 2x35 minute halves',
+      registrationDeadline: 'June 15, 2025',
+      membershipFee: '₹6,000 per team',
+      documentsRequired: 'Birth certificates, club registration, player cards',
+    },
+    {
+      id: '11',
+      category: 'Tournament',
+      title: 'East Coast Volleyball Championship',
+      image:
+        'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=100&h=100&fit=crop',
+      type: 'tournament',
+      eligibility: 'High school and club teams',
+      mustRepresent: 'Team must be registered',
+      dates: 'November 15 - November 22, 2025',
+      venue: 'Coastal Sports Arena, Chennai',
+      format: 'Pool play followed by bracket',
+      matchDetails: 'Best of 5 sets, rally scoring',
+      registrationDeadline: 'October 20, 2025',
+      membershipFee: '₹5,500 per team',
+      documentsRequired: 'Team roster, school/club letter, insurance proof',
+    },
+    {
+      id: '12',
+      category: 'Tournament',
+      title: 'Winter Tennis Open',
+      image:
+        'https://images.unsplash.com/photo-1554068865-24cecd4e34b8?w=100&h=100&fit=crop',
+      type: 'tournament',
+      eligibility: 'Singles and doubles, all skill levels',
+      mustRepresent: 'Individual or club registration',
+      dates: 'December 1 - December 8, 2025',
+      venue: 'Premium Tennis Courts, Bangalore',
+      format: 'Single elimination bracket',
+      matchDetails: 'Best of 3 sets, standard ITF rules',
+      registrationDeadline: 'November 10, 2025',
+      membershipFee: '₹2,000 singles, ₹3,500 doubles',
+      documentsRequired:
+        'ID proof, medical certificate, club membership (if applicable)',
+    },
+  ];
 
   // Dummy posts data - Photos, Videos and Text posts
   const photoTextPosts: PostData[] = [
@@ -267,9 +490,62 @@ export default function SearchPage() {
     ...eventPosts,
   ];
 
+  // Fetch scraped camps on mount
+  useEffect(() => {
+    const fetchAllCamps = async () => {
+      setLoadingCamps(true);
+      try {
+        const [playNSportsResponse, laxCampsResponse] = await Promise.all([
+          fetch('/api/scrape-camps'),
+          fetch('/api/scrape-laxcamps'),
+        ]);
+
+        const [playNSportsData, laxCampsData] = await Promise.all([
+          playNSportsResponse.json(),
+          laxCampsResponse.json(),
+        ]);
+
+        const allScrapedCamps = [
+          ...(playNSportsData.success && playNSportsData.camps
+            ? playNSportsData.camps
+            : []),
+          ...(laxCampsData.success && laxCampsData.camps
+            ? laxCampsData.camps
+            : []),
+        ];
+
+        console.log(`✅ Total camps loaded: ${allScrapedCamps.length}`);
+        setScrapedCamps(allScrapedCamps);
+      } catch (error) {
+        console.error('❌ Error fetching camps:', error);
+      } finally {
+        setLoadingCamps(false);
+      }
+    };
+
+    fetchAllCamps();
+  }, []);
+
   useEffect(() => {
     fetchCurrentUser();
   }, []);
+
+  // Check saved status for opportunities
+  useEffect(() => {
+    const checkSavedOpportunities = () => {
+      const savedOpportunityIds = JSON.parse(
+        localStorage.getItem('athlinked_saved_opportunities') || '[]'
+      );
+      const savedMap: { [key: string]: boolean } = {};
+      const allOpps = [...staticOpportunities, ...scrapedCamps];
+      allOpps.forEach(opp => {
+        savedMap[opp.id] = savedOpportunityIds.includes(opp.id);
+      });
+      setSavedOpportunities(savedMap);
+    };
+
+    checkSavedOpportunities();
+  }, [scrapedCamps]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -309,6 +585,74 @@ export default function SearchPage() {
       .slice(0, 2);
   };
 
+  const handleCampClick = async (camp: OpportunityItem) => {
+    if (camp.link) {
+      setShowCampPopup(true);
+      setLoadingDetails(true);
+
+      try {
+        const response = await fetch(
+          `/api/scrape-camp-details?url=${encodeURIComponent(camp.link)}`
+        );
+        const data = await response.json();
+
+        if (data.success && data.camp) {
+          setCampDetails(data.camp);
+        }
+      } catch (error) {
+        console.error('Error fetching camp details:', error);
+        setCampDetails({
+          title: camp.title,
+          image: camp.image,
+          date: camp.date || 'Date TBA',
+          location: camp.location || 'Location TBA',
+          description: 'Click Apply to view full details',
+          applyLink: camp.link,
+        });
+      } finally {
+        setLoadingDetails(false);
+      }
+    }
+  };
+
+  const handleOpportunityClick = (opportunity: OpportunityItem) => {
+    setSelectedOpportunityDetails(opportunity);
+    setShowOpportunityPopup(true);
+  };
+
+  const handleSaveOpportunity = (opportunityId: string) => {
+    const savedOpportunityIds = JSON.parse(
+      localStorage.getItem('athlinked_saved_opportunities') || '[]'
+    );
+
+    let isNowSaved: boolean;
+    if (savedOpportunityIds.includes(opportunityId)) {
+      // Unsave
+      const updatedSavedOpportunities = savedOpportunityIds.filter(
+        (id: string) => id !== opportunityId
+      );
+      localStorage.setItem(
+        'athlinked_saved_opportunities',
+        JSON.stringify(updatedSavedOpportunities)
+      );
+      isNowSaved = false;
+    } else {
+      // Save
+      const updatedSavedOpportunities = [...savedOpportunityIds, opportunityId];
+      localStorage.setItem(
+        'athlinked_saved_opportunities',
+        JSON.stringify(updatedSavedOpportunities)
+      );
+      isNowSaved = true;
+    }
+
+    // Update saved state
+    setSavedOpportunities(prev => ({
+      ...prev,
+      [opportunityId]: isNowSaved,
+    }));
+  };
+
   const getProfileUrl = (profileUrl?: string | null): string | undefined => {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
@@ -326,6 +670,7 @@ export default function SearchPage() {
       setSearchPosts([]);
       setSearchClips([]);
       setSearchArticles([]);
+      setSearchOpportunities([]);
       return;
     }
 
@@ -506,12 +851,30 @@ export default function SearchPage() {
       } else {
         setSearchArticles([]);
       }
+
+      // Filter opportunities
+      const allOpportunities = [...staticOpportunities, ...scrapedCamps];
+      const filteredOpportunities = allOpportunities.filter(opp => {
+        const title = (opp.title || '').toLowerCase();
+        const category = (opp.category || '').toLowerCase();
+        const sport = (opp.sport || '').toLowerCase();
+        const location = (opp.location || '').toLowerCase();
+
+        return (
+          title.includes(searchLower) ||
+          category.includes(searchLower) ||
+          sport.includes(searchLower) ||
+          location.includes(searchLower)
+        );
+      });
+      setSearchOpportunities(filteredOpportunities);
     } catch (error) {
       console.error('Search error:', error);
       setSearchResults([]);
       setSearchPosts([]);
       setSearchClips([]);
       setSearchArticles([]);
+      setSearchOpportunities([]);
     } finally {
       setIsSearching(false);
     }
@@ -528,8 +891,8 @@ export default function SearchPage() {
 
     try {
       const endpoint = isCurrentlyFollowing
-        ? `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/network/unfollow/${userId}`
-        : `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/network/follow/${userId}`;
+        ? `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/network/unfollow/${userId}`
+        : `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/network/follow/${userId}`;
 
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -616,7 +979,7 @@ export default function SearchPage() {
     }
     if (activeFilter === 'events')
       return posts.filter(p => p.post_type === 'event');
-    if (activeFilter === 'opportunities') return []; // Opportunities will be defined later
+    if (activeFilter === 'opportunities') return []; // Opportunities are handled separately
 
     return [];
   };
@@ -703,7 +1066,105 @@ export default function SearchPage() {
       );
     }
 
-    // For "All" tab - show people, posts, clips, and articles
+    // Show opportunities for Opportunities tab
+    if (activeFilter === 'opportunities') {
+      if (loadingCamps) {
+        return (
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#CB9729] mx-auto"></div>
+            <p className="text-gray-500 mt-4">Loading opportunities...</p>
+          </div>
+        );
+      }
+
+      if (searchQuery === '') {
+        return (
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+            <SearchIcon className="mx-auto text-gray-300 mb-4" size={48} />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Start searching
+            </h3>
+            <p className="text-gray-500">Search for opportunities</p>
+          </div>
+        );
+      }
+
+      if (searchOpportunities.length === 0) {
+        return (
+          <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+            <SearchIcon className="mx-auto text-gray-300 mb-4" size={48} />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              No opportunities found
+            </h3>
+            <p className="text-gray-500">
+              No opportunities found matching "{searchQuery}"
+            </p>
+          </div>
+        );
+      }
+
+      return (
+        <div className="space-y-3">
+          {searchOpportunities.map(opportunity => (
+            <div
+              key={opportunity.id}
+              className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 hover:border-[#CB9729] transition-colors cursor-pointer"
+              onClick={() => {
+                if (opportunity.type === 'tryouts' && opportunity.link) {
+                  handleCampClick(opportunity);
+                } else if (
+                  opportunity.type === 'scholarship' ||
+                  opportunity.type === 'tournament'
+                ) {
+                  handleOpportunityClick(opportunity);
+                } else if (opportunity.link) {
+                  window.open(opportunity.link, '_blank');
+                }
+              }}
+            >
+              <div className="w-12 h-12 rounded-full bg-blue-100 overflow-hidden flex-shrink-0">
+                <img
+                  src={opportunity.image}
+                  alt={opportunity.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+
+              <div className="flex-1">
+                <p className="text-xs text-gray-500 mb-0.5">
+                  {opportunity.category}
+                  {opportunity.sport && ` • ${opportunity.sport}`}
+                  {opportunity.website && ` • ${opportunity.website}`}
+                </p>
+                <h3 className="text-base font-medium text-gray-900">
+                  {opportunity.title}
+                </h3>
+                {opportunity.location && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {opportunity.location}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={e => {
+                    e.stopPropagation();
+                    // Handle save functionality here
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                  aria-label="Save opportunity"
+                >
+                  <Bookmark className="w-5 h-5 text-gray-500" />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // For "All" tab - show people, posts, clips, articles, and opportunities
     if (activeFilter === 'all') {
       const filteredPosts = getFilteredPosts();
       // Combine posts with articles, avoiding duplicates
@@ -718,6 +1179,7 @@ export default function SearchPage() {
       const hasPeople = searchQuery.trim() !== '' && searchResults.length > 0;
       const hasPosts = allPostsForDisplay.length > 0;
       const hasClips = searchClips.length > 0;
+      const hasOpportunities = searchOpportunities.length > 0;
 
       if (isSearching) {
         return (
@@ -743,7 +1205,7 @@ export default function SearchPage() {
         );
       }
 
-      if (!hasPeople && !hasPosts && !hasClips) {
+      if (!hasPeople && !hasPosts && !hasClips && !hasOpportunities) {
         return (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <SearchIcon className="mx-auto text-gray-300 mb-4" size={48} />
@@ -810,10 +1272,65 @@ export default function SearchPage() {
             </div>
           )}
 
+          {/* Opportunities Section */}
+          {hasOpportunities && (
+            <div>
+              {(hasPeople || hasPosts || hasClips) && (
+                <h3 className="text-lg font-semibold text-gray-900 mb-3 px-2">
+                  Opportunities
+                </h3>
+              )}
+              <div className="space-y-3">
+                {searchOpportunities.slice(0, 5).map(opportunity => (
+                  <div
+                    key={opportunity.id}
+                    className="flex items-center gap-4 p-4 bg-white rounded-lg border border-gray-200 hover:border-[#CB9729] transition-colors cursor-pointer"
+                    onClick={() => {
+                      if (opportunity.type === 'tryouts' && opportunity.link) {
+                        handleCampClick(opportunity);
+                      } else if (
+                        opportunity.type === 'scholarship' ||
+                        opportunity.type === 'tournament'
+                      ) {
+                        handleOpportunityClick(opportunity);
+                      } else if (opportunity.link) {
+                        window.open(opportunity.link, '_blank');
+                      }
+                    }}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-blue-100 overflow-hidden flex-shrink-0">
+                      <img
+                        src={opportunity.image}
+                        alt={opportunity.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    <div className="flex-1">
+                      <p className="text-xs text-gray-500 mb-0.5">
+                        {opportunity.category}
+                        {opportunity.sport && ` • ${opportunity.sport}`}
+                        {opportunity.website && ` • ${opportunity.website}`}
+                      </p>
+                      <h3 className="text-base font-medium text-gray-900">
+                        {opportunity.title}
+                      </h3>
+                      {opportunity.location && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {opportunity.location}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Clips Section */}
           {hasClips && (
             <div>
-              {(hasPeople || hasPosts) && (
+              {(hasPeople || hasPosts || hasOpportunities) && (
                 <h3 className="text-lg font-semibold text-gray-900 mb-3 px-2">
                   Clips
                 </h3>
@@ -882,7 +1399,7 @@ export default function SearchPage() {
           {/* Posts Section (includes posts and articles) */}
           {hasPosts && (
             <div>
-              {(hasPeople || hasClips) && (
+              {(hasPeople || hasClips || hasOpportunities) && (
                 <h3 className="text-lg font-semibold text-gray-900 mb-3 px-2">
                   Posts & Articles
                 </h3>
@@ -996,7 +1513,7 @@ export default function SearchPage() {
       );
     }
 
-    // Show posts for other filters (Posts, Articles, Events, Opportunities)
+    // Show posts for other filters (Posts, Articles, Events)
     const filteredPosts = getFilteredPosts();
 
     if (searchQuery.trim() === '') {
@@ -1082,6 +1599,7 @@ export default function SearchPage() {
                         setSearchPosts([]);
                         setSearchClips([]);
                         setSearchArticles([]);
+                        setSearchOpportunities([]);
                       }}
                       className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                     >
@@ -1119,6 +1637,25 @@ export default function SearchPage() {
           <RightSideBar />
         </div>
       </main>
+
+      <CampDetailsPopup
+        show={showCampPopup}
+        loading={loadingDetails}
+        campDetails={campDetails}
+        onClose={() => setShowCampPopup(false)}
+      />
+
+      <OpportunityDetailsPopup
+        show={showOpportunityPopup}
+        opportunity={selectedOpportunityDetails}
+        onClose={() => setShowOpportunityPopup(false)}
+        onSave={handleSaveOpportunity}
+        isSaved={
+          selectedOpportunityDetails
+            ? savedOpportunities[selectedOpportunityDetails.id]
+            : false
+        }
+      />
     </div>
   );
 }

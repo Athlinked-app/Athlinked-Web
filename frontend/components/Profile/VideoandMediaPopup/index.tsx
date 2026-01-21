@@ -112,7 +112,7 @@ export default function VideoAndMediaPopup({
     showDropdown,
     setShowDropdown,
     onSelect,
-    ref,
+    dropdownRef,
     helperText,
   }: {
     label: string;
@@ -122,10 +122,10 @@ export default function VideoAndMediaPopup({
     showDropdown: boolean;
     setShowDropdown: (show: boolean) => void;
     onSelect: (value: string) => void;
-    ref: React.RefObject<HTMLDivElement>;
+    dropdownRef: React.RefObject<HTMLDivElement | null>;
     helperText?: string;
   }) => (
-    <div className="relative" ref={ref}>
+    <div className="relative" ref={dropdownRef}>
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {label}
       </label>
@@ -211,7 +211,7 @@ export default function VideoAndMediaPopup({
             showDropdown={showVideoStatusDropdown}
             setShowDropdown={setShowVideoStatusDropdown}
             onSelect={setVideoStatus}
-            ref={videoStatusRef}
+            dropdownRef={videoStatusRef}
             helperText="This will be system-assigned but you can set it manually for now"
           />
 
@@ -224,7 +224,7 @@ export default function VideoAndMediaPopup({
             showDropdown={showVerifiedMediaProfileDropdown}
             setShowDropdown={setShowVerifiedMediaProfileDropdown}
             onSelect={setVerifiedMediaProfile}
-            ref={verifiedMediaProfileRef}
+            dropdownRef={verifiedMediaProfileRef}
           />
         </div>
 

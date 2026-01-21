@@ -445,7 +445,7 @@ export default function ManageResourcesPage() {
 
                   // Provide more specific error messages
                   if (uploadError.isNetworkError) {
-                    errorMessage = `Network error: Unable to connect to the server.\n\nPlease ensure:\n1. Backend server is running on https://athlinked-api.randomw.dev\n2. Check browser console for details`;
+                    errorMessage = `Network error: Unable to connect to the server.\n\nPlease ensure:\n1. Backend server is running on http://localhost:3001\n2. Check browser console for details`;
                   } else if (uploadError.message) {
                     errorMessage = uploadError.message;
                   }
@@ -488,7 +488,7 @@ export default function ManageResourcesPage() {
 
                 // Provide more specific error messages
                 if (uploadError.isNetworkError) {
-                  errorMessage = `Network error: Unable to connect to the server.\n\nPlease ensure:\n1. Backend server is running on https://athlinked-api.randomw.dev\n2. Check browser console for details`;
+                  errorMessage = `Network error: Unable to connect to the server.\n\nPlease ensure:\n1. Backend server is running on http://localhost:3001\n2. Check browser console for details`;
                 } else if (uploadError.message) {
                   errorMessage = uploadError.message;
                 }
@@ -557,10 +557,10 @@ export default function ManageResourcesPage() {
             {/* Tabs Navigation */}
             <div className="border-b border-gray-200">
               <div className="max-w-7xl mx-auto">
-                <div className="flex justify-center gap-20">
+                <div className="flex justify-evenly">
                   <button
                     onClick={() => setActiveTab('guides')}
-                    className={`pl-6 pr-10 py-4 text-base font-medium relative transition-colors border-r border-gray-300 ${
+                    className={`px-6 py-4 text-md font-medium relative transition-colors border-r border-gray-300 ${
                       activeTab === 'guides'
                         ? 'text-[#CB9729]'
                         : 'text-black hover:text-black'
@@ -573,7 +573,7 @@ export default function ManageResourcesPage() {
                   </button>
                   <button
                     onClick={() => setActiveTab('videos')}
-                    className={`pl-6 pr-10 py-4 text-base font-medium relative transition-colors border-r border-gray-300 ${
+                    className={`px-6 py-4 text-md font-medium relative transition-colors border-r border-gray-300 ${
                       activeTab === 'videos'
                         ? 'text-[#CB9729]'
                         : 'text-black hover:text-black'
@@ -586,7 +586,7 @@ export default function ManageResourcesPage() {
                   </button>
                   <button
                     onClick={() => setActiveTab('templates')}
-                    className={`px-6 py-4 text-base font-medium relative transition-colors ${
+                    className={`px-6 py-4 text-nd font-medium relative transition-colors ${
                       activeTab === 'templates'
                         ? 'text-[#CB9729]'
                         : 'text-black hover:text-black'
@@ -642,17 +642,41 @@ export default function ManageResourcesPage() {
                     </div>
 
                     {/* Empty State */}
+
                     {resources.length === 0 && (
                       <div className="text-center py-16">
-                        <p className="text-black text-base mb-2">
-                          No Forms and Documents yet, Upload your first Form and
-                          Document
-                        </p>
-                        <p className="text-black text-sm">
-                          {activeTab === 'guides'
-                            ? 'Click Upload to add article URL'
-                            : ''}
-                        </p>
+                        {activeTab === 'guides' && (
+                          <>
+                            <p className="text-black text-base mb-2">
+                              No Guides & Articles yet, Upload your first
+                              Article
+                            </p>
+                            <p className="text-black text-sm">
+                              Click Upload to add article URL
+                            </p>
+                          </>
+                        )}
+                        {activeTab === 'videos' && (
+                          <>
+                            <p className="text-black text-base mb-2">
+                              No Videos yet, Upload your first Video
+                            </p>
+                            <p className="text-black text-sm">
+                              Click Upload to select video files
+                            </p>
+                          </>
+                        )}
+                        {activeTab === 'templates' && (
+                          <>
+                            <p className="text-black text-base mb-2">
+                              No Forms and Documents yet, Upload your first Form
+                              and Document
+                            </p>
+                            <p className="text-black text-sm">
+                              Click Upload to select PDF files
+                            </p>
+                          </>
+                        )}
                       </div>
                     )}
                   </>

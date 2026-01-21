@@ -45,7 +45,7 @@ export default function NavigationBar({
   const [notificationCount, setNotificationCount] = useState<number>(0);
   const [messageCount, setMessageCount] = useState<number>(0);
 
-    // Fetch notification count and set up WebSocket
+  // Fetch notification count and set up WebSocket
   useEffect(() => {
     const fetchNotificationCount = async () => {
       try {
@@ -69,7 +69,10 @@ export default function NavigationBar({
         // Silently handle errors for notification count - it's a non-critical feature
         // Only log in development mode
         if (process.env.NODE_ENV === 'development') {
-          console.warn('Could not fetch notification count:', error?.message || error);
+          console.warn(
+            'Could not fetch notification count:',
+            error?.message || error
+          );
         }
         // Set count to 0 on error to avoid showing incorrect counts
         setNotificationCount(0);
@@ -268,7 +271,7 @@ export default function NavigationBar({
       ? rawProfileUrl.startsWith('http')
         ? rawProfileUrl
         : rawProfileUrl.startsWith('/') && !rawProfileUrl.startsWith('/assets')
-          ? `https://athlinked-api.randomw.dev${rawProfileUrl}`
+          ? `http://localhost:3001${rawProfileUrl}`
           : rawProfileUrl
       : null;
 

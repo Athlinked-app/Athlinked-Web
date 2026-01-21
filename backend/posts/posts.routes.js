@@ -60,7 +60,7 @@ router.post(
  * /api/posts:
  *   get:
  *     summary: Get posts feed
- *     description: Retrieve a feed of posts. Only shows posts from users the authenticated user follows (or their own posts). Unauthenticated users see no posts. Users can see posts from: 1) themselves, 2) users they follow, 3) users they're connected with.
+ *     description: "Retrieve a feed of posts. Only shows posts from users the authenticated user follows (or their own posts). Unauthenticated users see no posts. Users can see posts from: 1) themselves, 2) users they follow, 3) users they're connected with."
  *     tags: [Posts]
  *     security:
  *       - bearerAuth: []

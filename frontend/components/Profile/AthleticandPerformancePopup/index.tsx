@@ -202,7 +202,7 @@ export default function AthleticAndPerformancePopup({
     showDropdown,
     setShowDropdown,
     onSelect,
-    ref,
+    dropdownRef,
   }: {
     label: string;
     value: string;
@@ -211,9 +211,9 @@ export default function AthleticAndPerformancePopup({
     showDropdown: boolean;
     setShowDropdown: (show: boolean) => void;
     onSelect: (value: string) => void;
-    ref: React.RefObject<HTMLDivElement>;
+    dropdownRef: React.RefObject<HTMLDivElement | null>;
   }) => (
-    <div className="relative" ref={ref}>
+    <div className="relative" ref={dropdownRef}>
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {label}
       </label>
@@ -315,7 +315,7 @@ export default function AthleticAndPerformancePopup({
             showDropdown={showSportDropdown}
             setShowDropdown={setShowSportDropdown}
             onSelect={setSport}
-            ref={sportRef}
+            dropdownRef={sportRef}
           />
 
           {/* Athlete Handedness Dropdown */}
@@ -327,7 +327,7 @@ export default function AthleticAndPerformancePopup({
             showDropdown={showHandednessDropdown}
             setShowDropdown={setShowHandednessDropdown}
             onSelect={setAthleteHandedness}
-            ref={handednessRef}
+            dropdownRef={handednessRef}
           />
 
           <div>

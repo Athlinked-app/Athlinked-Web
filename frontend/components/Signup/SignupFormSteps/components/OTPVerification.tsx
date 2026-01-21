@@ -52,7 +52,7 @@ export default function OTPVerification({
 
       // Call backend to verify OTP and create user
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'https://athlinked-api.randomw.dev/api'}/signup/verify-otp`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/verify-otp`,
         {
           method: 'POST',
           headers: {
