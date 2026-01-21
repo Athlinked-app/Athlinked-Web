@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import NavigationBar from '@/components/NavigationBar';
 import Header from '@/components/Header';
 import FileUploadModal from '@/components/Clips/FileUploadModal';
@@ -98,6 +98,134 @@ export default function ClipsPage() {
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({});
   const playPromisesRef = useRef<{ [key: string]: Promise<void> | null }>({});
   const lastWheelTimeRef = useRef(0);
+  // Track which clips have had their comments fetched to avoid duplicate calls
+  const fetchedCommentsRef = useRef<Set<string>>(new Set());
+  // Track ongoing fetch to prevent concurrent requests
+  const fetchingCommentsRef = useRef<string | null>(null);
+  // Debounce timer for scroll-based comment fetching
+  const commentFetchTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Define fetchComments early so it can be used in useEffects
+  const fetchComments = useCallback(async (clipId: string, forceRefresh = false) => {
+    // Skip if already fetched (unless force refresh) or currently fetching this clip
+    if (!forceRefresh && fetchedCommentsRef.current.has(clipId)) {
+      return;
+    }
+    
+    // Skip if we're already fetching comments for this clip
+    if (fetchingCommentsRef.current === clipId) {
+      return;
+    }
+
+    // Mark as currently fetching
+    fetchingCommentsRef.current = clipId;
+
+    try {
+      const { apiGet } = await import('@/utils/api');
+      const data = await apiGet<{ success: boolean; comments?: any[] }>(
+        `/clips/${clipId}/comments`
+      );
+
+      // Mark as fetched
+      fetchedCommentsRef.current.add(clipId);
+
+      if (data.success && data.comments) {
+        const transformedComments: Comment[] = data.comments.map(
+          (comment: any) => ({
+            id: comment.id,
+            author: comment.username || 'User',
+            authorAvatar:
+              comment.user_profile_url && comment.user_profile_url.trim() !== ''
+                ? comment.user_profile_url
+                : null,
+            text: comment.comment,
+            hasReplies: comment.replies && comment.replies.length > 0,
+            replies: comment.replies
+              ? comment.replies.map((reply: any) => ({
+                  id: reply.id,
+                  author: reply.username || 'User',
+                  authorAvatar:
+                    reply.user_profile_url &&
+                    reply.user_profile_url.trim() !== ''
+                      ? reply.user_profile_url
+                      : null,
+                  text: reply.comment,
+                  parent_username: reply.parent_username || null,
+                }))
+              : [],
+          })
+        );
+
+        // Show all replies by default
+        const newShowReplies: { [key: string]: boolean } = {};
+        transformedComments.forEach(comment => {
+          if (
+            comment.hasReplies &&
+            comment.replies &&
+            comment.replies.length > 0
+          ) {
+            newShowReplies[comment.id] = true;
+          }
+        });
+        setShowReplies(prev => ({ ...prev, ...newShowReplies }));
+
+        // Count total comments including replies for the count
+        const totalCount = data.comments.reduce(
+          (count: number, comment: any) => {
+            return count + 1 + (comment.replies ? comment.replies.length : 0);
+          },
+          0
+        );
+
+        setReels(prev =>
+          prev.map(reel => {
+            if (reel.id === clipId) {
+              return {
+                ...reel,
+                comments: transformedComments,
+                commentCount: totalCount,
+              };
+            }
+            return reel;
+          })
+        );
+      } else if (
+        data.success &&
+        (!data.comments || data.comments.length === 0)
+      ) {
+        // If no comments, ensure comments array is set to empty array
+        setReels(prev =>
+          prev.map(reel => {
+            if (reel.id === clipId) {
+              return {
+                ...reel,
+                comments: [],
+                commentCount: 0,
+              };
+            }
+            return reel;
+          })
+        );
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      // On error, ensure comments array exists
+      setReels(prev =>
+        prev.map(reel => {
+          if (reel.id === clipId) {
+            return {
+              ...reel,
+              comments: reel.comments || [],
+            };
+          }
+          return reel;
+        })
+      );
+    } finally {
+      // Clear fetching flag
+      fetchingCommentsRef.current = null;
+    }
+  }, []);
 
   const handleWheelScroll = (event: React.WheelEvent<HTMLDivElement>) => {
     const container = scrollContainerRef.current;
@@ -184,8 +312,14 @@ export default function ClipsPage() {
 
       if (reels[currentIndex]) {
         setSelectedReelId(reels[currentIndex].id);
-        // Fetch comments for the current reel
-        fetchComments(reels[currentIndex].id);
+        
+        // Debounce comment fetching - clear previous timer and set new one
+        if (commentFetchTimerRef.current) {
+          clearTimeout(commentFetchTimerRef.current);
+        }
+        commentFetchTimerRef.current = setTimeout(() => {
+          fetchComments(reels[currentIndex].id);
+        }, 300); // Wait 300ms after scroll stops before fetching
       } // Play/pause audio based on current index and paused state
       reels.forEach((reel, index) => {
         const audio = audioRefs.current[reel.id];
@@ -232,8 +366,7 @@ export default function ClipsPage() {
 
     if (reels.length > 0 && !selectedReelId) {
       setSelectedReelId(reels[0].id);
-      // Fetch comments for the first reel
-      fetchComments(reels[0].id);
+      // Comments will be fetched by the useEffect watching selectedReelId
     }
 
     // Play the first audio on initial load (only after user interaction)
@@ -260,7 +393,13 @@ export default function ClipsPage() {
       }
     }
 
-    return () => container.removeEventListener('scroll', handleScroll);
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      // Clear any pending comment fetch timer
+      if (commentFetchTimerRef.current) {
+        clearTimeout(commentFetchTimerRef.current);
+      }
+    };
   }, [
     reels,
     selectedReelId,
@@ -270,16 +409,14 @@ export default function ClipsPage() {
     userHasInteracted,
   ]);
 
-  // Fetch comments when selectedReelId changes
+  // Fetch comments when selectedReelId changes (with debounce protection)
   useEffect(() => {
     if (selectedReelId && reels.length > 0) {
-      const reel = reels.find(r => r.id === selectedReelId);
-      // Only fetch if comments haven't been loaded yet or if comments array doesn't exist
-      if (reel && (!reel.comments || reel.comments.length === 0)) {
-        fetchComments(selectedReelId);
-      }
+      // The fetchComments function already handles duplicate prevention via fetchedCommentsRef
+      // This ensures comments are fetched for the initially selected reel
+      fetchComments(selectedReelId);
     }
-  }, [selectedReelId, reels.length]);
+  }, [selectedReelId, fetchComments]);
 
   // Enable audio on any page interaction (makes it feel automatic)
   useEffect(() => {
@@ -668,112 +805,6 @@ export default function ClipsPage() {
     await fetchComments(reelId);
   };
 
-  const fetchComments = async (clipId: string) => {
-    try {
-      const { apiGet } = await import('@/utils/api');
-      const data = await apiGet<{ success: boolean; comments?: any[] }>(
-        `/clips/${clipId}/comments`
-      );
-
-      if (data.success && data.comments) {
-        const transformedComments: Comment[] = data.comments.map(
-          (comment: any) => ({
-            id: comment.id,
-            author:
-              comment.username || userData?.full_name?.split(' ')[0] || 'User',
-            authorAvatar:
-              comment.user_profile_url && comment.user_profile_url.trim() !== ''
-                ? comment.user_profile_url
-                : null,
-            text: comment.comment,
-            hasReplies: comment.replies && comment.replies.length > 0,
-            replies: comment.replies
-              ? comment.replies.map((reply: any) => ({
-                  id: reply.id,
-                  author:
-                    reply.username ||
-                    userData?.full_name?.split(' ')[0] ||
-                    'User',
-                  authorAvatar:
-                    reply.user_profile_url &&
-                    reply.user_profile_url.trim() !== ''
-                      ? reply.user_profile_url
-                      : null,
-                  text: reply.comment,
-                  parent_username: reply.parent_username || null,
-                }))
-              : [],
-          })
-        );
-
-        // Show all replies by default
-        const newShowReplies: { [key: string]: boolean } = {};
-        transformedComments.forEach(comment => {
-          if (
-            comment.hasReplies &&
-            comment.replies &&
-            comment.replies.length > 0
-          ) {
-            newShowReplies[comment.id] = true;
-          }
-        });
-        setShowReplies(prev => ({ ...prev, ...newShowReplies }));
-
-        // Count total comments including replies for the count
-        const totalCount = data.comments.reduce(
-          (count: number, comment: any) => {
-            return count + 1 + (comment.replies ? comment.replies.length : 0);
-          },
-          0
-        );
-
-        setReels(prev =>
-          prev.map(reel => {
-            if (reel.id === clipId) {
-              return {
-                ...reel,
-                comments: transformedComments,
-                commentCount: totalCount,
-              };
-            }
-            return reel;
-          })
-        );
-      } else if (
-        data.success &&
-        (!data.comments || data.comments.length === 0)
-      ) {
-        // If no comments, ensure comments array is set to empty array
-        setReels(prev =>
-          prev.map(reel => {
-            if (reel.id === clipId) {
-              return {
-                ...reel,
-                comments: [],
-                commentCount: 0,
-              };
-            }
-            return reel;
-          })
-        );
-      }
-    } catch (error) {
-      console.error('Error fetching comments:', error);
-      // On error, ensure comments array exists
-      setReels(prev =>
-        prev.map(reel => {
-          if (reel.id === clipId) {
-            return {
-              ...reel,
-              comments: reel.comments || [],
-            };
-          }
-          return reel;
-        })
-      );
-    }
-  };
-
   const handleAddComment = async (reelId: string) => {
     const text = commentTexts[reelId] || '';
     if (!text.trim()) {
@@ -794,7 +825,7 @@ export default function ClipsPage() {
       }
 
       setCommentTexts(prev => ({ ...prev, [reelId]: '' }));
-      await fetchComments(reelId);
+      await fetchComments(reelId, true); // Force refresh after adding comment
     } catch (error) {
       console.error('Error adding comment:', error);
       alert(error instanceof Error ? error.message : 'Failed to add comment');
@@ -826,7 +857,7 @@ export default function ClipsPage() {
         return newState;
       });
       setReplyingTo(prev => ({ ...prev, [reelId]: null }));
-      await fetchComments(reelId);
+      await fetchComments(reelId, true); // Force refresh after adding reply
     } catch (error) {
       console.error('Error adding reply:', error);
       alert(error instanceof Error ? error.message : 'Failed to add reply');
@@ -847,6 +878,9 @@ export default function ClipsPage() {
 
   const fetchClips = async () => {
     try {
+      // Reset the fetched comments cache when clips are refreshed
+      fetchedCommentsRef.current.clear();
+      
       const { apiGet } = await import('@/utils/api');
       const data = await apiGet<{ success: boolean; clips?: any[] }>(
         '/clips?page=1&limit=50'
