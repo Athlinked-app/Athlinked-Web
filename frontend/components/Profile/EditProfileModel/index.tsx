@@ -16,7 +16,8 @@ import {
   Heart,
 } from 'lucide-react';
 import EditProfilePopup from '../EditProfilePopup';
-import { BASE_URL, getResourceUrl } from '@/utils/api';
+import { getResourceUrl } from '@/utils/api';
+import { API_BASE_URL } from '@/utils/config';
 
 interface EditProfileModalProps {
   open: boolean;
@@ -154,11 +155,11 @@ export default function EditProfileModal({
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(username)}`
+            `${API_BASE_URL}/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
+            `${API_BASE_URL}/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 
@@ -298,11 +299,11 @@ export default function EditProfileModal({
         if (userIdentifier.startsWith('username:')) {
           const username = userIdentifier.replace('username:', '');
           response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user-by-username/${encodeURIComponent(username)}`
+            `${API_BASE_URL}/api/signup/user-by-username/${encodeURIComponent(username)}`
           );
         } else {
           response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/signup/user/${encodeURIComponent(userIdentifier)}`
+            `${API_BASE_URL}/api/signup/user/${encodeURIComponent(userIdentifier)}`
           );
         }
 

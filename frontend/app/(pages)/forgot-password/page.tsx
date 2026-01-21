@@ -4,6 +4,7 @@ import { useState, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import SignupHero from '@/components/Signup/SignupHero';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
+import { API_BASE_URL } from '@/utils/config';
 
 function ForgotPasswordContent() {
   const router = useRouter();
@@ -34,7 +35,7 @@ function ForgotPasswordContent() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/forgot-password/request`,
+        `${API_BASE_URL}/api/forgot-password/request`,
         {
           method: 'POST',
           headers: {
@@ -90,7 +91,7 @@ function ForgotPasswordContent() {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/forgot-password/reset`,
+        `${API_BASE_URL}/api/forgot-password/reset`,
         {
           method: 'POST',
           headers: {

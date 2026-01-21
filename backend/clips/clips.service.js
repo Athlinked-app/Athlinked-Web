@@ -68,14 +68,15 @@ async function createClipService(clipData) {
  * Get clips feed with pagination
  * @param {number} page - Page number
  * @param {number} limit - Items per page
+ * @param {string} viewerUserId - Optional viewer user ID for privacy filtering
  * @returns {Promise<object>} Service result with clips and pagination
  */
-async function getClipsFeedService(page = 1, limit = 10) {
+async function getClipsFeedService(page = 1, limit = 10, viewerUserId = null) {
   try {
     const pageNum = Math.max(1, parseInt(page, 10));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
 
-    const result = await clipsModel.getClipsFeed(pageNum, limitNum);
+    const result = await clipsModel.getClipsFeed(pageNum, limitNum, viewerUserId);
 
     // Convert user_profile_url and video_url S3 keys to presigned URLs
     if (result.clips && Array.isArray(result.clips)) {

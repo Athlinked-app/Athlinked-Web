@@ -1,5 +1,6 @@
 'use client';
 
+import { API_BASE_URL } from '@/utils/config';
 import { useState, useEffect, useCallback } from 'react';
 
 export interface Follower {
@@ -46,7 +47,7 @@ export function useMention({
 
       try {
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/network/following/${currentUserId}`
+          `${API_BASE_URL}/api/network/following/${currentUserId}`
         );
 
         if (response.ok) {

@@ -3,10 +3,10 @@
  */
 
 // Import from config for consistency
-import { API_BASE_URL, BASE_URL, getResourceUrl } from './config';
+import { API_BASE_URL, getResourceUrl } from './config';
 
 // Re-export for backward compatibility
-export { BASE_URL, getResourceUrl };
+export { getResourceUrl };
 
 /**
  * Make an unauthenticated API request (for login, signup, etc.)
@@ -29,7 +29,7 @@ export async function apiRequestUnauthenticated(
 
   const url = endpoint.startsWith('http')
     ? endpoint
-    : `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+    : `${API_BASE_URL}/api${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
   try {
     const response = await fetch(url, {
@@ -43,7 +43,7 @@ export async function apiRequestUnauthenticated(
       const networkError: any = new Error(
         `Network error: Unable to connect to ${url}. Please check:\n` +
           `1. The API server is running\n` +
-          `2. The API URL is correct (${API_BASE_URL})\n` +
+          `2. The API URL is correct (${API_BASE_URL}/api)\n` +
           `3. CORS is configured correctly\n` +
           `4. Your network connection is working`
       );
@@ -130,7 +130,7 @@ export async function refreshAccessToken(): Promise<string | null> {
   // Create refresh promise
   refreshPromise = (async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      const response = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -216,7 +216,7 @@ export async function apiRequest(
 
   const url = endpoint.startsWith('http')
     ? endpoint
-    : `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+    : `${API_BASE_URL}/api${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
   try {
     const response = await fetch(url, {
@@ -241,7 +241,7 @@ export async function apiRequest(
       const networkError: any = new Error(
         `Network error: Unable to connect to ${url}. Please check:\n` +
           `1. The API server is running\n` +
-          `2. The API URL is correct (${API_BASE_URL})\n` +
+          `2. The API URL is correct (${API_BASE_URL}/api)\n` +
           `3. CORS is configured correctly\n` +
           `4. Your network connection is working`
       );
@@ -679,7 +679,7 @@ export async function apiUpload<T = any>(
     ) {
       const networkError: any = new Error(
         `Network error: Unable to upload file to ${endpoint}. Please check:\n` +
-          `1. The API server is running on ${API_BASE_URL}\n` +
+          `1. The API server is running on ${API_BASE_URL}/api\n` +
           `2. The backend server is accessible\n` +
           `3. CORS is configured correctly\n` +
           `4. Your network connection is working`

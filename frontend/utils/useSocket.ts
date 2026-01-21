@@ -5,9 +5,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { getCurrentUserId } from './auth';
-
-const SOCKET_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
+import { API_BASE_URL } from './config';
 
 let globalSocket: Socket | null = null;
 const socketListeners: Map<string, Set<Function>> = new Map();
@@ -29,7 +27,7 @@ export function initializeSocket(): Socket | null {
     globalSocket.disconnect();
   }
 
-  globalSocket = io(SOCKET_URL, {
+  globalSocket = io(API_BASE_URL, {
     transports: ['websocket'],
     autoConnect: true,
   });
