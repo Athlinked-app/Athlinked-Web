@@ -125,7 +125,7 @@ export default function ShareModal({
   // Load connected users when modal opens
   useEffect(() => {
     if (open && currentUserId) {
-      loadFollowingUsers();
+      loadConnections();
     }
   }, [open, currentUserId]);
 
