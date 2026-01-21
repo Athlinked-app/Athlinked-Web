@@ -97,7 +97,11 @@ export default function Header({
 
   // Helper function to validate if a string is a valid URL for Next.js Image
   const isValidUrl = (urlString: string): boolean => {
-    if (!urlString || typeof urlString !== 'string' || urlString.trim() === '') {
+    if (
+      !urlString ||
+      typeof urlString !== 'string' ||
+      urlString.trim() === ''
+    ) {
       return false;
     }
     try {
@@ -115,9 +119,10 @@ export default function Header({
 
   // Use getResourceUrl for consistent URL construction, then validate
   const userProfileUrl = rawProfileUrl ? getResourceUrl(rawProfileUrl) : null;
-  
+
   // Final validation - ensure the URL is valid before using it with Next.js Image
-  const validUserProfileUrl = userProfileUrl && isValidUrl(userProfileUrl) ? userProfileUrl : null;
+  const validUserProfileUrl =
+    userProfileUrl && isValidUrl(userProfileUrl) ? userProfileUrl : null;
 
   const getInitials = (name: string) => {
     return name
