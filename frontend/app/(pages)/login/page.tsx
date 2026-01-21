@@ -175,67 +175,60 @@ export default function LoginPage() {
   };
 
   //   GOOGLE SIGN-IN HANDLER
-  const handleGoogleSignIn = async (userData: any) => {
-    console.log('Google sign-in data received:', userData);
+  const handleGoogleSignIn = async (data: any) => {
+    console.log('Google sign-in data received:', data);
     setError('');
     setShowPasswordChangedToast(false);
     setShowDeletedAccountToast(false);
 
-    try {
-      const { apiRequestUnauthenticated } = await import('@/utils/api');
-      const response = await apiRequestUnauthenticated('/auth/google', {
-        method: 'POST',
-        body: JSON.stringify({
-          google_id: userData.google_id,
-          email: userData.email,
-          full_name: userData.full_name,
-          profile_picture: userData.profile_picture,
-          email_verified: userData.email_verified,
-          flow: 'login',
-        }),
-      });
-
-      const data = await response.json();
-      console.log('Google login response:', data);
-
-      if (!data.success) {
-        setError(data.message || 'Failed to sign in with Google');
-        return;
-      }
-
-      if (data.needs_user_type) {
-        setError(
-          'No account found with this Google account. Please sign up first.'
-        );
-        return;
-      }
-
-      if (data.accessToken || data.token) {
-        if (data.accessToken) {
-          localStorage.setItem('accessToken', data.accessToken);
-        } else if (data.token) {
-          localStorage.setItem('accessToken', data.token);
-        }
-
-        if (data.refreshToken) {
-          localStorage.setItem('refreshToken', data.refreshToken);
-        }
-
-        if (data.user) {
-          localStorage.setItem('user', JSON.stringify(data.user));
-          localStorage.setItem('userEmail', data.user.email);
-        }
-
-        router.push('/home');
-        return;
-      }
-
-      setError('Failed to sign in with Google. Please try again.');
-    } catch (error) {
-      console.error('Google sign-in error:', error);
-      setError('Failed to connect to server. Please try again.');
+    if (!data.success) {
+      setError(data.message || 'Failed to sign in with Google');
+      return;
     }
+
+    // If user needs to select user type, redirect to signup
+    if (data.needs_user_type) {
+      // Store Google data for signup page to use
+      localStorage.setItem(
+        'google_temp_data',
+        JSON.stringify({
+          google_id: data.google_id,
+          email: data.email,
+          full_name: data.full_name,
+          profile_picture: data.profile_picture,
+          email_verified: data.email_verified,
+        })
+      );
+
+      // Redirect to signup page
+      router.push('/signup?from=login');
+      return;
+    }
+
+    // User exists, log them in
+    if (data.accessToken || data.token) {
+      if (data.accessToken) {
+        localStorage.setItem('accessToken', data.accessToken);
+      } else if (data.token) {
+        localStorage.setItem('accessToken', data.token);
+      }
+
+      if (data.refreshToken) {
+        localStorage.setItem('refreshToken', data.refreshToken);
+      }
+
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('userEmail', data.user.email);
+      }
+
+      router.push('/home');
+      return;
+    }
+
+    setError('Failed to sign in with Google. Please try again.');
   };
+
   // Show loading state while checking authentication
   if (checkingAuth) {
     return (
@@ -376,6 +369,7 @@ export default function LoginPage() {
             <GoogleSignInButton
               onSuccess={handleGoogleSignIn}
               buttonText="Sign in with Google"
+              mode="login" // NEW: Add this prop
             />
           </div>
 

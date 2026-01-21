@@ -135,14 +135,19 @@ class GoogleAuthController {
       }
 
       //   NEW: User doesn't exist at all
-      if (flow === 'login') {
-        // LOGIN: Don't create, just return error
-        return res.json({
-          success: false,
-          message:
-            'No account found with this Google account. Please sign up first.',
-        });
-      }
+     //   NEW: User doesn't exist at all
+if (flow === 'login') {
+  // LOGIN: Return success with needs_user_type flag for redirect to signup
+  return res.json({
+    success: true,
+    needs_user_type: true,
+    google_id: google_id,
+    email: email,
+    full_name: full_name,
+    profile_picture: profile_picture,
+    email_verified: email_verified,
+  });
+}
 
       // SIGNUP: Create new user
       user = await googleAuthService.createGoogleUser(

@@ -7,6 +7,7 @@ interface GoogleSignInButtonProps {
   onSuccess: (userData: any) => void;
   onError?: (error: any) => void;
   buttonText?: string;
+  mode?: 'login' | 'signup'; // NEW: Add mode prop
 }
 
 // Inner component that uses the hook - only rendered when provider exists
@@ -14,6 +15,7 @@ function GoogleSignInButtonInner({
   onSuccess,
   onError,
   buttonText = 'Continue with Google',
+  mode = 'signup', // NEW: Default to signup for backward compatibility
 }: GoogleSignInButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -34,8 +36,6 @@ function GoogleSignInButtonInner({
 
         const userInfo = await userInfoResponse.json();
 
-        //   NEW: Just return Google data WITHOUT calling backend
-        // We'll create the user later when they complete all steps
         const googleData = {
           success: true,
           needs_user_type: true,
@@ -46,7 +46,37 @@ function GoogleSignInButtonInner({
           email_verified: userInfo.email_verified,
         };
 
-        onSuccess(googleData);
+        // NEW: For login mode, call backend first to check if user exists
+        if (mode === 'login') {
+          try {
+            const API_BASE_URL =
+              process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+            const response = await fetch(`${API_BASE_URL}/auth/google`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                google_id: googleData.google_id,
+                email: googleData.email,
+                full_name: googleData.full_name,
+                profile_picture: googleData.profile_picture,
+                email_verified: googleData.email_verified,
+                flow: 'login',
+              }),
+            });
+
+            const data = await response.json();
+            onSuccess(data);
+          } catch (error) {
+            console.error('Backend check failed:', error);
+            onError?.(error);
+            alert('Failed to sign in with Google. Please try again.');
+          }
+        } else {
+          // Signup mode: Just return Google data without backend check
+          onSuccess(googleData);
+        }
       } catch (error) {
         console.error('Google sign-in error:', error);
         onError?.(error);
