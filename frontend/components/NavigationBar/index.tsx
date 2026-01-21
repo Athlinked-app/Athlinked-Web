@@ -45,7 +45,7 @@ export default function NavigationBar({
   const [notificationCount, setNotificationCount] = useState<number>(0);
   const [messageCount, setMessageCount] = useState<number>(0);
 
-    // Fetch notification count and set up WebSocket
+  // Fetch notification count and set up WebSocket
   useEffect(() => {
     const fetchNotificationCount = async () => {
       try {
@@ -69,7 +69,10 @@ export default function NavigationBar({
         // Silently handle errors for notification count - it's a non-critical feature
         // Only log in development mode
         if (process.env.NODE_ENV === 'development') {
-          console.warn('Could not fetch notification count:', error?.message || error);
+          console.warn(
+            'Could not fetch notification count:',
+            error?.message || error
+          );
         }
         // Set count to 0 on error to avoid showing incorrect counts
         setNotificationCount(0);
@@ -78,6 +81,12 @@ export default function NavigationBar({
 
     // Initial fetch
     fetchNotificationCount();
+
+    // When notifications are marked read/deleted on the notifications page, refresh the badge
+    const handleNotificationUpdated = () => {
+      fetchNotificationCount();
+    };
+    window.addEventListener('notification-updated', handleNotificationUpdated);
 
     // Fetch message count - completely silent error handling for non-critical feature
     const fetchMessageCount = async () => {
@@ -158,6 +167,7 @@ export default function NavigationBar({
     setupWebSocket();
 
     return () => {
+      window.removeEventListener('notification-updated', handleNotificationUpdated);
       if (socket) {
         if (handleNotificationCountUpdate) {
           socket.off(

@@ -232,6 +232,133 @@ function ProfileContent() {
     fetchProfileComplete();
   }, [targetUserId]); // Only depend on targetUserId, not viewUserId or currentUserId
 
+  // Fallback when /profile/:id/complete returns 404 (e.g. backend not yet deployed with that route)
+  const fetchProfileCompleteFallback = async (
+    userId: string,
+    viewUid: string | null,
+    currentUid: string | null
+  ) => {
+    const { apiGet } = await import('@/utils/api');
+    const base = { success: true };
+
+    const [profileRes, countsRes, connectionRes, ...sectionRes] =
+      await Promise.all([
+        apiGet<{
+          userId?: string;
+          fullName?: string | null;
+          profileImage?: string | null;
+          coverImage?: string | null;
+          bio?: string | null;
+          education?: string | null;
+          city?: string | null;
+          primarySport?: string | null;
+          sportsPlayed?: string | null;
+          dob?: string | null;
+          userType?: string;
+        }>(`/profile/${userId}`).catch(() => null),
+        apiGet<{ success?: boolean; followers?: number; following?: number }>(
+          `/network/counts/${userId}`
+        ).catch(() => ({ success: false, followers: 0, following: 0 })),
+        viewUid && currentUid && viewUid !== currentUid
+          ? apiGet<{ success?: boolean; exists?: boolean; status?: string }>(
+              `/network/connection-status/${viewUid}?requester_id=${currentUid}`
+            ).catch(() => null)
+          : Promise.resolve(null),
+        apiGet<{ success?: boolean; data?: any[] }>(
+          `/profile/${userId}/social-handles`
+        ).catch(() => ({ success: false, data: [] })),
+        apiGet<{ success?: boolean; data?: any[] }>(
+          `/profile/${userId}/academic-backgrounds`
+        ).catch(() => ({ success: false, data: [] })),
+        apiGet<{ success?: boolean; data?: any[] }>(
+          `/profile/${userId}/achievements`
+        ).catch(() => ({ success: false, data: [] })),
+        apiGet<{ success?: boolean; data?: any[] }>(
+          `/profile/${userId}/athletic-performance`
+        ).catch(() => ({ success: false, data: [] })),
+        apiGet<{ success?: boolean; data?: any[] }>(
+          `/profile/${userId}/competition-clubs`
+        ).catch(() => ({ success: false, data: [] })),
+        apiGet<{ success?: boolean; data?: any[] }>(
+          `/profile/${userId}/character-leadership`
+        ).catch(() => ({ success: false, data: [] })),
+        apiGet<{ success?: boolean; data?: any[] }>(
+          `/profile/${userId}/health-readiness`
+        ).catch(() => ({ success: false, data: [] })),
+        apiGet<{ success?: boolean; data?: any[] }>(
+          `/profile/${userId}/video-media`
+        ).catch(() => ({ success: false, data: [] })),
+      ]);
+
+    const [socialHandlesRes, academicRes, achievementsRes, athleticRes, clubsRes, charRes, healthRes, videoRes] =
+      sectionRes;
+
+    let sportsPlayed: string | null = null;
+    if (
+      profileRes?.sportsPlayed != null &&
+      typeof profileRes.sportsPlayed === 'string'
+    ) {
+      sportsPlayed = profileRes.sportsPlayed;
+    } else if (Array.isArray(profileRes?.sportsPlayed)) {
+      sportsPlayed = (profileRes.sportsPlayed as string[])
+        .filter(Boolean)
+        .join(', ');
+    }
+
+    const postsRes = await apiGet<{
+      success?: boolean;
+      posts?: any[];
+      data?: any[];
+    }>('/posts?page=1&limit=50').catch(() => ({ success: false, posts: [] }));
+    const allPosts =
+      (postsRes && ('posts' in postsRes ? postsRes.posts : (postsRes as any).data)) || [];
+    const posts = allPosts.filter((p: any) => p?.user_id === userId);
+
+    return {
+      ...base,
+      profile: profileRes
+        ? {
+            userId: profileRes.userId || userId,
+            fullName: profileRes.fullName ?? null,
+            profileImage: profileRes.profileImage ?? null,
+            coverImage: profileRes.coverImage ?? null,
+            bio: profileRes.bio ?? null,
+            education: profileRes.education ?? null,
+            city: profileRes.city ?? null,
+            primarySport: profileRes.primarySport ?? null,
+            sportsPlayed,
+            dob: profileRes.dob ?? null,
+            userType: profileRes.userType ?? undefined,
+            username: undefined,
+          }
+        : undefined,
+      followCounts:
+        countsRes && (countsRes.success !== false || 'followers' in countsRes)
+          ? {
+              followers: countsRes.followers ?? 0,
+              following: countsRes.following ?? 0,
+            }
+          : undefined,
+      connectionStatus:
+        connectionRes && connectionRes.success
+          ? {
+              exists: connectionRes.exists ?? false,
+              status: connectionRes.status ?? null,
+            }
+          : undefined,
+      socialHandles:
+        (socialHandlesRes as any)?.data ?? (socialHandlesRes as any)?.socialHandles ?? [],
+      academicBackgrounds: (academicRes as any)?.data ?? [],
+      achievements: (achievementsRes as any)?.data ?? [],
+      athleticPerformance: (athleticRes as any)?.data ?? [],
+      competitionClubs: (clubsRes as any)?.data ?? [],
+      characterLeadership: (charRes as any)?.data ?? [],
+      healthReadiness: (healthRes as any)?.data ?? [],
+      videoMedia: (videoRes as any)?.data ?? [],
+      posts,
+    };
+  };
+
   // OPTIMIZED: Single function to fetch all profile data (replaces multiple functions)
   const fetchProfileComplete = async () => {
     if (!targetUserId) {
@@ -249,9 +376,8 @@ function ProfileContent() {
       setLoading(true);
       const { apiGet } = await import('@/utils/api');
 
-      // Single API call to get ALL profile data
-      const data = await apiGet<{
-        success: boolean;
+      let data: {
+        success?: boolean;
         profile?: {
           userId?: string;
           fullName?: string | null;
@@ -278,7 +404,25 @@ function ProfileContent() {
         healthReadiness?: HealthAndReadiness[];
         videoMedia?: VideoAndMedia[];
         posts?: any[];
-      }>(`/profile/${currentTargetId}/complete`);
+      } | null = null;
+
+      try {
+        data = await apiGet<typeof data>(`/profile/${currentTargetId}/complete`);
+      } catch (completeErr: any) {
+        // Fallback when /complete is not available (e.g. older backend)
+        if (completeErr?.status === 404) {
+          console.warn(
+            'Profile /complete not found, using fallback with separate API calls'
+          );
+          data = await fetchProfileCompleteFallback(
+            currentTargetId,
+            viewUserId || null,
+            currentUserId
+          );
+        } else {
+          throw completeErr;
+        }
+      }
 
       // Verify we're still fetching for the same userId (prevent race conditions)
       if (currentTargetId !== targetUserId) {
@@ -288,7 +432,7 @@ function ProfileContent() {
         return;
       }
 
-      if (!data.success) {
+      if (!data || (typeof data.success === 'boolean' && !data.success)) {
         console.error(
           'Profile complete API returned unsuccessful response:',
           data
