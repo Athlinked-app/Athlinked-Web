@@ -88,7 +88,9 @@ export default function ShareModal({
     });
   };
 
-  const loadFollowingUsers = async () => {
+  // Load accepted connections only: people who accepted your request, or whose request you accepted.
+  // /network/connections returns users from user_connections (both directions).
+  const loadConnections = async () => {
     if (!currentUserId) return;
 
     setLoading(true);
@@ -113,12 +115,19 @@ export default function ShareModal({
         setUsers([]);
       }
     } catch (error) {
-      console.error('Error loading connected users:', error);
+      console.error('Error loading connections:', error);
       setUsers([]);
     } finally {
       setLoading(false);
     }
   };
+
+  // Fetch accepted connections when the share modal opens.
+  useEffect(() => {
+    if (open && currentUserId) {
+      loadConnections();
+    }
+  }, [open, currentUserId]);
 
   const getInitials = (name: string) => {
     if (!name) return 'U';

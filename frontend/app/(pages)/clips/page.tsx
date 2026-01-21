@@ -1084,7 +1084,7 @@ export default function ClipsPage() {
                       className="
     relative bg-black rounded-lg overflow-hidden shadow-2xl cursor-pointer w-full
     max-w-[280px] sm:max-w-[320px] md:max-w-[400px] lg:max-w-[480px]
-    xl:max-w-[700px] 2xl:max-w-[1000px]
+    xl:max-w-[700px] 2xl:max-w-[1000px] 
 
     aspect-[9/12]
     xl:aspect-[9/12]
@@ -1105,7 +1105,7 @@ export default function ClipsPage() {
                           }
                         }}
                         src={reel.videoUrl}
-                        className="w-full h-[90%] 2xl:h-[80%] object-top  mt-0 "
+                        className="w-full h-[90%] 2xl:h-[80%] object-top  mt-20 "
                         playsInline
                         loop
                         preload="auto"
