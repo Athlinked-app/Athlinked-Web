@@ -170,15 +170,37 @@ async function createResourceService(resourceData) {
 
 /**
  * Get all active resources
- * @param {string} userId - Optional user ID to filter by
- * @returns {Promise<object>} Service result with resources array
+ * Aggregates articles, videos, templates, posts, and clips from their respective endpoints
+ * @param {string} userId - Optional user ID to filter by (also used as viewerUserId for posts/clips)
+ * @returns {Promise<object>} Service result with articles, videos, templates, posts, and clips arrays
  */
 async function getAllResourcesService(userId = null) {
   try {
-    const resources = await resourcesModel.getAllResources(userId);
+    // Import services for articles, videos, templates, posts, and clips
+    const articlesService = require('../articles/articles.service');
+    const videosService = require('../videos/videos.service');
+    const templatesService = require('../templates/templates.service');
+    const postsService = require('../posts/posts.service');
+    const clipsService = require('../clips/clips.service');
+
+    // Fetch all types in parallel
+    // For posts and clips, use userId as viewerUserId for privacy filtering and set reasonable limits
+    const [articlesResult, videosResult, templatesResult, postsResult, clipsResult] = await Promise.all([
+      articlesService.getAllArticlesService(userId),
+      videosService.getAllVideosService(userId),
+      templatesService.getAllTemplatesService(userId),
+      postsService.getPostsFeedService(1, 100, userId), // page=1, limit=100, viewerUserId=userId
+      clipsService.getClipsFeedService(1, 100, userId), // page=1, limit=100, viewerUserId=userId
+    ]);
+
     return {
       success: true,
-      resources,
+      articles: articlesResult.articles || [],
+      videos: videosResult.videos || [],
+      templates: templatesResult.templates || [],
+      posts: postsResult.posts || [],
+      clips: clipsResult.clips || [],
+      resources: [], // Keep for backward compatibility, but prefer using articles, videos, templates, posts, clips
     };
   } catch (error) {
     console.error('Get all resources service error:', error.message);
@@ -188,25 +210,68 @@ async function getAllResourcesService(userId = null) {
 
 /**
  * Get resources by type
- * @param {string} resourceType - Resource type (article, video, template)
+ * Calls the appropriate separate endpoint (articles, videos, templates, posts, or clips)
+ * @param {string} resourceType - Resource type (article, video, template, post, clip)
+ * @param {string} userId - Optional user ID to filter by (also used as viewerUserId for posts/clips)
+ * @param {string} postType - Optional post_type filter when resourceType is 'post' (photo, video, article, event, text)
  * @returns {Promise<object>} Service result with resources array
  */
-async function getResourcesByTypeService(resourceType) {
+async function getResourcesByTypeService(resourceType, userId = null, postType = null) {
   try {
     if (
       !resourceType ||
-      !['article', 'video', 'template'].includes(resourceType)
+      !['article', 'video', 'template', 'post', 'clip'].includes(resourceType)
     ) {
       throw new Error(
-        'Invalid resource_type. Must be article, video, or template'
+        'Invalid resource_type. Must be article, video, template, post, or clip'
       );
     }
 
-    const resources = await resourcesModel.getResourcesByType(resourceType);
-    return {
-      success: true,
-      resources,
-    };
+    // Import services for articles, videos, templates, posts, and clips
+    const articlesService = require('../articles/articles.service');
+    const videosService = require('../videos/videos.service');
+    const templatesService = require('../templates/templates.service');
+    const postsService = require('../posts/posts.service');
+    const clipsService = require('../clips/clips.service');
+
+    // Call the appropriate separate endpoint based on type
+    if (resourceType === 'article') {
+      const result = await articlesService.getAllArticlesService(userId);
+      return {
+        success: true,
+        articles: result.articles || [],
+        resources: result.articles || [], // Keep for backward compatibility
+      };
+    } else if (resourceType === 'video') {
+      const result = await videosService.getAllVideosService(userId);
+      return {
+        success: true,
+        videos: result.videos || [],
+        resources: result.videos || [], // Keep for backward compatibility
+      };
+    } else if (resourceType === 'template') {
+      const result = await templatesService.getAllTemplatesService(userId);
+      return {
+        success: true,
+        templates: result.templates || [],
+        resources: result.templates || [], // Keep for backward compatibility
+      };
+    } else if (resourceType === 'post') {
+      // Pass postType if provided to filter posts by post_type
+      const result = await postsService.getPostsFeedService(1, 100, userId, postType);
+      return {
+        success: true,
+        posts: result.posts || [],
+        resources: result.posts || [], // Keep for backward compatibility
+      };
+    } else if (resourceType === 'clip') {
+      const result = await clipsService.getClipsFeedService(1, 100, userId);
+      return {
+        success: true,
+        clips: result.clips || [],
+        resources: result.clips || [], // Keep for backward compatibility
+      };
+    }
   } catch (error) {
     console.error('Get resources by type service error:', error.message);
     throw error;

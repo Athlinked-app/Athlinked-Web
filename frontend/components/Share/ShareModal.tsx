@@ -14,7 +14,7 @@ import {
 import io, { Socket } from 'socket.io-client';
 import type { PostData } from '../Post';
 import { apiPost, apiGet } from '@/utils/api';
-import { getResourceUrl } from '@/utils/config';
+import { getResourceUrl, API_BASE_URL } from '@/utils/config';
 
 export interface UserData {
   id: string;
@@ -65,7 +65,7 @@ export default function ShareModal({
         socketRef.current.disconnect();
       }
 
-      const socket = io('http://localhost:3001', {
+      const socket = io(API_BASE_URL, {
         transports: ['websocket'],
       });
 
