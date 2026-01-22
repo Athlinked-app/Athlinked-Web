@@ -1184,7 +1184,7 @@ export default function SearchPage() {
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Start searching
             </h3>
-            <p className="text-gray-500">
+            <p className="text-gray-500 dark:text-gray-900">
               Search for posts, clips, articles, events, opportunities, and
               people
             </p>
@@ -1576,7 +1576,7 @@ export default function SearchPage() {
                     placeholder="Search for posts, clips, articles, events, opportunities, and people..."
                     value={searchQuery}
                     onChange={e => handleSearch(e.target.value)}
-                    className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] focus:border-transparent"
+                    className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg dark:text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#CB9729] focus:border-transparent"
                   />
                   {searchQuery && (
                     <button
