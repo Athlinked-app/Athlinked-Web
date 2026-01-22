@@ -11,6 +11,7 @@ import {
   apiUpload,
   apiRequest,
 } from '@/utils/api';
+import { getResourceUrl } from '@/utils/api';
 import { getCurrentUserId } from '@/utils/auth';
 
 export type { Achievement };
@@ -238,6 +239,38 @@ export default function Achievements({
     }
   };
 
+  const getPdfUrl = (mediaPdf: Achievement['mediaPdf']): string | null => {
+    if (!mediaPdf) return null;
+    if (typeof mediaPdf === 'string') {
+      if (mediaPdf.startsWith('http://') || mediaPdf.startsWith('https://')) {
+        return mediaPdf;
+      }
+      return getResourceUrl(mediaPdf) || mediaPdf;
+    }
+    return URL.createObjectURL(mediaPdf);
+  };
+
+  const getPdfName = (pdfUrlOrName: string): string => {
+    // If it's already a filename, just return it.
+    if (!pdfUrlOrName.includes('/')) return pdfUrlOrName;
+
+    try {
+      const u = new URL(pdfUrlOrName);
+      const last = u.pathname.split('/').filter(Boolean).pop();
+      return decodeURIComponent(last || 'document.pdf');
+    } catch {
+      const clean = pdfUrlOrName.split('?')[0];
+      const last = clean.split('/').filter(Boolean).pop();
+      return decodeURIComponent(last || 'document.pdf');
+    }
+  };
+
+  const openPdf = (mediaPdf: Achievement['mediaPdf']) => {
+    const url = getPdfUrl(mediaPdf);
+    if (!url) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <>
       <div className="w-full bg-white rounded-lg px-6 py-5">
@@ -325,14 +358,23 @@ export default function Achievements({
                       </p>
                     )}
                     {achievement.mediaPdf && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <FileText className="w-4 h-4 text-gray-600" />
-                        <span className="text-sm text-gray-600">
-                          {typeof achievement.mediaPdf === 'string'
-                            ? achievement.mediaPdf
-                            : achievement.mediaPdf.name}
+                      <button
+                        type="button"
+                        className="flex items-center gap-2 mt-2 text-sm text-gray-600 hover:underline"
+                        onClick={e => {
+                          e.stopPropagation();
+                          openPdf(achievement.mediaPdf);
+                        }}
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span className="break-all">
+                          {getPdfName(
+                            typeof achievement.mediaPdf === 'string'
+                              ? achievement.mediaPdf
+                              : achievement.mediaPdf.name
+                          )}
                         </span>
-                      </div>
+                      </button>
                     )}
                   </div>
                   {isOwnProfile && (
@@ -393,6 +435,31 @@ function ViewAchievementPopup({
   data: Achievement;
 }) {
   if (!open) return null;
+
+  const getPdfUrl = (mediaPdf: Achievement['mediaPdf']): string | null => {
+    if (!mediaPdf) return null;
+    if (typeof mediaPdf === 'string') {
+      if (mediaPdf.startsWith('http://') || mediaPdf.startsWith('https://')) {
+        return mediaPdf;
+      }
+      return getResourceUrl(mediaPdf) || mediaPdf;
+    }
+    return URL.createObjectURL(mediaPdf);
+  };
+
+  const getPdfName = (pdfUrlOrName: string): string => {
+    if (!pdfUrlOrName.includes('/')) return pdfUrlOrName;
+
+    try {
+      const u = new URL(pdfUrlOrName);
+      const last = u.pathname.split('/').filter(Boolean).pop();
+      return decodeURIComponent(last || 'document.pdf');
+    } catch {
+      const clean = pdfUrlOrName.split('?')[0];
+      const last = clean.split('/').filter(Boolean).pop();
+      return decodeURIComponent(last || 'document.pdf');
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -505,11 +572,18 @@ function ViewAchievementPopup({
               </label>
               <div className="flex items-center gap-2">
                 <FileText className="w-4 h-4 text-gray-600" />
-                <p className="text-gray-900">
-                  {typeof data.mediaPdf === 'string'
-                    ? data.mediaPdf
-                    : data.mediaPdf.name}
-                </p>
+                <a
+                  href={getPdfUrl(data.mediaPdf) || undefined}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-gray-600 hover:underline break-all"
+                >
+                  {getPdfName(
+                    typeof data.mediaPdf === 'string'
+                      ? data.mediaPdf
+                      : data.mediaPdf.name
+                  )}
+                </a>
               </div>
             </div>
           )}

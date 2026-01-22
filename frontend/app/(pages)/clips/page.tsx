@@ -45,6 +45,7 @@ interface Reel {
   author: string;
   authorAvatar: string | null;
   caption: string;
+  // Raw created timestamp from backend (ISO string)
   timestamp: string;
   likes: number;
   shares: number;
@@ -698,7 +699,7 @@ export default function ClipsPage() {
       setReels(prev =>
         prev.map(reel => {
           if (reel.id === selectedReelForShare.id) {
-            return { ...reel, shares: reel.shares + 1 };
+            return { ...reel, shares: (reel.shares || 0) + 1 };
           }
           return reel;
         })
@@ -901,9 +902,9 @@ export default function ClipsPage() {
               ? clip.user_profile_url
               : null,
           caption: clip.description || '',
-          timestamp: formatTimestamp(clip.created_at),
+          timestamp: clip.created_at,
           likes: clip.like_count || 0,
-          shares: 0,
+          shares: clip.share_count || clip.shares || 0,
           commentCount: clip.comment_count || 0,
           comments: [],
           user_id: clip.user_id,
@@ -923,15 +924,29 @@ export default function ClipsPage() {
   // Format timestamp to relative time
   const formatTimestamp = (dateString: string) => {
     const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (Number.isNaN(date.getTime())) return '';
 
-    if (diffInSeconds < 60) return `${diffInSeconds} seconds ago`;
-    if (diffInSeconds < 3600)
-      return `${Math.floor(diffInSeconds / 60)} minutes ago`;
-    if (diffInSeconds < 86400)
-      return `${Math.floor(diffInSeconds / 3600)} hours ago`;
-    return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    const now = Date.now();
+    const diffInSeconds = Math.floor((now - date.getTime()) / 1000);
+
+    // < 1 hour: show minutes (keeps UI informative for fresh uploads)
+    if (diffInSeconds < 3600) {
+      const mins = Math.max(1, Math.floor(diffInSeconds / 60));
+      return `${mins}m`;
+    }
+
+    // < 24 hours: show hours like "5hr"
+    if (diffInSeconds < 86400) {
+      const hrs = Math.floor(diffInSeconds / 3600);
+      return `${hrs}hr`;
+    }
+
+    // >= 24 hours: show date like "27 October 2025"
+    return date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
   };
 
   const handleFileUpload = async (file: File, description: string) => {
@@ -1239,6 +1254,11 @@ export default function ClipsPage() {
                             <p className="text-white text-[10px] sm:text-xs md:text-sm leading-relaxed line-clamp-2 sm:line-clamp-3">
                               {reel.caption}
                             </p>
+                            {reel.timestamp && (
+                              <p className="mt-0.5 text-white/80 text-[9px] sm:text-[10px] md:text-xs">
+                                {formatTimestamp(reel.timestamp)}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </div>

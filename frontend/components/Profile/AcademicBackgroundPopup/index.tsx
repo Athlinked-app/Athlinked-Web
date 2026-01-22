@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { X, ChevronDown, ChevronUp, Upload } from 'lucide-react';
+import { getResourceUrl } from '@/utils/api';
 
 export interface AcademicBackground {
   id?: string;
@@ -66,6 +67,31 @@ export default function AcademicBackgroundPopup({
   onSave,
   existingData,
 }: AcademicBackgroundPopupProps) {
+  const getPdfUrl = (degreePdf: AcademicBackground['degreePdf']): string | null => {
+    if (!degreePdf) return null;
+    if (typeof degreePdf === 'string') {
+      if (degreePdf.startsWith('http://') || degreePdf.startsWith('https://')) {
+        return degreePdf;
+      }
+      return getResourceUrl(degreePdf) || degreePdf;
+    }
+    return URL.createObjectURL(degreePdf);
+  };
+
+  const getPdfName = (pdfUrlOrName: string): string => {
+    if (!pdfUrlOrName.includes('/')) return pdfUrlOrName;
+
+    try {
+      const u = new URL(pdfUrlOrName);
+      const last = u.pathname.split('/').filter(Boolean).pop();
+      return decodeURIComponent(last || 'document.pdf');
+    } catch {
+      const clean = pdfUrlOrName.split('?')[0];
+      const last = clean.split('/').filter(Boolean).pop();
+      return decodeURIComponent(last || 'document.pdf');
+    }
+  };
+
   const [school, setSchool] = useState(existingData?.school || '');
   const [degree, setDegree] = useState(existingData?.degree || '');
   const [qualification, setQualification] = useState(
@@ -77,7 +103,7 @@ export default function AcademicBackgroundPopup({
   const [degreePdfName, setDegreePdfName] = useState(
     existingData?.degreePdf
       ? typeof existingData.degreePdf === 'string'
-        ? existingData.degreePdf
+        ? getPdfName(existingData.degreePdf)
         : existingData.degreePdf.name
       : ''
   );
@@ -148,7 +174,7 @@ export default function AcademicBackgroundPopup({
       setDegreePdfName(
         existingData.degreePdf
           ? typeof existingData.degreePdf === 'string'
-            ? existingData.degreePdf
+            ? getPdfName(existingData.degreePdf)
             : existingData.degreePdf.name
           : ''
       );
@@ -298,7 +324,7 @@ export default function AcademicBackgroundPopup({
     showDropdown: boolean;
     setShowDropdown: (show: boolean) => void;
     onSelect: (value: string) => void;
-    dropdownRef: React.RefObject<HTMLDivElement>;
+    dropdownRef: React.RefObject<HTMLDivElement | null>;
   }) => (
     <div className="relative" ref={dropdownRef}>
       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -446,6 +472,18 @@ export default function AcademicBackgroundPopup({
                     <Upload className="w-5 h-5" />
                     <span>{degreePdfName || 'Upload Degree'}</span>
                   </button>
+                  {existingData?.degreePdf && !degreePdf && (
+                    <div className="mt-2 text-sm">
+                      <a
+                        href={getPdfUrl(existingData.degreePdf) || undefined}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-600 hover:underline"
+                      >
+                        View current PDF
+                      </a>
+                    </div>
+                  )}
                   <input
                     ref={pdfInputRef}
                     type="file"
