@@ -29,12 +29,14 @@ const uploadToS3Middleware = async (req, res, next) => {
   if (req.file) {
     try {
       const s3Key = generateS3Key('profile', req.file.originalname, req.file.mimetype);
-      const s3Url = await uploadToS3(req.file.buffer, s3Key, req.file.mimetype);
+      // uploadToS3 returns the S3 key (not a presigned URL)
+      const uploadedKey = await uploadToS3(req.file.buffer, s3Key, req.file.mimetype);
       
-      // Store S3 URL in req.file.location for controllers to use
-      req.file.location = s3Url;
-      req.file.s3Key = s3Key;
-      console.log('File uploaded to S3:', s3Url);
+      // Store S3 key (not presigned URL) for controllers to use
+      // Use s3Key explicitly to avoid confusion
+      req.file.location = uploadedKey; // Keep for backward compatibility
+      req.file.s3Key = uploadedKey; // Explicit S3 key (this is what should be stored in DB)
+      console.log('File uploaded to S3, key:', uploadedKey);
     } catch (error) {
       return res.status(500).json({
         success: false,
