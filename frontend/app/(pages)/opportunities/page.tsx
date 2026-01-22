@@ -621,6 +621,7 @@ export default function OpportunitiesPage() {
 
         {selectedOpportunity && selectedOpportunity.type !== 'tryouts' && (
           <div className="w-80 bg-white ml-5 mb-5 rounded-xl p-6 overflow-y-auto">
+            {/* Update this section - around line 572-585 */}
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
               <div className="w-12 h-12 rounded-full bg-blue-100 overflow-hidden flex-shrink-0">
                 <img
@@ -639,13 +640,17 @@ export default function OpportunitiesPage() {
               </div>
             </div>
 
+            {/* Change line ~588: Update heading */}
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              Details
+              {selectedOpportunity.type === 'scholarship'
+                ? 'Scholarship Details'
+                : 'Tournament Details'}
             </h2>
 
+            {/* Update buttons section - around lines 591-615 */}
             <div className="flex gap-3 mb-6">
               <button className="flex-1 bg-[#CB9729] text-white py-2 px-4 rounded-lg font-medium hover:bg-[#B88624] transition-colors">
-                Share
+                Apply Now
               </button>
               <button
                 onClick={() => {
@@ -677,27 +682,30 @@ export default function OpportunitiesPage() {
               </button>
             </div>
 
+            {/* Add Description section before Date & Venue - around line 617 */}
             <div className="space-y-6">
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  Eligibility:
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {selectedOpportunity.eligibility}
-                </p>
-              </div>
-
               <div>
                 <h3 className="font-semibold text-gray-900 mb-2">
                   Date & Venue:
                 </h3>
                 <p className="text-sm text-gray-600">
-                  {selectedOpportunity.dates}
+                  Dates: {selectedOpportunity.dates}
                 </p>
                 <p className="text-sm text-gray-600">
-                  {selectedOpportunity.venue}
+                  Venue: {selectedOpportunity.venue}
                 </p>
               </div>
+              {/* NEW: Add Description section */}
+              {selectedOpportunity.eligibility && (
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">
+                    Description:
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {selectedOpportunity.eligibility}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

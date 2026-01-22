@@ -52,19 +52,16 @@ export default function OTPVerification({
       }
 
       // Call backend to verify OTP and create user
-      const response = await fetch(
-        `${API_BASE_URL}/api/signup/verify-otp`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: emailForVerification,
-            otp: formData.otp,
-          }),
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/signup/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: emailForVerification,
+          otp: formData.otp,
+        }),
+      });
 
       // Check if response is ok and is JSON
       const contentType = response.headers.get('content-type');

@@ -13,26 +13,6 @@ export default function ParentDetailsForm({
   isLoadingOTP = false,
   onContinue,
 }: ParentDetailsFormProps) {
-  // Convert MM/DD/YYYY to YYYY-MM-DD for date input
-  const formatDateForInput = (mmddyyyy: string): string => {
-    if (!mmddyyyy || mmddyyyy.length !== 10) return '';
-    const [month, day, year] = mmddyyyy.split('/');
-    return `${year}-${month}-${day}`;
-  };
-
-  // Convert YYYY-MM-DD to MM/DD/YYYY for storage
-  const formatDateForStorage = (yyyymmdd: string): string => {
-    if (!yyyymmdd) return '';
-    const [year, month, day] = yyyymmdd.split('-');
-    return `${month}/${day}/${year}`;
-  };
-
-  const handleDOBChange = (value: string) => {
-    // Value comes in YYYY-MM-DD format from date input
-    const formattedDate = formatDateForStorage(value);
-    onFormDataChange({ ...formData, parentDOB: formattedDate });
-  };
-
   return (
     <>
       <div className="space-y-4 mb-6">
@@ -69,24 +49,12 @@ export default function ParentDetailsForm({
             <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           </div>
         </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Date of birth
-          </label>
-          <input
-            type="date"
-            value={formatDateForInput(formData.parentDOB)}
-            onChange={e => handleDOBChange(e.target.value)}
-            max={new Date().toISOString().split('T')[0]}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 bg-white"
-          />
-        </div>
       </div>
 
       <button
         onClick={onContinue}
-        className="w-full bg-[#CB9729] text-gray-800 font-medium py-3 rounded-lg transition-all mb-4 text-sm sm:text-base"
+        disabled={isLoadingOTP}
+        className="w-full bg-[#CB9729] text-gray-800 font-medium py-3 rounded-lg transition-all mb-4 text-sm sm:text-base flex items-center justify-center gap-2 disabled:opacity-70"
       >
         {isLoadingOTP && (
           <svg
@@ -110,7 +78,7 @@ export default function ParentDetailsForm({
             ></path>
           </svg>
         )}
-        {isLoadingOTP ? 'Sending OTP...' : 'Continue'}
+        <span>{isLoadingOTP ? 'Sending OTP...' : 'Continue'}</span>
       </button>
 
       <div className="text-center text-xs sm:text-sm text-gray-600">

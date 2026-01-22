@@ -96,8 +96,8 @@ export default function StatsPage() {
   };
 
   const [showYearPicker, setShowYearPicker] = useState(false);
-const currentYear = new Date().getFullYear();
-const years = Array.from({ length: 100 }, (_, i) => currentYear - i); 
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
   // Construct profile URL - return undefined if no profileUrl exists
   const getProfileUrl = (profileUrl?: string | null): string | undefined => {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
@@ -771,253 +771,240 @@ const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
         {/* Main Content Area */}
 
         <div className="flex-1 flex flex-col pr-3 gap-4 overflow-hidden min-w-0">
-        <div className="bg-[#CB9729] rounded-lg p-5 flex items-center justify-between shadow-sm">
-  <div className="flex items-center gap-6">
-    <div className="w-24 h-24 rounded-full bg-white overflow-hidden border-2 border-white shadow-md flex items-center justify-center">
-      {getProfileUrl(userData?.profile_url) ? (
-        <img
-          src={getProfileUrl(userData?.profile_url) || ''}
-          alt={displayName}
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <span className="text-black font-semibold text-lg">
-          {getInitials(userData?.full_name || 'User')}
-        </span>
-      )}
-    </div>
-    <div>
-      <h1 className="text-3xl font-bold text-white mb-1">
-        {displayName}
-      </h1>
-      <p className="text-white text-base">
-        {primarySport}
-        {athleticPerformance?.jerseyNumber &&
-          ` • #${athleticPerformance.jerseyNumber}`}
-      </p>
-    </div>
-  </div>
-  <div className="text-white mr-44">
-    <div className="grid grid-cols-2 gap-x-32 gap-y-2 text-lg font-semibold">
-      {athleticPerformance?.height ? (
-        <div>Height: {athleticPerformance.height}</div>
-      ) : (
-        <div className="text-gray-300">Height: —</div>
-      )}
-      {athleticPerformance?.hand ? (
-        <div>Hand: {athleticPerformance.hand}</div>
-      ) : (
-        <div className="text-gray-300">Hand: —</div>
-      )}
-      {athleticPerformance?.weight ? (
-        <div>Weight: {athleticPerformance.weight}</div>
-      ) : (
-        <div className="text-gray-300">Weight: —</div>
-      )}
-      {athleticPerformance?.arm ? (
-        <div>Arm: {athleticPerformance.arm}</div>
-      ) : (
-        <div className="text-gray-300">Arm: —</div>
-      )}
-    </div>
-  </div>
-</div>
+          <div className="bg-[#CB9729] rounded-lg p-5 flex items-center justify-between shadow-sm">
+            <div className="flex items-center gap-6">
+              <div className="w-24 h-24 rounded-full bg-white overflow-hidden border-2 border-white shadow-md flex items-center justify-center">
+                {getProfileUrl(userData?.profile_url) ? (
+                  <img
+                    src={getProfileUrl(userData?.profile_url) || ''}
+                    alt={displayName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-black font-semibold text-lg">
+                    {getInitials(userData?.full_name || 'User')}
+                  </span>
+                )}
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white mb-1">
+                  {displayName}
+                </h1>
+                <p className="text-white text-base">
+                  {primarySport}
+                  {athleticPerformance?.jerseyNumber &&
+                    ` • #${athleticPerformance.jerseyNumber}`}
+                </p>
+              </div>
+            </div>
+            <div className="text-white mr-44">
+              <div className="grid grid-cols-2 gap-x-32 gap-y-2 text-lg font-semibold">
+                {athleticPerformance?.height ? (
+                  <div>Height: {athleticPerformance.height}</div>
+                ) : (
+                  <div className="text-gray-300">Height: —</div>
+                )}
+                {athleticPerformance?.hand ? (
+                  <div>Hand: {athleticPerformance.hand}</div>
+                ) : (
+                  <div className="text-gray-300">Hand: —</div>
+                )}
+                {athleticPerformance?.weight ? (
+                  <div>Weight: {athleticPerformance.weight}</div>
+                ) : (
+                  <div className="text-gray-300">Weight: —</div>
+                )}
+                {athleticPerformance?.arm ? (
+                  <div>Arm: {athleticPerformance.arm}</div>
+                ) : (
+                  <div className="text-gray-300">Arm: —</div>
+                )}
+              </div>
+            </div>
+          </div>
           <div className="flex-1 flex flex-col bg-white overflow-auto rounded-lg">
             <main className="flex-1 p-6 bg-white">
-             
-
               {/* Sport Tabs */}
               <div className="flex mb-6 border-b border-gray-200">
-  {sports.map((sport, index) => {
-    const sportKey = sport.toLowerCase();
-    const displayName = getSportDisplayName(sport);
-    return (
-      <button
-        key={sportKey}
-        onClick={() => setActiveSport(sportKey)}
-        className={`pb-3 px-8 font-medium transition-colors relative ${
-          activeSport === sportKey
-            ? 'text-[#CB9729]'
-            : 'text-gray-600 hover:text-gray-900'
-        } ${index !== 0 ? 'border-l  border-gray-200' : ''}`}
-      >
-        {displayName}
-        {activeSport === sportKey && (
-          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]" />
-        )}
-      </button>
-    );
-  })}
-</div>
+                {sports.map((sport, index) => {
+                  const sportKey = sport.toLowerCase();
+                  const displayName = getSportDisplayName(sport);
+                  return (
+                    <button
+                      key={sportKey}
+                      onClick={() => setActiveSport(sportKey)}
+                      className={`pb-3 px-8 font-medium transition-colors relative ${
+                        activeSport === sportKey
+                          ? 'text-[#CB9729]'
+                          : 'text-gray-600 hover:text-gray-900'
+                      } ${index !== 0 ? 'border-l  border-gray-200' : ''}`}
+                    >
+                      {displayName}
+                      {activeSport === sportKey && (
+                        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
 
               {/* Football Stats Section */}
-             
-                
-                 
 
-                  {/* Action Bar */}
-                  <div className="flex items-center gap-4">
-                  <h2 className="text-lg font-medium text-black mb-4">
-                    {getSportDisplayName(activeSport)} Stats
-                  </h2>
-                    <div className="flex-1 relative">
-                      <Search
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black"
-                        size={20}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Search"
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-black"
-                      />
-                    </div>
-                    <div className="relative">
-                      <select
-                        value={selectedPosition}
-                        onChange={e => setSelectedPosition(e.target.value)}
-                        className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-yellow-500 min-w-[180px] text-black"
-                      >
-                        <option value="" className="text-black">
-                          All Positions
-                        </option>
-                        {loadingPositions ? (
-                          <option disabled className="text-black">
-                            Loading positions...
-                          </option>
-                        ) : availablePositions.length === 0 ? (
-                          <option disabled className="text-black">
-                            No positions available
-                          </option>
-                        ) : (
-                          availablePositions.map(position => (
-                            <option
-                              key={position.id}
-                              value={position.name}
-                              className="text-black"
-                            >
-                              {position.name}
-                            </option>
-                          ))
-                        )}
-                      </select>
-                      <ChevronDown
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-black pointer-events-none"
-                        size={20}
-                      />
-                    </div>
-                    <button
-                      onClick={() => {
-                        // If there are profiles, allow editing the first one (or selected one)
-                        if (currentProfiles.length > 0) {
-                          const firstProfile = currentProfiles[0];
-                          const year = getYearForProfile(firstProfile);
-                          handleEditProfile(firstProfile, year);
-                        } else {
-                          alert(
-                            'No stats data to edit. Please add data first.'
-                          );
-                        }
-                      }}
-                      className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-black"
-                    >
-                      <Edit size={18} />
-                      <span>Edit</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditingProfile(null);
-                        setEditingYear('');
-                        setFormData({ year: '', position: '' });
-                        setAvailableFields([]);
-                        setShowAddStatsModal(true);
-                      }}
-                      className="flex items-center gap-2 px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-yellow-600 transition-colors"
-                    >
-                      <Plus size={18} />
-                      <span>Add Data</span>
-                    </button>
-                  </div>
-                
-
-                {/* Statistics Table */}
-                <div className="overflow-x-auto">
-                  {loadingStats ? (
-                    <div className="p-6 text-center text-black">
-                      Loading stats...
-                    </div>
-                  ) : currentProfiles.length === 0 ||
-                    allFieldLabels.length === 0 ? (
-                    <div className="p-6 text-center text-gray-600">
-                      No stats data available yet. Use the "Add Data" button
-                      above to add your first stats entry.
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse">
-                        <thead className="bg-gray-50 border-b border-gray-200">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
-                              Year
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
-                              Position
-                            </th>
-                            {allFieldLabels.map(fieldLabel => (
-                              <th
-                                key={fieldLabel}
-                                className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap min-w-[150px]"
-                              >
-                                {fieldLabel}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {currentProfiles.map(profile => {
-                            const year = getYearForProfile(profile);
-                            return (
-                              <tr
-                                key={`${profile.id}-${year}`}
-                                className="hover:bg-gray-50 transition-colors"
-                              >
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
-                                  {year || '—'}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                  <div className="flex items-center gap-2">
-                                    <span>{profile.position_name}</span>
-                                    <button
-                                      onClick={() =>
-                                        handleEditProfile(profile, year)
-                                      }
-                                      className="p-1 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
-                                      title="Edit this row"
-                                    >
-                                      <Edit
-                                        size={14}
-                                        className="text-gray-600"
-                                      />
-                                    </button>
-                                  </div>
-                                </td>
-                                {allFieldLabels.map(fieldLabel => (
-                                  <td
-                                    key={fieldLabel}
-                                    className="px-6 py-4 whitespace-nowrap text-sm text-black"
-                                  >
-                                    {getValueForField(profile, fieldLabel) ||
-                                      '—'}
-                                  </td>
-                                ))}
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
+              {/* Action Bar */}
+              <div className="flex items-center gap-4">
+                <h2 className="text-lg font-medium text-black mb-4">
+                  {getSportDisplayName(activeSport)} Stats
+                </h2>
+                <div className="flex-1 relative">
+                  <Search
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black"
+                    size={20}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-black"
+                  />
                 </div>
-              
+                <div className="relative">
+                  <select
+                    value={selectedPosition}
+                    onChange={e => setSelectedPosition(e.target.value)}
+                    className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-yellow-500 min-w-[180px] text-black"
+                  >
+                    <option value="" className="text-black">
+                      All Positions
+                    </option>
+                    {loadingPositions ? (
+                      <option disabled className="text-black">
+                        Loading positions...
+                      </option>
+                    ) : availablePositions.length === 0 ? (
+                      <option disabled className="text-black">
+                        No positions available
+                      </option>
+                    ) : (
+                      availablePositions.map(position => (
+                        <option
+                          key={position.id}
+                          value={position.name}
+                          className="text-black"
+                        >
+                          {position.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  <ChevronDown
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-black pointer-events-none"
+                    size={20}
+                  />
+                </div>
+                <button
+                  onClick={() => {
+                    // If there are profiles, allow editing the first one (or selected one)
+                    if (currentProfiles.length > 0) {
+                      const firstProfile = currentProfiles[0];
+                      const year = getYearForProfile(firstProfile);
+                      handleEditProfile(firstProfile, year);
+                    } else {
+                      alert('No stats data to edit. Please add data first.');
+                    }
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-black"
+                >
+                  <Edit size={18} />
+                  <span>Edit</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingProfile(null);
+                    setEditingYear('');
+                    setFormData({ year: '', position: '' });
+                    setAvailableFields([]);
+                    setShowAddStatsModal(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-yellow-600 transition-colors"
+                >
+                  <Plus size={18} />
+                  <span>Add Data</span>
+                </button>
+              </div>
+
+              {/* Statistics Table */}
+              <div className="overflow-x-auto">
+                {loadingStats ? (
+                  <div className="p-6 text-center text-black">
+                    Loading stats...
+                  </div>
+                ) : currentProfiles.length === 0 ||
+                  allFieldLabels.length === 0 ? (
+                  <div className="p-6 text-center text-gray-600">
+                    No stats data available yet. Use the "Add Data" button above
+                    to add your first stats entry.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead className="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
+                            Year
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
+                            Position
+                          </th>
+                          {allFieldLabels.map(fieldLabel => (
+                            <th
+                              key={fieldLabel}
+                              className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap min-w-[150px]"
+                            >
+                              {fieldLabel}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {currentProfiles.map(profile => {
+                          const year = getYearForProfile(profile);
+                          return (
+                            <tr
+                              key={`${profile.id}-${year}`}
+                              className="hover:bg-gray-50 transition-colors"
+                            >
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
+                                {year || '—'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                                <div className="flex items-center gap-2">
+                                  <span>{profile.position_name}</span>
+                                  <button
+                                    onClick={() =>
+                                      handleEditProfile(profile, year)
+                                    }
+                                    className="p-1 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
+                                    title="Edit this row"
+                                  >
+                                    <Edit size={14} className="text-gray-600" />
+                                  </button>
+                                </div>
+                              </td>
+                              {allFieldLabels.map(fieldLabel => (
+                                <td
+                                  key={fieldLabel}
+                                  className="px-6 py-4 whitespace-nowrap text-sm text-black"
+                                >
+                                  {getValueForField(profile, fieldLabel) || '—'}
+                                </td>
+                              ))}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </main>
           </div>
         </div>
@@ -1089,51 +1076,54 @@ const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
                   Year
                 </label>
                 <div className="relative">
-  <input
-    type="text"
-    value={formData.year}
-    onChange={e =>
-      setFormData({ ...formData, year: e.target.value })
-    }
-    placeholder="Select Year (e.g., 2024)"
-    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black"
-    readOnly
-    onClick={() => setShowYearPicker(!showYearPicker)}
-  />
-  <Calendar
-    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black cursor-pointer"
-    size={20}
-    onClick={() => setShowYearPicker(!showYearPicker)}
-  />
-  
-  {showYearPicker && (
-    <>
-      <div
-        className="fixed inset-0 z-10"
-        onClick={() => setShowYearPicker(false)}
-      />
-      <div className="absolute z-20 mt-2 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
-        {years.map(year => (
-          <button
-            key={year}
-            type="button"
-            onClick={() => {
-              setFormData({ ...formData, year: year.toString() });
-              setShowYearPicker(false);
-            }}
-            className={`w-full px-4 py-2.5 text-left hover:bg-gray-100 transition-colors ${
-              formData.year === year.toString()
-                ? 'bg-[#CB9729] text-white hover:bg-[#CB9729]'
-                : 'text-black'
-            }`}
-          >
-            {year}
-          </button>
-        ))}
-      </div>
-    </>
-  )}
-</div>
+                  <input
+                    type="text"
+                    value={formData.year}
+                    onChange={e =>
+                      setFormData({ ...formData, year: e.target.value })
+                    }
+                    placeholder="Select Year (e.g., 2024)"
+                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black"
+                    readOnly
+                    onClick={() => setShowYearPicker(!showYearPicker)}
+                  />
+                  <Calendar
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-black cursor-pointer"
+                    size={20}
+                    onClick={() => setShowYearPicker(!showYearPicker)}
+                  />
+
+                  {showYearPicker && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-10"
+                        onClick={() => setShowYearPicker(false)}
+                      />
+                      <div className="absolute z-20 mt-2 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-y-auto">
+                        {years.map(year => (
+                          <button
+                            key={year}
+                            type="button"
+                            onClick={() => {
+                              setFormData({
+                                ...formData,
+                                year: year.toString(),
+                              });
+                              setShowYearPicker(false);
+                            }}
+                            className={`w-full px-4 py-2.5 text-left hover:bg-gray-100 transition-colors ${
+                              formData.year === year.toString()
+                                ? 'bg-[#CB9729] text-white hover:bg-[#CB9729]'
+                                : 'text-black'
+                            }`}
+                          >
+                            {year}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
 
               {/* Position Field */}

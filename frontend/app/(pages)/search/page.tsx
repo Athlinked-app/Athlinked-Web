@@ -1145,19 +1145,6 @@ export default function SearchPage() {
                   </p>
                 )}
               </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={e => {
-                    e.stopPropagation();
-                    // Handle save functionality here
-                  }}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                  aria-label="Save opportunity"
-                >
-                  <Bookmark className="w-5 h-5 text-gray-500" />
-                </button>
-              </div>
             </div>
           ))}
         </div>

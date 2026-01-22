@@ -168,7 +168,10 @@ export default function NavigationBar({
     setupWebSocket();
 
     return () => {
-      window.removeEventListener('notification-updated', handleNotificationUpdated);
+      window.removeEventListener(
+        'notification-updated',
+        handleNotificationUpdated
+      );
       if (socket) {
         if (handleNotificationCountUpdate) {
           socket.off(
