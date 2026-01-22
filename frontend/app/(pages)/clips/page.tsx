@@ -926,14 +926,36 @@ export default function ClipsPage() {
   };
 
   // Format timestamp to relative time
+  const parseUTCTimestamp = (timestamp: string): Date => {
+    if (!timestamp) return new Date(NaN);
+
+    let ts = String(timestamp).trim();
+
+    // Normalize: replace space with T for ISO format
+    if (ts.includes(' ') && !ts.includes('T')) {
+      ts = ts.replace(' ', 'T');
+    }
+
+    // Add Z suffix if no timezone indicator (backend often returns UTC without Z)
+    if (
+      !ts.endsWith('Z') &&
+      !ts.includes('+') &&
+      !/[+-]\d{2}:\d{2}$/.test(ts)
+    ) {
+      ts = ts + 'Z';
+    }
+
+    return new Date(ts);
+  };
+
   const formatTimestamp = (dateString: string) => {
-    const date = new Date(dateString);
+    const date = parseUTCTimestamp(dateString);
     if (Number.isNaN(date.getTime())) return '';
 
     const now = Date.now();
-    const diffInSeconds = Math.floor((now - date.getTime()) / 1000);
+    const diffInSeconds = Math.max(0, Math.floor((now - date.getTime()) / 1000));
 
-    // < 1 hour: show minutes (keeps UI informative for fresh uploads)
+    // < 1 hour: show minutes for fresh uploads
     if (diffInSeconds < 3600) {
       const mins = Math.max(1, Math.floor(diffInSeconds / 60));
       return `${mins}m`;
