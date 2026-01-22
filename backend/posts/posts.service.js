@@ -483,49 +483,58 @@ async function deletePostService(postId, userId) {
       throw new Error('Post not found');
     }
 
+    let canDelete = false;
+
     // Check if user is the post owner
     if (post.user_id === userId) {
-      // User owns the post, allow deletion
-      const deleted = await postsModel.deletePost(postId, userId);
-      if (!deleted) {
-        throw new Error('Failed to delete post');
-      }
-
-      return {
-        success: true,
-        message: 'Post deleted successfully',
-      };
-    }
-
-    // Check if user is a parent of the post author
-    const signupModel = require('../signup/signup.model');
-    const currentUser = await signupModel.findById(userId);
-    
-    if (!currentUser) {
-      throw new Error('User not found');
-    }
-
-    // If current user is a parent, check if post author is their child
-    if (currentUser.user_type === 'parent' && currentUser.email) {
-      const postAuthor = await signupModel.findById(post.user_id);
+      canDelete = true;
+    } else {
+      // Check if user is a parent of the post author
+      const signupModel = require('../signup/signup.model');
+      const currentUser = await signupModel.findById(userId);
       
-      if (postAuthor && postAuthor.parent_email && 
-          postAuthor.parent_email.toLowerCase().trim() === currentUser.email.toLowerCase().trim()) {
-        // Parent is deleting their child's post - allow it
-        const deleted = await postsModel.deletePost(postId, userId);
-        if (!deleted) {
-          throw new Error('Failed to delete post');
-        }
+      if (!currentUser) {
+        throw new Error('User not found');
+      }
 
-        return {
-          success: true,
-          message: 'Post deleted successfully',
-        };
+      // If current user is a parent, check if post author is their child
+      if (currentUser.user_type === 'parent' && currentUser.email) {
+        const postAuthor = await signupModel.findById(post.user_id);
+        
+        if (postAuthor && postAuthor.parent_email && 
+            postAuthor.parent_email.toLowerCase().trim() === currentUser.email.toLowerCase().trim()) {
+          canDelete = true;
+        }
       }
     }
 
-    // User is neither the post owner nor the parent of the post author
-    throw new Error('Unauthorized: You can only delete your own posts or posts from your athletes');
+    if (!canDelete) {
+      // User is neither the post owner nor the parent of the post author
+      throw new Error('Unauthorized: You can only delete your own posts or posts from your athletes');
+    }
+
+    // Delete media file from S3 if it exists
+    if (post.media_url) {
+      try {
+        const { deleteFromS3 } = require('../utils/s3');
+        await deleteFromS3(post.media_url);
+        console.log('Deleted post media from S3:', post.media_url);
+      } catch (s3Error) {
+        // Log error but continue with database deletion
+        console.error('Error deleting post media from S3:', s3Error.message);
+      }
+    }
+
+    // Delete from database
+    const deleted = await postsModel.deletePost(postId, userId);
+    if (!deleted) {
+      throw new Error('Failed to delete post');
+    }
+
+    return {
+      success: true,
+      message: 'Post deleted successfully',
+    };
   } catch (error) {
     console.error('Delete post service error:', error);
     throw error;
