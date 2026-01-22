@@ -6,12 +6,7 @@ import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import ResourceCard from '@/components/Resources/ResourceCard';
 import ResourceModals from '@/components/Resources/ResourceModals';
-import {
-  getResourceUrl,
-  apiGet,
-  apiDelete,
-  apiUpload,
-} from '@/utils/api';
+import { getResourceUrl, apiGet, apiDelete, apiUpload } from '@/utils/api';
 
 type TabType = 'guides' | 'videos' | 'templates';
 
@@ -489,8 +484,8 @@ export default function ManageResourcesPage() {
                 if (uploadError.isNetworkError) {
                   errorMessage = `Network error: Unable to connect to the server. Please ensure the backend server is running.`;
                 } else if (uploadError.message) {
-                    errorMessage = uploadError.message;
-                  }
+                  errorMessage = uploadError.message;
+                }
 
                 alert(errorMessage);
               } finally {

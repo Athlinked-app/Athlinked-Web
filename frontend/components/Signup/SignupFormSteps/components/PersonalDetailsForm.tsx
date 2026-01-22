@@ -663,7 +663,8 @@ export default function PersonalDetailsForm({
 
       <button
         onClick={handleContinueClick}
-        className="w-full bg-[#CB9729] text-gray-800 font-medium py-3 rounded-lg transition-all mb-4 text-sm sm:text-base"
+        disabled={isLoadingOTP}
+        className="w-full bg-[#CB9729] text-gray-800 font-medium py-3 rounded-lg transition-all mb-4 text-sm sm:text-base flex items-center justify-center gap-2 disabled:opacity-70"
       >
         {isLoadingOTP && (
           <svg
@@ -687,9 +688,8 @@ export default function PersonalDetailsForm({
             ></path>
           </svg>
         )}
-        {isLoadingOTP ? 'Sending OTP...' : 'Continue'}
+        <span>{isLoadingOTP ? 'Sending OTP...' : 'Continue'}</span>
       </button>
-
       <div className="text-center text-xs sm:text-sm text-gray-600">
         <span className="text-gray-700">Already have an account? </span>
         <a href="#" className="text-[#CB9729] font-medium hover:underline">

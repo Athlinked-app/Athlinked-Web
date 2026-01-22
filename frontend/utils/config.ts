@@ -45,7 +45,9 @@ export function getResourceUrl(
     }
     if (path.startsWith('/posts/images/')) {
       const filename = path.split('/').pop();
-      return filename ? `${API_BASE_URL}/uploads/${filename}` : `${API_BASE_URL}${path}`;
+      return filename
+        ? `${API_BASE_URL}/uploads/${filename}`
+        : `${API_BASE_URL}${path}`;
     }
 
     // If stored paths already include `/api/...`, don't double-prefix
@@ -68,7 +70,6 @@ export function getApiUrl(endpoint: string): string {
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   // Avoid double-prefix if caller passes `/api/...`
   const withoutApiPrefix = cleanEndpoint.replace(/^\/api(\/|$)/i, '/');
-  const suffix =
-    withoutApiPrefix === '/' ? '' : withoutApiPrefix; // allow `getApiUrl('/api')` -> `${base}/api`
+  const suffix = withoutApiPrefix === '/' ? '' : withoutApiPrefix; // allow `getApiUrl('/api')` -> `${base}/api`
   return `${API_BASE_URL}/api${suffix}`;
 }

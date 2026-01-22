@@ -290,8 +290,16 @@ function ProfileContent() {
         ).catch(() => ({ success: false, data: [] })),
       ]);
 
-    const [socialHandlesRes, academicRes, achievementsRes, athleticRes, clubsRes, charRes, healthRes, videoRes] =
-      sectionRes;
+    const [
+      socialHandlesRes,
+      academicRes,
+      achievementsRes,
+      athleticRes,
+      clubsRes,
+      charRes,
+      healthRes,
+      videoRes,
+    ] = sectionRes;
 
     let sportsPlayed: string | null = null;
     if (
@@ -311,7 +319,9 @@ function ProfileContent() {
       data?: any[];
     }>('/posts?page=1&limit=50').catch(() => ({ success: false, posts: [] }));
     const allPosts =
-      (postsRes && ('posts' in postsRes ? postsRes.posts : (postsRes as any).data)) || [];
+      (postsRes &&
+        ('posts' in postsRes ? postsRes.posts : (postsRes as any).data)) ||
+      [];
     const posts = allPosts.filter((p: any) => p?.user_id === userId);
 
     return {
@@ -347,7 +357,9 @@ function ProfileContent() {
             }
           : undefined,
       socialHandles:
-        (socialHandlesRes as any)?.data ?? (socialHandlesRes as any)?.socialHandles ?? [],
+        (socialHandlesRes as any)?.data ??
+        (socialHandlesRes as any)?.socialHandles ??
+        [],
       academicBackgrounds: (academicRes as any)?.data ?? [],
       achievements: (achievementsRes as any)?.data ?? [],
       athleticPerformance: (athleticRes as any)?.data ?? [],
@@ -407,7 +419,9 @@ function ProfileContent() {
       } | null = null;
 
       try {
-        data = await apiGet<typeof data>(`/profile/${currentTargetId}/complete`);
+        data = await apiGet<typeof data>(
+          `/profile/${currentTargetId}/complete`
+        );
       } catch (completeErr: any) {
         // Fallback when /complete is not available (e.g. older backend)
         if (completeErr?.status === 404) {

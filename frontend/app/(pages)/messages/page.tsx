@@ -1250,7 +1250,9 @@ function MessagesPageContent() {
                                       <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0">
                                         <img
                                           src={
-                                            getResourceUrl(msg.post_data.user_profile_url) || ''
+                                            getResourceUrl(
+                                              msg.post_data.user_profile_url
+                                            ) || ''
                                           }
                                           alt={msg.post_data.username || 'User'}
                                           className="w-full h-full object-cover"
@@ -1269,7 +1271,10 @@ function MessagesPageContent() {
                                   </div>
                                   {msg.post_data.media_url &&
                                     (() => {
-                                      const mediaUrl = getResourceUrl(msg.post_data.media_url) || '';
+                                      const mediaUrl =
+                                        getResourceUrl(
+                                          msg.post_data.media_url
+                                        ) || '';
                                       const isVideo =
                                         msg.post_data.post_type === 'video' ||
                                         msg.post_data.media_url.match(
@@ -1356,7 +1361,8 @@ function MessagesPageContent() {
                                 </div>
                               ) : msg.media_url ? (
                                 (() => {
-                                  const mediaUrl = getResourceUrl(msg.media_url) || '';
+                                  const mediaUrl =
+                                    getResourceUrl(msg.media_url) || '';
                                   const urlLower = msg.media_url.toLowerCase();
                                   const isImage =
                                     msg.message_type === 'image' ||

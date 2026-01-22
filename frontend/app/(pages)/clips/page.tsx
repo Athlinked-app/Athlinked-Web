@@ -107,126 +107,130 @@ export default function ClipsPage() {
   const commentFetchTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Define fetchComments early so it can be used in useEffects
-  const fetchComments = useCallback(async (clipId: string, forceRefresh = false) => {
-    // Skip if already fetched (unless force refresh) or currently fetching this clip
-    if (!forceRefresh && fetchedCommentsRef.current.has(clipId)) {
-      return;
-    }
-    
-    // Skip if we're already fetching comments for this clip
-    if (fetchingCommentsRef.current === clipId) {
-      return;
-    }
-
-    // Mark as currently fetching
-    fetchingCommentsRef.current = clipId;
-
-    try {
-      const { apiGet } = await import('@/utils/api');
-      const data = await apiGet<{ success: boolean; comments?: any[] }>(
-        `/clips/${clipId}/comments`
-      );
-
-      // Mark as fetched
-      fetchedCommentsRef.current.add(clipId);
-
-      if (data.success && data.comments) {
-        const transformedComments: Comment[] = data.comments.map(
-          (comment: any) => ({
-            id: comment.id,
-            author: comment.username || 'User',
-            authorAvatar:
-              comment.user_profile_url && comment.user_profile_url.trim() !== ''
-                ? comment.user_profile_url
-                : null,
-            text: comment.comment,
-            hasReplies: comment.replies && comment.replies.length > 0,
-            replies: comment.replies
-              ? comment.replies.map((reply: any) => ({
-                  id: reply.id,
-                  author: reply.username || 'User',
-                  authorAvatar:
-                    reply.user_profile_url &&
-                    reply.user_profile_url.trim() !== ''
-                      ? reply.user_profile_url
-                      : null,
-                  text: reply.comment,
-                  parent_username: reply.parent_username || null,
-                }))
-              : [],
-          })
-        );
-
-        // Show all replies by default
-        const newShowReplies: { [key: string]: boolean } = {};
-        transformedComments.forEach(comment => {
-          if (
-            comment.hasReplies &&
-            comment.replies &&
-            comment.replies.length > 0
-          ) {
-            newShowReplies[comment.id] = true;
-          }
-        });
-        setShowReplies(prev => ({ ...prev, ...newShowReplies }));
-
-        // Count total comments including replies for the count
-        const totalCount = data.comments.reduce(
-          (count: number, comment: any) => {
-            return count + 1 + (comment.replies ? comment.replies.length : 0);
-          },
-          0
-        );
-
-        setReels(prev =>
-          prev.map(reel => {
-            if (reel.id === clipId) {
-              return {
-                ...reel,
-                comments: transformedComments,
-                commentCount: totalCount,
-              };
-            }
-            return reel;
-          })
-        );
-      } else if (
-        data.success &&
-        (!data.comments || data.comments.length === 0)
-      ) {
-        // If no comments, ensure comments array is set to empty array
-        setReels(prev =>
-          prev.map(reel => {
-            if (reel.id === clipId) {
-              return {
-                ...reel,
-                comments: [],
-                commentCount: 0,
-              };
-            }
-            return reel;
-          })
-        );
+  const fetchComments = useCallback(
+    async (clipId: string, forceRefresh = false) => {
+      // Skip if already fetched (unless force refresh) or currently fetching this clip
+      if (!forceRefresh && fetchedCommentsRef.current.has(clipId)) {
+        return;
       }
-    } catch (error) {
-      console.error('Error fetching comments:', error);
-      // On error, ensure comments array exists
-      setReels(prev =>
-        prev.map(reel => {
-          if (reel.id === clipId) {
-            return {
-              ...reel,
-              comments: reel.comments || [],
-            };
-          }
-          return reel;
-        })
-      );
-    } finally {
-      // Clear fetching flag
-      fetchingCommentsRef.current = null;
-    }
-  }, []);
+
+      // Skip if we're already fetching comments for this clip
+      if (fetchingCommentsRef.current === clipId) {
+        return;
+      }
+
+      // Mark as currently fetching
+      fetchingCommentsRef.current = clipId;
+
+      try {
+        const { apiGet } = await import('@/utils/api');
+        const data = await apiGet<{ success: boolean; comments?: any[] }>(
+          `/clips/${clipId}/comments`
+        );
+
+        // Mark as fetched
+        fetchedCommentsRef.current.add(clipId);
+
+        if (data.success && data.comments) {
+          const transformedComments: Comment[] = data.comments.map(
+            (comment: any) => ({
+              id: comment.id,
+              author: comment.username || 'User',
+              authorAvatar:
+                comment.user_profile_url &&
+                comment.user_profile_url.trim() !== ''
+                  ? comment.user_profile_url
+                  : null,
+              text: comment.comment,
+              hasReplies: comment.replies && comment.replies.length > 0,
+              replies: comment.replies
+                ? comment.replies.map((reply: any) => ({
+                    id: reply.id,
+                    author: reply.username || 'User',
+                    authorAvatar:
+                      reply.user_profile_url &&
+                      reply.user_profile_url.trim() !== ''
+                        ? reply.user_profile_url
+                        : null,
+                    text: reply.comment,
+                    parent_username: reply.parent_username || null,
+                  }))
+                : [],
+            })
+          );
+
+          // Show all replies by default
+          const newShowReplies: { [key: string]: boolean } = {};
+          transformedComments.forEach(comment => {
+            if (
+              comment.hasReplies &&
+              comment.replies &&
+              comment.replies.length > 0
+            ) {
+              newShowReplies[comment.id] = true;
+            }
+          });
+          setShowReplies(prev => ({ ...prev, ...newShowReplies }));
+
+          // Count total comments including replies for the count
+          const totalCount = data.comments.reduce(
+            (count: number, comment: any) => {
+              return count + 1 + (comment.replies ? comment.replies.length : 0);
+            },
+            0
+          );
+
+          setReels(prev =>
+            prev.map(reel => {
+              if (reel.id === clipId) {
+                return {
+                  ...reel,
+                  comments: transformedComments,
+                  commentCount: totalCount,
+                };
+              }
+              return reel;
+            })
+          );
+        } else if (
+          data.success &&
+          (!data.comments || data.comments.length === 0)
+        ) {
+          // If no comments, ensure comments array is set to empty array
+          setReels(prev =>
+            prev.map(reel => {
+              if (reel.id === clipId) {
+                return {
+                  ...reel,
+                  comments: [],
+                  commentCount: 0,
+                };
+              }
+              return reel;
+            })
+          );
+        }
+      } catch (error) {
+        console.error('Error fetching comments:', error);
+        // On error, ensure comments array exists
+        setReels(prev =>
+          prev.map(reel => {
+            if (reel.id === clipId) {
+              return {
+                ...reel,
+                comments: reel.comments || [],
+              };
+            }
+            return reel;
+          })
+        );
+      } finally {
+        // Clear fetching flag
+        fetchingCommentsRef.current = null;
+      }
+    },
+    []
+  );
 
   const handleWheelScroll = (event: React.WheelEvent<HTMLDivElement>) => {
     const container = scrollContainerRef.current;
@@ -313,7 +317,7 @@ export default function ClipsPage() {
 
       if (reels[currentIndex]) {
         setSelectedReelId(reels[currentIndex].id);
-        
+
         // Debounce comment fetching - clear previous timer and set new one
         if (commentFetchTimerRef.current) {
           clearTimeout(commentFetchTimerRef.current);
@@ -881,7 +885,7 @@ export default function ClipsPage() {
     try {
       // Reset the fetched comments cache when clips are refreshed
       fetchedCommentsRef.current.clear();
-      
+
       const { apiGet } = await import('@/utils/api');
       const data = await apiGet<{ success: boolean; clips?: any[] }>(
         '/clips?page=1&limit=50'

@@ -77,108 +77,15 @@ export default function OpportunityDetailsPopup({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="space-y-6">
-            {/* Eligibility */}
-            {opportunity.eligibility && (
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  Eligibility:
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {opportunity.eligibility}
-                </p>
-              </div>
-            )}
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+            {opportunity.type === 'scholarship'
+              ? 'Scholarship Details'
+              : 'Tournament Details'}
+          </h2>
 
-            {/* Must Represent */}
-            {opportunity.mustRepresent && (
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  Requirements:
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {opportunity.mustRepresent}
-                </p>
-              </div>
-            )}
-
-            {/* Dates */}
-            {opportunity.dates && (
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Dates:</h3>
-                <p className="text-sm text-gray-600">{opportunity.dates}</p>
-              </div>
-            )}
-
-            {/* Venue */}
-            {opportunity.venue && (
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Venue:</h3>
-                <p className="text-sm text-gray-600">{opportunity.venue}</p>
-              </div>
-            )}
-
-            {/* Format */}
-            {opportunity.format && (
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Format:</h3>
-                <p className="text-sm text-gray-600">{opportunity.format}</p>
-              </div>
-            )}
-
-            {/* Match Details (for tournaments) */}
-            {opportunity.matchDetails && opportunity.matchDetails !== 'N/A' && (
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  Match Details:
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {opportunity.matchDetails}
-                </p>
-              </div>
-            )}
-
-            {/* Registration Deadline */}
-            {opportunity.registrationDeadline && (
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  Registration Deadline:
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {opportunity.registrationDeadline}
-                </p>
-              </div>
-            )}
-
-            {/* Membership Fee */}
-            {opportunity.membershipFee && (
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">Fee:</h3>
-                <p className="text-sm text-gray-600">
-                  {opportunity.membershipFee}
-                </p>
-              </div>
-            )}
-
-            {/* Documents Required */}
-            {opportunity.documentsRequired && (
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  Documents Required:
-                </h3>
-                <p className="text-sm text-gray-600">
-                  {opportunity.documentsRequired}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Footer with Action Buttons */}
-        <div className="p-6 border-t border-gray-200">
-          <div className="flex gap-3">
-            <button className="flex-1 bg-[#CB9729] text-white py-2.5 px-4 rounded-lg font-medium hover:bg-[#B88624] transition-colors">
-              Share
+          <div className="flex gap-3 w-5/12 mb-6">
+            <button className="flex-1 bg-[#CB9729] text-white py-2 px-4 rounded-lg font-medium hover:bg-[#B88624] transition-colors">
+              Apply Now
             </button>
             {onSave && (
               <button
@@ -186,7 +93,7 @@ export default function OpportunityDetailsPopup({
                   e.stopPropagation();
                   onSave(opportunity.id);
                 }}
-                className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg transition-colors ${
+                className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors ${
                   isSaved
                     ? 'bg-[#CB9729] text-white border-[#CB9729]'
                     : 'border-gray-300 hover:bg-gray-50'
@@ -200,6 +107,37 @@ export default function OpportunityDetailsPopup({
                 </span>
               </button>
             )}
+          </div>
+
+          <div className="space-y-6">
+            {/* Description */}
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-2">
+                Date & Venue:
+              </h3>
+              {opportunity.dates && (
+                <p className="text-sm text-gray-600">
+                  Dates: {opportunity.dates}
+                </p>
+              )}
+              {opportunity.venue && (
+                <p className="text-sm text-gray-600">
+                  Venue: {opportunity.venue}
+                </p>
+              )}
+            </div>
+            {opportunity.eligibility && (
+              <div>
+                <h3 className="font-semibold text-gray-900 mb-2">
+                  Description:
+                </h3>
+                <p className="text-sm text-gray-600">
+                  {opportunity.eligibility}
+                </p>
+              </div>
+            )}
+
+            {/* Date & Venue */}
           </div>
         </div>
       </div>
