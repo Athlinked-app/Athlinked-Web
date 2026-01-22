@@ -25,16 +25,21 @@ export default function FileUploadModal({
   if (!isOpen) return null;
 
   const handleFileSelect = (file: File) => {
-    if (
+    // Allow ONLY videos (mp4/mov)
+    const isAllowedVideoType =
       file &&
-      (file.type.startsWith('video/') || file.type.startsWith('image/'))
-    ) {
+      (file.type === 'video/mp4' ||
+        file.type === 'video/quicktime' ||
+        file.name.toLowerCase().endsWith('.mp4') ||
+        file.name.toLowerCase().endsWith('.mov'));
+
+    if (isAllowedVideoType) {
       setSelectedFile(file);
 
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
     } else {
-      alert('Please select a valid video or image file (MP4, MOV, PNG, JPG)');
+      alert('Please select a valid video file (MP4 or MOV only)');
     }
   };
 
@@ -168,7 +173,7 @@ export default function FileUploadModal({
                       Drag and drop your files
                     </p>
                     <p className="text-xs text-gray-500 mb-3">
-                      JPEG, PNG and GIF formats up to 50MB
+                      MP4 and MOV formats up to 50MB
                     </p>
                     <button
                       type="button"
@@ -185,12 +190,12 @@ export default function FileUploadModal({
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept="video/mp4,video/mov,image/png,image/jpeg,image/jpg"
+                  accept="video/mp4,video/quicktime,.mp4,.mov"
                   onChange={handleFileChange}
                   className="hidden"
                 />
                 <p className="text-xs text-gray-500 mt-2">
-                  *Supported formats: MP4, MOV, PNG, JPG
+                  *Supported formats: MP4, MOV
                 </p>
               </div>
 

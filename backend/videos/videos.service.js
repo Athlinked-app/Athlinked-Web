@@ -75,49 +75,58 @@ async function deleteVideoService(videoId, userId) {
       throw new Error('Video not found');
     }
 
+    let canDelete = false;
+
     // Check if user is the video owner
     if (video.user_id === userId) {
-      // User owns the video, allow deletion
-      const deleted = await videosModel.deleteVideo(videoId, userId);
-      if (!deleted) {
-        throw new Error('Failed to delete video');
-      }
-
-      return {
-        success: true,
-        message: 'Video deleted successfully',
-      };
-    }
-
-    // Check if user is a parent of the video author
-    const signupModel = require('../signup/signup.model');
-    const currentUser = await signupModel.findById(userId);
-    
-    if (!currentUser) {
-      throw new Error('User not found');
-    }
-
-    // If current user is a parent, check if video author is their child
-    if (currentUser.user_type === 'parent' && currentUser.email) {
-      const videoAuthor = await signupModel.findById(video.user_id);
+      canDelete = true;
+    } else {
+      // Check if user is a parent of the video author
+      const signupModel = require('../signup/signup.model');
+      const currentUser = await signupModel.findById(userId);
       
-      if (videoAuthor && videoAuthor.parent_email && 
-          videoAuthor.parent_email.toLowerCase().trim() === currentUser.email.toLowerCase().trim()) {
-        // Parent is deleting their child's video - allow it
-        const deleted = await videosModel.deleteVideo(videoId, userId);
-        if (!deleted) {
-          throw new Error('Failed to delete video');
-        }
+      if (!currentUser) {
+        throw new Error('User not found');
+      }
 
-        return {
-          success: true,
-          message: 'Video deleted successfully',
-        };
+      // If current user is a parent, check if video author is their child
+      if (currentUser.user_type === 'parent' && currentUser.email) {
+        const videoAuthor = await signupModel.findById(video.user_id);
+        
+        if (videoAuthor && videoAuthor.parent_email && 
+            videoAuthor.parent_email.toLowerCase().trim() === currentUser.email.toLowerCase().trim()) {
+          canDelete = true;
+        }
       }
     }
 
-    // User is neither the video owner nor the parent of the video author
-    throw new Error('Unauthorized: You can only delete your own videos or videos from your athletes');
+    if (!canDelete) {
+      // User is neither the video owner nor the parent of the video author
+      throw new Error('Unauthorized: You can only delete your own videos or videos from your athletes');
+    }
+
+    // Delete video file from S3 if it exists
+    if (video.video_url) {
+      try {
+        const { deleteFromS3 } = require('../utils/s3');
+        await deleteFromS3(video.video_url);
+        console.log('Deleted video file from S3:', video.video_url);
+      } catch (s3Error) {
+        // Log error but continue with database deletion
+        console.error('Error deleting video file from S3:', s3Error.message);
+      }
+    }
+
+    // Delete from database
+    const deleted = await videosModel.deleteVideo(videoId, userId);
+    if (!deleted) {
+      throw new Error('Failed to delete video');
+    }
+
+    return {
+      success: true,
+      message: 'Video deleted successfully',
+    };
   } catch (error) {
     console.error('Delete video service error:', error);
     throw error;

@@ -2,16 +2,19 @@ const { Pool } = require('pg');
 require('dotenv').config();
 
 // SSL configuration for cloud databases
-const sslConfig = process.env.DB_SSL === 'true' || process.env.DB_SSL === '1' 
+// Support both formats: DB_SSL or sslmode from .env
+const sslMode = process.env.DB_SSL || process.env.sslmode;
+const sslConfig = (sslMode === 'require' || sslMode === 'true' || sslMode === '1')
   ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' }
   : false;
 
+// Support both formats: DB_* or lowercase from .env
 const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT || 5432,
+  user: process.env.DB_USER || process.env.username,
+  host: process.env.DB_HOST || process.env.host,
+  database: process.env.DB_NAME || process.env.database,
+  password: process.env.DB_PASSWORD || process.env.password,
+  port: process.env.DB_PORT || process.env.port || 5432,
   ssl: sslConfig,
 });
 

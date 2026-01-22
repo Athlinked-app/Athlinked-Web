@@ -13,6 +13,7 @@ import {
   apiUpload,
   apiRequest,
 } from '@/utils/api';
+import { getResourceUrl } from '@/utils/api';
 import { getCurrentUserId } from '@/utils/auth';
 
 export type { AcademicBackground };
@@ -240,6 +241,37 @@ export default function AcademicBackgrounds({
     }
   };
 
+  const getPdfUrl = (degreePdf: AcademicBackground['degreePdf']): string | null => {
+    if (!degreePdf) return null;
+    if (typeof degreePdf === 'string') {
+      if (degreePdf.startsWith('http://') || degreePdf.startsWith('https://')) {
+        return degreePdf;
+      }
+      return getResourceUrl(degreePdf) || degreePdf;
+    }
+    return URL.createObjectURL(degreePdf);
+  };
+
+  const getPdfName = (pdfUrlOrName: string): string => {
+    if (!pdfUrlOrName.includes('/')) return pdfUrlOrName;
+
+    try {
+      const u = new URL(pdfUrlOrName);
+      const last = u.pathname.split('/').filter(Boolean).pop();
+      return decodeURIComponent(last || 'document.pdf');
+    } catch {
+      const clean = pdfUrlOrName.split('?')[0];
+      const last = clean.split('/').filter(Boolean).pop();
+      return decodeURIComponent(last || 'document.pdf');
+    }
+  };
+
+  const openPdf = (degreePdf: AcademicBackground['degreePdf']) => {
+    const url = getPdfUrl(degreePdf);
+    if (!url) return;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <>
       <div className="w-full bg-white rounded-lg px-6 py-5">
@@ -306,15 +338,24 @@ export default function AcademicBackgrounds({
                         </p>
                       )}
                       {bg.degreePdf && (
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-4 h-4 text-gray-600" />
-                          <span className="text-sm text-gray-600">
-                            <span className="font-medium">Degree PDF:</span>{' '}
-                            {typeof bg.degreePdf === 'string'
-                              ? bg.degreePdf
-                              : bg.degreePdf.name}
+                        <button
+                          type="button"
+                          className="flex items-center gap-2 text-sm text-gray-600 hover:underline"
+                          onClick={e => {
+                            e.stopPropagation();
+                            openPdf(bg.degreePdf);
+                          }}
+                        >
+                          <FileText className="w-4 h-4" />
+                          <span className="font-medium">Degree PDF:</span>
+                          <span className="break-all">
+                            {getPdfName(
+                              typeof bg.degreePdf === 'string'
+                                ? bg.degreePdf
+                                : bg.degreePdf.name
+                            )}
                           </span>
-                        </div>
+                        </button>
                       )}
                     </div>
 
@@ -468,6 +509,31 @@ function ViewAcademicBackgroundPopup({
 }) {
   if (!open) return null;
 
+  const getPdfUrl = (degreePdf: AcademicBackground['degreePdf']): string | null => {
+    if (!degreePdf) return null;
+    if (typeof degreePdf === 'string') {
+      if (degreePdf.startsWith('http://') || degreePdf.startsWith('https://')) {
+        return degreePdf;
+      }
+      return getResourceUrl(degreePdf) || degreePdf;
+    }
+    return URL.createObjectURL(degreePdf);
+  };
+
+  const getPdfName = (pdfUrlOrName: string): string => {
+    if (!pdfUrlOrName.includes('/')) return pdfUrlOrName;
+
+    try {
+      const u = new URL(pdfUrlOrName);
+      const last = u.pathname.split('/').filter(Boolean).pop();
+      return decodeURIComponent(last || 'document.pdf');
+    } catch {
+      const clean = pdfUrlOrName.split('?')[0];
+      const last = clean.split('/').filter(Boolean).pop();
+      return decodeURIComponent(last || 'document.pdf');
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
@@ -550,11 +616,18 @@ function ViewAcademicBackgroundPopup({
                   </label>
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4 text-gray-600" />
-                    <p className="text-gray-900">
-                      {typeof data.degreePdf === 'string'
-                        ? data.degreePdf
-                        : data.degreePdf.name}
-                    </p>
+                    <a
+                      href={getPdfUrl(data.degreePdf) || undefined}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-600 hover:underline break-all"
+                    >
+                      {getPdfName(
+                        typeof data.degreePdf === 'string'
+                          ? data.degreePdf
+                          : data.degreePdf.name
+                      )}
+                    </a>
                   </div>
                 </div>
               )}

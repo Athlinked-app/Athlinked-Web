@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { X, ChevronDown, Upload } from 'lucide-react';
+import { getResourceUrl } from '@/utils/api';
 
 export interface Achievement {
   id?: string;
@@ -47,6 +48,30 @@ export default function AchievementsPopup({
   onSave,
   existingData,
 }: AchievementsPopupProps) {
+  const getPdfUrl = (media: Achievement['mediaPdf']): string | null => {
+    if (!media) return null;
+    if (typeof media === 'string') {
+      if (media.startsWith('http://') || media.startsWith('https://')) return media;
+      return getResourceUrl(media) || media;
+    }
+    return URL.createObjectURL(media);
+  };
+
+  const getPdfName = (pdfUrlOrName: string): string => {
+    // If it's already just a filename, keep it.
+    if (!pdfUrlOrName.includes('/')) return pdfUrlOrName;
+
+    try {
+      const u = new URL(pdfUrlOrName);
+      const last = u.pathname.split('/').filter(Boolean).pop();
+      return decodeURIComponent(last || 'document.pdf');
+    } catch {
+      const clean = pdfUrlOrName.split('?')[0];
+      const last = clean.split('/').filter(Boolean).pop();
+      return decodeURIComponent(last || 'document.pdf');
+    }
+  };
+
   const [title, setTitle] = useState(existingData?.title || '');
   const [organization, setOrganization] = useState(
     existingData?.organization || ''
@@ -70,7 +95,7 @@ export default function AchievementsPopup({
   const [mediaPdfName, setMediaPdfName] = useState(
     existingData?.mediaPdf
       ? typeof existingData.mediaPdf === 'string'
-        ? existingData.mediaPdf
+        ? getPdfName(existingData.mediaPdf)
         : existingData.mediaPdf.name
       : ''
   );
@@ -100,7 +125,7 @@ export default function AchievementsPopup({
       setMediaPdfName(
         existingData.mediaPdf
           ? typeof existingData.mediaPdf === 'string'
-            ? existingData.mediaPdf
+            ? getPdfName(existingData.mediaPdf)
             : existingData.mediaPdf.name
           : ''
       );
@@ -229,7 +254,7 @@ export default function AchievementsPopup({
     showDropdown: boolean;
     setShowDropdown: (show: boolean) => void;
     onSelect: (value: string) => void;
-    dropdownRef: React.RefObject<HTMLDivElement>;
+    dropdownRef: React.RefObject<HTMLDivElement | null>;
   }) => (
     <div className="relative" ref={dropdownRef}>
       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -411,6 +436,18 @@ export default function AchievementsPopup({
               <Upload className="w-5 h-5" />
               <span>{mediaPdfName || 'Upload Degree'}</span>
             </button>
+            {existingData?.mediaPdf && !mediaPdf && (
+              <div className="mt-2 text-sm">
+                <a
+                  href={getPdfUrl(existingData.mediaPdf) || undefined}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ttext-gray-900 dark:text-gray-900 hover:underline"
+                >
+                  View current PDF
+                </a>
+              </div>
+            )}
             <input
               ref={pdfInputRef}
               type="file"

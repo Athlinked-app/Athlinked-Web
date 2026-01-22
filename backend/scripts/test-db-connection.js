@@ -1,28 +1,74 @@
 const { Pool } = require('pg');
-require('dotenv').config();
+const path = require('path');
+
+// Load .env file from the backend directory (parent of scripts)
+const envPath = path.join(__dirname, '..', '.env');
+const result = require('dotenv').config({ path: envPath });
+
+if (result.error) {
+  console.error(`\n❌ Error loading .env file from: ${envPath}`);
+  console.error(`   ${result.error.message}\n`);
+  process.exit(1);
+}
 
 async function testConnection() {
+  // Read from .env file format: username, password, host, port, database, sslmode
+  // Support both formats for backward compatibility
+  const dbHost = process.env.DB_HOST || process.env.host;
+  const dbPort = process.env.DB_PORT || process.env.port;
+  const dbName = process.env.DB_NAME || process.env.database;
+  const dbUser = process.env.DB_USER || process.env.username;
+  const dbPassword = process.env.DB_PASSWORD || process.env.password;
+  const sslMode = process.env.DB_SSL || process.env.sslmode;
+  
+  // Validate required environment variables
+  const missingVars = [];
+  if (!dbHost) missingVars.push('host or DB_HOST');
+  if (!dbPort) missingVars.push('port or DB_PORT');
+  if (!dbName) missingVars.push('database or DB_NAME');
+  if (!dbUser) missingVars.push('username or DB_USER');
+  if (!dbPassword) missingVars.push('password or DB_PASSWORD');
+  
+  if (missingVars.length > 0) {
+    console.error('\n❌ Missing required environment variables:');
+    missingVars.forEach(varName => {
+      console.error(`   - ${varName}`);
+    });
+    console.error('\n💡 Your .env file should have these variables:');
+    console.error('   Example format:');
+    console.error('   host = your-host');
+    console.error('   port = 5432');
+    console.error('   database = your-database');
+    console.error('   username = your-username');
+    console.error('   password = your-password');
+    console.error('   sslmode = require (optional, for SSL connections)');
+    console.error('\n💡 Current .env file location:', envPath);
+    console.error('💡 Note: Variable names must match exactly (case-sensitive)\n');
+    process.exit(1);
+  }
+
   console.log('\n🔍 Testing Database Connection...\n');
   console.log('📋 Connection Details:');
-  console.log(`   Host: ${process.env.DB_HOST || 'localhost'}`);
-  console.log(`   Port: ${process.env.DB_PORT || 5432}`);
-  console.log(`   Database: ${process.env.DB_NAME || 'athlinked'}`);
-  console.log(`   User: ${process.env.DB_USER || 'postgres'}`);
-  console.log(`   SSL: ${process.env.DB_SSL || 'false'}`);
+  console.log(`   Host: ${dbHost}`);
+  console.log(`   Port: ${dbPort}`);
+  console.log(`   Database: ${dbName}`);
+  console.log(`   User: ${dbUser}`);
+  console.log(`   SSL: ${sslMode || 'false'}`);
   console.log(`   SSL Reject Unauthorized: ${process.env.DB_SSL_REJECT_UNAUTHORIZED || 'true'}`);
   console.log('');
 
   // Create a test pool with longer timeout for cloud databases
-  const sslConfig = process.env.DB_SSL === 'true' || process.env.DB_SSL === '1' 
+  // Handle sslmode = require or DB_SSL = true
+  const sslConfig = (sslMode === 'require' || sslMode === 'true' || sslMode === '1')
     ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' }
     : false;
 
   const testPool = new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    database: process.env.DB_NAME || 'athlinked',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || '',
+    host: dbHost,
+    port: parseInt(dbPort, 10),
+    database: dbName,
+    user: dbUser,
+    password: dbPassword,
     ssl: sslConfig,
     connectionTimeoutMillis: 10000, // 10 seconds for cloud databases
   });
@@ -75,15 +121,15 @@ async function testConnection() {
     console.error(`   Message: ${error.message}`);
     
     if (error.code === 'ENOTFOUND') {
-      console.error('\n💡 Tip: Check if DB_HOST is correct (hostname not found)');
+      console.error('\n💡 Tip: Check if host is correct (hostname not found)');
     } else if (error.code === 'ECONNREFUSED') {
-      console.error('\n💡 Tip: Check if DB_PORT is correct or if the database server is running');
+      console.error('\n💡 Tip: Check if port is correct or if the database server is running');
     } else if (error.code === '28P01' || error.message.includes('password')) {
-      console.error('\n💡 Tip: Check if DB_USER and DB_PASSWORD are correct');
+      console.error('\n💡 Tip: Check if username and password are correct');
     } else if (error.code === '3D000' || error.message.includes('database')) {
-      console.error('\n💡 Tip: Check if DB_NAME is correct (database does not exist)');
+      console.error('\n💡 Tip: Check if database name is correct (database does not exist)');
     } else if (error.message.includes('SSL') || error.code === '08006') {
-      console.error('\n💡 Tip: SSL connection issue - try setting DB_SSL_REJECT_UNAUTHORIZED=false');
+      console.error('\n💡 Tip: SSL connection issue - try setting DB_SSL_REJECT_UNAUTHORIZED=false in .env');
     }
     
     console.error('');

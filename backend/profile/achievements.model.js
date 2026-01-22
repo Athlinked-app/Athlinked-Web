@@ -162,6 +162,27 @@ async function updateAchievement(id, data) {
 }
 
 /**
+ * Get achievement by ID (for getting PDF URL before deletion)
+ * @param {string} id - Achievement ID
+ * @returns {Promise<object|null>} Achievement data or null
+ */
+async function getAchievementById(id) {
+  const query = `
+    SELECT id, media_pdf
+    FROM achievements
+    WHERE id = $1
+  `;
+
+  try {
+    const result = await pool.query(query, [id]);
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('Error fetching achievement by ID:', error);
+    throw error;
+  }
+}
+
+/**
  * Delete an achievement
  * @param {string} id - Achievement ID
  * @returns {Promise<boolean>} True if deleted successfully
@@ -186,5 +207,6 @@ module.exports = {
   getAchievementsByUserId,
   createAchievement,
   updateAchievement,
+  getAchievementById,
   deleteAchievement,
 };

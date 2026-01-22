@@ -12,7 +12,9 @@ types.setTypeParser(TIMESTAMP_OID, (val) => val);
 types.setTypeParser(TIMESTAMPTZ_OID, (val) => val);
 
 // SSL configuration for cloud databases
-const sslConfig = process.env.DB_SSL === 'true' || process.env.DB_SSL === '1' 
+// Support both formats: DB_SSL or sslmode from .env
+const sslMode = process.env.DB_SSL || process.env.sslmode;
+const sslConfig = (sslMode === 'require' || sslMode === 'true' || sslMode === '1')
   ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' }
   : false;
 
@@ -27,12 +29,13 @@ const POOL_MAX = parseInt(process.env.DB_POOL_MAX) || DEFAULT_POOL_MAX;
 // If you need more, increase DB_POOL_MAX environment variable
 const SAFE_POOL_MAX = Math.min(POOL_MAX, 50); // Cap at 50 max to prevent abuse
 
+// Support both formats: DB_* or lowercase from .env
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+  host: process.env.DB_HOST || process.env.host,
+  port: process.env.DB_PORT || process.env.port,
+  database: process.env.DB_NAME || process.env.database,
+  user: process.env.DB_USER || process.env.username,
+  password: process.env.DB_PASSWORD || process.env.password,
   ssl: sslConfig,
   max: SAFE_POOL_MAX, // Max connections (default: 30, configurable via DB_POOL_MAX)
   idleTimeoutMillis: 10000, // Release idle connections after 10 seconds
