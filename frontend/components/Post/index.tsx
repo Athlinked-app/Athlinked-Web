@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   ThumbsUp,
   MessageSquare,
@@ -71,6 +72,7 @@ export default function Post({
   onCommentCountUpdate,
   onPostDeleted,
 }: PostProps) {
+  const router = useRouter();
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -381,16 +383,18 @@ export default function Post({
   const canDeletePost = isOwnPost || isAthletePost;
 
   const handleDownloadPDF = () => {
-    if (!post.article_title || !post.article_body) return;
+    if (!post.article_body) return;
 
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
+
+    const pdfTitle = 'Article';
 
     const htmlContent = `
       <!DOCTYPE html>
       <html>
         <head>
-          <title>${post.article_title}</title>
+          <title>${pdfTitle}</title>
           <style>
             body {
               font-family: Arial, sans-serif;
@@ -399,7 +403,6 @@ export default function Post({
               padding: 20px;
               line-height: 1.6;
             }
-            h1 { color: #333; border-bottom: 2px solid #CB9729; padding-bottom: 10px; }
             .author { color: #666; margin-bottom: 20px; }
             .content { margin-top: 30px; }
             .content h1, .content h2, .content h3, .content h4 {
@@ -413,12 +416,10 @@ export default function Post({
           </style>
         </head>
         <body>
-          <h1>${post.article_title}</h1>
           <div class="author">
             <strong>Author:</strong> ${post.username}<br>
             <strong>Date:</strong> ${new Date(post.created_at).toLocaleDateString()}
           </div>
-          ${post.caption ? `<p><em>${post.caption}</em></p>` : ''}
           <div class="content">
             ${post.article_body}
           </div>
@@ -437,48 +438,61 @@ export default function Post({
   return (
     <div className="w-full bg-white border border-gray-200 rounded-lg sm:rounded-xl shadow-sm overflow-hidden">
       <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 border-b border-gray-200 mb-2 sm:mb-4">
-        <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
-          {(() => {
-            const profileUrl = getProfileUrl(post.user_profile_url);
-            if (profileUrl) {
+        <button
+          type="button"
+          onClick={() => {
+            if (!post.user_id) return;
+            router.push(`/profile?userId=${encodeURIComponent(post.user_id)}`);
+          }}
+          disabled={!post.user_id}
+          className={`flex items-center gap-2 sm:gap-3 flex-1 text-left ${
+            post.user_id ? 'cursor-pointer' : 'cursor-default'
+          }`}
+          aria-label="Open user profile"
+        >
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
+            {(() => {
+              const profileUrl = getProfileUrl(post.user_profile_url);
+              if (profileUrl) {
+                return (
+                  <img
+                    src={profileUrl}
+                    alt={post.username}
+                    className="w-full h-full object-cover"
+                    onError={e => {
+                      const target = e.currentTarget;
+                      target.style.display = 'none';
+                      const parent = target.parentElement;
+                      if (parent && !parent.querySelector('span')) {
+                        const fallback = document.createElement('span');
+                        fallback.className =
+                          'text-gray-600 font-semibold text-xs';
+                        fallback.textContent = getInitials(post.username);
+                        parent.appendChild(fallback);
+                      }
+                    }}
+                  />
+                );
+              }
               return (
-                <img
-                  src={profileUrl}
-                  alt={post.username}
-                  className="w-full h-full object-cover"
-                  onError={e => {
-                    const target = e.currentTarget;
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent && !parent.querySelector('span')) {
-                      const fallback = document.createElement('span');
-                      fallback.className =
-                        'text-gray-600 font-semibold text-xs';
-                      fallback.textContent = getInitials(post.username);
-                      parent.appendChild(fallback);
-                    }
-                  }}
-                />
+                <span className="text-gray-600 font-semibold text-xs">
+                  {getInitials(post.username)}
+                </span>
               );
-            }
-            return (
-              <span className="text-gray-600 font-semibold text-xs">
-                {getInitials(post.username)}
-              </span>
-            );
-          })()}
-        </div>
-        <div className="flex-1">
-          <p className="text-sm text-gray-500 font-medium">
-            {post.user_type
-              ? post.user_type.charAt(0).toUpperCase() +
-                post.user_type.slice(1).toLowerCase()
-              : 'Athlete'}
-          </p>
-          <p className="text-base font-semibold text-gray-900">
-            {post.username}
-          </p>
-        </div>
+            })()}
+          </div>
+          <div className="flex-1">
+            <p className="text-sm text-gray-500 font-medium">
+              {post.user_type
+                ? post.user_type.charAt(0).toUpperCase() +
+                  post.user_type.slice(1).toLowerCase()
+                : 'Athlete'}
+            </p>
+            <p className="text-base font-semibold text-gray-900 hover:underline">
+              {post.username}
+            </p>
+          </div>
+        </button>
         {canDeletePost && (
           <div className="relative">
             <button
@@ -520,7 +534,7 @@ export default function Post({
                     : getResourceUrl(post.media_url || post.image_url || '') ||
                       ''
                 }
-                alt={post.article_title || 'Article image'}
+                alt="Article media"
                 className="w-full h-auto object-cover rounded-lg sm:rounded-none"
                 onError={e => {
                   if (process.env.NODE_ENV === 'development') {
@@ -538,57 +552,44 @@ export default function Post({
             </div>
           )}
 
-          {post.article_title && (
+          {post.article_body && (
             <div className="px-3 sm:px-6 md:px-8 py-3 sm:py-4">
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3">
-                {post.article_title}
-              </h3>
-              {post.caption && (
-                <p className="text-sm sm:text-base text-gray-600 mb-3 sm:mb-4">
-                  {post.caption}
-                </p>
-              )}
-              {post.article_body && (
-                <div className="mb-4">
-                  {(() => {
-                    const textContent = post.article_body.replace(
-                      /<[^>]*>/g,
-                      ''
-                    );
-                    const previewLength = 200;
-                    const shouldTruncate = textContent.length > previewLength;
-                    const preview = shouldTruncate
-                      ? textContent.substring(0, previewLength) + '...'
-                      : textContent;
+              <div className="mb-4">
+                {(() => {
+                  const textContent = post.article_body.replace(/<[^>]*>/g, '');
+                  const previewLength = 200;
+                  const shouldTruncate = textContent.length > previewLength;
+                  const preview = shouldTruncate
+                    ? textContent.substring(0, previewLength) + '...'
+                    : textContent;
 
-                    return (
-                      <>
-                        {shouldTruncate ? (
-                          <p className="text-sm sm:text-base text-gray-800 mb-2 sm:mb-3">
-                            {preview}
-                          </p>
-                        ) : (
-                          <div
-                            className="text-sm sm:text-base text-gray-800 prose max-w-none mb-2 sm:mb-3 prose-sm sm:prose-base"
-                            dangerouslySetInnerHTML={{
-                              __html: post.article_body,
-                            }}
-                          />
-                        )}
-                        <div className="flex justify-end gap-2 sm:gap-3 mt-3 sm:mt-4">
-                          <button
-                            onClick={() => setShowArticleModal(true)}
-                            className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base bg-[#CB9729] text-white rounded-md hover:bg-[#b78322] transition-colors"
-                          >
-                            Read more
-                            <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                          </button>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              )}
+                  return (
+                    <>
+                      {shouldTruncate ? (
+                        <p className="text-sm sm:text-base text-gray-800 mb-2 sm:mb-3">
+                          {preview}
+                        </p>
+                      ) : (
+                        <div
+                          className="text-sm sm:text-base text-gray-800 prose max-w-none mb-2 sm:mb-3 prose-sm sm:prose-base"
+                          dangerouslySetInnerHTML={{
+                            __html: post.article_body,
+                          }}
+                        />
+                      )}
+                      <div className="flex justify-end gap-2 sm:gap-3 mt-3 sm:mt-4">
+                        <button
+                          onClick={() => setShowArticleModal(true)}
+                          className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base bg-[#CB9729] text-white rounded-md hover:bg-[#b78322] transition-colors"
+                        >
+                          Read more
+                          <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
             </div>
           )}
         </>
@@ -913,23 +914,13 @@ export default function Post({
                           post.media_url || post.image_url || ''
                         ) || ''
                   }
-                  alt={post.article_title || 'Article image'}
+                  alt="Article media"
                   className="w-full h-auto object-cover"
                 />
               </div>
             )}
 
             <div className="px-4 sm:px-6 py-4 sm:py-6">
-              {post.article_title && (
-                <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 mb-3 sm:mb-4">
-                  {post.article_title}
-                </h3>
-              )}
-              {post.caption && (
-                <p className="text-base sm:text-lg text-gray-600 mb-4 sm:mb-6">
-                  {post.caption}
-                </p>
-              )}
               {post.article_body && (
                 <div
                   className="prose max-w-none text-gray-800"

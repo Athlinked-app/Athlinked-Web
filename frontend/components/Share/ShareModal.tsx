@@ -45,6 +45,7 @@ export default function ShareModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
@@ -167,11 +168,12 @@ export default function ShareModal({
   };
 
   const handleShareToUsers = async () => {
-    if (selectedUsers.size === 0 || !currentUserId) return;
+    if (selectedUsers.size === 0 || !currentUserId || isSending) return;
 
     const selectedUserIds = Array.from(selectedUsers);
 
     try {
+      setIsSending(true);
       // Try to initialize socket, but handle errors gracefully
       try {
         await initializeSocket();
@@ -290,6 +292,8 @@ export default function ShareModal({
           ? error.message
           : 'Failed to connect. Please try again.';
       alert(errorMessage);
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -497,16 +501,28 @@ export default function ShareModal({
               value={message}
               onChange={e => setMessage(e.target.value)}
               placeholder="Add a message..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-sm"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729]/50 text-sm dark:text-gray-900"
             />
             <button
               onClick={handleShareToUsers}
-              disabled={selectedUsers.size === 0}
+              disabled={selectedUsers.size === 0 || isSending}
               className="w-full px-6 py-2 bg-[#CB9729] text-white font-semibold rounded-md hover:bg-[#b78322] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              <Send className="w-4 h-4" />
-              Send to {selectedUsers.size}{' '}
-              {selectedUsers.size === 1 ? 'user' : 'users'}
+              {isSending ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/70 border-t-transparent rounded-full animate-spin" />
+                  <span>
+                    Sending to {selectedUsers.size}{' '}
+                    {selectedUsers.size === 1 ? 'user' : 'users'}...
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Send className="w-4 h-4" />
+                  Send to {selectedUsers.size}{' '}
+                  {selectedUsers.size === 1 ? 'user' : 'users'}
+                </>
+              )}
             </button>
           </div>
         )}

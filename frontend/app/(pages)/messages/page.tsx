@@ -643,52 +643,55 @@ function MessagesPageContent() {
   // Handle userId from URL parameter - auto-select or create conversation
   useEffect(() => {
     const handleUserIdFromUrl = async () => {
-      if (!userIdFromUrl || !currentUser?.id) {
-        return;
-      }
+      if (!userIdFromUrl || !currentUser?.id) return;
+      // Ignore if URL points to self
+      if (userIdFromUrl === currentUser.id) return;
 
-      // Wait for conversations to be loaded
-      if (conversations.length === 0) {
-        return;
-      }
+      // Already selected
+      if (selectedConversation?.other_user_id === userIdFromUrl) return;
 
-      // Check if conversation already exists
+      // If conversation exists, select it
       const existingConv = conversations.find(
         conv => conv.other_user_id === userIdFromUrl
       );
-
       if (existingConv) {
         setSelectedConversation(existingConv);
         return;
       }
 
-      // If no conversation exists, try to create one or find the user
+      // Otherwise, create it directly (works even if no prior messages)
       try {
-        // First, try to search for the user to get their info
-        const { apiGet } = await import('@/utils/api');
-        const searchData = await apiGet<{
+        const { apiPost } = await import('@/utils/api');
+        const data = await apiPost<{
           success: boolean;
-          users?: SearchUser[];
-        }>(`/messages/search/users?q=`);
-        if (searchData.success && searchData.users) {
-          const targetUser = searchData.users.find(
-            (u: SearchUser) => u.id === userIdFromUrl
-          );
+          conversation?: Conversation;
+          message?: string;
+        }>('/messages/conversations/create', {
+          otherUserId: userIdFromUrl,
+        });
 
-          if (targetUser) {
-            // Create conversation with this user
-            await handleSelectUser(targetUser);
-          }
+        if (data.success && data.conversation) {
+          setSelectedConversation(data.conversation);
+          await fetchConversations();
+        } else {
+          console.error('Create conversation failed:', data);
+          alert(data.message || 'Failed to start conversation');
         }
       } catch (error) {
         console.error('Error handling userId from URL:', error);
+        alert('Failed to start conversation. Please try again.');
       }
     };
 
-    if (userIdFromUrl && currentUser?.id && conversations.length > 0) {
+    if (userIdFromUrl && currentUser?.id) {
       handleUserIdFromUrl();
     }
-  }, [userIdFromUrl, currentUser?.id, conversations.length]);
+  }, [
+    userIdFromUrl,
+    currentUser?.id,
+    conversations,
+    selectedConversation?.other_user_id,
+  ]);
 
   useEffect(() => {
     if (selectedConversation) {
