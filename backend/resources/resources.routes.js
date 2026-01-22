@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, optionalAuth } = require('../middleware/auth');
 const resourcesController = require('./resources.controller');
 const { upload, uploadToS3Middleware } = require('../utils/upload-resources');
 
@@ -95,7 +95,7 @@ router.post(
  * /api/resources:
  *   get:
  *     summary: Get all active resources
- *     description: Retrieve all active resources, optionally filtered by type
+ *     description: Retrieve all active resources (articles, videos, templates, posts, and clips), optionally filtered by type
  *     tags: [Resources]
  *     security: []
  *     parameters:
@@ -103,20 +103,31 @@ router.post(
  *         name: type
  *         schema:
  *           type: string
- *           enum: [article, video, template]
+ *           enum: [article, video, template, post, clip]
  *         description: Filter by resource type
+ *       - in: query
+ *         name: post_type
+ *         schema:
+ *           type: string
+ *           enum: [photo, video, article, event, text]
+ *         description: Filter posts by post_type (only used when type=post)
+ *       - in: query
+ *         name: user_id
+ *         schema:
+ *           type: string
+ *         description: Filter by user ID
  *       - in: query
  *         name: page
  *         schema:
  *           type: integer
  *           default: 1
- *         description: Page number
+ *         description: Page number (for posts/clips when filtered by type)
  *       - in: query
  *         name: limit
  *         schema:
  *           type: integer
  *           default: 10
- *         description: Number of resources per page
+ *         description: Number of resources per page (for posts/clips when filtered by type)
  *     responses:
  *       200:
  *         description: Resources retrieved successfully
@@ -128,12 +139,33 @@ router.post(
  *                 success:
  *                   type: boolean
  *                   example: true
+ *                 articles:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 videos:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 templates:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 posts:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                 clips:
+ *                   type: array
+ *                   items:
+ *                     type: object
  *                 resources:
  *                   type: array
  *                   items:
  *                     type: object
+ *                   description: Deprecated - use specific type arrays instead
  */
-router.get('/', resourcesController.getAllResources);
+router.get('/', optionalAuth, resourcesController.getAllResources);
 
 /**
  * @swagger

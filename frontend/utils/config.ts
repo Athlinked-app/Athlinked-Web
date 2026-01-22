@@ -13,8 +13,9 @@ function normalizeApiBaseUrl(url: string): string {
 }
 
 // Base URL for API endpoints (without trailing `/api`)
+// NEXT_PUBLIC_API_URL must be set in .env.local (e.g., http://localhost:3001)
 export const API_BASE_URL = normalizeApiBaseUrl(
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+  process.env.NEXT_PUBLIC_API_URL!
 );
 
 // Log API URL in development for debugging
