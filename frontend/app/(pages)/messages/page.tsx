@@ -822,12 +822,7 @@ function MessagesPageContent() {
   };
 
   const getProfileUrl = (profileUrl?: string | null): string | undefined => {
-    if (!profileUrl || profileUrl.trim() === '') return undefined;
-    if (profileUrl.startsWith('http')) return profileUrl;
-    if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return `http://localhost:3001/${profileUrl}`;
-    }
-    return profileUrl;
+    return getResourceUrl(profileUrl);
   };
 
   const getInitials = (name?: string) => {
@@ -1255,11 +1250,7 @@ function MessagesPageContent() {
                                       <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0">
                                         <img
                                           src={
-                                            msg.post_data.user_profile_url.startsWith(
-                                              'http'
-                                            )
-                                              ? msg.post_data.user_profile_url
-                                              : `http://localhost:3001${msg.post_data.user_profile_url}`
+                                            getResourceUrl(msg.post_data.user_profile_url) || ''
                                           }
                                           alt={msg.post_data.username || 'User'}
                                           className="w-full h-full object-cover"
@@ -1278,12 +1269,7 @@ function MessagesPageContent() {
                                   </div>
                                   {msg.post_data.media_url &&
                                     (() => {
-                                      const mediaUrl =
-                                        msg.post_data.media_url.startsWith(
-                                          'http'
-                                        )
-                                          ? msg.post_data.media_url
-                                          : `http://localhost:3001${msg.post_data.media_url}`;
+                                      const mediaUrl = getResourceUrl(msg.post_data.media_url) || '';
                                       const isVideo =
                                         msg.post_data.post_type === 'video' ||
                                         msg.post_data.media_url.match(
@@ -1370,11 +1356,7 @@ function MessagesPageContent() {
                                 </div>
                               ) : msg.media_url ? (
                                 (() => {
-                                  const mediaUrl = msg.media_url.startsWith(
-                                    'http'
-                                  )
-                                    ? msg.media_url
-                                    : `http://localhost:3001${msg.media_url}`;
+                                  const mediaUrl = getResourceUrl(msg.media_url) || '';
                                   const urlLower = msg.media_url.toLowerCase();
                                   const isImage =
                                     msg.message_type === 'image' ||

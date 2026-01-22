@@ -108,9 +108,14 @@ async function createPostService(postData, userId) {
   }
 }
 
-async function getPostsFeedService(page = 1, limit = 50, viewerUserId = null) {
+async function getPostsFeedService(page = 1, limit = 50, viewerUserId = null, postType = null) {
   try {
-    const posts = await postsModel.getPostsFeed(page, limit, viewerUserId);
+    // Validate post_type if provided
+    if (postType && !['photo', 'video', 'article', 'event', 'text'].includes(postType)) {
+      throw new Error('Invalid post_type. Must be photo, video, article, event, or text');
+    }
+
+    const posts = await postsModel.getPostsFeed(page, limit, viewerUserId, postType);
     
     // Convert user_profile_url S3 keys to presigned URLs
     const postsWithPresignedUrls = await Promise.all(

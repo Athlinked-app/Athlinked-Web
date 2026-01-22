@@ -133,12 +133,21 @@ async function createResource(req, res) {
  */
 async function getAllResources(req, res) {
   try {
-    const { type } = req.query;
+    const { type, post_type } = req.query;
     const userId = req.query.user_id || req.user?.id || null;
+
+    // For posts and clips, user_id is required (either from query param or auth token)
+    if ((type === 'post' || type === 'clip') && !userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'user_id query parameter is required for posts and clips, or provide authentication token',
+      });
+    }
 
     let result;
     if (type) {
-      result = await resourcesService.getResourcesByTypeService(type);
+      // If type is 'post' and post_type is specified, pass it along
+      result = await resourcesService.getResourcesByTypeService(type, userId, post_type);
     } else {
       result = await resourcesService.getAllResourcesService(userId);
     }

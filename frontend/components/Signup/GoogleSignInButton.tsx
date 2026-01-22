@@ -2,6 +2,7 @@
 
 import { useGoogleLogin } from '@react-oauth/google';
 import { useState } from 'react';
+import { getApiUrl } from '@/utils/config';
 
 interface GoogleSignInButtonProps {
   onSuccess: (userData: any) => void;
@@ -49,9 +50,7 @@ function GoogleSignInButtonInner({
         // NEW: For login mode, call backend first to check if user exists
         if (mode === 'login') {
           try {
-            const API_BASE_URL =
-              process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
-            const response = await fetch(`${API_BASE_URL}/auth/google`, {
+            const response = await fetch(getApiUrl('/auth/google'), {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

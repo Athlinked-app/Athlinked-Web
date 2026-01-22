@@ -92,7 +92,7 @@ async function createPost(postData, client = null) {
   }
 }
 
-async function getPostsFeed(page = 1, limit = 50, viewerUserId = null) {
+async function getPostsFeed(page = 1, limit = 50, viewerUserId = null, postType = null) {
   const offset = (page - 1) * limit;
   
   // If no viewer is authenticated, return empty array (strict privacy)
@@ -100,6 +100,7 @@ async function getPostsFeed(page = 1, limit = 50, viewerUserId = null) {
     return [];
   }
 
+  // Build query with optional post_type filter
   const query = `
     SELECT DISTINCT
       p.*,
@@ -109,6 +110,7 @@ async function getPostsFeed(page = 1, limit = 50, viewerUserId = null) {
     FROM posts p
     LEFT JOIN users u ON p.user_id = u.id
     WHERE p.is_active = true
+      ${postType ? 'AND p.post_type = $4' : ''}
       AND (
         -- User sees their own posts
         p.user_id = $1
@@ -137,7 +139,10 @@ async function getPostsFeed(page = 1, limit = 50, viewerUserId = null) {
   `;
 
   try {
-    const result = await pool.query(query, [viewerUserId, limit, offset]);
+    const params = postType 
+      ? [viewerUserId, limit, offset, postType]
+      : [viewerUserId, limit, offset];
+    const result = await pool.query(query, params);
     return result.rows;
   } catch (error) {
     console.error('Error fetching posts feed:', error);

@@ -162,6 +162,7 @@ export default function ManageResourcesPage() {
       setLoading(true);
       let endpoint = '';
 
+      // Use separate endpoints by default
       if (activeTab === 'guides') {
         endpoint = `/articles?user_id=${encodeURIComponent(currentUserId)}`;
       } else if (activeTab === 'videos') {
@@ -443,7 +444,7 @@ export default function ManageResourcesPage() {
 
                   // Provide more specific error messages
                   if (uploadError.isNetworkError) {
-                    errorMessage = `Network error: Unable to connect to the server.\n\nPlease ensure:\n1. Backend server is running on http://localhost:3001\n2. Check browser console for details`;
+                    errorMessage = `Network error: Unable to connect to the server. Please ensure the backend server is running.`;
                   } else if (uploadError.message) {
                     errorMessage = uploadError.message;
                   }
@@ -486,10 +487,10 @@ export default function ManageResourcesPage() {
 
                 // Provide more specific error messages
                 if (uploadError.isNetworkError) {
-                  errorMessage = `Network error: Unable to connect to the server.\n\nPlease ensure:\n1. Backend server is running on http://localhost:3001\n2. Check browser console for details`;
+                  errorMessage = `Network error: Unable to connect to the server. Please ensure the backend server is running.`;
                 } else if (uploadError.message) {
-                  errorMessage = uploadError.message;
-                }
+                    errorMessage = uploadError.message;
+                  }
 
                 alert(errorMessage);
               } finally {
