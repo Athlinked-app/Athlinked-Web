@@ -2,13 +2,21 @@ const {
   getAchievementsByUserId,
   createAchievement,
   updateAchievement,
+  getAchievementById,
   deleteAchievement,
 } = require('./achievements.model');
+const { convertKeyToPresignedUrl } = require('../utils/s3');
 
 /**
  * Transform database row to frontend format
+ * Converts S3 keys to presigned URLs for PDFs when fetching
  */
-function transformToFrontendFormat(row) {
+async function transformToFrontendFormat(row) {
+  // Convert S3 key to presigned URL for PDF (if it exists)
+  const mediaPdf = row.media_pdf 
+    ? await convertKeyToPresignedUrl(row.media_pdf)
+    : null;
+
   return {
     id: row.id,
     title: row.title,
@@ -20,7 +28,7 @@ function transformToFrontendFormat(row) {
     level: row.level,
     location: row.location,
     description: row.description,
-    mediaPdf: row.media_pdf,
+    mediaPdf: mediaPdf,
   };
 }
 
@@ -32,7 +40,10 @@ function transformToFrontendFormat(row) {
 async function getAchievementsService(userId) {
   try {
     const achievements = await getAchievementsByUserId(userId);
-    const transformed = achievements.map(transformToFrontendFormat);
+    // Convert S3 keys to presigned URLs for PDFs
+    const transformed = await Promise.all(
+      achievements.map(row => transformToFrontendFormat(row))
+    );
     return {
       success: true,
       data: transformed,
@@ -56,10 +67,12 @@ async function createAchievementService(userId, data) {
     }
 
     const achievement = await createAchievement(userId, data);
+    // Convert S3 key to presigned URL for PDF when returning
+    const transformed = await transformToFrontendFormat(achievement);
     return {
       success: true,
       message: 'Achievement created successfully',
-      data: transformToFrontendFormat(achievement),
+      data: transformed,
     };
   } catch (error) {
     console.error('Error in createAchievementService:', error);
@@ -75,11 +88,30 @@ async function createAchievementService(userId, data) {
  */
 async function updateAchievementService(id, data) {
   try {
+    // Get current achievement to get old PDF URL before updating
+    const currentAchievement = await getAchievementById(id);
+    const oldMediaPdf = currentAchievement?.media_pdf;
+
     const achievement = await updateAchievement(id, data);
+
+    // Delete old PDF from S3 if it exists and is being replaced
+    if (data.mediaPdf !== undefined && oldMediaPdf && oldMediaPdf !== data.mediaPdf) {
+      try {
+        const { deleteFromS3 } = require('../utils/s3');
+        await deleteFromS3(oldMediaPdf);
+        console.log('Deleted old achievement PDF from S3:', oldMediaPdf);
+      } catch (s3Error) {
+        // Log error but continue
+        console.error('Error deleting old achievement PDF from S3:', s3Error.message);
+      }
+    }
+
+    // Convert S3 key to presigned URL for PDF when returning
+    const transformed = await transformToFrontendFormat(achievement);
     return {
       success: true,
       message: 'Achievement updated successfully',
-      data: transformToFrontendFormat(achievement),
+      data: transformed,
     };
   } catch (error) {
     console.error('Error in updateAchievementService:', error);
@@ -94,10 +126,30 @@ async function updateAchievementService(id, data) {
  */
 async function deleteAchievementService(id) {
   try {
-    const deleted = await deleteAchievement(id);
-    if (!deleted) {
+    // Get the achievement first to get the PDF URL
+    const achievement = await getAchievementById(id);
+    if (!achievement) {
       throw new Error('Achievement not found');
     }
+
+    // Delete PDF file from S3 if it exists
+    if (achievement.media_pdf) {
+      try {
+        const { deleteFromS3 } = require('../utils/s3');
+        await deleteFromS3(achievement.media_pdf);
+        console.log('Deleted achievement PDF from S3:', achievement.media_pdf);
+      } catch (s3Error) {
+        // Log error but continue with database deletion
+        console.error('Error deleting achievement PDF from S3:', s3Error.message);
+      }
+    }
+
+    // Delete from database
+    const deleted = await deleteAchievement(id);
+    if (!deleted) {
+      throw new Error('Failed to delete achievement');
+    }
+
     return {
       success: true,
       message: 'Achievement deleted successfully',

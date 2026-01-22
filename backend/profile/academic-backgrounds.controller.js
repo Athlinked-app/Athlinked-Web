@@ -61,8 +61,9 @@ async function createAcademicBackgroundController(req, res) {
     // Handle PDF file upload if present
     if (req.file) {
       console.log('PDF file uploaded:', req.file.originalname);
-      // Use S3 URL if available, otherwise fallback to local path (for backward compatibility)
-      data.degreePdf = req.file.location || `/uploads/profile/pdfs/${req.file.filename}`;
+      // Store S3 key (not presigned URL) - presigned URLs are generated when fetching
+      data.degreePdf = req.file.s3Key || req.file.location || `/uploads/profile/pdfs/${req.file.filename}`;
+      console.log('Storing S3 key (not presigned URL):', data.degreePdf);
     } else {
       console.log('No PDF file in request');
     }
@@ -101,8 +102,9 @@ async function updateAcademicBackgroundController(req, res) {
     // Handle PDF file upload if present
     if (req.file) {
       console.log('PDF file uploaded:', req.file.originalname);
-      // Use S3 URL if available, otherwise fallback to local path (for backward compatibility)
-      data.degreePdf = req.file.location || `/uploads/profile/pdfs/${req.file.filename}`;
+      // Store S3 key (not presigned URL) - presigned URLs are generated when fetching
+      data.degreePdf = req.file.s3Key || req.file.location || `/uploads/profile/pdfs/${req.file.filename}`;
+      console.log('Storing S3 key (not presigned URL):', data.degreePdf);
     } else {
       console.log('No PDF file in request');
     }

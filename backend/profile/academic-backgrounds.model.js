@@ -197,6 +197,27 @@ async function updateAcademicBackground(id, data) {
 }
 
 /**
+ * Get academic background by ID (for getting PDF URL before deletion)
+ * @param {string} id - Academic background ID
+ * @returns {Promise<object|null>} Academic background data or null
+ */
+async function getAcademicBackgroundById(id) {
+  const query = `
+    SELECT id, degree_pdf
+    FROM academic_backgrounds
+    WHERE id = $1
+  `;
+
+  try {
+    const result = await pool.query(query, [id]);
+    return result.rows[0] || null;
+  } catch (error) {
+    console.error('Error fetching academic background by ID:', error);
+    throw error;
+  }
+}
+
+/**
  * Delete an academic background
  * @param {string} id - Academic background ID
  * @returns {Promise<boolean>} True if deleted successfully
@@ -221,5 +242,6 @@ module.exports = {
   getAcademicBackgroundsByUserId,
   createAcademicBackground,
   updateAcademicBackground,
+  getAcademicBackgroundById,
   deleteAcademicBackground,
 };
