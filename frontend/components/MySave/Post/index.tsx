@@ -30,92 +30,26 @@ export default function MySavePost({
   onPostDeleted,
 }: MySavePostProps) {
   const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
-  const [savedPosts, setSavedPosts] = useState<PostData[]>([]);
-  const [loadingSaved, setLoadingSaved] = useState(false);
 
-  // Fetch saved posts from backend if viewing another user's profile
-  useEffect(() => {
-    const fetchSavedPosts = async () => {
-      if (viewedUserId && viewedUserId !== currentUserId) {
-        setLoadingSaved(true);
-        try {
-          const response = await fetch(
-            `${API_BASE_URL}/api/posts/saved/${viewedUserId}`
-          );
-          if (response.ok) {
-            const data = await response.json();
-            if (data.success && data.posts) {
-              const transformedPosts: PostData[] = data.posts.map(
-                (post: any) => ({
-                  id: post.id,
-                  username: post.username || 'User',
-                  user_profile_url: post.user_profile_url || null,
-                  user_id: post.user_id,
-                  post_type: post.post_type,
-                  caption: post.caption,
-                  media_url: post.media_url,
-                  article_title: post.article_title,
-                  article_body: post.article_body,
-                  event_title: post.event_title,
-                  event_date: post.event_date,
-                  event_location: post.event_location,
-                  like_count: post.like_count || 0,
-                  comment_count: post.comment_count || 0,
-                  save_count: post.save_count || 0,
-                  created_at: post.created_at,
-                })
-              );
-              setSavedPosts(transformedPosts);
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching saved posts:', error);
-        } finally {
-          setLoadingSaved(false);
-        }
-      } else {
-        // Use localStorage for own profile
-        setSavedPosts([]);
-      }
-    };
-
-    fetchSavedPosts();
-  }, [viewedUserId, currentUserId]);
-
-  // Get saved post IDs from localStorage (for own profile)
+  // Get saved post IDs from localStorage
   const getSavedPostIds = (): string[] => {
     if (typeof window === 'undefined') return [];
-    const savedPosts = localStorage.getItem('athlinked_saved_posts');
-    return savedPosts ? JSON.parse(savedPosts) : [];
+    const savedPosts = JSON.parse(
+      localStorage.getItem('athlinked_saved_posts') || '[]'
+    );
+    return savedPosts;
   };
 
-  // Determine which posts to show
-  let filteredPosts: PostData[] = [];
-
-  if (viewedUserId && viewedUserId !== currentUserId) {
-    // Show saved posts from backend for other users
-    filteredPosts = savedPosts.filter(
-      post =>
-        post.post_type === 'photo' ||
+  // Filter posts to show only saved posts (photo, video, text, and event posts, not articles)
+  const savedPostIds = getSavedPostIds();
+  const filteredPosts = posts.filter(
+    post =>
+      savedPostIds.includes(post.id) &&
+      (post.post_type === 'photo' ||
         post.post_type === 'video' ||
         post.post_type === 'text' ||
-        post.post_type === 'event'
-    );
-  } else {
-    // Show saved posts from localStorage for own profile
-    const savedPostIds = getSavedPostIds();
-    filteredPosts = posts.filter(post => {
-      if (!savedPostIds.includes(post.id)) {
-        return false;
-      }
-      return (
-        post.post_type === 'photo' ||
-        post.post_type === 'video' ||
-        post.post_type === 'text' ||
-        post.post_type === 'event'
-      );
-    });
-  }
+        post.post_type === 'event')
+  );
 
   // Get thumbnail URL for a post with proper URL formatting
   const getThumbnailUrl = (post: PostData): string | null => {
@@ -129,7 +63,7 @@ export default function MySavePost({
     return getResourceUrl(mediaUrl) || mediaUrl;
   };
 
-  if (loading || loadingSaved) {
+  if (loading) {
     return (
       <div className="text-center py-8 text-gray-500">
         Loading saved posts...

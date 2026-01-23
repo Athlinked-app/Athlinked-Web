@@ -408,6 +408,19 @@ async function replyToCommentService(commentId, userId, comment) {
   }
 }
 
+async function checkPostSaveStatusService(postId, userId) {
+  try {
+    const isSaved = await postsModel.checkPostSaveStatus(postId, userId);
+    return {
+      success: true,
+      isSaved: isSaved,
+    };
+  } catch (error) {
+    console.error('Check post save status service error:', error);
+    throw error;
+  }
+}
+
 async function savePostService(postId, userId) {
   const client = await pool.connect();
   try {
@@ -435,6 +448,45 @@ async function savePostService(postId, userId) {
     }
   } catch (error) {
     console.error('Save post service error:', error);
+    throw error;
+  } finally {
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
+  }
+}
+
+async function unsavePostService(postId, userId) {
+  const client = await pool.connect();
+  try {
+    const post = await postsModel.getPostById(postId);
+    if (!post) {
+      throw new Error('Post not found');
+    }
+
+    await client.query('BEGIN');
+    try {
+      const unsaveResult = await postsModel.unsavePost(postId, userId, client);
+      await client.query('COMMIT');
+      return {
+        success: true,
+        message: 'Post unsaved successfully',
+        save_count: unsaveResult.save_count,
+      };
+    } catch (error) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error('Unsave post service error:', error);
     throw error;
   } finally {
     if (client) {
@@ -541,6 +593,26 @@ async function deletePostService(postId, userId) {
   }
 }
 
+/**
+ * Get saved posts for a user
+ * @param {string} userId - User UUID
+ * @param {number} limit - Limit of posts to return
+ * @returns {Promise<object>} Service result with saved posts
+ */
+async function getSavedPostsService(userId, limit = 50) {
+  try {
+    const posts = await postsModel.getSavedPostsByUserId(userId, limit);
+    return {
+      success: true,
+      posts: posts,
+    };
+  } catch (error) {
+    console.error('Get saved posts service error:', error.message);
+    console.error('Error stack:', error.stack);
+    throw error;
+  }
+}
+
 module.exports = {
   createPostService,
   getPostsFeedService,
@@ -549,7 +621,10 @@ module.exports = {
   unlikePostService,
   addCommentService,
   replyToCommentService,
+  checkPostSaveStatusService,
   savePostService,
+  unsavePostService,
   getCommentsByPostIdService,
   deletePostService,
+  getSavedPostsService,
 };

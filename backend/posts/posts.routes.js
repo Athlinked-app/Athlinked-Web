@@ -97,6 +97,36 @@ router.get('/', optionalAuth, postsController.getPostsFeed);
 
 /**
  * @swagger
+ * /api/posts/saved/{userId}:
+ *   get:
+ *     summary: Get saved posts for a user
+ *     description: Retrieve all posts saved by a specific user
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *         description: Number of posts to return
+ *     responses:
+ *       200:
+ *         description: Saved posts retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/saved/:userId', authenticateToken, postsController.getSavedPosts);
+
+/**
+ * @swagger
  * /api/posts/{postId}/like-status:
  *   get:
  *     summary: Check like status
@@ -287,6 +317,35 @@ router.get('/:postId/comments', postsController.getComments);
 
 /**
  * @swagger
+ * /api/posts/{postId}/save-status:
+ *   get:
+ *     summary: Check if a post is saved by user
+ *     description: Check if the current user has saved a specific post
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: postId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Post ID
+ *       - in: query
+ *         name: user_id
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: Save status retrieved
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/:postId/save-status', authenticateToken, postsController.checkPostSaveStatus);
+
+/**
+ * @swagger
  * /api/posts/{postId}/save:
  *   post:
  *     summary: Save a post
@@ -316,6 +375,30 @@ router.get('/:postId/comments', postsController.getComments);
  *               $ref: '#/components/schemas/Error'
  */
 router.post('/:postId/save', authenticateToken, postsController.savePost);
+
+/**
+ * @swagger
+ * /api/posts/{postId}/unsave:
+ *   post:
+ *     summary: Unsave a post
+ *     description: Remove a post from user's saved posts
+ *     tags: [Posts]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: postId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Post ID
+ *     responses:
+ *       200:
+ *         description: Post unsaved successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.post('/:postId/unsave', authenticateToken, postsController.unsavePost);
 
 /**
  * @swagger

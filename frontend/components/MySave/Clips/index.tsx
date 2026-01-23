@@ -39,18 +39,18 @@ export default function MySaveClips({
   // Get saved clip IDs from localStorage
   const getSavedClipIds = (): string[] => {
     if (typeof window === 'undefined') return [];
-    const savedClips = localStorage.getItem('athlinked_saved_clips');
-    return savedClips ? JSON.parse(savedClips) : [];
+    const savedClips = JSON.parse(
+      localStorage.getItem('athlinked_saved_clips') || '[]'
+    );
+    return savedClips;
   };
 
-  // Fetch clips from API
+  // Fetch all clips from API
   useEffect(() => {
     const fetchClips = async () => {
       try {
         setLoading(true);
-        const response = await fetch(
-          `${API_BASE_URL}/api/clips?page=1&limit=50`
-        );
+        const response = await fetch(`${API_BASE_URL}/api/clips?page=1&limit=50`);
 
         if (!response.ok) {
           console.error(
@@ -104,7 +104,7 @@ export default function MySaveClips({
     fetchClips();
   }, [currentUsername]);
 
-  // Filter clips: only show saved clips
+  // Filter clips to show only saved clips
   const savedClipIds = getSavedClipIds();
   const filteredClips = clips.filter(clip => {
     return savedClipIds.includes(clip.id);

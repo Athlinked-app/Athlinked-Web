@@ -256,6 +256,131 @@ async function deleteClip(req, res) {
   }
 }
 
+/**
+ * Controller to handle save clip request
+ */
+async function saveClip(req, res) {
+  try {
+    const { clipId } = req.params;
+    const user_id = req.body.user_id || req.user?.id;
+
+    if (!user_id) {
+      return res
+        .status(401)
+        .json({ success: false, message: 'Authentication required' });
+    }
+
+    if (!clipId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Clip ID is required',
+      });
+    }
+
+    const result = await clipsService.saveClipService(clipId, user_id);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Save clip error:', error);
+    console.error('Error stack:', error.stack);
+    if (error.message === 'Clip not found') {
+      return res.status(404).json({ success: false, message: error.message });
+    }
+    if (error.message.includes('already saved')) {
+      return res.status(400).json({
+        success: false,
+        message: error.message,
+      });
+    }
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
+/**
+ * Controller to handle unsave clip request
+ */
+async function unsaveClip(req, res) {
+  try {
+    const { clipId } = req.params;
+    const user_id = req.user?.id;
+
+    if (!user_id) {
+      return res
+        .status(401)
+        .json({ success: false, message: 'Authentication required' });
+    }
+
+    const result = await clipsService.unsaveClipService(clipId, user_id);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Unsave clip error:', error);
+    if (error.message === 'Clip not found') {
+      return res.status(404).json({ success: false, message: error.message });
+    }
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
+/**
+ * Controller to handle check clip save status request
+ */
+async function checkClipSaveStatus(req, res) {
+  try {
+    const { clipId } = req.params;
+    const user_id = req.query.user_id || req.user?.id;
+
+    if (!user_id) {
+      return res
+        .status(401)
+        .json({ success: false, message: 'Authentication required' });
+    }
+
+    const isSaved = await clipsModel.checkClipSaveStatus(clipId, user_id);
+    return res.status(200).json({
+      success: true,
+      isSaved: isSaved,
+    });
+  } catch (error) {
+    console.error('Check clip save status error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
+/**
+ * Controller to handle get saved clips request
+ */
+async function getSavedClips(req, res) {
+  try {
+    const userId = req.params.userId || req.user?.id;
+    const limit = parseInt(req.query.limit, 10) || 50;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User ID is required',
+      });
+    }
+
+    const result = await clipsService.getSavedClipsService(userId, limit);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Get saved clips error:', error);
+    console.error('Error stack:', error.stack);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 module.exports = {
   createClip,
   getClipsFeed,
@@ -265,6 +390,10 @@ module.exports = {
   deleteClip,
   likeClip,
   unlikeClip,
+  checkClipSaveStatus,
+  saveClip,
+  unsaveClip,
+  getSavedClips,
 };
 
 /**
