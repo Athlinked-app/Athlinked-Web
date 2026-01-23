@@ -563,58 +563,94 @@ export default function ClipsPage() {
 
   // Check saved clips status on mount and when reels change
   useEffect(() => {
-    const checkSavedStatus = () => {
-      const savedClipIds = JSON.parse(
-        localStorage.getItem('athlinked_saved_clips') || '[]'
-      );
-      const savedMap: { [key: string]: boolean } = {};
-      reels.forEach(reel => {
-        savedMap[reel.id] = savedClipIds.includes(reel.id);
-      });
-      setSavedClips(savedMap);
+    const checkSavedStatus = async () => {
+      if (!currentUserId || reels.length === 0) return;
+
+      try {
+        const { apiGet } = await import('@/utils/api');
+        const savedMap: { [key: string]: boolean } = {};
+        
+        // Check each clip's save status
+        await Promise.all(
+          reels.map(async (reel) => {
+            try {
+              const data = await apiGet<{
+                success: boolean;
+                isSaved?: boolean;
+              }>(`/clips/${reel.id}/save-status?user_id=${currentUserId}`);
+              savedMap[reel.id] = data.success && (data.isSaved || false);
+            } catch (error) {
+              savedMap[reel.id] = false;
+            }
+          })
+        );
+        
+        setSavedClips(savedMap);
+      } catch (error) {
+        console.error('Error checking save status:', error);
+        // Fallback to localStorage for backward compatibility
+        const savedClipIds = JSON.parse(
+          localStorage.getItem('athlinked_saved_clips') || '[]'
+        );
+        const savedMap: { [key: string]: boolean } = {};
+        reels.forEach(reel => {
+          savedMap[reel.id] = savedClipIds.includes(reel.id);
+        });
+        setSavedClips(savedMap);
+      }
     };
 
     checkSavedStatus();
-  }, [reels]);
+  }, [reels, currentUserId]);
 
   // Toggle save clip
-  const handleSaveClip = (clipId: string) => {
-    const savedClipIds = JSON.parse(
-      localStorage.getItem('athlinked_saved_clips') || '[]'
-    );
-
-    let isNowSaved: boolean;
-    if (savedClipIds.includes(clipId)) {
-      // Unsave
-      const updatedSavedClips = savedClipIds.filter(
-        (id: string) => id !== clipId
-      );
-      localStorage.setItem(
-        'athlinked_saved_clips',
-        JSON.stringify(updatedSavedClips)
-      );
-      isNowSaved = false;
-      setSaveAlertMessage('This clip is unsaved');
-    } else {
-      // Save
-      const updatedSavedClips = [...savedClipIds, clipId];
-      localStorage.setItem(
-        'athlinked_saved_clips',
-        JSON.stringify(updatedSavedClips)
-      );
-      isNowSaved = true;
-      setSaveAlertMessage('Clip is saved');
+  const handleSaveClip = async (clipId: string) => {
+    if (!currentUserId) {
+      alert('Please log in to save clips');
+      return;
     }
 
-    // Update saved state
+    const wasSaved = savedClips[clipId] || false;
+    // Optimistic update
     setSavedClips(prev => ({
       ...prev,
-      [clipId]: isNowSaved,
+      [clipId]: !wasSaved,
     }));
-
-    // Show alert
+    setSaveAlertMessage(wasSaved ? 'This clip is unsaved' : 'Clip is saved');
     setSavedClipId(clipId);
     setShowSaveAlert(true);
+
+    try {
+      const { apiPost } = await import('@/utils/api');
+      const endpoint = wasSaved ? '/save/unsave' : '/save';
+
+      const result = await apiPost<{
+        success: boolean;
+        message?: string;
+      }>(endpoint, {
+        type: 'clip',
+        id: clipId,
+        user_id: currentUserId,
+      });
+
+      if (!result.success) {
+        // Revert optimistic update on error
+        setSavedClips(prev => ({
+          ...prev,
+          [clipId]: wasSaved,
+        }));
+        alert(result.message || 'Failed to update save status');
+      }
+    } catch (error) {
+      console.error('Error updating save status:', error);
+      // Revert optimistic update on error
+      setSavedClips(prev => ({
+        ...prev,
+        [clipId]: wasSaved,
+      }));
+      alert('Failed to update save status. Please try again.');
+    }
+
     setTimeout(() => {
       setShowSaveAlert(false);
       setSavedClipId(null);

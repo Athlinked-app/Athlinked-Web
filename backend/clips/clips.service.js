@@ -346,6 +346,133 @@ async function deleteClipService(clipId, userId) {
   }
 }
 
+/**
+ * Save a clip
+ * @param {string} clipId - Clip UUID
+ * @param {string} userId - User UUID
+ * @returns {Promise<object>} Service result
+ */
+async function saveClipService(clipId, userId) {
+  const client = await pool.connect();
+  try {
+    const clip = await clipsModel.getClipById(clipId);
+    if (!clip) {
+      throw new Error('Clip not found');
+    }
+
+    await client.query('BEGIN');
+    try {
+      const saveResult = await clipsModel.saveClip(clipId, userId, client);
+      await client.query('COMMIT');
+      return {
+        success: true,
+        message: 'Clip saved successfully',
+        save_count: saveResult.save_count,
+      };
+    } catch (error) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error('Save clip service error:', error);
+    throw error;
+  } finally {
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
+  }
+}
+
+/**
+ * Unsave a clip
+ * @param {string} clipId - Clip UUID
+ * @param {string} userId - User UUID
+ * @returns {Promise<object>} Service result
+ */
+async function unsaveClipService(clipId, userId) {
+  const client = await pool.connect();
+  try {
+    const clip = await clipsModel.getClipById(clipId);
+    if (!clip) {
+      throw new Error('Clip not found');
+    }
+
+    await client.query('BEGIN');
+    try {
+      const unsaveResult = await clipsModel.unsaveClip(clipId, userId, client);
+      await client.query('COMMIT');
+      return {
+        success: true,
+        message: 'Clip unsaved successfully',
+        save_count: unsaveResult.save_count,
+      };
+    } catch (error) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error('Unsave clip service error:', error);
+    throw error;
+  } finally {
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
+  }
+}
+
+/**
+ * Get saved clips for a user
+ * @param {string} userId - User UUID
+ * @param {number} limit - Limit of clips to return
+ * @returns {Promise<object>} Service result with saved clips
+ */
+async function getSavedClipsService(userId, limit = 50) {
+  try {
+    const clips = await clipsModel.getSavedClipsByUserId(userId, limit);
+
+    // Convert S3 keys to presigned URLs
+    const clipsWithPresignedUrls = await Promise.all(
+      clips.map(async (clip) => {
+        if (clip.user_profile_url) {
+          clip.user_profile_url = await convertKeyToPresignedUrl(clip.user_profile_url);
+        }
+        if (clip.author_profile_url) {
+          clip.author_profile_url = await convertKeyToPresignedUrl(clip.author_profile_url);
+        }
+        if (clip.video_url) {
+          clip.video_url = await convertKeyToPresignedUrl(clip.video_url);
+        }
+        return clip;
+      })
+    );
+
+    return {
+      success: true,
+      clips: clipsWithPresignedUrls,
+    };
+  } catch (error) {
+    console.error('Get saved clips service error:', error.message);
+    console.error('Error stack:', error.stack);
+    throw error;
+  }
+}
+
 module.exports = {
   createClipService,
   getClipsFeedService,
@@ -355,6 +482,9 @@ module.exports = {
   deleteClipService,
   likeClipService,
   unlikeClipService,
+  saveClipService,
+  unsaveClipService,
+  getSavedClipsService,
 };
 
 async function likeClipService(clipId, userId) {

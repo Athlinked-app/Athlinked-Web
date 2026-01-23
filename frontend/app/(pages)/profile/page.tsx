@@ -1591,6 +1591,7 @@ function ProfileContent() {
                     <MySavePost
                       posts={posts}
                       currentUserId={currentUserId || undefined}
+                      viewedUserId={viewUserId || null}
                       currentUserProfileUrl={getProfileUrl(
                         viewUserId
                           ? viewUser?.profile_url || null
@@ -1601,7 +1602,6 @@ function ProfileContent() {
                           ? viewUser?.full_name || 'User'
                           : currentUser?.full_name || 'User'
                       }
-                      viewedUserId={viewUserId}
                       loading={loading}
                       onCommentCountUpdate={fetchPosts}
                       onPostDeleted={fetchPosts}
