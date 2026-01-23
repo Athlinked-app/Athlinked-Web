@@ -393,6 +393,9 @@ async function getUserProfileCompleteService(userId, currentUserId = null) {
         if (post.user_profile_url) {
           post.user_profile_url = await convertKeyToPresignedUrl(post.user_profile_url);
         }
+        if (post.author_profile_url) {
+          post.author_profile_url = await convertKeyToPresignedUrl(post.author_profile_url);
+        }
         if (post.media_url) {
           post.media_url = await convertKeyToPresignedUrl(post.media_url);
         }

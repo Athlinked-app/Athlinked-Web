@@ -472,27 +472,38 @@ async function getClipComments(clipId) {
  * @param {number} limit - Limit of clips to return
  * @returns {Promise<Array>} Array of clips
  */
-async function getClipsByUserId(userId, limit = 50) {
+async function getClipsByUserId(userId, limit = 50, viewerUserId = null) {
+  // If viewerUserId is provided, include is_saved field
+  const isSavedField = viewerUserId 
+    ? `, CASE WHEN cs.clip_id IS NOT NULL THEN true ELSE false END as is_saved`
+    : '';
+  const joinClause = viewerUserId
+    ? `LEFT JOIN clip_saves cs ON c.id = cs.clip_id AND cs.user_id = $3`
+    : '';
+  
   const query = `
     SELECT 
-      id,
-      user_id,
-      video_url,
-      description,
-      like_count,
-      comment_count,
-      save_count,
-      username,
-      user_profile_url,
-      created_at
-    FROM clips
-    WHERE user_id = $1
-    ORDER BY created_at DESC
+      c.id,
+      c.user_id,
+      c.video_url,
+      c.description,
+      c.like_count,
+      c.comment_count,
+      c.save_count,
+      c.username,
+      c.user_profile_url,
+      c.created_at
+      ${isSavedField}
+    FROM clips c
+    ${joinClause}
+    WHERE c.user_id = $1
+    ORDER BY c.created_at DESC
     LIMIT $2
   `;
 
   try {
-    const result = await pool.query(query, [userId, limit]);
+    const params = viewerUserId ? [userId, limit, viewerUserId] : [userId, limit];
+    const result = await pool.query(query, params);
     return result.rows;
   } catch (error) {
     console.error('Error fetching user clips:', error);

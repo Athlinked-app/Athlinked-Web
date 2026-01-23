@@ -1,4 +1,5 @@
 const resourcesModel = require('./resources.model');
+const { convertKeyToPresignedUrl } = require('../utils/s3');
 
 /**
  * Create a new resource
@@ -137,6 +138,14 @@ async function createResourceService(resourceData) {
           has_file: !!updatedResource.file_url,
         });
 
+        // Convert S3 keys to presigned URLs for updated resource
+        if (updatedResource.video_url) {
+          updatedResource.video_url = await convertKeyToPresignedUrl(updatedResource.video_url);
+        }
+        if (updatedResource.file_url) {
+          updatedResource.file_url = await convertKeyToPresignedUrl(updatedResource.file_url);
+        }
+
         return {
           success: true,
           resource: updatedResource,
@@ -157,6 +166,14 @@ async function createResourceService(resourceData) {
       file_type,
       file_size: file_size ? parseInt(file_size) : null,
     });
+
+    // Convert S3 keys to presigned URLs for created resource
+    if (resource.video_url) {
+      resource.video_url = await convertKeyToPresignedUrl(resource.video_url);
+    }
+    if (resource.file_url) {
+      resource.file_url = await convertKeyToPresignedUrl(resource.file_url);
+    }
 
     return {
       success: true,

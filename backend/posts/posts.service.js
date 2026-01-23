@@ -602,9 +602,29 @@ async function deletePostService(postId, userId) {
 async function getSavedPostsService(userId, limit = 50) {
   try {
     const posts = await postsModel.getSavedPostsByUserId(userId, limit);
+
+    // Convert S3 keys to presigned URLs
+    const postsWithPresignedUrls = await Promise.all(
+      posts.map(async (post) => {
+        if (post.user_profile_url) {
+          post.user_profile_url = await convertKeyToPresignedUrl(post.user_profile_url);
+        }
+        if (post.post_author_profile_url) {
+          post.post_author_profile_url = await convertKeyToPresignedUrl(post.post_author_profile_url);
+        }
+        if (post.author_profile_url) {
+          post.author_profile_url = await convertKeyToPresignedUrl(post.author_profile_url);
+        }
+        if (post.media_url) {
+          post.media_url = await convertKeyToPresignedUrl(post.media_url);
+        }
+        return post;
+      })
+    );
+
     return {
       success: true,
-      posts: posts,
+      posts: postsWithPresignedUrls,
     };
   } catch (error) {
     console.error('Get saved posts service error:', error.message);

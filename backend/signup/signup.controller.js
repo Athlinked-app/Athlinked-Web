@@ -122,6 +122,7 @@ async function getUserByEmail(req, res) {
     }
 
     const signupModel = require('./signup.model');
+    const { convertKeyToPresignedUrl } = require('../utils/s3');
     const user = await signupModel.findByEmail(email.toLowerCase().trim());
 
     if (!user) {
@@ -131,8 +132,11 @@ async function getUserByEmail(req, res) {
       });
     }
 
-    // Return user data without password
+    // Return user data without password and convert profile_url to presigned URL
     const { password, ...userData } = user;
+    if (userData.profile_url) {
+      userData.profile_url = await convertKeyToPresignedUrl(userData.profile_url);
+    }
 
     return res.status(200).json({
       success: true,
@@ -164,6 +168,7 @@ async function getUserByUsername(req, res) {
     }
 
     const signupModel = require('./signup.model');
+    const { convertKeyToPresignedUrl } = require('../utils/s3');
     const user = await signupModel.findByUsername(
       username.toLowerCase().trim()
     );
@@ -175,8 +180,11 @@ async function getUserByUsername(req, res) {
       });
     }
 
-    // Return user data without password
+    // Return user data without password and convert profile_url to presigned URL
     const { password, ...userData } = user;
+    if (userData.profile_url) {
+      userData.profile_url = await convertKeyToPresignedUrl(userData.profile_url);
+    }
 
     return res.status(200).json({
       success: true,

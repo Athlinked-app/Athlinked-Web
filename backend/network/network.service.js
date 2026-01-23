@@ -249,9 +249,19 @@ async function getConnectionRequestsService(userId) {
       `Service: Found ${requests.length} connection requests for user ${userId}`
     );
 
+    // Convert profile URLs to presigned URLs
+    const requestsWithPresignedUrls = await Promise.all(
+      requests.map(async (request) => {
+        if (request.profile_url) {
+          request.profile_url = await convertKeyToPresignedUrl(request.profile_url);
+        }
+        return request;
+      })
+    );
+
     return {
       success: true,
-      requests,
+      requests: requestsWithPresignedUrls,
     };
   } catch (error) {
     console.error('Get connection requests service error:', error.message);
@@ -309,9 +319,19 @@ async function getConnectionsService(userId) {
 
     const connections = await networkModel.getConnections(userId);
 
+    // Convert profile URLs to presigned URLs
+    const connectionsWithPresignedUrls = await Promise.all(
+      connections.map(async (connection) => {
+        if (connection.profile_url) {
+          connection.profile_url = await convertKeyToPresignedUrl(connection.profile_url);
+        }
+        return connection;
+      })
+    );
+
     return {
       success: true,
-      connections,
+      connections: connectionsWithPresignedUrls,
     };
   } catch (error) {
     console.error('Get connections service error:', error.message);

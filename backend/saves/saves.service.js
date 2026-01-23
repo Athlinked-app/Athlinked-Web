@@ -1,7 +1,5 @@
 const postsService = require('../posts/posts.service');
 const clipsService = require('../clips/clips.service');
-const postsModel = require('../posts/posts.model');
-const clipsModel = require('../clips/clips.model');
 
 /**
  * Unified save service - saves posts or clips
@@ -55,15 +53,16 @@ async function unsaveItemService(type, id, userId) {
  */
 async function getSavedItemsService(userId, limit = 50) {
   try {
-    const [savedPosts, savedClips] = await Promise.all([
-      postsModel.getSavedPostsByUserId(userId, limit),
-      clipsModel.getSavedClipsByUserId(userId, limit),
+    // Use service functions which handle presigned URL conversion
+    const [savedPostsResult, savedClipsResult] = await Promise.all([
+      postsService.getSavedPostsService(userId, limit),
+      clipsService.getSavedClipsService(userId, limit),
     ]);
 
     return {
       success: true,
-      posts: savedPosts,
-      clips: savedClips,
+      posts: savedPostsResult.posts || [],
+      clips: savedClipsResult.clips || [],
     };
   } catch (error) {
     console.error('Get saved items service error:', error.message);

@@ -726,7 +726,15 @@ async function getUserProfileComplete(userId, currentUserId = null) {
  * @param {number} limit - Limit of posts to return
  * @returns {Promise<Array>} Array of posts
  */
-async function getUserPosts(userId, limit = 50) {
+async function getUserPosts(userId, limit = 50, viewerUserId = null) {
+  // If viewerUserId is provided, include is_saved field
+  const isSavedField = viewerUserId 
+    ? `, CASE WHEN ps.post_id IS NOT NULL THEN true ELSE false END as is_saved`
+    : '';
+  const joinClause = viewerUserId
+    ? `LEFT JOIN post_saves ps ON p.id = ps.post_id AND ps.user_id = $3`
+    : '';
+  
   const postsQuery = `
     SELECT 
       p.id,
@@ -746,22 +754,24 @@ async function getUserPosts(userId, limit = 50) {
       (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as like_count,
       (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comment_count,
       (SELECT COUNT(*) FROM post_saves WHERE post_id = p.id) as save_count
+      ${isSavedField}
     FROM posts p
+    ${joinClause}
     WHERE p.user_id = $1 AND (p.is_active = true OR p.is_active IS NULL)
     ORDER BY p.created_at DESC
     LIMIT $2
   `;
 
   try {
-    const result = await pool.query(postsQuery, [userId, limit]);
-    console.log(`getUserPosts - Found ${result.rows.length} posts for user ${userId}`);
+    const params = viewerUserId ? [userId, limit, viewerUserId] : [userId, limit];
+    const result = await pool.query(postsQuery, params);
     return result.rows;
   } catch (error) {
     console.error('Error fetching user posts:', error);
-    console.error('Error details:', error.message, error.stack);
     throw error;
   }
 }
+
 
 module.exports = {
   getUserProfile,
