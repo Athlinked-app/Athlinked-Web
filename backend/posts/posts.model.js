@@ -133,7 +133,6 @@ setTimeout(async () => {
         }
       }
     });
-    console.log('✅ post_saves table columns ensured');
   } catch (err) {
     console.error(
       'Error ensuring post_saves table columns:',
