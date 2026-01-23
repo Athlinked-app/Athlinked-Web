@@ -133,248 +133,293 @@ function MessagesPageContent() {
     if (!currentUser?.id) return;
 
     // Use centralized WebSocket utility
-    const { getSocket } = require('@/utils/useSocket');
-    const newSocket = getSocket();
+    import('@/utils/useSocket').then(({ getSocket, initializeSocket }) => {
+      // Initialize socket if not already connected
+      let newSocket = getSocket();
+      if (!newSocket || !newSocket.connected) {
+        newSocket = initializeSocket();
+      }
 
-    if (!newSocket) return;
+      if (!newSocket) {
+        console.error('Failed to initialize WebSocket');
+        return;
+      }
 
-    // Remove existing listeners first to prevent duplicates
-    newSocket.off('receive_message');
-    newSocket.off('message_delivered');
-    newSocket.off('messages_read');
-    newSocket.off('conversation_updated');
-
-    if (newSocket.connected) {
-      newSocket.emit('userId', { userId: currentUser.id });
-    } else {
+      // Remove existing listeners first to prevent duplicates
+      newSocket.off('receive_message');
+      newSocket.off('message_delivered');
+      newSocket.off('messages_read');
+      newSocket.off('conversation_updated');
       newSocket.off('connect');
-      newSocket.on('connect', () => {
-        newSocket.emit('userId', { userId: currentUser.id });
-      });
-    }
 
-    newSocket.on(
-      'receive_message',
-      (
-        data: Message & {
-          conversation_id: string;
-          is_delivered?: boolean;
-          media_url?: string;
-          message_type?: string;
+      // Ensure userId is sent when connected
+      const sendUserId = () => {
+        if (newSocket && newSocket.connected && currentUser.id) {
+          try {
+            // Small delay to ensure socket is fully ready
+            setTimeout(() => {
+              if (newSocket && newSocket.connected) {
+                newSocket.emit('userId', { userId: currentUser.id });
+                console.log('✅ Sent userId to socket:', currentUser.id);
+              }
+            }, 100);
+          } catch (error) {
+            console.error('❌ Error sending userId:', error);
+          }
         }
-      ) => {
-        const isOurMessage = data.sender_id === currentUser.id;
+      };
 
-        // Update conversation list when receiving a message
-        setConversations(prev => {
-          const updated = prev.map(conv => {
-            if (conv.conversation_id === data.conversation_id) {
-              return {
-                ...conv,
-                last_message: data.message || (data.media_url ? 'Media' : ''),
-                last_message_time: data.created_at,
-                unread_count: isOurMessage
-                  ? conv.unread_count
-                  : conv.unread_count + 1,
-              };
-            }
-            return conv;
-          });
+      if (newSocket.connected) {
+        sendUserId();
+      } else {
+        const connectHandler = () => {
+          console.log('✅ Socket connected, sending userId');
+          sendUserId();
+          // Remove handler after first connection to avoid duplicates
+          newSocket.off('connect', connectHandler);
+        };
+        newSocket.on('connect', connectHandler);
+      }
+
+      newSocket.on(
+        'receive_message',
+        (
+          data: Message & {
+            conversation_id: string;
+            is_delivered?: boolean;
+            media_url?: string;
+            message_type?: string;
+          }
+        ) => {
+          console.log('Received message via WebSocket:', data);
+          const isOurMessage = data.sender_id === currentUser.id;
+
+          // Update conversation list when receiving a message
+          setConversations(prev => {
+            const updated = prev.map(conv => {
+              if (conv.conversation_id === data.conversation_id) {
+                return {
+                  ...conv,
+                  last_message: data.message || (data.media_url ? 'Media' : ''),
+                  last_message_time: data.created_at,
+                  unread_count: isOurMessage
+                    ? conv.unread_count
+                    : conv.unread_count + 1,
+                };
+              }
+              return conv;
+            });
 
           // If conversation doesn't exist in list, fetch conversations
           const exists = updated.some(
             conv => conv.conversation_id === data.conversation_id
           );
           if (!exists && !isOurMessage) {
-            fetchConversations();
+            // Fetch conversations asynchronously
+            import('@/utils/api').then(({ apiGet }) => {
+              apiGet<{
+                success: boolean;
+                conversations?: Conversation[];
+              }>(`/messages/conversations`).then(data => {
+                if (data.success && data.conversations) {
+                  setConversations(data.conversations);
+                }
+              }).catch(error => {
+                console.error('Error fetching conversations:', error);
+              });
+            });
           }
 
           return updated;
         });
 
-        if (selectedConversation?.conversation_id === data.conversation_id) {
-          setMessages(prev => {
-            // Check if message with this exact ID already exists
-            const existingMessage = prev.find(
-              msg => msg.message_id === data.message_id
-            );
-            if (existingMessage) {
-              // Message already exists, just update delivery status
-              return prev.map(msg =>
-                msg.message_id === data.message_id
-                  ? {
-                      ...msg,
-                      is_delivered: data.is_delivered || msg.is_delivered,
-                    }
-                  : msg
+          if (selectedConversation?.conversation_id === data.conversation_id) {
+            setMessages(prev => {
+              // Check if message with this exact ID already exists
+              const existingMessage = prev.find(
+                msg => msg.message_id === data.message_id
               );
-            }
+              if (existingMessage) {
+                // Message already exists, just update delivery status
+                return prev.map(msg =>
+                  msg.message_id === data.message_id
+                    ? {
+                        ...msg,
+                        is_delivered: data.is_delivered || msg.is_delivered,
+                      }
+                    : msg
+                );
+              }
 
-            // For our own messages, we already have an optimistic temp message
-            // Replace the temp message with the real one instead of adding new
-            if (isOurMessage) {
-              // Find and replace the matching temp message
-              const tempIndex = prev.findIndex(
-                msg =>
-                  msg.message_id.startsWith('temp-') &&
-                  msg.sender_id === data.sender_id
-              );
+              // For our own messages, we already have an optimistic temp message
+              // Replace the temp message with the real one instead of adding new
+              if (isOurMessage) {
+                // Find and replace the matching temp message
+                const tempIndex = prev.findIndex(
+                  msg =>
+                    msg.message_id.startsWith('temp-') &&
+                    msg.sender_id === data.sender_id
+                );
 
-              if (tempIndex !== -1) {
-                // Replace temp message with real message
-                const newMessages = [...prev];
-                newMessages[tempIndex] = {
+                if (tempIndex !== -1) {
+                  // Replace temp message with real message
+                  const newMessages = [...prev];
+                  newMessages[tempIndex] = {
+                    message_id: data.message_id,
+                    sender_id: data.sender_id,
+                    message: data.message || '',
+                    created_at: data.created_at,
+                    is_read: false,
+                    is_read_by_recipient: false,
+                    is_delivered: data.is_delivered || false,
+                    media_url: data.media_url || null,
+                    message_type: (data.message_type as any) || 'text',
+                    post_data: data.post_data
+                      ? typeof data.post_data === 'string'
+                        ? JSON.parse(data.post_data)
+                        : data.post_data
+                      : null,
+                  };
+                  return newMessages;
+                }
+                // No temp message found, don't add duplicate - this shouldn't happen normally
+                return prev;
+              }
+
+              // For messages from others, add the new message
+              let messageType = data.message_type as
+                | 'text'
+                | 'image'
+                | 'video'
+                | 'file'
+                | 'gif'
+                | 'post';
+              if (!messageType && data.post_data) {
+                messageType = 'post';
+              } else if (!messageType && data.media_url) {
+                const url = data.media_url.toLowerCase();
+                if (
+                  url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ||
+                  url.includes('giphy.com')
+                ) {
+                  messageType = url.includes('giphy.com') ? 'gif' : 'image';
+                } else if (url.match(/\.(mp4|mov|webm|ogg)$/i)) {
+                  messageType = 'video';
+                } else {
+                  messageType = 'file';
+                }
+              }
+
+              let postData = null;
+              if (data.post_data) {
+                try {
+                  postData =
+                    typeof data.post_data === 'string'
+                      ? JSON.parse(data.post_data)
+                      : data.post_data;
+                } catch (e) {
+                  console.error('Error parsing post_data:', e);
+                }
+              }
+
+              return [
+                ...prev,
+                {
                   message_id: data.message_id,
                   sender_id: data.sender_id,
                   message: data.message || '',
                   created_at: data.created_at,
                   is_read: false,
                   is_read_by_recipient: false,
-                  is_delivered: data.is_delivered || false,
+                  is_delivered: true,
                   media_url: data.media_url || null,
-                  message_type: (data.message_type as any) || 'text',
-                  post_data: data.post_data
-                    ? typeof data.post_data === 'string'
-                      ? JSON.parse(data.post_data)
-                      : data.post_data
-                    : null,
-                };
-                return newMessages;
-              }
-              // No temp message found, don't add duplicate - this shouldn't happen normally
-              return prev;
-            }
+                  message_type: messageType || 'text',
+                  post_data: postData,
+                },
+              ];
+            });
+          }
+        }
+      );
 
-            // For messages from others, add the new message
-            let messageType = data.message_type as
-              | 'text'
-              | 'image'
-              | 'video'
-              | 'file'
-              | 'gif'
-              | 'post';
-            if (!messageType && data.post_data) {
-              messageType = 'post';
-            } else if (!messageType && data.media_url) {
-              const url = data.media_url.toLowerCase();
-              if (
-                url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ||
-                url.includes('giphy.com')
-              ) {
-                messageType = url.includes('giphy.com') ? 'gif' : 'image';
-              } else if (url.match(/\.(mp4|mov|webm|ogg)$/i)) {
-                messageType = 'video';
-              } else {
-                messageType = 'file';
-              }
-            }
+      newSocket.on(
+        'message_delivered',
+        (data: { message_id: string; conversation_id: string }) => {
+          if (selectedConversation?.conversation_id === data.conversation_id) {
+            setMessages(prev =>
+              prev.map(msg =>
+                msg.message_id === data.message_id
+                  ? { ...msg, is_delivered: true }
+                  : msg
+              )
+            );
+          }
+        }
+      );
 
-            let postData = null;
-            if (data.post_data) {
-              try {
-                postData =
-                  typeof data.post_data === 'string'
-                    ? JSON.parse(data.post_data)
-                    : data.post_data;
-              } catch (e) {
-                console.error('Error parsing post_data:', e);
-              }
-            }
+      newSocket.on(
+        'messages_read',
+        (data: { conversationId: string; readerId: string }) => {
+          if (selectedConversation?.conversation_id === data.conversationId) {
+            setMessages(prev =>
+              prev.map(msg => {
+                if (
+                  msg.sender_id === currentUser?.id &&
+                  data.readerId === selectedConversation.other_user_id
+                ) {
+                  return { ...msg, is_read_by_recipient: true };
+                } else if (
+                  msg.sender_id === data.readerId &&
+                  msg.sender_id !== currentUser?.id
+                ) {
+                  return { ...msg, is_read: true };
+                }
+                return msg;
+              })
+            );
+          }
+        }
+      );
 
-            return [
-              ...prev,
-              {
-                message_id: data.message_id,
-                sender_id: data.sender_id,
-                message: data.message || '',
-                created_at: data.created_at,
-                is_read: false,
-                is_read_by_recipient: false,
-                is_delivered: true,
-                media_url: data.media_url || null,
-                message_type: messageType || 'text',
-                post_data: postData,
-              },
-            ];
+      // Listen for conversation updates
+      newSocket.on(
+        'conversation_updated',
+        (data: { conversation: Conversation }) => {
+          setConversations(prev => {
+            const index = prev.findIndex(
+              conv => conv.conversation_id === data.conversation.conversation_id
+            );
+            if (index >= 0) {
+              const updated = [...prev];
+              updated[index] = data.conversation;
+              // Move updated conversation to top
+              const [updatedConv] = updated.splice(index, 1);
+              return [updatedConv, ...updated];
+            } else {
+              // New conversation, add to top
+              return [data.conversation, ...prev];
+            }
           });
         }
-        fetchConversations();
-      }
-    );
+      );
 
-    newSocket.on(
-      'message_delivered',
-      (data: { message_id: string; conversation_id: string }) => {
-        if (selectedConversation?.conversation_id === data.conversation_id) {
-          setMessages(prev =>
-            prev.map(msg =>
-              msg.message_id === data.message_id
-                ? { ...msg, is_delivered: true }
-                : msg
-            )
-          );
+      socketRef.current = newSocket;
+      setSocket(newSocket);
+
+      // Cleanup function
+      return () => {
+        // Don't disconnect the global socket, just remove listeners
+        if (newSocket) {
+          newSocket.off('receive_message');
+          newSocket.off('message_delivered');
+          newSocket.off('messages_read');
+          newSocket.off('conversation_updated');
+          newSocket.off('connect');
         }
-      }
-    );
-
-    newSocket.on(
-      'messages_read',
-      (data: { conversationId: string; readerId: string }) => {
-        if (selectedConversation?.conversation_id === data.conversationId) {
-          setMessages(prev =>
-            prev.map(msg => {
-              if (
-                msg.sender_id === currentUser?.id &&
-                data.readerId === selectedConversation.other_user_id
-              ) {
-                return { ...msg, is_read_by_recipient: true };
-              } else if (
-                msg.sender_id === data.readerId &&
-                msg.sender_id !== currentUser?.id
-              ) {
-                return { ...msg, is_read: true };
-              }
-              return msg;
-            })
-          );
-        }
-      }
-    );
-
-    // Listen for conversation updates
-    newSocket.on(
-      'conversation_updated',
-      (data: { conversation: Conversation }) => {
-        setConversations(prev => {
-          const index = prev.findIndex(
-            conv => conv.conversation_id === data.conversation.conversation_id
-          );
-          if (index >= 0) {
-            const updated = [...prev];
-            updated[index] = data.conversation;
-            // Move updated conversation to top
-            const [updatedConv] = updated.splice(index, 1);
-            return [updatedConv, ...updated];
-          } else {
-            // New conversation, add to top
-            return [data.conversation, ...prev];
-          }
-        });
-      }
-    );
-
-    socketRef.current = newSocket;
-    setSocket(newSocket);
-
-    return () => {
-      // Don't disconnect the global socket, just remove listeners
-      if (newSocket) {
-        newSocket.off('receive_message');
-        newSocket.off('message_delivered');
-        newSocket.off('messages_read');
-        newSocket.off('conversation_updated');
-      }
-    };
+      };
+    }).catch(error => {
+      console.error('❌ Error initializing WebSocket:', error);
+    });
   }, [currentUser?.id, selectedConversation?.conversation_id]);
 
   const fetchConversations = async () => {
@@ -805,13 +850,49 @@ function MessagesPageContent() {
 
     setMessages(prev => [...prev, optimisticMessage]);
 
-    socket.emit('send_message', {
-      conversationId: selectedConversation.conversation_id,
-      receiverId: selectedConversation.other_user_id,
-      message: messageText || (selectedGIF ? 'GIF' : selectedFile?.name || ''),
-      media_url: mediaUrl || selectedGIF || null,
-      message_type: messageType,
-    });
+    // Use socketRef to ensure we have the latest socket instance
+    const currentSocket = socketRef.current || socket;
+    if (!currentSocket) {
+      console.error('❌ Socket not available, cannot send message');
+      alert('WebSocket connection not available. Please refresh the page.');
+      return;
+    }
+
+    if (!currentSocket.connected) {
+      console.error('❌ Socket not connected, attempting to reconnect...');
+      // Try to reconnect
+      import('@/utils/useSocket').then(({ initializeSocket }) => {
+        const newSocket = initializeSocket();
+        if (newSocket && newSocket.connected) {
+          newSocket.emit('send_message', {
+            conversationId: selectedConversation.conversation_id,
+            receiverId: selectedConversation.other_user_id,
+            message: messageText || (selectedGIF ? 'GIF' : selectedFile?.name || ''),
+            media_url: mediaUrl || selectedGIF || null,
+            message_type: messageType,
+          });
+          console.log('✅ Message sent via WebSocket after reconnect');
+        } else {
+          console.error('❌ Failed to reconnect socket');
+          alert('Failed to send message. Please refresh the page.');
+        }
+      });
+      return;
+    }
+
+    try {
+      currentSocket.emit('send_message', {
+        conversationId: selectedConversation.conversation_id,
+        receiverId: selectedConversation.other_user_id,
+        message: messageText || (selectedGIF ? 'GIF' : selectedFile?.name || ''),
+        media_url: mediaUrl || selectedGIF || null,
+        message_type: messageType,
+      });
+      console.log('✅ Message sent via WebSocket');
+    } catch (error) {
+      console.error('❌ Error sending message via WebSocket:', error);
+      alert('Failed to send message. Please try again.');
+    }
 
     setMessageInput('');
     clearMedia();

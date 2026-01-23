@@ -1,149 +1,179 @@
 const pool = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
 
+// Helper function to retry database operations
+async function retryQuery(queryFn, maxRetries = 3, delay = 1000) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await queryFn();
+    } catch (err) {
+      if (i === maxRetries - 1) throw err;
+      if (err.message && err.message.includes('timeout')) {
+        console.log(`Retrying query (attempt ${i + 1}/${maxRetries}) after ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 2; // Exponential backoff
+      } else {
+        throw err; // Don't retry for non-timeout errors
+      }
+    }
+  }
+}
+
 // Ensure clip_likes table exists for persisting likes on clips
-(async function ensureClipLikesTable() {
+// Delay execution to allow database connection pool to initialize
+setTimeout(async () => {
   try {
-    const createQuery = `
-      CREATE TABLE IF NOT EXISTS clip_likes (
-        clip_id UUID NOT NULL,
-        user_id UUID NOT NULL,
-        PRIMARY KEY (clip_id, user_id),
-        FOREIGN KEY (clip_id) REFERENCES clips(id) ON DELETE CASCADE,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      )`;
-    await pool.query(createQuery);
+    await retryQuery(async () => {
+      const createQuery = `
+        CREATE TABLE IF NOT EXISTS clip_likes (
+          clip_id UUID NOT NULL,
+          user_id UUID NOT NULL,
+          PRIMARY KEY (clip_id, user_id),
+          FOREIGN KEY (clip_id) REFERENCES clips(id) ON DELETE CASCADE,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`;
+      await pool.query(createQuery);
+    });
+    console.log('✅ clip_likes table ensured');
   } catch (err) {
     console.error(
       'Error ensuring clip_likes table exists:',
       err.message || err
     );
   }
-})();
+}, 2000); // Wait 2 seconds for DB connection pool to initialize
 
 // Ensure clips table has save_count column
-(async function ensureClipsTableSaveCount() {
+// Delay execution to allow database connection pool to initialize
+setTimeout(async () => {
   try {
-    const checkColumnQuery = `
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'clips' AND column_name = 'save_count'
-    `;
-    const columnResult = await pool.query(checkColumnQuery);
-    
-    if (columnResult.rows.length === 0) {
-      const addColumnQuery = `
-        ALTER TABLE clips 
-        ADD COLUMN save_count INTEGER DEFAULT 0
+    await retryQuery(async () => {
+      const checkColumnQuery = `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'clips' AND column_name = 'save_count'
       `;
-      await pool.query(addColumnQuery);
-      console.log('Added save_count column to clips table');
+      const columnResult = await pool.query(checkColumnQuery);
       
-      // Initialize save_count for existing clips
-      const initCountQuery = `
-        UPDATE clips c
-        SET save_count = (
-          SELECT COUNT(*) 
-          FROM clip_saves cs 
-          WHERE cs.clip_id = c.id
-        )
-      `;
-      await pool.query(initCountQuery);
-      console.log('Initialized save_count for existing clips');
-    }
+      if (columnResult.rows.length === 0) {
+        const addColumnQuery = `
+          ALTER TABLE clips 
+          ADD COLUMN save_count INTEGER DEFAULT 0
+        `;
+        await pool.query(addColumnQuery);
+        console.log('Added save_count column to clips table');
+        
+        // Initialize save_count for existing clips
+        const initCountQuery = `
+          UPDATE clips c
+          SET save_count = (
+            SELECT COUNT(*) 
+            FROM clip_saves cs 
+            WHERE cs.clip_id = c.id
+          )
+        `;
+        await pool.query(initCountQuery);
+        console.log('Initialized save_count for existing clips');
+      }
+    });
+    console.log('✅ clips table save_count column ensured');
   } catch (err) {
     console.error(
       'Error ensuring clips table has save_count column:',
       err.message || err
     );
   }
-})();
+}, 2500); // Wait 2.5 seconds for DB connection pool to initialize
 
 // Ensure clip_saves table exists for persisting saves on clips
-(async function ensureClipSavesTable() {
+// Delay execution to allow database connection pool to initialize
+setTimeout(async () => {
   try {
-    const createQuery = `
-      CREATE TABLE IF NOT EXISTS clip_saves (
-        clip_id UUID NOT NULL,
-        user_id UUID NOT NULL,
-        created_at TIMESTAMP DEFAULT NOW(),
-        PRIMARY KEY (clip_id, user_id),
-        FOREIGN KEY (clip_id) REFERENCES clips(id) ON DELETE CASCADE,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      )`;
-    await pool.query(createQuery);
-    
-    // Check if clip_author_id column exists and add it if not
-    const checkColumnQuery = `
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'clip_saves' AND column_name = 'clip_author_id'
-    `;
-    const columnResult = await pool.query(checkColumnQuery);
-    
-    if (columnResult.rows.length === 0) {
-      // Add clip_author_id column (without constraint first)
-      try {
-        const addColumnQuery = `
-          ALTER TABLE clip_saves 
-          ADD COLUMN clip_author_id UUID
-        `;
-        await pool.query(addColumnQuery);
-        console.log('Added clip_author_id column to clip_saves table');
-      } catch (addErr) {
-        // Column might already exist, ignore
-        if (!addErr.message.includes('already exists')) {
-          throw addErr;
-        }
-      }
+    await retryQuery(async () => {
+      const createQuery = `
+        CREATE TABLE IF NOT EXISTS clip_saves (
+          clip_id UUID NOT NULL,
+          user_id UUID NOT NULL,
+          created_at TIMESTAMP DEFAULT NOW(),
+          PRIMARY KEY (clip_id, user_id),
+          FOREIGN KEY (clip_id) REFERENCES clips(id) ON DELETE CASCADE,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )`;
+      await pool.query(createQuery);
       
-      // Backfill existing records with clip author IDs
-      try {
-        const backfillQuery = `
-          UPDATE clip_saves cs
-          SET clip_author_id = c.user_id
-          FROM clips c
-          WHERE cs.clip_id = c.id AND cs.clip_author_id IS NULL
-        `;
-        await pool.query(backfillQuery);
-        console.log('Backfilled clip_author_id in clip_saves table');
-      } catch (backfillErr) {
-        console.error('Error backfilling clip_author_id:', backfillErr.message);
-      }
+      // Check if clip_author_id column exists and add it if not
+      const checkColumnQuery = `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'clip_saves' AND column_name = 'clip_author_id'
+      `;
+      const columnResult = await pool.query(checkColumnQuery);
       
-      // Add foreign key constraint if it doesn't exist
-      try {
-        const checkConstraintQuery = `
-          SELECT constraint_name 
-          FROM information_schema.table_constraints 
-          WHERE table_name = 'clip_saves' 
-          AND constraint_name = 'fk_clip_author'
-        `;
-        const constraintResult = await pool.query(checkConstraintQuery);
-        
-        if (constraintResult.rows.length === 0) {
-          const addConstraintQuery = `
+      if (columnResult.rows.length === 0) {
+        // Add clip_author_id column (without constraint first)
+        try {
+          const addColumnQuery = `
             ALTER TABLE clip_saves 
-            ADD CONSTRAINT fk_clip_author 
-            FOREIGN KEY (clip_author_id) REFERENCES users(id) ON DELETE CASCADE
+            ADD COLUMN clip_author_id UUID
           `;
-          await pool.query(addConstraintQuery);
-          console.log('Added foreign key constraint for clip_author_id');
+          await pool.query(addColumnQuery);
+          console.log('Added clip_author_id column to clip_saves table');
+        } catch (addErr) {
+          // Column might already exist, ignore
+          if (!addErr.message.includes('already exists')) {
+            throw addErr;
+          }
         }
-      } catch (constraintErr) {
-        // Constraint might already exist, ignore
-        if (!constraintErr.message.includes('already exists')) {
-          console.error('Error adding foreign key constraint:', constraintErr.message);
+        
+        // Backfill existing records with clip author IDs
+        try {
+          const backfillQuery = `
+            UPDATE clip_saves cs
+            SET clip_author_id = c.user_id
+            FROM clips c
+            WHERE cs.clip_id = c.id AND cs.clip_author_id IS NULL
+          `;
+          await pool.query(backfillQuery);
+          console.log('Backfilled clip_author_id in clip_saves table');
+        } catch (backfillErr) {
+          console.error('Error backfilling clip_author_id:', backfillErr.message);
+        }
+        
+        // Add foreign key constraint if it doesn't exist
+        try {
+          const checkConstraintQuery = `
+            SELECT constraint_name 
+            FROM information_schema.table_constraints 
+            WHERE table_name = 'clip_saves' 
+            AND constraint_name = 'fk_clip_author'
+          `;
+          const constraintResult = await pool.query(checkConstraintQuery);
+          
+          if (constraintResult.rows.length === 0) {
+            const addConstraintQuery = `
+              ALTER TABLE clip_saves 
+              ADD CONSTRAINT fk_clip_author 
+              FOREIGN KEY (clip_author_id) REFERENCES users(id) ON DELETE CASCADE
+            `;
+            await pool.query(addConstraintQuery);
+            console.log('Added foreign key constraint for clip_author_id');
+          }
+        } catch (constraintErr) {
+          // Constraint might already exist, ignore
+          if (!constraintErr.message.includes('already exists')) {
+            console.error('Error adding foreign key constraint:', constraintErr.message);
+          }
         }
       }
-    }
+    });
+    console.log('✅ clip_saves table ensured');
   } catch (err) {
     console.error(
       'Error ensuring clip_saves table exists:',
       err.message || err
     );
   }
-})();
+}, 3000); // Wait 3 seconds for DB connection pool to initialize
 
 /**
  * Create a new clip

@@ -15,34 +15,116 @@ const socketListeners: Map<string, Set<Function>> = new Map();
  */
 export function initializeSocket(): Socket | null {
   if (globalSocket?.connected) {
+    console.log('Socket already connected');
     return globalSocket;
   }
 
   const userId = getCurrentUserId();
   if (!userId) {
+    console.warn('Cannot initialize socket: No user ID found');
     return null;
   }
 
   if (globalSocket) {
     globalSocket.disconnect();
+    globalSocket.removeAllListeners();
   }
 
-  globalSocket = io(API_BASE_URL, {
-    transports: ['websocket'],
-    autoConnect: true,
+  console.log('Initializing WebSocket connection to:', API_BASE_URL);
+  
+  try {
+    globalSocket = io(API_BASE_URL, {
+      transports: ['websocket', 'polling'], // Fallback to polling if websocket fails
+      autoConnect: true,
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionAttempts: 5,
+      timeout: 20000,
+      forceNew: false,
+    });
+
+    // Store userId in closure for use in event handlers
+    const currentUserId = userId;
+
+    globalSocket.on('connect', () => {
+      console.log('✅ Socket connected, sending userId:', currentUserId);
+      // Use a small delay to ensure socket is fully ready
+      setTimeout(() => {
+        try {
+          if (globalSocket && globalSocket.connected && currentUserId) {
+            console.log('Emitting userId event...');
+            globalSocket.emit('userId', { userId: currentUserId }, (response: any) => {
+              if (response && response.error) {
+                console.error('❌ Error response from userId event:', response.error);
+              } else {
+                console.log('✅ userId sent successfully, response:', response);
+              }
+            });
+          } else {
+            console.warn('⚠️ Socket not ready when trying to send userId', {
+              socketExists: !!globalSocket,
+              connected: globalSocket?.connected,
+              hasUserId: !!currentUserId,
+            });
+          }
+        } catch (error) {
+          console.error('❌ Error sending userId:', error);
+          if (error instanceof Error) {
+            console.error('Error message:', error.message);
+            console.error('Error stack:', error.stack);
+          }
+        }
+      }, 100);
+    });
+  } catch (error) {
+    console.error('❌ Error creating socket:', error);
+    return null;
+  }
+
+  globalSocket.on('disconnect', (reason) => {
+    console.log('❌ Socket disconnected:', reason);
   });
 
-  globalSocket.on('connect', () => {
-    console.log('Socket connected');
-    globalSocket?.emit('userId', { userId });
-  });
-
-  globalSocket.on('disconnect', () => {
-    console.log('Socket disconnected');
+  globalSocket.on('connect_error', (error: any) => {
+    // Only log if error has meaningful content
+    if (error && (error.message || error.description || error.type || error.code || typeof error === 'string')) {
+      console.error('❌ Socket connection error:', error);
+      if (typeof error === 'string') {
+        console.error('Error string:', error);
+      } else if (typeof error === 'object') {
+        console.error('Error details:', {
+          message: error.message || 'No message',
+          description: error.description || 'No description',
+          context: error.context || 'No context',
+          type: error.type || 'No type',
+          code: error.code || 'No code',
+          stack: error.stack || 'No stack',
+          toString: error.toString(),
+        });
+      }
+    }
+    // Ignore empty error objects - they're often false positives from socket.io
   });
 
   globalSocket.on('error', (error: any) => {
-    console.error('Socket error:', error);
+    // Only log if error has meaningful content
+    if (error && (error.message || error.description || error.type || typeof error === 'string')) {
+      console.error('❌ Socket error event:', error);
+      if (typeof error === 'string') {
+        console.error('Error string:', error);
+      } else if (typeof error === 'object') {
+        console.error('Error object details:', {
+          message: error.message || 'No message',
+          description: error.description || 'No description',
+          context: error.context || 'No context',
+          type: error.type || 'No type',
+          code: error.code || 'No code',
+          stack: error.stack || 'No stack',
+          toString: error.toString(),
+        });
+      }
+    }
+    // Ignore empty error objects - they're often false positives from socket.io
   });
 
   return globalSocket;
@@ -52,9 +134,16 @@ export function initializeSocket(): Socket | null {
  * Get or create global socket instance
  */
 export function getSocket(): Socket | null {
-  if (!globalSocket || !globalSocket.connected) {
+  if (!globalSocket) {
     return initializeSocket();
   }
+  
+  // If socket exists but not connected, try to reconnect
+  if (!globalSocket.connected) {
+    console.log('Socket exists but not connected, attempting to reconnect...');
+    globalSocket.connect();
+  }
+  
   return globalSocket;
 }
 
