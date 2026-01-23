@@ -36,34 +36,58 @@ export default function MentionInput({
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const [followers, setFollowers] = useState<Follower[]>([]);
 
-  // Fetch followers
+  // Fetch followers and following users for mentions
   useEffect(() => {
-    const fetchFollowers = async () => {
+    const fetchMentionableUsers = async () => {
       if (!currentUserId) return;
 
       try {
         const { apiGet } = await import('@/utils/api');
-        const data = await apiGet<{
-          success: boolean;
-          following?: any[];
-        }>(`/network/following/${currentUserId}`);
+        
+        // Fetch both followers and following users
+        const [followersData, followingData] = await Promise.all([
+          apiGet<{
+            success: boolean;
+            followers?: any[];
+          }>(`/network/followers/${currentUserId}`),
+          apiGet<{
+            success: boolean;
+            following?: any[];
+          }>(`/network/following/${currentUserId}`),
+        ]);
 
-        if (data.success && data.following) {
-          setFollowers(
-            data.following.map((user: any) => ({
+        // Combine both lists and remove duplicates by user ID
+        const allUsers = new Map<string, any>();
+        
+        if (followersData.success && followersData.followers) {
+          followersData.followers.forEach((user: any) => {
+            allUsers.set(user.id, {
               id: user.id,
               full_name: user.full_name || 'User',
               username: user.username,
               profile_url: user.profile_url,
-            }))
-          );
+            });
+          });
         }
+        
+        if (followingData.success && followingData.following) {
+          followingData.following.forEach((user: any) => {
+            allUsers.set(user.id, {
+              id: user.id,
+              full_name: user.full_name || 'User',
+              username: user.username,
+              profile_url: user.profile_url,
+            });
+          });
+        }
+
+        setFollowers(Array.from(allUsers.values()));
       } catch (error) {
-        console.error('Error fetching followers:', error);
+        console.error('Error fetching mentionable users:', error);
       }
     };
 
-    fetchFollowers();
+    fetchMentionableUsers();
   }, [currentUserId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {

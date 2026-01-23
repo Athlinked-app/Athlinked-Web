@@ -40,35 +40,56 @@ export function useMention({
     selectedIndex: 0,
   });
 
-  // Fetch followers
+  // Fetch followers and following users for mentions
   useEffect(() => {
-    const fetchFollowers = async () => {
+    const fetchMentionableUsers = async () => {
       if (!currentUserId) return;
 
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/api/network/following/${currentUserId}`
-        );
+        // Fetch both followers and following users
+        const [followersResponse, followingResponse] = await Promise.all([
+          fetch(`${API_BASE_URL}/api/network/followers/${currentUserId}`),
+          fetch(`${API_BASE_URL}/api/network/following/${currentUserId}`),
+        ]);
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.following) {
-            setFollowers(
-              data.following.map((user: any) => ({
+        // Combine both lists and remove duplicates by user ID
+        const allUsers = new Map<string, Follower>();
+
+        if (followersResponse.ok) {
+          const followersData = await followersResponse.json();
+          if (followersData.success && followersData.followers) {
+            followersData.followers.forEach((user: any) => {
+              allUsers.set(user.id, {
                 id: user.id,
                 full_name: user.full_name || 'User',
                 username: user.username,
                 profile_url: user.profile_url,
-              }))
-            );
+              });
+            });
           }
         }
+
+        if (followingResponse.ok) {
+          const followingData = await followingResponse.json();
+          if (followingData.success && followingData.following) {
+            followingData.following.forEach((user: any) => {
+              allUsers.set(user.id, {
+                id: user.id,
+                full_name: user.full_name || 'User',
+                username: user.username,
+                profile_url: user.profile_url,
+              });
+            });
+          }
+        }
+
+        setFollowers(Array.from(allUsers.values()));
       } catch (error) {
-        console.error('Error fetching followers:', error);
+        console.error('Error fetching mentionable users:', error);
       }
     };
 
-    fetchFollowers();
+    fetchMentionableUsers();
   }, [currentUserId]);
 
   const handleInputChange = useCallback(

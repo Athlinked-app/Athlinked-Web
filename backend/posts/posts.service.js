@@ -4,23 +4,29 @@ const { createNotification } = require('../notifications/notifications.helper');
 const { convertKeyToPresignedUrl, convertKeysToPresignedUrls } = require('../utils/s3');
 
 /**
- * Extract mentions from text (format: @fullname)
+ * Extract mentions from text (format: @fullname - supports multi-word names)
  * @param {string} text - Text to parse
  * @returns {Array<string>} Array of mentioned full names
  */
 function extractMentions(text) {
   if (!text) return [];
   const mentions = [];
-  const regex = /@([^\s@]+)/g;
+  // Updated regex to capture multi-word names: @ followed by any characters until @, newline, or end
+  // This handles cases like "@John Doe" or "@John Doe Smith"
+  const regex = /@([^\s@\n]+(?:\s+[^\s@\n]+)*)/g;
   let match;
   while ((match = regex.exec(text)) !== null) {
-    mentions.push(match[1]);
+    // Trim whitespace and add to mentions
+    const mention = match[1].trim();
+    if (mention) {
+      mentions.push(mention);
+    }
   }
   return [...new Set(mentions)]; // Remove duplicates
 }
 
 /**
- * Get user IDs for mentioned full names (only followers)
+ * Get user IDs for mentioned full names (followers and people the actor follows)
  * @param {string} actorUserId - User who created the post/comment
  * @param {Array<string>} mentionedNames - Array of full names
  * @returns {Promise<Array<{id: string, full_name: string}>>} Array of user objects
@@ -29,19 +35,64 @@ async function getMentionedUsers(actorUserId, mentionedNames) {
   if (mentionedNames.length === 0) return [];
 
   try {
-    // Get users who are followers of the actor and match the mentioned names
+    // Normalize mentioned names: trim whitespace and handle case-insensitive matching
+    const normalizedNames = mentionedNames.map(name => name.trim());
+    
+    // Get users who are either:
+    // 1. Followers of the actor (uf.follower_id = u.id AND uf.following_id = actorUserId)
+    // 2. People the actor follows (uf.follower_id = actorUserId AND uf.following_id = u.id)
+    // 3. Connected users (automatically considered as following each other)
+    // Use case-insensitive matching with LOWER() and TRIM() for full_name
     const query = `
       SELECT DISTINCT u.id, u.full_name
       FROM users u
-      INNER JOIN network n ON n.following_id = u.id
-      WHERE n.follower_id = $1
-        AND u.full_name = ANY($2::text[])
+      WHERE LOWER(TRIM(u.full_name)) = ANY(
+        SELECT LOWER(TRIM(unnest($2::text[])))
+      )
+      AND (
+        -- Direct follow relationships
+        EXISTS (
+          SELECT 1 FROM user_follows uf 
+          WHERE (
+            (uf.follower_id = u.id AND uf.following_id = $1) OR
+            (uf.follower_id = $1 AND uf.following_id = u.id)
+          )
+        )
+        OR
+        -- Connected users (automatically considered as following each other)
+        EXISTS (
+          SELECT 1 FROM user_connections uc
+          WHERE (
+            (uc.user_id_1 = $1 AND uc.user_id_2 = u.id) OR
+            (uc.user_id_1 = u.id AND uc.user_id_2 = $1)
+          )
+        )
+      )
     `;
 
-    const result = await pool.query(query, [actorUserId, mentionedNames]);
+    console.log('[Mention Lookup] Querying for mentioned users:', {
+      actorUserId,
+      mentionedNames,
+      normalizedNames,
+    });
+
+    const result = await pool.query(query, [actorUserId, normalizedNames]);
+    
+    console.log('[Mention Lookup] Query result:', {
+      mentionedNames,
+      normalizedNames,
+      foundCount: result.rows.length,
+      foundUsers: result.rows.map(u => ({ id: u.id, full_name: u.full_name })),
+    });
+
     return result.rows;
   } catch (error) {
-    console.error('Error getting mentioned users:', error);
+    console.error('[Mention Lookup] Error getting mentioned users:', {
+      error: error.message,
+      stack: error.stack,
+      actorUserId,
+      mentionedNames,
+    });
     return [];
   }
 }
@@ -72,13 +123,26 @@ async function createPostService(postData, userId) {
     const textToCheck = postData.caption || postData.article_body || '';
     const mentionedNames = extractMentions(textToCheck);
 
+    console.log('[Post Mentions] Extracted mentions:', {
+      textToCheck,
+      mentionedNames,
+      postId: createdPost.id,
+      userId,
+    });
+
     if (mentionedNames.length > 0) {
       const mentionedUsers = await getMentionedUsers(userId, mentionedNames);
+
+      console.log('[Post Mentions] Found mentioned users:', {
+        mentionedNames,
+        foundUsers: mentionedUsers.map(u => ({ id: u.id, full_name: u.full_name })),
+        count: mentionedUsers.length,
+      });
 
       // Create notifications for each mentioned user
       for (const mentionedUser of mentionedUsers) {
         try {
-          await createNotification({
+          const notification = await createNotification({
             recipientUserId: mentionedUser.id,
             actorUserId: userId,
             actorFullName: user.full_name || 'User',
@@ -87,13 +151,27 @@ async function createPostService(postData, userId) {
             entityId: createdPost.id,
             message: `${user.full_name || 'User'} mentioned you in a post`,
           });
+
+          console.log('[Post Mentions] Notification created:', {
+            notificationId: notification?.id,
+            recipientUserId: mentionedUser.id,
+            recipientName: mentionedUser.full_name,
+          });
         } catch (error) {
           console.error(
-            `Error creating mention notification for ${mentionedUser.id}:`,
+            `[Post Mentions] Error creating mention notification for ${mentionedUser.id}:`,
             error
           );
           // Continue with other notifications even if one fails
         }
+      }
+
+      if (mentionedUsers.length === 0) {
+        console.warn('[Post Mentions] No users found for mentions:', {
+          mentionedNames,
+          userId,
+          message: 'Users may not have network relationship or names may not match',
+        });
       }
     }
 
@@ -299,13 +377,28 @@ async function addCommentService(postId, userId, comment) {
       // Handle mentions in comment
       const mentionedNames = extractMentions(comment);
 
+      console.log('[Post Comment Mentions] Extracted mentions:', {
+        comment,
+        mentionedNames,
+        commentId: commentResult.comment.id,
+        postId,
+        userId,
+        actorFullName,
+      });
+
       if (mentionedNames.length > 0) {
         const mentionedUsers = await getMentionedUsers(userId, mentionedNames);
+
+        console.log('[Post Comment Mentions] Found mentioned users:', {
+          mentionedNames,
+          foundUsers: mentionedUsers.map(u => ({ id: u.id, full_name: u.full_name })),
+          count: mentionedUsers.length,
+        });
 
         // Create notifications for each mentioned user
         for (const mentionedUser of mentionedUsers) {
           try {
-            await createNotification({
+            const notification = await createNotification({
               recipientUserId: mentionedUser.id,
               actorUserId: userId,
               actorFullName: actorFullName,
@@ -314,12 +407,27 @@ async function addCommentService(postId, userId, comment) {
               entityId: commentResult.comment.id,
               message: `${actorFullName} mentioned you in a comment`,
             });
+
+            console.log('[Post Comment Mentions] Notification created:', {
+              notificationId: notification?.id,
+              recipientUserId: mentionedUser.id,
+              recipientName: mentionedUser.full_name,
+              message: `${actorFullName} mentioned you in a comment`,
+            });
           } catch (error) {
             console.error(
-              `Error creating mention notification for ${mentionedUser.id}:`,
+              `[Post Comment Mentions] Error creating mention notification for ${mentionedUser.id}:`,
               error
             );
           }
+        }
+
+        if (mentionedUsers.length === 0) {
+          console.warn('[Post Comment Mentions] No users found for mentions:', {
+            mentionedNames,
+            userId,
+            message: 'Users may not have network relationship or names may not match',
+          });
         }
       }
 

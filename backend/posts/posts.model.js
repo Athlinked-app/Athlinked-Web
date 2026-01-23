@@ -1,124 +1,146 @@
 const pool = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
 
+// Helper function to retry database operations
+async function retryQuery(queryFn, maxRetries = 3, delay = 1000) {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await queryFn();
+    } catch (err) {
+      if (i === maxRetries - 1) throw err;
+      if (err.message && err.message.includes('timeout')) {
+        console.log(`Retrying query (attempt ${i + 1}/${maxRetries}) after ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 2; // Exponential backoff
+      } else {
+        throw err; // Don't retry for non-timeout errors
+      }
+    }
+  }
+}
+
 // Ensure post_saves table exists and has required columns
-(async function ensurePostSavesTableColumns() {
+// Delay execution to allow database connection pool to initialize
+setTimeout(async () => {
   try {
-    // First, ensure the table exists
-    const createTableQuery = `
-      CREATE TABLE IF NOT EXISTS post_saves (
-        post_id UUID NOT NULL,
-        user_id UUID NOT NULL,
-        PRIMARY KEY (post_id, user_id),
-        FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      )
-    `;
-    await pool.query(createTableQuery);
-    
-    // Check if created_at column exists
-    const checkCreatedAtQuery = `
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'post_saves' AND column_name = 'created_at'
-    `;
-    const createdAtResult = await pool.query(checkCreatedAtQuery);
-    
-    if (createdAtResult.rows.length === 0) {
-      // Add created_at column
-      try {
-        const addCreatedAtQuery = `
-          ALTER TABLE post_saves 
-          ADD COLUMN created_at TIMESTAMP DEFAULT NOW()
-        `;
-        await pool.query(addCreatedAtQuery);
-        console.log('Added created_at column to post_saves table');
-        
-        // Set default created_at for existing records
-        const updateCreatedAtQuery = `
-          UPDATE post_saves 
-          SET created_at = NOW() 
-          WHERE created_at IS NULL
-        `;
-        await pool.query(updateCreatedAtQuery);
-      } catch (addErr) {
-        if (!addErr.message.includes('already exists')) {
-          console.error('Error adding created_at column:', addErr.message);
-        }
-      }
-    }
-    
-    // Check if post_author_id column exists
-    const checkColumnQuery = `
-      SELECT column_name 
-      FROM information_schema.columns 
-      WHERE table_name = 'post_saves' AND column_name = 'post_author_id'
-    `;
-    const columnResult = await pool.query(checkColumnQuery);
-    
-    if (columnResult.rows.length === 0) {
-      // Add post_author_id column (without constraint first)
-      try {
-        const addColumnQuery = `
-          ALTER TABLE post_saves 
-          ADD COLUMN post_author_id UUID
-        `;
-        await pool.query(addColumnQuery);
-        console.log('Added post_author_id column to post_saves table');
-      } catch (addErr) {
-        // Column might already exist, ignore
-        if (!addErr.message.includes('already exists')) {
-          throw addErr;
-        }
-      }
+    await retryQuery(async () => {
+      // First, ensure the table exists
+      const createTableQuery = `
+        CREATE TABLE IF NOT EXISTS post_saves (
+          post_id UUID NOT NULL,
+          user_id UUID NOT NULL,
+          PRIMARY KEY (post_id, user_id),
+          FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        )
+      `;
+      await pool.query(createTableQuery);
       
-      // Backfill existing records with post author IDs
-      try {
-        const backfillQuery = `
-          UPDATE post_saves ps
-          SET post_author_id = p.user_id
-          FROM posts p
-          WHERE ps.post_id = p.id AND ps.post_author_id IS NULL
-        `;
-        await pool.query(backfillQuery);
-        console.log('Backfilled post_author_id in post_saves table');
-      } catch (backfillErr) {
-        console.error('Error backfilling post_author_id:', backfillErr.message);
-      }
+      // Check if created_at column exists
+      const checkCreatedAtQuery = `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'post_saves' AND column_name = 'created_at'
+      `;
+      const createdAtResult = await pool.query(checkCreatedAtQuery);
       
-      // Add foreign key constraint if it doesn't exist
-      try {
-        const checkConstraintQuery = `
-          SELECT constraint_name 
-          FROM information_schema.table_constraints 
-          WHERE table_name = 'post_saves' 
-          AND constraint_name = 'fk_post_author'
-        `;
-        const constraintResult = await pool.query(checkConstraintQuery);
-        
-        if (constraintResult.rows.length === 0) {
-          const addConstraintQuery = `
+      if (createdAtResult.rows.length === 0) {
+        // Add created_at column
+        try {
+          const addCreatedAtQuery = `
             ALTER TABLE post_saves 
-            ADD CONSTRAINT fk_post_author 
-            FOREIGN KEY (post_author_id) REFERENCES users(id) ON DELETE CASCADE
+            ADD COLUMN created_at TIMESTAMP DEFAULT NOW()
           `;
-          await pool.query(addConstraintQuery);
-          console.log('Added foreign key constraint for post_author_id');
-        }
-      } catch (constraintErr) {
-        // Constraint might already exist, ignore
-        if (!constraintErr.message.includes('already exists')) {
-          console.error('Error adding foreign key constraint:', constraintErr.message);
+          await pool.query(addCreatedAtQuery);
+          console.log('Added created_at column to post_saves table');
+          
+          // Set default created_at for existing records
+          const updateCreatedAtQuery = `
+            UPDATE post_saves 
+            SET created_at = NOW() 
+            WHERE created_at IS NULL
+          `;
+          await pool.query(updateCreatedAtQuery);
+        } catch (addErr) {
+          if (!addErr.message.includes('already exists')) {
+            console.error('Error adding created_at column:', addErr.message);
+          }
         }
       }
-    }
+      
+      // Check if post_author_id column exists
+      const checkColumnQuery = `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'post_saves' AND column_name = 'post_author_id'
+      `;
+      const columnResult = await pool.query(checkColumnQuery);
+      
+      if (columnResult.rows.length === 0) {
+        // Add post_author_id column (without constraint first)
+        try {
+          const addColumnQuery = `
+            ALTER TABLE post_saves 
+            ADD COLUMN post_author_id UUID
+          `;
+          await pool.query(addColumnQuery);
+          console.log('Added post_author_id column to post_saves table');
+        } catch (addErr) {
+          // Column might already exist, ignore
+          if (!addErr.message.includes('already exists')) {
+            throw addErr;
+          }
+        }
+        
+        // Backfill existing records with post author IDs
+        try {
+          const backfillQuery = `
+            UPDATE post_saves ps
+            SET post_author_id = p.user_id
+            FROM posts p
+            WHERE ps.post_id = p.id AND ps.post_author_id IS NULL
+          `;
+          await pool.query(backfillQuery);
+          console.log('Backfilled post_author_id in post_saves table');
+        } catch (backfillErr) {
+          console.error('Error backfilling post_author_id:', backfillErr.message);
+        }
+        
+        // Add foreign key constraint if it doesn't exist
+        try {
+          const checkConstraintQuery = `
+            SELECT constraint_name 
+            FROM information_schema.table_constraints 
+            WHERE table_name = 'post_saves' 
+            AND constraint_name = 'fk_post_author'
+          `;
+          const constraintResult = await pool.query(checkConstraintQuery);
+          
+          if (constraintResult.rows.length === 0) {
+            const addConstraintQuery = `
+              ALTER TABLE post_saves 
+              ADD CONSTRAINT fk_post_author 
+              FOREIGN KEY (post_author_id) REFERENCES users(id) ON DELETE CASCADE
+            `;
+            await pool.query(addConstraintQuery);
+            console.log('Added foreign key constraint for post_author_id');
+          }
+        } catch (constraintErr) {
+          // Constraint might already exist, ignore
+          if (!constraintErr.message.includes('already exists')) {
+            console.error('Error adding foreign key constraint:', constraintErr.message);
+          }
+        }
+      }
+    });
+    console.log('✅ post_saves table columns ensured');
   } catch (err) {
     console.error(
       'Error ensuring post_saves table columns:',
       err.message || err
     );
   }
-})();
+}, 3500); // Wait 3.5 seconds for DB connection pool to initialize
 
 async function createPost(postData, client = null) {
   const {

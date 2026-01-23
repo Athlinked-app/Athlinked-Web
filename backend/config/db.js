@@ -39,7 +39,7 @@ const pool = new Pool({
   ssl: sslConfig,
   max: SAFE_POOL_MAX, // Max connections (default: 30, configurable via DB_POOL_MAX)
   idleTimeoutMillis: 10000, // Release idle connections after 10 seconds
-  connectionTimeoutMillis: 5000, // 5 second timeout - fail fast if pool is full
+  connectionTimeoutMillis: 10000, // 10 second timeout - increased for migrations
   allowExitOnIdle: true, // Allow process to exit when pool is idle
   min: 2, // Keep 2 connections alive for faster response
   // Query timeout to prevent hanging queries

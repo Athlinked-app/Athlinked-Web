@@ -1,6 +1,101 @@
 const clipsModel = require('./clips.model');
 const pool = require('../config/db');
 const { convertKeyToPresignedUrl } = require('../utils/s3');
+const { createNotification } = require('../notifications/notifications.helper');
+
+/**
+ * Extract mentions from text (format: @fullname - supports multi-word names)
+ * @param {string} text - Text to parse
+ * @returns {Array<string>} Array of mentioned full names
+ */
+function extractMentions(text) {
+  if (!text) return [];
+  const mentions = [];
+  // Updated regex to capture multi-word names: @ followed by any characters until @, newline, or end
+  // This handles cases like "@John Doe" or "@John Doe Smith"
+  const regex = /@([^\s@\n]+(?:\s+[^\s@\n]+)*)/g;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    // Trim whitespace and add to mentions
+    const mention = match[1].trim();
+    if (mention) {
+      mentions.push(mention);
+    }
+  }
+  return [...new Set(mentions)]; // Remove duplicates
+}
+
+/**
+ * Get user IDs for mentioned full names (followers and people the actor follows)
+ * @param {string} actorUserId - User who created the clip/comment
+ * @param {Array<string>} mentionedNames - Array of full names
+ * @returns {Promise<Array<{id: string, full_name: string}>>} Array of user objects
+ */
+async function getMentionedUsers(actorUserId, mentionedNames) {
+  if (mentionedNames.length === 0) return [];
+
+  try {
+    // Normalize mentioned names: trim whitespace and handle case-insensitive matching
+    const normalizedNames = mentionedNames.map(name => name.trim());
+    
+    // Get users who are either:
+    // 1. Followers of the actor (uf.follower_id = u.id AND uf.following_id = actorUserId)
+    // 2. People the actor follows (uf.follower_id = actorUserId AND uf.following_id = u.id)
+    // 3. Connected users (automatically considered as following each other)
+    // Use case-insensitive matching with LOWER() and TRIM() for full_name
+    const query = `
+      SELECT DISTINCT u.id, u.full_name
+      FROM users u
+      WHERE LOWER(TRIM(u.full_name)) = ANY(
+        SELECT LOWER(TRIM(unnest($2::text[])))
+      )
+      AND (
+        -- Direct follow relationships
+        EXISTS (
+          SELECT 1 FROM user_follows uf 
+          WHERE (
+            (uf.follower_id = u.id AND uf.following_id = $1) OR
+            (uf.follower_id = $1 AND uf.following_id = u.id)
+          )
+        )
+        OR
+        -- Connected users (automatically considered as following each other)
+        EXISTS (
+          SELECT 1 FROM user_connections uc
+          WHERE (
+            (uc.user_id_1 = $1 AND uc.user_id_2 = u.id) OR
+            (uc.user_id_1 = u.id AND uc.user_id_2 = $1)
+          )
+        )
+      )
+    `;
+
+    console.log('[Clip Mention Lookup] Querying for mentioned users:', {
+      actorUserId,
+      mentionedNames,
+      normalizedNames,
+    });
+
+    const result = await pool.query(query, [actorUserId, normalizedNames]);
+    
+    console.log('[Clip Mention Lookup] Query result:', {
+      mentionedNames,
+      normalizedNames,
+      foundCount: result.rows.length,
+      foundUsers: result.rows.map(u => ({ id: u.id, full_name: u.full_name })),
+    });
+
+    return result.rows;
+  } catch (error) {
+    console.error('[Clip Mention Lookup] Error getting mentioned users:', {
+      error: error.message,
+      stack: error.stack,
+      actorUserId,
+      mentionedNames,
+    });
+    return [];
+  }
+}
 
 /**
  * Create a new clip
@@ -36,6 +131,62 @@ async function createClipService(clipData) {
       const createdClip = await clipsModel.createClip(clipDataWithUser, client);
 
       await client.query('COMMIT');
+
+      // Handle mentions in description
+      const textToCheck = description || '';
+      const mentionedNames = extractMentions(textToCheck);
+
+      console.log('[Clip Mentions] Extracted mentions:', {
+        textToCheck,
+        mentionedNames,
+        clipId: createdClip.id,
+        userId: user_id,
+      });
+
+      if (mentionedNames.length > 0) {
+        const mentionedUsers = await getMentionedUsers(user_id, mentionedNames);
+
+        console.log('[Clip Mentions] Found mentioned users:', {
+          mentionedNames,
+          foundUsers: mentionedUsers.map(u => ({ id: u.id, full_name: u.full_name })),
+          count: mentionedUsers.length,
+        });
+
+        // Create notifications for each mentioned user
+        for (const mentionedUser of mentionedUsers) {
+          try {
+            const notification = await createNotification({
+              recipientUserId: mentionedUser.id,
+              actorUserId: user_id,
+              actorFullName: user.full_name || 'User',
+              type: 'mention',
+              entityType: 'clip',
+              entityId: createdClip.id,
+              message: `${user.full_name || 'User'} mentioned you in a clip`,
+            });
+
+            console.log('[Clip Mentions] Notification created:', {
+              notificationId: notification?.id,
+              recipientUserId: mentionedUser.id,
+              recipientName: mentionedUser.full_name,
+            });
+          } catch (error) {
+            console.error(
+              `[Clip Mentions] Error creating mention notification for ${mentionedUser.id}:`,
+              error
+            );
+            // Continue with other notifications even if one fails
+          }
+        }
+
+        if (mentionedUsers.length === 0) {
+          console.warn('[Clip Mentions] No users found for mentions:', {
+            mentionedNames,
+            userId: user_id,
+            message: 'Users may not have network relationship or names may not match',
+          });
+        }
+      }
 
       return {
         success: true,
@@ -139,6 +290,67 @@ async function addCommentService(clipId, commentData) {
 
       await client.query('COMMIT');
 
+      // Handle mentions in comment (after commit to avoid transaction issues)
+      const mentionedNames = extractMentions(comment);
+
+      console.log('[Clip Comment Mentions] Extracted mentions:', {
+        comment,
+        mentionedNames,
+        commentId: newComment.id,
+        clipId,
+        userId: user_id,
+      });
+
+      if (mentionedNames.length > 0) {
+        // Get actor user info for notification
+        const userQuery = 'SELECT full_name FROM users WHERE id = $1';
+        const userResult = await pool.query(userQuery, [user_id]);
+        const actorFullName = userResult.rows[0]?.full_name || 'User';
+
+        const mentionedUsers = await getMentionedUsers(user_id, mentionedNames);
+
+        console.log('[Clip Comment Mentions] Found mentioned users:', {
+          mentionedNames,
+          foundUsers: mentionedUsers.map(u => ({ id: u.id, full_name: u.full_name })),
+          count: mentionedUsers.length,
+        });
+
+        // Create notifications for each mentioned user
+        for (const mentionedUser of mentionedUsers) {
+          try {
+            const notification = await createNotification({
+              recipientUserId: mentionedUser.id,
+              actorUserId: user_id,
+              actorFullName: actorFullName,
+              type: 'mention',
+              entityType: 'comment',
+              entityId: newComment.id,
+              message: `${actorFullName} mentioned you in a comment`,
+            });
+
+            console.log('[Clip Comment Mentions] Notification created:', {
+              notificationId: notification?.id,
+              recipientUserId: mentionedUser.id,
+              recipientName: mentionedUser.full_name,
+            });
+          } catch (error) {
+            console.error(
+              `[Clip Comment Mentions] Error creating mention notification for ${mentionedUser.id}:`,
+              error
+            );
+            // Continue with other notifications even if one fails
+          }
+        }
+
+        if (mentionedUsers.length === 0) {
+          console.warn('[Clip Comment Mentions] No users found for mentions:', {
+            mentionedNames,
+            userId: user_id,
+            message: 'Users may not have network relationship or names may not match',
+          });
+        }
+      }
+
       return {
         success: true,
         comment: newComment,
@@ -203,6 +415,67 @@ async function replyToCommentService(commentId, replyData) {
       await clipsModel.incrementCommentCount(clipId, client);
 
       await client.query('COMMIT');
+
+      // Handle mentions in reply (after commit to avoid transaction issues)
+      const mentionedNames = extractMentions(comment);
+
+      console.log('[Clip Reply Mentions] Extracted mentions:', {
+        comment,
+        mentionedNames,
+        replyId: reply.id,
+        clipId,
+        userId: user_id,
+      });
+
+      if (mentionedNames.length > 0) {
+        // Get actor user info for notification
+        const userQuery = 'SELECT full_name FROM users WHERE id = $1';
+        const userResult = await pool.query(userQuery, [user_id]);
+        const actorFullName = userResult.rows[0]?.full_name || 'User';
+
+        const mentionedUsers = await getMentionedUsers(user_id, mentionedNames);
+
+        console.log('[Clip Reply Mentions] Found mentioned users:', {
+          mentionedNames,
+          foundUsers: mentionedUsers.map(u => ({ id: u.id, full_name: u.full_name })),
+          count: mentionedUsers.length,
+        });
+
+        // Create notifications for each mentioned user
+        for (const mentionedUser of mentionedUsers) {
+          try {
+            const notification = await createNotification({
+              recipientUserId: mentionedUser.id,
+              actorUserId: user_id,
+              actorFullName: actorFullName,
+              type: 'mention',
+              entityType: 'comment',
+              entityId: reply.id,
+              message: `${actorFullName} mentioned you in a comment`,
+            });
+
+            console.log('[Clip Reply Mentions] Notification created:', {
+              notificationId: notification?.id,
+              recipientUserId: mentionedUser.id,
+              recipientName: mentionedUser.full_name,
+            });
+          } catch (error) {
+            console.error(
+              `[Clip Reply Mentions] Error creating mention notification for ${mentionedUser.id}:`,
+              error
+            );
+            // Continue with other notifications even if one fails
+          }
+        }
+
+        if (mentionedUsers.length === 0) {
+          console.warn('[Clip Reply Mentions] No users found for mentions:', {
+            mentionedNames,
+            userId: user_id,
+            message: 'Users may not have network relationship or names may not match',
+          });
+        }
+      }
 
       return {
         success: true,
