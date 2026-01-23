@@ -14,12 +14,19 @@ if (result.error) {
 async function testConnection() {
   // Read from .env file format: username, password, host, port, database, sslmode
   // Support both formats for backward compatibility
-  const dbHost = process.env.DB_HOST || process.env.host;
-  const dbPort = process.env.DB_PORT || process.env.port;
-  const dbName = process.env.DB_NAME || process.env.database;
-  const dbUser = process.env.DB_USER || process.env.username;
-  const dbPassword = process.env.DB_PASSWORD || process.env.password;
-  const sslMode = process.env.DB_SSL || process.env.sslmode;
+  // Use parsed result directly to avoid Windows case-insensitivity issues
+  const envConfig = result.parsed || {};
+  
+  // DEBUG: Show what we're reading
+  // console.log('DEBUG envConfig.username:', envConfig.username);
+  // console.log('DEBUG envConfig.password:', envConfig.password);
+  
+  const dbHost = process.env.DB_HOST || envConfig.DB_HOST || process.env.host || envConfig.host;
+  const dbPort = process.env.DB_PORT || envConfig.DB_PORT || process.env.port || envConfig.port;
+  const dbName = process.env.DB_NAME || envConfig.DB_NAME || process.env.database || envConfig.database;
+  const dbUser = process.env.DB_USER || envConfig.DB_USER || envConfig.username || process.env.username;
+  const dbPassword = process.env.DB_PASSWORD || envConfig.DB_PASSWORD || envConfig.password || process.env.password;
+  const sslMode = process.env.DB_SSL || envConfig.DB_SSL || process.env.sslmode || envConfig.sslmode;
   
   // Validate required environment variables
   const missingVars = [];
