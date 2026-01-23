@@ -51,7 +51,8 @@ export default function AchievementsPopup({
   const getPdfUrl = (media: Achievement['mediaPdf']): string | null => {
     if (!media) return null;
     if (typeof media === 'string') {
-      if (media.startsWith('http://') || media.startsWith('https://')) return media;
+      if (media.startsWith('http://') || media.startsWith('https://'))
+        return media;
       return getResourceUrl(media) || media;
     }
     return URL.createObjectURL(media);
@@ -254,7 +255,7 @@ export default function AchievementsPopup({
     showDropdown: boolean;
     setShowDropdown: (show: boolean) => void;
     onSelect: (value: string) => void;
-    dropdownRef: React.RefObject<HTMLDivElement | null>;
+    dropdownRef: React.RefObject<HTMLDivElement>;
   }) => (
     <div className="relative" ref={dropdownRef}>
       <label className="block text-sm font-medium text-gray-700 mb-2">
