@@ -18,10 +18,6 @@ export const API_BASE_URL = normalizeApiBaseUrl(
   process.env.NEXT_PUBLIC_API_URL!
 );
 
-// Log API URL in development for debugging
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  console.log('API Base URL:', API_BASE_URL);
-}
 
 /**
  * Get the full URL for a resource (image, file, etc.)
