@@ -6,7 +6,6 @@ const pool = require('./config/db');
 (async function testDatabaseConnection() {
   try {
     const result = await pool.query('SELECT NOW()');
-    console.log('✅ Database connection successful');
   } catch (error) {
     console.error('❌ Database connection failed:', error.message);
     console.error('⚠️ Server will start but database operations may fail');
@@ -35,30 +34,24 @@ const io = new Server(server, {
 
 io.on('connection', socket => {
   let socketUserId = null;
-  console.log('🔌 New socket connection:', socket.id);
-
   socket.on('userId', (data, callback) => {
     try {
-      console.log('📥 Received userId event:', { data, socketId: socket.id });
       const { userId } = data || {};
       if (userId) {
         socketUserId = userId;
         socket.userId = userId;
         socket.join(`user:${userId}`);
-        console.log(`✅ User ${userId} joined socket room: user:${userId}`);
         // Send acknowledgment if callback provided
         if (typeof callback === 'function') {
           callback({ success: true, message: 'User ID registered' });
         }
       } else {
-        console.warn('⚠️ Received userId event without userId', { data });
         if (typeof callback === 'function') {
           callback({ success: false, error: 'User ID is required' });
         }
       }
     } catch (error) {
-      console.error('❌ Error handling userId event:', error);
-      console.error('Error stack:', error.stack);
+      console.error('Error handling userId event:', error);
       if (typeof callback === 'function') {
         callback({ success: false, error: error.message || 'Failed to register user ID' });
       }

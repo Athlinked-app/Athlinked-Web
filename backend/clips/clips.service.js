@@ -70,20 +70,7 @@ async function getMentionedUsers(actorUserId, mentionedNames) {
       )
     `;
 
-    console.log('[Clip Mention Lookup] Querying for mentioned users:', {
-      actorUserId,
-      mentionedNames,
-      normalizedNames,
-    });
-
     const result = await pool.query(query, [actorUserId, normalizedNames]);
-    
-    console.log('[Clip Mention Lookup] Query result:', {
-      mentionedNames,
-      normalizedNames,
-      foundCount: result.rows.length,
-      foundUsers: result.rows.map(u => ({ id: u.id, full_name: u.full_name })),
-    });
 
     return result.rows;
   } catch (error) {
@@ -136,26 +123,13 @@ async function createClipService(clipData) {
       const textToCheck = description || '';
       const mentionedNames = extractMentions(textToCheck);
 
-      console.log('[Clip Mentions] Extracted mentions:', {
-        textToCheck,
-        mentionedNames,
-        clipId: createdClip.id,
-        userId: user_id,
-      });
-
       if (mentionedNames.length > 0) {
         const mentionedUsers = await getMentionedUsers(user_id, mentionedNames);
-
-        console.log('[Clip Mentions] Found mentioned users:', {
-          mentionedNames,
-          foundUsers: mentionedUsers.map(u => ({ id: u.id, full_name: u.full_name })),
-          count: mentionedUsers.length,
-        });
 
         // Create notifications for each mentioned user
         for (const mentionedUser of mentionedUsers) {
           try {
-            const notification = await createNotification({
+            await createNotification({
               recipientUserId: mentionedUser.id,
               actorUserId: user_id,
               actorFullName: user.full_name || 'User',
@@ -164,27 +138,12 @@ async function createClipService(clipData) {
               entityId: createdClip.id,
               message: `${user.full_name || 'User'} mentioned you in a clip`,
             });
-
-            console.log('[Clip Mentions] Notification created:', {
-              notificationId: notification?.id,
-              recipientUserId: mentionedUser.id,
-              recipientName: mentionedUser.full_name,
-            });
           } catch (error) {
             console.error(
-              `[Clip Mentions] Error creating mention notification for ${mentionedUser.id}:`,
+              `Error creating mention notification for ${mentionedUser.id}:`,
               error
             );
-            // Continue with other notifications even if one fails
           }
-        }
-
-        if (mentionedUsers.length === 0) {
-          console.warn('[Clip Mentions] No users found for mentions:', {
-            mentionedNames,
-            userId: user_id,
-            message: 'Users may not have network relationship or names may not match',
-          });
         }
       }
 
@@ -293,14 +252,6 @@ async function addCommentService(clipId, commentData) {
       // Handle mentions in comment (after commit to avoid transaction issues)
       const mentionedNames = extractMentions(comment);
 
-      console.log('[Clip Comment Mentions] Extracted mentions:', {
-        comment,
-        mentionedNames,
-        commentId: newComment.id,
-        clipId,
-        userId: user_id,
-      });
-
       if (mentionedNames.length > 0) {
         // Get actor user info for notification
         const userQuery = 'SELECT full_name FROM users WHERE id = $1';
@@ -309,16 +260,10 @@ async function addCommentService(clipId, commentData) {
 
         const mentionedUsers = await getMentionedUsers(user_id, mentionedNames);
 
-        console.log('[Clip Comment Mentions] Found mentioned users:', {
-          mentionedNames,
-          foundUsers: mentionedUsers.map(u => ({ id: u.id, full_name: u.full_name })),
-          count: mentionedUsers.length,
-        });
-
         // Create notifications for each mentioned user
         for (const mentionedUser of mentionedUsers) {
           try {
-            const notification = await createNotification({
+            await createNotification({
               recipientUserId: mentionedUser.id,
               actorUserId: user_id,
               actorFullName: actorFullName,
@@ -327,27 +272,12 @@ async function addCommentService(clipId, commentData) {
               entityId: newComment.id,
               message: `${actorFullName} mentioned you in a comment`,
             });
-
-            console.log('[Clip Comment Mentions] Notification created:', {
-              notificationId: notification?.id,
-              recipientUserId: mentionedUser.id,
-              recipientName: mentionedUser.full_name,
-            });
           } catch (error) {
             console.error(
-              `[Clip Comment Mentions] Error creating mention notification for ${mentionedUser.id}:`,
+              `Error creating mention notification for ${mentionedUser.id}:`,
               error
             );
-            // Continue with other notifications even if one fails
           }
-        }
-
-        if (mentionedUsers.length === 0) {
-          console.warn('[Clip Comment Mentions] No users found for mentions:', {
-            mentionedNames,
-            userId: user_id,
-            message: 'Users may not have network relationship or names may not match',
-          });
         }
       }
 

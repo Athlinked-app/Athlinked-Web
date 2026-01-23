@@ -34,7 +34,6 @@ setTimeout(async () => {
         )`;
       await pool.query(createQuery);
     });
-    console.log('✅ clip_likes table ensured');
   } catch (err) {
     console.error(
       'Error ensuring clip_likes table exists:',
@@ -76,7 +75,6 @@ setTimeout(async () => {
         console.log('Initialized save_count for existing clips');
       }
     });
-    console.log('✅ clips table save_count column ensured');
   } catch (err) {
     console.error(
       'Error ensuring clips table has save_count column:',
@@ -166,7 +164,6 @@ setTimeout(async () => {
         }
       }
     });
-    console.log('✅ clip_saves table ensured');
   } catch (err) {
     console.error(
       'Error ensuring clip_saves table exists:',
