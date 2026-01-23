@@ -6,99 +6,99 @@ import { Download } from 'lucide-react';
 export default function PrivacyPolicy() {
   const contentRef = useRef<HTMLDivElement>(null);
 
-  const handleDownloadPDF = async () => {
-    try {
-      if (!contentRef.current) return;
+  // const handleDownloadPDF = async () => {
+  //   try {
+  //     if (!contentRef.current) return;
 
-      // Dynamically import html2canvas and jspdf
-      // Using eval to prevent Next.js from analyzing at build time
-      let html2canvas: any;
-      let jsPDF: any;
+  //     // Dynamically import html2canvas and jspdf
+  //     // Using eval to prevent Next.js from analyzing at build time
+  //     let html2canvas: any;
+  //     let jsPDF: any;
 
-      try {
-        html2canvas = (await import('html2canvas')).default;
-      } catch (e: any) {
-        if (
-          e?.code === 'MODULE_NOT_FOUND' ||
-          e?.message?.includes('Cannot find module')
-        ) {
-          alert(
-            'PDF export feature requires html2canvas package. Please install it: npm install html2canvas'
-          );
-        } else {
-          console.error('Error loading html2canvas:', e);
-          alert('Failed to load PDF export library. Please try again.');
-        }
-        return;
-      }
+  //     try {
+  //       html2canvas = (await import('html2canvas')).default;
+  //     } catch (e: any) {
+  //       if (
+  //         e?.code === 'MODULE_NOT_FOUND' ||
+  //         e?.message?.includes('Cannot find module')
+  //       ) {
+  //         alert(
+  //           'PDF export feature requires html2canvas package. Please install it: npm install html2canvas'
+  //         );
+  //       } else {
+  //         console.error('Error loading html2canvas:', e);
+  //         alert('Failed to load PDF export library. Please try again.');
+  //       }
+  //       return;
+  //     }
 
-      try {
-        jsPDF = (await import('jspdf')).default;
-      } catch (e: any) {
-        if (
-          e?.code === 'MODULE_NOT_FOUND' ||
-          e?.message?.includes('Cannot find module')
-        ) {
-          alert(
-            'PDF export feature requires jspdf package. Please install it: npm install jspdf'
-          );
-        } else {
-          console.error('Error loading jspdf:', e);
-          alert('Failed to load PDF export library. Please try again.');
-        }
-        return;
-      }
+  //     try {
+  //       jsPDF = (await import('jspdf')).default;
+  //     } catch (e: any) {
+  //       if (
+  //         e?.code === 'MODULE_NOT_FOUND' ||
+  //         e?.message?.includes('Cannot find module')
+  //       ) {
+  //         alert(
+  //           'PDF export feature requires jspdf package. Please install it: npm install jspdf'
+  //         );
+  //       } else {
+  //         console.error('Error loading jspdf:', e);
+  //         alert('Failed to load PDF export library. Please try again.');
+  //       }
+  //       return;
+  //     }
 
-      // Capture the content as canvas
-      // Suppress console errors for unsupported CSS color functions during capture
-      const originalError = console.error;
-      console.error = (...args: any[]) => {
-        if (
-          typeof args[0] === 'string' &&
-          args[0].includes('unsupported color function')
-        ) {
-          return; // Ignore lab() color function errors
-        }
-        originalError.apply(console, args);
-      };
+  //     // Capture the content as canvas
+  //     // Suppress console errors for unsupported CSS color functions during capture
+  //     const originalError = console.error;
+  //     console.error = (...args: any[]) => {
+  //       if (
+  //         typeof args[0] === 'string' &&
+  //         args[0].includes('unsupported color function')
+  //       ) {
+  //         return; // Ignore lab() color function errors
+  //       }
+  //       originalError.apply(console, args);
+  //     };
 
-      // html2canvas types may be outdated, but these options work at runtime
-      const canvas = await html2canvas(contentRef.current, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-      } as any);
+  //     // html2canvas types may be outdated, but these options work at runtime
+  //     const canvas = await html2canvas(contentRef.current, {
+  //       scale: 2,
+  //       useCORS: true,
+  //       logging: false,
+  //     } as any);
 
-      // Restore original console.error
-      console.error = originalError;
+  //     // Restore original console.error
+  //     console.error = originalError;
 
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
+  //     const imgData = canvas.toDataURL('image/png');
+  //     const pdf = new jsPDF('p', 'mm', 'a4');
+  //     const imgWidth = 210; // A4 width in mm
+  //     const pageHeight = 297; // A4 height in mm
+  //     const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  //     let heightLeft = imgHeight;
+  //     let position = 0;
 
-      // Add first page
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+  //     // Add first page
+  //     pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+  //     heightLeft -= pageHeight;
 
-      // Add additional pages if content is longer than one page
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
+  //     // Add additional pages if content is longer than one page
+  //     while (heightLeft > 0) {
+  //       position = heightLeft - imgHeight;
+  //       pdf.addPage();
+  //       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+  //       heightLeft -= pageHeight;
+  //     }
 
-      // Download the PDF
-      pdf.save('Privacy-Policy.pdf');
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
-    }
-  };
+  //     // Download the PDF
+  //     pdf.save('Privacy-Policy.pdf');
+  //   } catch (error) {
+  //     console.error('Error generating PDF:', error);
+  //     alert('Failed to generate PDF. Please try again.');
+  //   }
+  // };
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -117,13 +117,13 @@ export default function PrivacyPolicy() {
             </p>
           </div>
         </div>
-        <button
+        {/* <button
           onClick={handleDownloadPDF}
           className="flex items-center gap-2 px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-[#b78322] transition-colors shadow-sm"
         >
           <Download size={18} />
           <span className="text-sm font-medium">Download PDF</span>
-        </button>
+        </button> */}
       </div>
 
       <div ref={contentRef} className="space-y-6 text-gray-700 leading-relaxed">

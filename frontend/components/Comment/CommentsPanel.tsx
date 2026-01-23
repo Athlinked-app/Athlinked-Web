@@ -254,7 +254,7 @@ export default function CommentsPanel({
   };
 
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div className="h-full flex flex-col bg-white dark:bg-white">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 shrink-0">
         <h2 className="text-xl font-semibold text-gray-900">Comments</h2>
@@ -287,7 +287,7 @@ export default function CommentsPanel({
               return (
                 <div key={comment.id}>
                   {/* Parent Comment */}
-                  <div className="flex gap-3">
+                  <div className="flex gap-3 ">
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
                       {comment.user_profile_url &&
                       comment.user_profile_url.trim() !== '' ? (
@@ -299,7 +299,7 @@ export default function CommentsPanel({
                                 comment.user_profile_url
                           }
                           alt={comment.username}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover "
                         />
                       ) : (
                         <span className="text-gray-600 font-semibold text-xs">

@@ -305,7 +305,9 @@ export default function Post({
       // Don't log errors
     }
 
-    if (onCommentCountUpdate) {
+    // IMPORTANT: Do not force parent refresh while the comments modal is open,
+    // otherwise the Post component may re-mount and close the popup.
+    if (onCommentCountUpdate && !showComments) {
       onCommentCountUpdate();
     }
 
@@ -998,32 +1000,44 @@ export default function Post({
           >
             <div className="w-full sm:w-1/2 h-1/3 sm:h-full bg-black flex items-center justify-center">
               {post.media_url || post.image_url ? (
-                post.post_type === 'video' ||
-                (post.media_url && post.media_url.match(/\.(mp4|mov)$/i)) ? (
-                  <video
-                    src={
-                      post.media_url && post.media_url.startsWith('http')
-                        ? post.media_url
-                        : getResourceUrl(
-                            post.media_url || post.image_url || ''
-                          ) || ''
-                    }
-                    controls
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <img
-                    src={
-                      post.media_url && post.media_url.startsWith('http')
-                        ? post.media_url
-                        : getResourceUrl(
-                            post.media_url || post.image_url || ''
-                          ) || ''
-                    }
-                    alt={post.caption || post.description || 'Post media'}
-                    className="w-full h-full object-contain"
-                  />
-                )
+                (() => {
+                  const src =
+                    post.media_url && post.media_url.startsWith('http')
+                      ? post.media_url
+                      : getResourceUrl(post.media_url || post.image_url || '') ||
+                        '';
+                  const isVideo =
+                    post.post_type === 'video' ||
+                    (post.media_url && post.media_url.match(/\.(mp4|mov)$/i));
+
+                  if (isVideo) {
+                    return (
+                      <video
+                        src={src}
+                        controls
+                        className="w-full h-full object-contain"
+                      />
+                    );
+                  }
+
+                  // Image: keep black theme, but add a blurred cover background so it looks nicer
+                  return (
+                    <div className="relative w-full h-full bg-black overflow-hidden">
+                      <img
+                        src={src}
+                        alt=""
+                        aria-hidden="true"
+                        className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60"
+                      />
+                      <div className="absolute inset-0 bg-black/40" />
+                      <img
+                        src={src}
+                        alt={post.caption || post.description || 'Post media'}
+                        className="relative w-full h-full object-contain"
+                      />
+                    </div>
+                  );
+                })()
               ) : (
                 <div className="text-white">No media available</div>
               )}
