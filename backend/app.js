@@ -24,6 +24,7 @@ const notificationsRoutes = require('./notifications/notifications.routes');
 const favoritesRoutes = require('./favorites/favorites.routes');
 const searchRoutes = require('./search/search.routes');
 const savesRoutes = require('./saves/saves.routes');
+const activityRoutes = require('./activity/activity.routes');
 
 const app = express();
 
@@ -121,6 +122,7 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/notifications', notificationsRoutes);
 app.use('/api/favorites', favoritesRoutes);
 app.use('/api/save', savesRoutes);
+app.use('/api/my-activity', activityRoutes);
 
 app.use((req, res) => {
   res.status(404).json({

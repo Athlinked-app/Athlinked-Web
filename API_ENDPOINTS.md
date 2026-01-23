@@ -397,6 +397,26 @@ Complete list of all API endpoints in the AthLinked project.
 
 ---
 
+## 📱 My Activity
+
+- **GET** `/api/my-activity` - Get my activity (current user's posts and clips only)
+  - Query: `limit` (default: 50)
+  - Auth: Required
+  - Returns: `{ success, posts: [], clips: [] }`
+  - **Only returns content created by the authenticated user**
+  - Posts include all types: `photo`, `video`, `article`, `event`, `text`
+  - Posts include `is_saved` field (true/false)
+  - Clips include `is_saved` and `save_count` fields
+
+- **GET** `/api/my-activity/:userId` - Get activity for specific user
+  - Query: `limit` (default: 50)
+  - Auth: Required
+  - Returns: `{ success, posts: [], clips: [] }`
+  - **Only returns content created by the specified user**
+  - Same response structure as above
+
+---
+
 ## 💬 Comments
 
 - **POST** `/api/comments/:commentId/reply` - Reply to a comment
@@ -732,11 +752,13 @@ Complete list of all API endpoints in the AthLinked project.
 
 - **Saves (Unified)**: 3 endpoints ⭐ NEW
 
+- **My Activity**: 2 endpoints ⭐ NEW
+
 - **Health Check**: 1 endpoint
 
 - **API Documentation**: 1 endpoint
 
-### **Grand Total: 131 API Endpoints**
+### **Grand Total: 133 API Endpoints**
 
 ### File Upload Endpoints:
 - Profile image upload: 1 endpoint

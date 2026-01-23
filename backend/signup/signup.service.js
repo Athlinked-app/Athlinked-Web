@@ -4,6 +4,7 @@ const { startOTPFlow, verifyOTP } = require('./otp.service');
 const { sendOTPEmail, sendParentSignupLink } = require('../utils/email');
 const profileModel = require('../profile/profile.model');
 const refreshTokensService = require('../auth/refresh-tokens.service');
+const { convertKeyToPresignedUrl } = require('../utils/s3');
 
 /**
  * Check if string is an email
@@ -319,18 +320,24 @@ async function getAllUsersService(excludeUserId = null, limit = 10, currentUserI
   try {
     const users = await signupModel.getAllUsers(excludeUserId, limit, currentUserId);
 
-    // Remove password from all users (produce shallow copies)
+    // Remove password from all users and convert profile URLs to presigned URLs
     // Also convert is_following to isFollowing (camelCase) for frontend consistency
-    const sanitizedUsers = users.map(user => {
-      const copy = { ...user };
-      delete copy.password;
-      // Convert is_following (snake_case from DB) to isFollowing (camelCase)
-      if ('is_following' in copy) {
-        copy.isFollowing = copy.is_following;
-        delete copy.is_following;
-      }
-      return copy;
-    });
+    const sanitizedUsers = await Promise.all(
+      users.map(async (user) => {
+        const copy = { ...user };
+        delete copy.password;
+        // Convert is_following (snake_case from DB) to isFollowing (camelCase)
+        if ('is_following' in copy) {
+          copy.isFollowing = copy.is_following;
+          delete copy.is_following;
+        }
+        // Convert profile_url to presigned URL
+        if (copy.profile_url) {
+          copy.profile_url = await convertKeyToPresignedUrl(copy.profile_url);
+        }
+        return copy;
+      })
+    );
 
     return {
       success: true,
@@ -355,12 +362,18 @@ async function getChildrenByParentEmailService(parentEmail) {
 
     const children = await signupModel.getChildrenByParentEmail(parentEmail);
 
-    // Remove password from all children (produce shallow copies)
-    const sanitizedChildren = children.map(child => {
-      const copy = { ...child };
-      delete copy.password;
-      return copy;
-    });
+    // Remove password from all children and convert profile URLs to presigned URLs
+    const sanitizedChildren = await Promise.all(
+      children.map(async (child) => {
+        const copy = { ...child };
+        delete copy.password;
+        // Convert profile_url to presigned URL
+        if (copy.profile_url) {
+          copy.profile_url = await convertKeyToPresignedUrl(copy.profile_url);
+        }
+        return copy;
+      })
+    );
 
     return {
       success: true,
@@ -449,7 +462,7 @@ async function getChildrenActivitiesService(parentEmail) {
     const childrenIds = children.map(child => child.id).filter(id => id); // Filter out any null/undefined IDs
     
     // Get activities for all children in parallel
-    const postsModel = require('../profile/profile.model');
+    const profileModel = require('../profile/profile.model');
     const clipsModel = require('../clips/clips.model');
     const articlesModel = require('../articles/articles.model');
     const videosModel = require('../videos/videos.model');
@@ -468,18 +481,46 @@ async function getChildrenActivitiesService(parentEmail) {
         let resources = [];
         
         try {
-          posts = await postsModel.getUserPosts(childId, 50);
+          posts = await profileModel.getUserPosts(childId, 50);
           if (!Array.isArray(posts)) posts = [];
-          console.log(`getChildrenActivitiesService - Fetched ${posts.length} posts for child ${childId}`);
+          // Convert S3 keys to presigned URLs for posts
+          posts = await Promise.all(
+            posts.map(async (post) => {
+              if (post.user_profile_url) {
+                post.user_profile_url = await convertKeyToPresignedUrl(post.user_profile_url);
+              }
+              if (post.author_profile_url) {
+                post.author_profile_url = await convertKeyToPresignedUrl(post.author_profile_url);
+              }
+              if (post.media_url) {
+                post.media_url = await convertKeyToPresignedUrl(post.media_url);
+              }
+              return post;
+            })
+          );
         } catch (err) {
           console.error(`Error fetching posts for child ${childId}:`, err.message || err);
-          console.error(`Error stack:`, err.stack);
           posts = [];
         }
         
         try {
           clips = await clipsModel.getClipsByUserId(childId, 50);
           if (!Array.isArray(clips)) clips = [];
+          // Convert S3 keys to presigned URLs for clips
+          clips = await Promise.all(
+            clips.map(async (clip) => {
+              if (clip.user_profile_url) {
+                clip.user_profile_url = await convertKeyToPresignedUrl(clip.user_profile_url);
+              }
+              if (clip.author_profile_url) {
+                clip.author_profile_url = await convertKeyToPresignedUrl(clip.author_profile_url);
+              }
+              if (clip.video_url) {
+                clip.video_url = await convertKeyToPresignedUrl(clip.video_url);
+              }
+              return clip;
+            })
+          );
         } catch (err) {
           console.error(`Error fetching clips for child ${childId}:`, err.message || err);
           clips = [];
@@ -488,6 +529,18 @@ async function getChildrenActivitiesService(parentEmail) {
         try {
           articles = await articlesModel.getAllArticles(childId);
           if (!Array.isArray(articles)) articles = [];
+          // Convert S3 keys to presigned URLs for articles (if they have media)
+          articles = await Promise.all(
+            articles.map(async (article) => {
+              if (article.image_url) {
+                article.image_url = await convertKeyToPresignedUrl(article.image_url);
+              }
+              if (article.user_profile_url) {
+                article.user_profile_url = await convertKeyToPresignedUrl(article.user_profile_url);
+              }
+              return article;
+            })
+          );
         } catch (err) {
           console.error(`Error fetching articles for child ${childId}:`, err.message || err);
           articles = [];
@@ -496,6 +549,18 @@ async function getChildrenActivitiesService(parentEmail) {
         try {
           videos = await videosModel.getAllVideos(childId);
           if (!Array.isArray(videos)) videos = [];
+          // Convert S3 keys to presigned URLs for videos
+          videos = await Promise.all(
+            videos.map(async (video) => {
+              if (video.video_url) {
+                video.video_url = await convertKeyToPresignedUrl(video.video_url);
+              }
+              if (video.user_profile_url) {
+                video.user_profile_url = await convertKeyToPresignedUrl(video.user_profile_url);
+              }
+              return video;
+            })
+          );
         } catch (err) {
           console.error(`Error fetching videos for child ${childId}:`, err.message || err);
           videos = [];
@@ -504,6 +569,18 @@ async function getChildrenActivitiesService(parentEmail) {
         try {
           templates = await templatesModel.getAllTemplates(childId);
           if (!Array.isArray(templates)) templates = [];
+          // Convert S3 keys to presigned URLs for templates
+          templates = await Promise.all(
+            templates.map(async (template) => {
+              if (template.file_url) {
+                template.file_url = await convertKeyToPresignedUrl(template.file_url);
+              }
+              if (template.user_profile_url) {
+                template.user_profile_url = await convertKeyToPresignedUrl(template.user_profile_url);
+              }
+              return template;
+            })
+          );
         } catch (err) {
           console.error(`Error fetching templates for child ${childId}:`, err.message || err);
           templates = [];
@@ -513,6 +590,22 @@ async function getChildrenActivitiesService(parentEmail) {
         try {
           resources = await resourcesModel.getAllResources(childId);
           if (!Array.isArray(resources)) resources = [];
+          
+          // Convert S3 keys to presigned URLs for resources
+          resources = await Promise.all(
+            resources.map(async (resource) => {
+              if (resource.video_url) {
+                resource.video_url = await convertKeyToPresignedUrl(resource.video_url);
+              }
+              if (resource.file_url) {
+                resource.file_url = await convertKeyToPresignedUrl(resource.file_url);
+              }
+              if (resource.user_profile_url) {
+                resource.user_profile_url = await convertKeyToPresignedUrl(resource.user_profile_url);
+              }
+              return resource;
+            })
+          );
           
           // Separate resources into videos and templates
           const resourceVideos = resources.filter(r => r.resource_type === 'video' || r.video_url);
