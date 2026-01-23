@@ -1,6 +1,125 @@
 const pool = require('../config/db');
 const { v4: uuidv4 } = require('uuid');
 
+// Ensure post_saves table exists and has required columns
+(async function ensurePostSavesTableColumns() {
+  try {
+    // First, ensure the table exists
+    const createTableQuery = `
+      CREATE TABLE IF NOT EXISTS post_saves (
+        post_id UUID NOT NULL,
+        user_id UUID NOT NULL,
+        PRIMARY KEY (post_id, user_id),
+        FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )
+    `;
+    await pool.query(createTableQuery);
+    
+    // Check if created_at column exists
+    const checkCreatedAtQuery = `
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'post_saves' AND column_name = 'created_at'
+    `;
+    const createdAtResult = await pool.query(checkCreatedAtQuery);
+    
+    if (createdAtResult.rows.length === 0) {
+      // Add created_at column
+      try {
+        const addCreatedAtQuery = `
+          ALTER TABLE post_saves 
+          ADD COLUMN created_at TIMESTAMP DEFAULT NOW()
+        `;
+        await pool.query(addCreatedAtQuery);
+        console.log('Added created_at column to post_saves table');
+        
+        // Set default created_at for existing records
+        const updateCreatedAtQuery = `
+          UPDATE post_saves 
+          SET created_at = NOW() 
+          WHERE created_at IS NULL
+        `;
+        await pool.query(updateCreatedAtQuery);
+      } catch (addErr) {
+        if (!addErr.message.includes('already exists')) {
+          console.error('Error adding created_at column:', addErr.message);
+        }
+      }
+    }
+    
+    // Check if post_author_id column exists
+    const checkColumnQuery = `
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'post_saves' AND column_name = 'post_author_id'
+    `;
+    const columnResult = await pool.query(checkColumnQuery);
+    
+    if (columnResult.rows.length === 0) {
+      // Add post_author_id column (without constraint first)
+      try {
+        const addColumnQuery = `
+          ALTER TABLE post_saves 
+          ADD COLUMN post_author_id UUID
+        `;
+        await pool.query(addColumnQuery);
+        console.log('Added post_author_id column to post_saves table');
+      } catch (addErr) {
+        // Column might already exist, ignore
+        if (!addErr.message.includes('already exists')) {
+          throw addErr;
+        }
+      }
+      
+      // Backfill existing records with post author IDs
+      try {
+        const backfillQuery = `
+          UPDATE post_saves ps
+          SET post_author_id = p.user_id
+          FROM posts p
+          WHERE ps.post_id = p.id AND ps.post_author_id IS NULL
+        `;
+        await pool.query(backfillQuery);
+        console.log('Backfilled post_author_id in post_saves table');
+      } catch (backfillErr) {
+        console.error('Error backfilling post_author_id:', backfillErr.message);
+      }
+      
+      // Add foreign key constraint if it doesn't exist
+      try {
+        const checkConstraintQuery = `
+          SELECT constraint_name 
+          FROM information_schema.table_constraints 
+          WHERE table_name = 'post_saves' 
+          AND constraint_name = 'fk_post_author'
+        `;
+        const constraintResult = await pool.query(checkConstraintQuery);
+        
+        if (constraintResult.rows.length === 0) {
+          const addConstraintQuery = `
+            ALTER TABLE post_saves 
+            ADD CONSTRAINT fk_post_author 
+            FOREIGN KEY (post_author_id) REFERENCES users(id) ON DELETE CASCADE
+          `;
+          await pool.query(addConstraintQuery);
+          console.log('Added foreign key constraint for post_author_id');
+        }
+      } catch (constraintErr) {
+        // Constraint might already exist, ignore
+        if (!constraintErr.message.includes('already exists')) {
+          console.error('Error adding foreign key constraint:', constraintErr.message);
+        }
+      }
+    }
+  } catch (err) {
+    console.error(
+      'Error ensuring post_saves table columns:',
+      err.message || err
+    );
+  }
+})();
+
 async function createPost(postData, client = null) {
   const {
     user_id,
@@ -106,9 +225,14 @@ async function getPostsFeed(page = 1, limit = 50, viewerUserId = null, postType 
       p.*,
       COALESCE(u.profile_url, p.user_profile_url) as user_profile_url,
       COALESCE(u.full_name, p.username) as username,
-      COALESCE(p.user_type, u.user_type, 'athlete') as user_type
+      COALESCE(p.user_type, u.user_type, 'athlete') as user_type,
+      CASE 
+        WHEN ps.post_id IS NOT NULL THEN true 
+        ELSE false 
+      END as is_saved
     FROM posts p
     LEFT JOIN users u ON p.user_id = u.id
+    LEFT JOIN post_saves ps ON p.id = ps.post_id AND ps.user_id = $1
     WHERE p.is_active = true
       ${postType ? 'AND p.post_type = $4' : ''}
       AND (
@@ -296,11 +420,23 @@ async function replyToComment(commentId, userId, comment, client = null) {
   }
 }
 
+async function checkPostSaveStatus(postId, userId) {
+  const query = 'SELECT * FROM post_saves WHERE post_id = $1 AND user_id = $2';
+  try {
+    const result = await pool.query(query, [postId, userId]);
+    return result.rows.length > 0;
+  } catch (error) {
+    console.error('Error checking post save status:', error);
+    throw error;
+  }
+}
+
 async function savePost(postId, userId, client = null) {
   const checkQuery =
     'SELECT * FROM post_saves WHERE post_id = $1 AND user_id = $2';
+  const getPostAuthorQuery = 'SELECT user_id FROM posts WHERE id = $1';
   const insertSaveQuery =
-    'INSERT INTO post_saves (post_id, user_id) VALUES ($1, $2)';
+    'INSERT INTO post_saves (post_id, user_id, post_author_id) VALUES ($1, $2, $3)';
   const updateCountQuery =
     'UPDATE posts SET save_count = save_count + 1 WHERE id = $1 RETURNING save_count';
 
@@ -312,12 +448,91 @@ async function savePost(postId, userId, client = null) {
       throw new Error('Post already saved by this user');
     }
 
-    await dbClient.query(insertSaveQuery, [postId, userId]);
+    // Get the post author ID
+    const postResult = await dbClient.query(getPostAuthorQuery, [postId]);
+    if (postResult.rows.length === 0) {
+      throw new Error('Post not found');
+    }
+    const postAuthorId = postResult.rows[0].user_id;
+
+    await dbClient.query(insertSaveQuery, [postId, userId, postAuthorId]);
     const updateResult = await dbClient.query(updateCountQuery, [postId]);
 
     return { save_count: updateResult.rows[0].save_count };
   } catch (error) {
     console.error('Error saving post:', error);
+    throw error;
+  }
+}
+
+async function unsavePost(postId, userId, client = null) {
+  const deleteSaveQuery =
+    'DELETE FROM post_saves WHERE post_id = $1 AND user_id = $2';
+  const updateCountQuery =
+    'UPDATE posts SET save_count = GREATEST(save_count - 1, 0) WHERE id = $1 RETURNING save_count';
+
+  try {
+    const dbClient = client || pool;
+    await dbClient.query(deleteSaveQuery, [postId, userId]);
+    const updateResult = await dbClient.query(updateCountQuery, [postId]);
+    return { save_count: updateResult.rows[0].save_count };
+  } catch (error) {
+    console.error('Error unsaving post:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get saved posts for a user
+ * @param {string} userId - User UUID
+ * @param {number} limit - Limit of posts to return
+ * @returns {Promise<Array>} Array of saved posts
+ */
+async function getSavedPostsByUserId(userId, limit = 50) {
+  const query = `
+    SELECT 
+      p.id,
+      p.user_id,
+      p.username,
+      p.user_profile_url,
+      p.user_type,
+      p.post_type,
+      p.caption,
+      p.media_url,
+      p.article_title,
+      p.article_body,
+      p.event_title,
+      p.event_date,
+      p.event_location,
+      p.created_at,
+      p.user_id as post_author_id,
+      p.username as post_author_username,
+      p.user_profile_url as post_author_profile_url,
+      p.user_type as post_author_type,
+      COALESCE(u.full_name, p.username) as author_name,
+      u.profile_url as author_profile_url,
+      u.id as author_id,
+      u.username as author_username,
+      u.user_type as author_type,
+      ps.user_id as saved_by_user_id,
+      COALESCE(ps.post_author_id, p.user_id) as saved_post_author_id,
+      ps.created_at as saved_at,
+      (SELECT COUNT(*) FROM post_likes WHERE post_id = p.id) as like_count,
+      (SELECT COUNT(*) FROM post_comments WHERE post_id = p.id) as comment_count,
+      (SELECT COUNT(*) FROM post_saves WHERE post_id = p.id) as save_count
+    FROM posts p
+    INNER JOIN post_saves ps ON p.id = ps.post_id
+    LEFT JOIN users u ON COALESCE(ps.post_author_id, p.user_id) = u.id
+    WHERE ps.user_id = $1 AND (p.is_active = true OR p.is_active IS NULL)
+    ORDER BY ps.created_at DESC
+    LIMIT $2
+  `;
+
+  try {
+    const result = await pool.query(query, [userId, limit]);
+    return result.rows;
+  } catch (error) {
+    console.error('Error fetching saved posts:', error);
     throw error;
   }
 }
@@ -413,7 +628,10 @@ module.exports = {
   unlikePost,
   addComment,
   replyToComment,
+  checkPostSaveStatus,
   savePost,
+  unsavePost,
   getCommentsByPostId,
   deletePost,
+  getSavedPostsByUserId,
 };

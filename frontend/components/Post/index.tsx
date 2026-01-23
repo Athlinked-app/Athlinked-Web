@@ -159,15 +159,31 @@ export default function Post({
   }, [post.id, post.comment_count]);
 
   useEffect(() => {
-    const checkSavedStatus = () => {
-      const savedPosts = JSON.parse(
-        localStorage.getItem('athlinked_saved_posts') || '[]'
-      );
-      setIsSaved(savedPosts.includes(post.id));
+    const checkSavedStatus = async () => {
+      if (!currentUserId) return;
+
+      try {
+        const { apiGet } = await import('@/utils/api');
+        const data = await apiGet<{
+          success: boolean;
+          isSaved?: boolean;
+        }>(`/posts/${post.id}/save-status?user_id=${currentUserId}`);
+
+        if (data.success) {
+          setIsSaved(data.isSaved || false);
+        }
+      } catch (error) {
+        console.error('Error checking save status:', error);
+        // Fallback to localStorage for backward compatibility
+        const savedPosts = JSON.parse(
+          localStorage.getItem('athlinked_saved_posts') || '[]'
+        );
+        setIsSaved(savedPosts.includes(post.id));
+      }
     };
 
     checkSavedStatus();
-  }, [post.id]);
+  }, [post.id, currentUserId]);
 
   // Check if current user has liked this post
   useEffect(() => {
@@ -299,17 +315,43 @@ export default function Post({
 
   const handleShareComplete = () => {};
 
-  const handleSave = () => {
-    const newSavedStatus = toggleSave(post.id);
-    setIsSaved(newSavedStatus);
-
-    if (newSavedStatus) {
-      setSaveAlertMessage('This post is saved');
-    } else {
-      setSaveAlertMessage('This post is unsaved');
+  const handleSave = async () => {
+    if (!currentUserId) {
+      alert('Please log in to save posts');
+      return;
     }
 
+    const wasSaved = isSaved;
+    // Optimistic update
+    setIsSaved(!isSaved);
+    setSaveAlertMessage(wasSaved ? 'This post is unsaved' : 'This post is saved');
     setShowSaveAlert(true);
+
+    try {
+      const { apiPost } = await import('@/utils/api');
+      const endpoint = wasSaved ? '/save/unsave' : '/save';
+
+      const result = await apiPost<{
+        success: boolean;
+        message?: string;
+      }>(endpoint, {
+        type: 'post',
+        id: post.id,
+        user_id: currentUserId,
+      });
+
+      if (!result.success) {
+        // Revert optimistic update on error
+        setIsSaved(wasSaved);
+        alert(result.message || 'Failed to update save status');
+      }
+    } catch (error) {
+      console.error('Error updating save status:', error);
+      // Revert optimistic update on error
+      setIsSaved(wasSaved);
+      alert('Failed to update save status. Please try again.');
+    }
+
     setTimeout(() => {
       setShowSaveAlert(false);
     }, 2000);

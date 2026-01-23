@@ -253,8 +253,9 @@ Complete list of all API endpoints in the AthLinked project.
 ## 📝 Posts
 
 - **POST** `/api/posts` - Create a new post
-  - FormData: `{ content: string, media? }` (image/video)
-  - Field: `media` (image/video file)
+  - FormData: `{ post_type, caption?, media?, article_title?, article_body?, event_title?, event_date?, event_location? }`
+  - Field: `media` (image/video file for photo/video posts)
+  - Post types: `photo`, `video`, `article`, `event`, `text`
   - Auth: Required
 
 - **GET** `/api/posts` - Get posts feed (NEW ⭐ Follow-based visibility)
@@ -266,9 +267,12 @@ Complete list of all API endpoints in the AthLinked project.
     - Always shows the user's own posts
     - Unauthenticated users see no posts (empty array)
   - Returns: `{ success, posts: [], page, limit }`
+  - **Response includes `is_saved` field for each post** (true/false based on current user)
 
 - **GET** `/api/posts/:postId/like-status` - Check like status
+  - Query: `user_id` (optional if token provides user)
   - Auth: Required
+  - Returns: `{ success, isLiked: boolean }`
 
 - **POST** `/api/posts/:postId/like` - Like a post
   - Auth: Required
@@ -287,8 +291,25 @@ Complete list of all API endpoints in the AthLinked project.
   - Body: `{ reply: string }`
   - Auth: Required
 
-- **POST** `/api/posts/:postId/save` - Save a post
+- **GET** `/api/posts/:postId/save-status` - Check if a post is saved by user
+  - Query: `user_id` (optional if token provides user)
   - Auth: Required
+  - Returns: `{ success, isSaved: boolean }`
+
+- **POST** `/api/posts/:postId/save` - Save a post
+  - Body: `{ user_id? }` (optional if token provides user)
+  - Auth: Required
+  - Returns: `{ success, message, save_count }`
+
+- **POST** `/api/posts/:postId/unsave` - Unsave a post
+  - Body: `{ user_id? }` (optional if token provides user)
+  - Auth: Required
+  - Returns: `{ success, message, save_count }`
+
+- **GET** `/api/posts/saved/:userId` - Get saved posts for a user
+  - Query: `limit` (default: 50)
+  - Auth: Required
+  - Returns: `{ success, posts: [] }` (includes all post types: photo, video, article, event, text)
 
 - **DELETE** `/api/posts/:postId` - Delete a post
   - Auth: Required
@@ -304,7 +325,8 @@ Complete list of all API endpoints in the AthLinked project.
 
 - **GET** `/api/clips` - Get clips feed
   - Query: `page`, `limit`
-  - Auth: None
+  - Auth: Optional (Bearer token recommended)
+  - **Response includes `is_saved` and `save_count` fields for each clip**
 
 - **POST** `/api/clips/:clipId/like` - Like a clip
   - Auth: Required
@@ -323,9 +345,55 @@ Complete list of all API endpoints in the AthLinked project.
   - Body: `{ comment: string }`
   - Auth: Required
 
+- **GET** `/api/clips/:clipId/save-status` - Check if a clip is saved by user
+  - Query: `user_id` (optional if token provides user)
+  - Auth: Required
+  - Returns: `{ success, isSaved: boolean }`
+
+- **POST** `/api/clips/:clipId/save` - Save a clip
+  - Body: `{ user_id? }` (optional if token provides user)
+  - Auth: Required
+  - Returns: `{ success, message, save_count }`
+
+- **POST** `/api/clips/:clipId/unsave` - Unsave a clip
+  - Body: `{ user_id? }` (optional if token provides user)
+  - Auth: Required
+  - Returns: `{ success, message, save_count }`
+
+- **GET** `/api/clips/saved/:userId` - Get saved clips for a user
+  - Query: `limit` (default: 50)
+  - Auth: Required
+  - Returns: `{ success, clips: [] }`
+
 - **DELETE** `/api/clips/:clipId` - Delete a clip
   - Auth: Required
   - Note: Parents can delete clips from their athletes
+
+---
+
+## 💾 Saves (Unified Save/Unsave Endpoints) ⭐ NEW
+
+### Unified Save Endpoints (Recommended)
+- **POST** `/api/save` - Save a post or clip (Unified endpoint)
+  - Body: `{ type: "post" | "clip", id: string, user_id?: string }`
+  - Auth: Required
+  - Returns: `{ success, message, save_count }`
+  - **Works for all post types:** photos, videos, articles, events, text posts, and clips
+
+- **POST** `/api/save/unsave` - Unsave a post or clip (Unified endpoint)
+  - Body: `{ type: "post" | "clip", id: string, user_id?: string }`
+  - Auth: Required
+  - Returns: `{ success, message, save_count }`
+
+- **GET** `/api/save/saved/:userId` - Get all saved items (posts + clips) in single call
+  - Query: `limit` (default: 50)
+  - Auth: Required
+  - Returns: `{ success, posts: [], clips: [] }`
+  - **Returns both saved posts and clips in one API call**
+
+### Individual Save Endpoints (Legacy - Still Available)
+- See **Posts** section for post save endpoints
+- See **Clips** section for clip save endpoints
 
 ---
 
@@ -634,9 +702,11 @@ Complete list of all API endpoints in the AthLinked project.
   - Health and Readiness: 4 endpoints
   - Video and Media: 4 endpoints
 
-- **Posts**: 9 endpoints
+- **Posts**: 13 endpoints
+  - Includes: save, unsave, save-status, saved posts endpoints
 
-- **Clips**: 7 endpoints
+- **Clips**: 11 endpoints
+  - Includes: save, unsave, save-status, saved clips endpoints
 
 - **Comments**: 1 endpoint
 
@@ -660,11 +730,13 @@ Complete list of all API endpoints in the AthLinked project.
 
 - **Stats**: 7 endpoints
 
+- **Saves (Unified)**: 3 endpoints ⭐ NEW
+
 - **Health Check**: 1 endpoint
 
 - **API Documentation**: 1 endpoint
 
-### **Grand Total: 128 API Endpoints**
+### **Grand Total: 131 API Endpoints**
 
 ### File Upload Endpoints:
 - Profile image upload: 1 endpoint

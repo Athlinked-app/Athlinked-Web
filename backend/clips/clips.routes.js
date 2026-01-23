@@ -122,6 +122,36 @@ router.get('/', optionalAuth, clipsController.getClipsFeed);
 
 /**
  * @swagger
+ * /api/clips/saved/{userId}:
+ *   get:
+ *     summary: Get saved clips for a user
+ *     description: Retrieve all clips saved by a specific user
+ *     tags: [Clips]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *         description: Number of clips to return
+ *     responses:
+ *       200:
+ *         description: Saved clips retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/saved/:userId', authenticateToken, clipsController.getSavedClips);
+
+/**
+ * @swagger
  * /api/clips/{clipId}/comments:
  *   post:
  *     summary: Add a comment to a clip
@@ -300,5 +330,86 @@ router.delete('/:clipId', authenticateToken, clipsController.deleteClip);
  */
 router.post('/:clipId/like', authenticateToken, clipsController.likeClip);
 router.post('/:clipId/unlike', authenticateToken, clipsController.unlikeClip);
+
+/**
+ * @swagger
+ * /api/clips/{clipId}/save-status:
+ *   get:
+ *     summary: Check if a clip is saved by user
+ *     description: Check if the current user has saved a specific clip
+ *     tags: [Clips]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: clipId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Clip ID
+ *       - in: query
+ *         name: user_id
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: Save status retrieved
+ *       401:
+ *         description: Unauthorized
+ */
+router.get('/:clipId/save-status', authenticateToken, clipsController.checkClipSaveStatus);
+
+/**
+ * @swagger
+ * /api/clips/{clipId}/save:
+ *   post:
+ *     summary: Save a clip
+ *     description: Save a clip to user's saved clips
+ *     tags: [Clips]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: clipId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Clip ID
+ *     responses:
+ *       200:
+ *         description: Clip saved successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Clip not found
+ */
+router.post('/:clipId/save', authenticateToken, clipsController.saveClip);
+
+/**
+ * @swagger
+ * /api/clips/{clipId}/unsave:
+ *   post:
+ *     summary: Unsave a clip
+ *     description: Remove a clip from user's saved clips
+ *     tags: [Clips]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: clipId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Clip ID
+ *     responses:
+ *       200:
+ *         description: Clip unsaved successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Clip not found
+ */
+router.post('/:clipId/unsave', authenticateToken, clipsController.unsaveClip);
 
 module.exports = router;

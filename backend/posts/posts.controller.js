@@ -301,6 +301,29 @@ async function replyToComment(req, res) {
   }
 }
 
+async function checkPostSaveStatus(req, res) {
+  try {
+    const postId = req.params.postId;
+    const userId = req.query.user_id || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
+
+    const result = await postsService.checkPostSaveStatusService(postId, userId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Check post save status controller error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 async function savePost(req, res) {
   try {
     const postId = req.params.postId;
@@ -313,16 +336,53 @@ async function savePost(req, res) {
       });
     }
 
+    if (!postId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Post ID is required',
+      });
+    }
+
     const result = await postsService.savePostService(postId, userId);
     return res.status(200).json(result);
   } catch (error) {
     console.error('Save post controller error:', error);
+    console.error('Error stack:', error.stack);
     if (error.message.includes('already saved')) {
       return res.status(400).json({
         success: false,
         message: error.message,
       });
     }
+    if (error.message.includes('not found')) {
+      return res.status(404).json({
+        success: false,
+        message: error.message,
+      });
+    }
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
+async function unsavePost(req, res) {
+  try {
+    const postId = req.params.postId;
+    const userId = req.body.user_id || req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User authentication required',
+      });
+    }
+
+    const result = await postsService.unsavePostService(postId, userId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Unsave post controller error:', error);
     return res.status(500).json({
       success: false,
       message: error.message || 'Internal server error',
@@ -379,6 +439,33 @@ async function deletePost(req, res) {
   }
 }
 
+/**
+ * Controller to handle get saved posts request
+ */
+async function getSavedPosts(req, res) {
+  try {
+    const userId = req.params.userId || req.user?.id;
+    const limit = parseInt(req.query.limit, 10) || 50;
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User ID is required',
+      });
+    }
+
+    const result = await postsService.getSavedPostsService(userId, limit);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Get saved posts error:', error);
+    console.error('Error stack:', error.stack);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 module.exports = {
   createPost,
   getPostsFeed,
@@ -387,7 +474,10 @@ module.exports = {
   unlikePost,
   addComment,
   replyToComment,
+  checkPostSaveStatus,
   savePost,
+  unsavePost,
   getComments,
   deletePost,
+  getSavedPosts,
 };

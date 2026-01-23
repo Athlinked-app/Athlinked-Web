@@ -21,6 +21,130 @@ const { v4: uuidv4 } = require('uuid');
   }
 })();
 
+// Ensure clips table has save_count column
+(async function ensureClipsTableSaveCount() {
+  try {
+    const checkColumnQuery = `
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'clips' AND column_name = 'save_count'
+    `;
+    const columnResult = await pool.query(checkColumnQuery);
+    
+    if (columnResult.rows.length === 0) {
+      const addColumnQuery = `
+        ALTER TABLE clips 
+        ADD COLUMN save_count INTEGER DEFAULT 0
+      `;
+      await pool.query(addColumnQuery);
+      console.log('Added save_count column to clips table');
+      
+      // Initialize save_count for existing clips
+      const initCountQuery = `
+        UPDATE clips c
+        SET save_count = (
+          SELECT COUNT(*) 
+          FROM clip_saves cs 
+          WHERE cs.clip_id = c.id
+        )
+      `;
+      await pool.query(initCountQuery);
+      console.log('Initialized save_count for existing clips');
+    }
+  } catch (err) {
+    console.error(
+      'Error ensuring clips table has save_count column:',
+      err.message || err
+    );
+  }
+})();
+
+// Ensure clip_saves table exists for persisting saves on clips
+(async function ensureClipSavesTable() {
+  try {
+    const createQuery = `
+      CREATE TABLE IF NOT EXISTS clip_saves (
+        clip_id UUID NOT NULL,
+        user_id UUID NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW(),
+        PRIMARY KEY (clip_id, user_id),
+        FOREIGN KEY (clip_id) REFERENCES clips(id) ON DELETE CASCADE,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      )`;
+    await pool.query(createQuery);
+    
+    // Check if clip_author_id column exists and add it if not
+    const checkColumnQuery = `
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'clip_saves' AND column_name = 'clip_author_id'
+    `;
+    const columnResult = await pool.query(checkColumnQuery);
+    
+    if (columnResult.rows.length === 0) {
+      // Add clip_author_id column (without constraint first)
+      try {
+        const addColumnQuery = `
+          ALTER TABLE clip_saves 
+          ADD COLUMN clip_author_id UUID
+        `;
+        await pool.query(addColumnQuery);
+        console.log('Added clip_author_id column to clip_saves table');
+      } catch (addErr) {
+        // Column might already exist, ignore
+        if (!addErr.message.includes('already exists')) {
+          throw addErr;
+        }
+      }
+      
+      // Backfill existing records with clip author IDs
+      try {
+        const backfillQuery = `
+          UPDATE clip_saves cs
+          SET clip_author_id = c.user_id
+          FROM clips c
+          WHERE cs.clip_id = c.id AND cs.clip_author_id IS NULL
+        `;
+        await pool.query(backfillQuery);
+        console.log('Backfilled clip_author_id in clip_saves table');
+      } catch (backfillErr) {
+        console.error('Error backfilling clip_author_id:', backfillErr.message);
+      }
+      
+      // Add foreign key constraint if it doesn't exist
+      try {
+        const checkConstraintQuery = `
+          SELECT constraint_name 
+          FROM information_schema.table_constraints 
+          WHERE table_name = 'clip_saves' 
+          AND constraint_name = 'fk_clip_author'
+        `;
+        const constraintResult = await pool.query(checkConstraintQuery);
+        
+        if (constraintResult.rows.length === 0) {
+          const addConstraintQuery = `
+            ALTER TABLE clip_saves 
+            ADD CONSTRAINT fk_clip_author 
+            FOREIGN KEY (clip_author_id) REFERENCES users(id) ON DELETE CASCADE
+          `;
+          await pool.query(addConstraintQuery);
+          console.log('Added foreign key constraint for clip_author_id');
+        }
+      } catch (constraintErr) {
+        // Constraint might already exist, ignore
+        if (!constraintErr.message.includes('already exists')) {
+          console.error('Error adding foreign key constraint:', constraintErr.message);
+        }
+      }
+    }
+  } catch (err) {
+    console.error(
+      'Error ensuring clip_saves table exists:',
+      err.message || err
+    );
+  }
+})();
+
 /**
  * Create a new clip
  * @param {object} clipData - Clip data object
@@ -42,8 +166,9 @@ async function createClip(clipData, client = null) {
       description,
       like_count,
       comment_count,
+      save_count,
       created_at
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
     RETURNING *
   `;
 
@@ -56,6 +181,7 @@ async function createClip(clipData, client = null) {
     description || null,
     0, // like_count
     0, // comment_count
+    0, // save_count
   ];
 
   try {
@@ -94,6 +220,7 @@ async function getClipsFeed(page = 1, limit = 10, viewerUserId = null) {
         c.description,
         c.like_count,
         c.comment_count,
+        c.save_count,
         c.username,
         c.user_profile_url,
         c.created_at
@@ -125,11 +252,17 @@ async function getClipsFeed(page = 1, limit = 10, viewerUserId = null) {
         c.description,
         c.like_count,
         c.comment_count,
+        c.save_count,
         c.username,
         c.user_profile_url,
-        c.created_at
+        c.created_at,
+        CASE 
+          WHEN cs.clip_id IS NOT NULL THEN true 
+          ELSE false 
+        END as is_saved
       FROM clips c
       LEFT JOIN users u ON c.user_id = u.id
+      LEFT JOIN clip_saves cs ON c.id = cs.clip_id AND cs.user_id = $1
       WHERE (
         -- User sees their own clips
         c.user_id = $1
@@ -348,6 +481,7 @@ async function getClipsByUserId(userId, limit = 50) {
       description,
       like_count,
       comment_count,
+      save_count,
       username,
       user_profile_url,
       created_at
@@ -429,6 +563,135 @@ async function deleteClip(clipId, userId) {
   }
 }
 
+/**
+ * Save a clip
+ * @param {string} clipId - Clip UUID
+ * @param {string} userId - User UUID
+ * @param {object} client - Optional database client for transactions
+ * @returns {Promise<object>} Save result with save_count
+ */
+async function saveClip(clipId, userId, client = null) {
+  const checkQuery =
+    'SELECT * FROM clip_saves WHERE clip_id = $1 AND user_id = $2';
+  const getClipAuthorQuery = 'SELECT user_id FROM clips WHERE id = $1';
+  const insertSaveQuery =
+    'INSERT INTO clip_saves (clip_id, user_id, clip_author_id) VALUES ($1, $2, $3)';
+  const updateCountQuery =
+    'UPDATE clips SET save_count = save_count + 1 WHERE id = $1 RETURNING save_count';
+
+  try {
+    const dbClient = client || pool;
+
+    const checkResult = await dbClient.query(checkQuery, [clipId, userId]);
+    if (checkResult.rows.length > 0) {
+      throw new Error('Clip already saved by this user');
+    }
+
+    // Get the clip author ID
+    const clipResult = await dbClient.query(getClipAuthorQuery, [clipId]);
+    if (clipResult.rows.length === 0) {
+      throw new Error('Clip not found');
+    }
+    const clipAuthorId = clipResult.rows[0].user_id;
+
+    await dbClient.query(insertSaveQuery, [clipId, userId, clipAuthorId]);
+    const updateResult = await dbClient.query(updateCountQuery, [clipId]);
+
+    return { save_count: updateResult.rows[0].save_count };
+  } catch (error) {
+    console.error('Error saving clip:', error);
+    throw error;
+  }
+}
+
+/**
+ * Unsave a clip
+ * @param {string} clipId - Clip UUID
+ * @param {string} userId - User UUID
+ * @param {object} client - Optional database client for transactions
+ * @returns {Promise<object>} Unsave result with save_count
+ */
+async function unsaveClip(clipId, userId, client = null) {
+  const deleteSaveQuery =
+    'DELETE FROM clip_saves WHERE clip_id = $1 AND user_id = $2';
+  const updateCountQuery =
+    'UPDATE clips SET save_count = GREATEST(save_count - 1, 0) WHERE id = $1 RETURNING save_count';
+
+  try {
+    const dbClient = client || pool;
+    await dbClient.query(deleteSaveQuery, [clipId, userId]);
+    const updateResult = await dbClient.query(updateCountQuery, [clipId]);
+    return { save_count: updateResult.rows[0].save_count };
+  } catch (error) {
+    console.error('Error unsaving clip:', error);
+    throw error;
+  }
+}
+
+/**
+ * Check if a clip is saved by a user
+ * @param {string} clipId - Clip UUID
+ * @param {string} userId - User UUID
+ * @returns {Promise<boolean>} True if saved, false otherwise
+ */
+async function checkClipSaveStatus(clipId, userId) {
+  const query = 'SELECT * FROM clip_saves WHERE clip_id = $1 AND user_id = $2';
+  try {
+    const result = await pool.query(query, [clipId, userId]);
+    return result.rows.length > 0;
+  } catch (error) {
+    console.error('Error checking clip save status:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get saved clips for a user
+ * @param {string} userId - User UUID
+ * @param {number} limit - Limit of clips to return
+ * @returns {Promise<Array>} Array of saved clips
+ */
+async function getSavedClipsByUserId(userId, limit = 50) {
+  const query = `
+    SELECT 
+      c.id,
+      c.user_id,
+      c.username,
+      c.user_profile_url,
+      c.video_url,
+      c.description,
+      c.like_count,
+      c.comment_count,
+      c.created_at,
+      c.user_id as clip_author_id,
+      c.username as clip_author_username,
+      c.user_profile_url as clip_author_profile_url,
+      COALESCE(u.full_name, c.username) as author_name,
+      u.profile_url as author_profile_url,
+      u.id as author_id,
+      u.username as author_username,
+      u.user_type as author_type,
+      cs.user_id as saved_by_user_id,
+      COALESCE(cs.clip_author_id, c.user_id) as saved_clip_author_id,
+      cs.created_at as saved_at,
+      c.save_count
+    FROM clips c
+    INNER JOIN clip_saves cs ON c.id = cs.clip_id
+    LEFT JOIN users u ON COALESCE(cs.clip_author_id, c.user_id) = u.id
+    WHERE cs.user_id = $1
+    ORDER BY cs.created_at DESC
+    LIMIT $2
+  `;
+
+  try {
+    const result = await pool.query(query, [userId, limit]);
+    return result.rows;
+  } catch (error) {
+    console.error('Error fetching saved clips:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   createClip,
   getClipsFeed,
@@ -444,6 +707,11 @@ module.exports = {
   checkClipLikeStatus,
   likeClip,
   unlikeClip,
+  // Save helpers
+  saveClip,
+  unsaveClip,
+  checkClipSaveStatus,
+  getSavedClipsByUserId,
 };
 
 async function checkClipLikeStatus(clipId, userId) {
