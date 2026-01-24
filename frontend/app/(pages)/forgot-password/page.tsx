@@ -19,12 +19,55 @@ function ForgotPasswordContent() {
   const [loading, setLoading] = useState(false);
   const [resetToken, setResetToken] = useState<string | null>(null);
 
-  // Check if token exists in URL
+  // Check if token exists in URL and redirect to app on mobile
   useEffect(() => {
     const token = searchParams.get('token');
     if (token) {
-      setResetToken(token);
-      setStep('reset');
+      // Check if user is on mobile device
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+        navigator.userAgent
+      );
+      
+      if (isMobile) {
+        // On mobile, try to redirect to app immediately
+        // Universal links should open the app if Android App Links are verified
+        // If not verified, redirect to custom scheme as fallback
+        const deepLink = `athlinked://forgot-password?token=${encodeURIComponent(token)}`;
+        
+        // Try to open the app using custom scheme (works even if App Links not verified)
+        // This is a fallback - if App Links are verified, the universal link should open the app directly
+        const attemptAppOpen = () => {
+          // Create a hidden iframe to attempt app opening (works better than window.location)
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = deepLink;
+          document.body.appendChild(iframe);
+          
+          // Remove iframe after a short delay
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+          }, 1000);
+        };
+        
+        // Try opening app immediately
+        attemptAppOpen();
+        
+        // Also try window.location as backup
+        window.location.href = deepLink;
+        
+        // Fallback: If app doesn't open within 1.5 seconds, show the web form
+        const fallbackTimer = setTimeout(() => {
+          setResetToken(token);
+          setStep('reset');
+        }, 1500);
+        
+        // Clean up timer if component unmounts
+        return () => clearTimeout(fallbackTimer);
+      } else {
+        // Desktop: Show web form directly
+        setResetToken(token);
+        setStep('reset');
+      }
     }
   }, [searchParams]);
 

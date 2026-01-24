@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const swaggerUi = require('swagger-ui-express');
 const swaggerSpec = require('./config/swagger');
+const path = require('path');
 require('dotenv').config();
 
 const signupRoutes = require('./signup/signup.routes');
@@ -87,6 +88,63 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/uploads', express.static('public/uploads'));
+
+// Serve .well-known files for App Links verification (must be before other routes)
+// These files are required for Android App Links and iOS Universal Links
+// IMPORTANT: These routes must be BEFORE all other routes to ensure they're not intercepted
+app.get('/.well-known/assetlinks.json', (req, res) => {
+  try {
+    const filePath = path.join(__dirname, 'public', '.well-known', 'assetlinks.json');
+    
+    // Set proper headers for Android App Links verification
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+    
+    // Send file with error handling
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error serving assetlinks.json:', err);
+        // Fallback: Return JSON directly if file read fails
+        res.status(500).json({
+          error: 'Failed to load assetlinks.json',
+          message: err.message
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Error in assetlinks.json route:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
+
+app.get('/.well-known/apple-app-site-association', (req, res) => {
+  try {
+    const filePath = path.join(__dirname, 'public', '.well-known', 'apple-app-site-association');
+    
+    // Apple requires no file extension and application/json content type
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error serving apple-app-site-association:', err);
+        res.status(500).json({
+          error: 'Failed to load apple-app-site-association',
+          message: err.message
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Error in apple-app-site-association route:', error);
+    res.status(500).json({
+      error: 'Internal server error',
+      message: error.message
+    });
+  }
+});
 
 // Swagger documentation
 app.use(

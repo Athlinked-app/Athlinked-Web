@@ -16,8 +16,23 @@ async function requestResetLink(req, res) {
       });
     }
 
-    const result =
-      await forgotPasswordService.requestResetLinkService(emailOrUsername);
+    // Detect if request is from mobile app
+    const { isMobileRequest } = require('../utils/deepLinkUtils');
+    const isMobile = isMobileRequest(req);
+
+    // Log request details for debugging
+    console.log('Password reset request:', {
+      emailOrUsername: emailOrUsername.substring(0, 20) + '...',
+      isMobile,
+      clientType: req.headers['x-client-type'],
+      userAgent: req.headers['user-agent']?.substring(0, 50),
+    });
+
+    // Pass isMobile flag to service
+    const result = await forgotPasswordService.requestResetLinkService(
+      emailOrUsername,
+      isMobile
+    );
 
     return res.status(200).json(result);
   } catch (error) {
