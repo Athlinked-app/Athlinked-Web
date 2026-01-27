@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Play, X } from 'lucide-react';
-import { getResourceUrl } from '@/utils/api';
-import { API_BASE_URL } from '@/utils/config';
+import { apiGet, getResourceUrl } from '@/utils/api';
 
 interface Clip {
   id: string;
@@ -35,36 +34,21 @@ export default function Clips({
   const [loading, setLoading] = useState(true);
   const [selectedClip, setSelectedClip] = useState<Clip | null>(null);
 
-  // Fetch clips from API
+  // Fetch clips for the current user (Activity tab)
   useEffect(() => {
     const fetchClips = async () => {
+      if (!currentUserId) return;
       try {
         setLoading(true);
-        const response = await fetch(
-          `${API_BASE_URL}/api/clips?page=1&limit=50`
-        );
+        const data = await apiGet<{
+          success: boolean;
+          clips?: any[];
+          message?: string;
+        }>(`/my-activity/${currentUserId}?limit=50`);
 
-        if (!response.ok) {
-          console.error(
-            'Failed to fetch clips:',
-            response.status,
-            response.statusText
-          );
-          setClips([]);
-          return;
-        }
+        console.log('My activity (clips) API response:', data);
 
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          console.error('Non-JSON response from clips API');
-          setClips([]);
-          return;
-        }
-
-        const data = await response.json();
-        console.log('Clips API response:', data);
-
-        if (data.success && data.clips) {
+        if (data.success && Array.isArray(data.clips)) {
           const fallbackName = currentUsername || 'User';
           const transformedClips: Clip[] = data.clips.map((clip: any) => ({
             id: clip.id,
@@ -78,7 +62,7 @@ export default function Clips({
             likes: clip.like_count || 0,
             shares: 0,
             commentCount: clip.comment_count || 0,
-            user_id: clip.user_id,
+            user_id: clip.user_id ?? clip.userId ?? clip.user?.id,
           }));
           setClips(transformedClips);
         } else {
@@ -94,12 +78,16 @@ export default function Clips({
     };
 
     fetchClips();
-  }, [currentUsername]);
+  }, [currentUserId, currentUsername]);
 
   // Filter clips: only show clips created by the current user
   const filteredClips = clips.filter(clip => {
     // Only show current user's clips
-    if (currentUserId && clip.user_id !== currentUserId) {
+    if (
+      currentUserId &&
+      clip.user_id != null &&
+      String(clip.user_id) !== String(currentUserId)
+    ) {
       return false;
     }
     return true;

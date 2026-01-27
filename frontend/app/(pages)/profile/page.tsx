@@ -1514,7 +1514,7 @@ function ProfileContent() {
                   )}
                   {activeFilter === 'clips' && (
                     <Clips
-                      currentUserId={targetUserId || undefined}
+                      currentUserId={currentUserId || undefined}
                       currentUserProfileUrl={getProfileUrl(
                         viewUserId
                           ? viewUser?.profile_url || null

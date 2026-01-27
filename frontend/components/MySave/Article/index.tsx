@@ -5,8 +5,7 @@ import Image from 'next/image';
 import { FileText, X } from 'lucide-react';
 import { type PostData } from '@/components/Post';
 import Post from '@/components/Post';
-import { getResourceUrl } from '@/utils/api';
-import { API_BASE_URL } from '@/utils/config';
+import { apiGet, getResourceUrl } from '@/utils/api';
 
 interface MySaveArticleProps {
   posts: PostData[];
@@ -30,21 +29,44 @@ export default function MySaveArticle({
   onPostDeleted,
 }: MySaveArticleProps) {
   const [selectedArticle, setSelectedArticle] = useState<PostData | null>(null);
+  const [savedPosts, setSavedPosts] = useState<PostData[]>([]);
+  const [savedPostsLoading, setSavedPostsLoading] = useState(true);
 
-  // Get saved post IDs from localStorage
-  const getSavedPostIds = (): string[] => {
-    if (typeof window === 'undefined') return [];
-    const savedPosts = JSON.parse(
-      localStorage.getItem('athlinked_saved_posts') || '[]'
-    );
-    return savedPosts;
-  };
+  useEffect(() => {
+    const fetchSavedPosts = async () => {
+      if (!currentUserId) {
+        setSavedPosts([]);
+        setSavedPostsLoading(false);
+        return;
+      }
+
+      try {
+        setSavedPostsLoading(true);
+        const data = await apiGet<{
+          success: boolean;
+          posts?: PostData[];
+          message?: string;
+        }>(`/posts/saved/${currentUserId}?limit=50`);
+
+        if (data.success && Array.isArray(data.posts)) {
+          setSavedPosts(data.posts);
+        } else {
+          console.error('Saved posts API returned unsuccessful response:', data);
+          setSavedPosts([]);
+        }
+      } catch (error) {
+        console.error('Error fetching saved posts:', error);
+        setSavedPosts([]);
+      } finally {
+        setSavedPostsLoading(false);
+      }
+    };
+
+    fetchSavedPosts();
+  }, [currentUserId]);
 
   // Filter posts to show only saved articles
-  const savedPostIds = getSavedPostIds();
-  const filteredArticles = posts.filter(
-    post => savedPostIds.includes(post.id) && post.post_type === 'article'
-  );
+  const filteredArticles = savedPosts.filter(post => post.post_type === 'article');
 
   // Get thumbnail URL for an article with proper URL formatting
   const getThumbnailUrl = (post: PostData): string | null => {
@@ -58,7 +80,7 @@ export default function MySaveArticle({
     return getResourceUrl(mediaUrl) || mediaUrl;
   };
 
-  if (loading) {
+  if (loading || savedPostsLoading) {
     return (
       <div className="text-center py-8 text-gray-500">
         Loading saved articles...
