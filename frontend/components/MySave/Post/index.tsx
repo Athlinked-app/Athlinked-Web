@@ -5,8 +5,7 @@ import Image from 'next/image';
 import { Play, X, Calendar } from 'lucide-react';
 import { type PostData } from '@/components/Post';
 import Post from '@/components/Post';
-import { getResourceUrl } from '@/utils/api';
-import { API_BASE_URL } from '@/utils/config';
+import { apiGet, getResourceUrl } from '@/utils/api';
 
 interface MySavePostProps {
   posts: PostData[];
@@ -30,25 +29,49 @@ export default function MySavePost({
   onPostDeleted,
 }: MySavePostProps) {
   const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
+  const [savedPosts, setSavedPosts] = useState<PostData[]>([]);
+  const [savedPostsLoading, setSavedPostsLoading] = useState(true);
 
-  // Get saved post IDs from localStorage
-  const getSavedPostIds = (): string[] => {
-    if (typeof window === 'undefined') return [];
-    const savedPosts = JSON.parse(
-      localStorage.getItem('athlinked_saved_posts') || '[]'
-    );
-    return savedPosts;
-  };
+  useEffect(() => {
+    const fetchSavedPosts = async () => {
+      if (!currentUserId) {
+        setSavedPosts([]);
+        setSavedPostsLoading(false);
+        return;
+      }
+
+      try {
+        setSavedPostsLoading(true);
+        const data = await apiGet<{
+          success: boolean;
+          posts?: PostData[];
+          message?: string;
+        }>(`/posts/saved/${currentUserId}?limit=50`);
+
+        if (data.success && Array.isArray(data.posts)) {
+          setSavedPosts(data.posts);
+        } else {
+          console.error('Saved posts API returned unsuccessful response:', data);
+          setSavedPosts([]);
+        }
+      } catch (error) {
+        console.error('Error fetching saved posts:', error);
+        setSavedPosts([]);
+      } finally {
+        setSavedPostsLoading(false);
+      }
+    };
+
+    fetchSavedPosts();
+  }, [currentUserId]);
 
   // Filter posts to show only saved posts (photo, video, text, and event posts, not articles)
-  const savedPostIds = getSavedPostIds();
-  const filteredPosts = posts.filter(
+  const filteredPosts = savedPosts.filter(
     post =>
-      savedPostIds.includes(post.id) &&
-      (post.post_type === 'photo' ||
-        post.post_type === 'video' ||
-        post.post_type === 'text' ||
-        post.post_type === 'event')
+      post.post_type === 'photo' ||
+      post.post_type === 'video' ||
+      post.post_type === 'text' ||
+      post.post_type === 'event'
   );
 
   // Get thumbnail URL for a post with proper URL formatting
@@ -63,7 +86,7 @@ export default function MySavePost({
     return getResourceUrl(mediaUrl) || mediaUrl;
   };
 
-  if (loading) {
+  if (loading || savedPostsLoading) {
     return (
       <div className="text-center py-8 text-gray-500">
         Loading saved posts...

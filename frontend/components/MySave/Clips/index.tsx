@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Play, X } from 'lucide-react';
-import { getResourceUrl } from '@/utils/api';
-import { API_BASE_URL } from '@/utils/config';
+import { apiGet, getResourceUrl } from '@/utils/api';
 
 interface Clip {
   id: string;
@@ -36,45 +35,25 @@ export default function MySaveClips({
   const [loading, setLoading] = useState(true);
   const [selectedClip, setSelectedClip] = useState<Clip | null>(null);
 
-  // Get saved clip IDs from localStorage
-  const getSavedClipIds = (): string[] => {
-    if (typeof window === 'undefined') return [];
-    const savedClips = JSON.parse(
-      localStorage.getItem('athlinked_saved_clips') || '[]'
-    );
-    return savedClips;
-  };
-
-  // Fetch all clips from API
+  // Fetch saved clips from API
   useEffect(() => {
     const fetchClips = async () => {
+      if (!currentUserId) {
+        setClips([]);
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
-        const response = await fetch(
-          `${API_BASE_URL}/api/clips?page=1&limit=50`
-        );
+        const data = await apiGet<{
+          success: boolean;
+          clips?: any[];
+          message?: string;
+        }>(`/clips/saved/${currentUserId}?limit=50`);
 
-        if (!response.ok) {
-          console.error(
-            'Failed to fetch clips:',
-            response.status,
-            response.statusText
-          );
-          setClips([]);
-          return;
-        }
+        console.log('Saved clips API response:', data);
 
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          console.error('Non-JSON response from clips API');
-          setClips([]);
-          return;
-        }
-
-        const data = await response.json();
-        console.log('Clips API response:', data);
-
-        if (data.success && data.clips) {
+        if (data.success && Array.isArray(data.clips)) {
           const fallbackName = currentUsername || 'User';
           const transformedClips: Clip[] = data.clips.map((clip: any) => ({
             id: clip.id,
@@ -88,7 +67,7 @@ export default function MySaveClips({
             likes: clip.like_count || 0,
             shares: 0,
             commentCount: clip.comment_count || 0,
-            user_id: clip.user_id,
+            user_id: clip.user_id ?? clip.userId ?? clip.user?.id,
           }));
           setClips(transformedClips);
         } else {
@@ -104,13 +83,7 @@ export default function MySaveClips({
     };
 
     fetchClips();
-  }, [currentUsername]);
-
-  // Filter clips to show only saved clips
-  const savedClipIds = getSavedClipIds();
-  const filteredClips = clips.filter(clip => {
-    return savedClipIds.includes(clip.id);
-  });
+  }, [currentUserId, currentUsername]);
 
   if (loading) {
     return (
@@ -120,7 +93,7 @@ export default function MySaveClips({
     );
   }
 
-  if (filteredClips.length === 0) {
+  if (clips.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
         No saved clips found.
@@ -132,7 +105,7 @@ export default function MySaveClips({
     <>
       {/* Grid Layout */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {filteredClips.map(clip => {
+        {clips.map(clip => {
           return (
             <div
               key={clip.id}
