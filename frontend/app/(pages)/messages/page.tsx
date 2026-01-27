@@ -11,11 +11,13 @@ import {
   X,
   MoreVertical,
   Trash2,
+  Play,
 } from 'lucide-react';
 import io, { Socket } from 'socket.io-client';
 import EmojiPicker from '@/components/Message/EmojiPicker';
 import GIFPicker from '@/components/Message/GIFPicker';
 import FileUpload from '@/components/Message/FileUpload';
+import Post, { type PostData } from '@/components/Post';
 import { getResourceUrl } from '@/utils/config';
 interface Conversation {
   conversation_id: string;
@@ -74,6 +76,10 @@ function MessagesPageContent() {
   const [hoveredMessageId, setHoveredMessageId] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [showConversationMenu, setShowConversationMenu] = useState(false);
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState<PostData | null>(null);
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [videoModalUrl, setVideoModalUrl] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1069,6 +1075,103 @@ function MessagesPageContent() {
     conv.other_user_username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const resolvePostIdFromPostData = (pd: any): string | null => {
+    const direct = pd?.id ?? pd?.post_id ?? pd?.postId;
+    if (direct) return String(direct);
+
+    const url = pd?.post_url;
+    if (typeof url !== 'string' || !url.trim()) return null;
+
+    try {
+      const u = new URL(url, window.location.origin);
+      const qp = u.searchParams.get('postId') || u.searchParams.get('id');
+      if (qp) return qp;
+      const parts = u.pathname.split('/').filter(Boolean);
+      return parts[parts.length - 1] || null;
+    } catch {
+      // Try best-effort parse for non-standard URLs
+      const parts = url.split('/').filter(Boolean);
+      return parts[parts.length - 1] || null;
+    }
+  };
+
+  const mapPostDataToPost = (pd: any): PostData => {
+    const id = resolvePostIdFromPostData(pd) || 'unknown';
+
+    return {
+      id,
+      username: pd?.username || 'User',
+      user_profile_url: pd?.user_profile_url ?? null,
+      user_id: pd?.user_id ?? undefined,
+      user_type: pd?.user_type ?? undefined,
+      post_type: pd?.post_type ?? undefined,
+      caption: pd?.caption ?? null,
+      media_url: pd?.media_url ?? null,
+      article_title: pd?.article_title ?? null,
+      article_body: pd?.article_body ?? null,
+      event_title: pd?.event_title ?? null,
+      event_date: pd?.event_date ?? null,
+      event_location: pd?.event_location ?? null,
+      event_type: pd?.event_type ?? null,
+      image_url: pd?.image_url ?? null,
+      description: pd?.description ?? null,
+      like_count: Number(pd?.like_count ?? 0),
+      comment_count: Number(pd?.comment_count ?? 0),
+      save_count: Number(pd?.save_count ?? 0),
+      created_at: pd?.created_at ?? new Date().toISOString(),
+    };
+  };
+
+  const isClipPostData = (pd: any): boolean => {
+    // Heuristics: clips are commonly linked to /clips or have clip ids/types
+    const url = typeof pd?.post_url === 'string' ? pd.post_url : '';
+
+    if (pd?.clip_id || pd?.clipId) return true;
+    if (pd?.clip_url || pd?.clipUrl) return true;
+    if (pd?.type === 'clip' || pd?.resource_type === 'clip') return true;
+    if (pd?.post_type === 'clip') return true;
+
+    if (url) {
+      const lower = url.toLowerCase();
+      if (lower.includes('/clips') || lower.includes('/clip')) return true;
+
+      try {
+        const u = new URL(url, window.location.origin);
+        const path = u.pathname.toLowerCase();
+        if (path.includes('/clips') || path.includes('/clip')) return true;
+
+        // Common query param patterns
+        const qp =
+          u.searchParams.get('type') ||
+          u.searchParams.get('resource') ||
+          u.searchParams.get('resource_type');
+        if (qp && qp.toLowerCase() === 'clip') return true;
+
+        const clipId =
+          u.searchParams.get('clipId') ||
+          u.searchParams.get('clip_id') ||
+          u.searchParams.get('clip');
+        if (clipId) return true;
+      } catch {
+        // ignore
+      }
+    }
+
+    return false;
+  };
+
+  const getVideoUrlFromPostData = (pd: any): string | null => {
+    const raw =
+      pd?.media_url ||
+      pd?.video_url ||
+      pd?.videoUrl ||
+      pd?.clip_url ||
+      pd?.clipUrl ||
+      pd?.url;
+    if (!raw || typeof raw !== 'string') return null;
+    return getResourceUrl(raw) || raw;
+  };
+
   return (
     <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
       <Header
@@ -1124,7 +1227,7 @@ function MessagesPageContent() {
                         className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center flex-shrink-0">
+                          <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center shrink-0">
                             {user.profile_url ? (
                               <img
                                 src={getProfileUrl(user.profile_url) || ''}
@@ -1175,7 +1278,7 @@ function MessagesPageContent() {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center shrink-0">
                         {conv.other_user_profile_image ? (
                           <img
                             src={
@@ -1196,7 +1299,7 @@ function MessagesPageContent() {
                             {conv.other_user_username}
                           </span>
                           {conv.unread_count > 0 && (
-                            <span className="bg-[#CB9729] text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center flex-shrink-0">
+                            <span className="bg-[#CB9729] text-white text-xs font-semibold rounded-full w-5 h-5 flex items-center justify-center shrink-0">
                               {conv.unread_count}
                             </span>
                           )}
@@ -1206,7 +1309,7 @@ function MessagesPageContent() {
                             {conv.last_message || 'No messages yet'}
                           </span>
                           {conv.last_message_time && (
-                            <span className="text-xs text-black ml-2 flex-shrink-0">
+                            <span className="text-xs text-black ml-2 shrink-0">
                               {formatTime(conv.last_message_time)}
                             </span>
                           )}
@@ -1296,7 +1399,7 @@ function MessagesPageContent() {
                           onMouseLeave={() => setHoveredMessageId(null)}
                         >
                           {!isOwnMessage && (
-                            <div className="w-8 h-8 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center flex-shrink-0">
+                            <div className="w-8 h-8 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center shrink-0">
                               {selectedConversation.other_user_profile_image ? (
                                 <img
                                   src={
@@ -1328,7 +1431,7 @@ function MessagesPageContent() {
                                 <div className="w-full border border-gray-200 rounded-lg overflow-hidden bg-white max-w-md">
                                   <div className="p-3 border-b border-gray-200 flex items-center gap-2">
                                     {msg.post_data.user_profile_url && (
-                                      <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex-shrink-0">
+                                      <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0">
                                         <img
                                           src={
                                             getResourceUrl(
@@ -1428,15 +1531,19 @@ function MessagesPageContent() {
                                         {msg.post_data.caption}
                                       </p>
                                     )}
-                                    {msg.post_data.post_url && (
-                                      <a
-                                        href={msg.post_data.post_url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
+                                    {msg.post_data.post_url &&
+                                      !isClipPostData(msg.post_data) && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const mapped = mapPostDataToPost(msg.post_data);
+                                          setSelectedPost(mapped);
+                                          setIsPostModalOpen(true);
+                                        }}
                                         className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
                                       >
                                         View Post →
-                                      </a>
+                                      </button>
                                     )}
                                   </div>
                                 </div>
@@ -1478,15 +1585,35 @@ function MessagesPageContent() {
                                   } else if (isVideo) {
                                     return (
                                       <div className="w-full">
-                                        <video
-                                          src={mediaUrl}
-                                          controls
-                                          className="w-full h-auto max-w-md rounded-lg"
-                                          onError={e => {
-                                            e.currentTarget.style.display =
-                                              'none';
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            setVideoModalUrl(mediaUrl);
+                                            setIsVideoModalOpen(true);
                                           }}
-                                        />
+                                          className="relative w-full max-w-md rounded-lg overflow-hidden"
+                                          aria-label="Open video"
+                                        >
+                                          <video
+                                            src={mediaUrl}
+                                            className="w-full h-auto rounded-lg"
+                                            muted
+                                            playsInline
+                                            preload="metadata"
+                                            onError={e => {
+                                              e.currentTarget.style.display =
+                                                'none';
+                                            }}
+                                          />
+                                          <div className="absolute inset-0 flex items-center justify-center bg-black/10">
+                                            <div className="w-12 h-12 rounded-full bg-black/60 flex items-center justify-center">
+                                              <Play
+                                                className="w-6 h-6 text-white ml-0.5"
+                                                fill="currentColor"
+                                              />
+                                            </div>
+                                          </div>
+                                        </button>
                                       </div>
                                     );
                                   } else {
@@ -1671,6 +1798,80 @@ function MessagesPageContent() {
           </div>
         </div>
       </main>
+
+      {/* Post details modal (opened from "View Post") */}
+      {isPostModalOpen && selectedPost && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => {
+              setIsPostModalOpen(false);
+              setSelectedPost(null);
+            }}
+          />
+
+          <div className="relative z-10 w-full max-w-3xl bg-white rounded-lg sm:rounded-xl shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-gray-900">Post Details</h2>
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => {
+                  setIsPostModalOpen(false);
+                  setSelectedPost(null);
+                }}
+                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            <div className="p-2 sm:p-3">
+              <Post
+                post={selectedPost}
+                currentUserId={currentUser?.id || undefined}
+                currentUserProfileUrl={getProfileUrl(currentUser?.profile_url)}
+                currentUsername={currentUser?.full_name || 'You'}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Video-only modal (for clips/videos) */}
+      {isVideoModalOpen && videoModalUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => {
+              setIsVideoModalOpen(false);
+              setVideoModalUrl(null);
+            }}
+          />
+
+          <div className="relative z-10 w-full max-w-3xl bg-black rounded-lg shadow-2xl overflow-hidden">
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={() => {
+                setIsVideoModalOpen(false);
+                setVideoModalUrl(null);
+              }}
+              className="absolute top-3 right-3 z-20 p-2 rounded-full bg-black/50 hover:bg-black/70 transition-colors"
+            >
+              <X className="w-5 h-5 text-white" />
+            </button>
+
+            <video
+              src={videoModalUrl}
+              controls
+              autoPlay
+              playsInline
+              className="w-full max-h-[80vh] object-contain bg-black"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
