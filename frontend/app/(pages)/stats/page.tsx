@@ -250,7 +250,7 @@ export default function StatsPage() {
   const getSportDisplayName = (sportKey: string) => {
     const normalized = sportKey.toLowerCase().trim();
     // Special cases for display formatting
-    if (normalized === 'basketball') return 'BasketBall';
+    if (normalized === 'basketball') return 'Basketball';
     if (normalized === 'track & field' || normalized === 'track and field')
       return 'Track & Field';
     // Default: capitalize first letter of each word

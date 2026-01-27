@@ -24,16 +24,17 @@ function ForgotPasswordContent() {
     const token = searchParams.get('token');
     if (token) {
       // Check if user is on mobile device
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent
-      );
-      
+      const isMobile =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
+
       if (isMobile) {
         // On mobile, try to redirect to app immediately
         // Universal links should open the app if Android App Links are verified
         // If not verified, redirect to custom scheme as fallback
         const deepLink = `athlinked://forgot-password?token=${encodeURIComponent(token)}`;
-        
+
         // Try to open the app using custom scheme (works even if App Links not verified)
         // This is a fallback - if App Links are verified, the universal link should open the app directly
         const attemptAppOpen = () => {
@@ -42,25 +43,25 @@ function ForgotPasswordContent() {
           iframe.style.display = 'none';
           iframe.src = deepLink;
           document.body.appendChild(iframe);
-          
+
           // Remove iframe after a short delay
           setTimeout(() => {
             document.body.removeChild(iframe);
           }, 1000);
         };
-        
+
         // Try opening app immediately
         attemptAppOpen();
-        
+
         // Also try window.location as backup
         window.location.href = deepLink;
-        
+
         // Fallback: If app doesn't open within 1.5 seconds, show the web form
         const fallbackTimer = setTimeout(() => {
           setResetToken(token);
           setStep('reset');
         }, 1500);
-        
+
         // Clean up timer if component unmounts
         return () => clearTimeout(fallbackTimer);
       } else {
