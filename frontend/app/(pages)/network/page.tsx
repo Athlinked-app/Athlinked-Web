@@ -44,6 +44,29 @@ export default function NetworkPage() {
     [key: string]: boolean;
   }>({});
 
+
+  useEffect(() => {
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{
+        userId: string;
+        isFollowing: boolean;
+      }>).detail;
+
+      if (!detail?.userId) return;
+
+      setFollowStatuses(prev => ({
+        ...prev,
+        [detail.userId]: detail.isFollowing,
+      }));
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('athlinked:follow-changed', handler);
+      return () =>
+        window.removeEventListener('athlinked:follow-changed', handler);
+    }
+  }, []);
+
   // Fetch current user ID
   useEffect(() => {
     const fetchCurrentUserId = async () => {
@@ -68,7 +91,7 @@ export default function NetworkPage() {
               });
             }
           } catch (error) {
-            // If profile fetch fails, use basic info from token
+          
             console.error('Error fetching user profile:', error);
           }
         }
@@ -80,7 +103,7 @@ export default function NetworkPage() {
     fetchCurrentUserId();
   }, []);
 
-  // Fetch followers and following lists
+
   const fetchNetworkData = async () => {
     if (!currentUserId) return;
 
@@ -247,14 +270,25 @@ export default function NetworkPage() {
       );
 
       if (result.success) {
+        const newIsFollowing = !isCurrentlyFollowing;
+
         // Update follow status
         setFollowStatuses(prev => ({
           ...prev,
-          [userId]: !isCurrentlyFollowing,
+          [userId]: newIsFollowing,
         }));
 
-        // Refresh the lists
-        await fetchNetworkData();
+        // Notify other components (Search, RightSideBar, etc.) to update immediately
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('athlinked:follow-changed', {
+              detail: { userId, isFollowing: newIsFollowing },
+            })
+          );
+        }
+
+        // Refresh the lists in background (keeps Followers/Following tabs accurate)
+        fetchNetworkData();
       } else {
         alert(
           result.message ||
