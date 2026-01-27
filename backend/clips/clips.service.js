@@ -220,6 +220,7 @@ async function getClipsFeedService(page = 1, limit = 10, viewerUserId = null) {
  * @returns {Promise<object>} Service result with created comment
  */
 async function addCommentService(clipId, commentData) {
+  let client = null;
   try {
     const { user_id, comment } = commentData;
 
@@ -232,7 +233,7 @@ async function addCommentService(clipId, commentData) {
       throw new Error('Clip not found');
     }
 
-    const client = await pool.connect();
+    client = await pool.connect();
     try {
       await client.query('BEGIN');
 
@@ -314,6 +315,7 @@ async function addCommentService(clipId, commentData) {
  * @returns {Promise<object>} Service result with created reply
  */
 async function replyToCommentService(commentId, replyData) {
+  let client = null;
   try {
     const { user_id, comment } = replyData;
 
@@ -328,7 +330,7 @@ async function replyToCommentService(commentId, replyData) {
 
     const clipId = parentComment.clip_id;
 
-    const client = await pool.connect();
+    client = await pool.connect();
     try {
       await client.query('BEGIN');
 

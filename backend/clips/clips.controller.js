@@ -1,4 +1,5 @@
 const clipsService = require('./clips.service');
+const clipsModel = require('./clips.model');
 
 /**
  * Controller to handle create clip request

@@ -31,7 +31,7 @@ interface Position {
 
 function getSportDisplayName(sportKey: string) {
   const normalized = sportKey.toLowerCase().trim();
-  if (normalized === 'basketball') return 'BasketBall';
+  if (normalized === 'basketball') return 'Basketball';
   if (normalized === 'track & field' || normalized === 'track and field')
     return 'Track & Field';
   return sportKey

@@ -42,6 +42,29 @@ export default function RightSideBar({
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  useEffect(() => {
+    // Sync follow state instantly across the app (no refresh needed)
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{
+        userId: string;
+        isFollowing: boolean;
+      }>).detail;
+
+      if (!detail?.userId) return;
+
+      setPeople(prev =>
+        prev.map(p =>
+          p.id === detail.userId ? { ...p, isFollowing: detail.isFollowing } : p
+        )
+      );
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('athlinked:follow-changed', handler);
+      return () => window.removeEventListener('athlinked:follow-changed', handler);
+    }
+  }, []);
+
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
     return name
@@ -228,13 +251,23 @@ export default function RightSideBar({
       });
 
       if (result.success) {
+        const newIsFollowing = !isCurrentlyFollowing;
         setPeople(prevPeople =>
           prevPeople.map(person =>
             person.id === id
-              ? { ...person, isFollowing: !isCurrentlyFollowing }
+              ? { ...person, isFollowing: newIsFollowing }
               : person
           )
         );
+
+        // Notify other components (e.g. Search page) to update immediately
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('athlinked:follow-changed', {
+              detail: { userId: id, isFollowing: newIsFollowing },
+            })
+          );
+        }
       } else {
         alert(
           result.message ||
