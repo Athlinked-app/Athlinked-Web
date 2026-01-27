@@ -353,8 +353,8 @@ export default function NavigationBar({
           </div>
         </div>
       </div>
-      <nav className="flex-1 p-1 sm:p-2 md:p-3 overflow-y-auto">
-        <ul className="space-y-0.5 md:space-y-1">
+      <nav className="flex-1 p-1 sm:p-2 md:p-3 overflow-y-hidden">
+        <ul className="space-y-0.5 md:space-y-0">
           {filteredMenuItems.map(item => {
             const Icon = item.icon;
             const isActive = activeItem === item.id;
@@ -418,7 +418,7 @@ export default function NavigationBar({
                 {href !== '#' ? (
                   <Link
                     href={href}
-                    className={`flex items-center justify-center md:justify-start gap-2 md:gap-3 px-2 md:px-3 lg:px-4 py-2 md:py-2.5 lg:py-3 rounded-lg transition-colors relative ${
+                    className={`flex items-center justify-center md:justify-start gap-2 md:gap-3 px-2 md:px-3 lg:px-4 py-2 md:py-2.5 lg:py-2.5 rounded-lg transition-colors relative ${
                       isActive
                         ? ' text-[#CB9729]'
                         : 'text-gray-700 hover:bg-gray-100'

@@ -50,7 +50,9 @@ export default function MySaveClips({
     const fetchClips = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/api/clips?page=1&limit=50`);
+        const response = await fetch(
+          `${API_BASE_URL}/api/clips?page=1&limit=50`
+        );
 
         if (!response.ok) {
           console.error(

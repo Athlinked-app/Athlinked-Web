@@ -138,23 +138,23 @@ export default function ClipsPage() {
               author: comment.username || 'User',
               authorAvatar:
                 comment.user_profile_url &&
-                  comment.user_profile_url.trim() !== ''
+                comment.user_profile_url.trim() !== ''
                   ? comment.user_profile_url
                   : null,
               text: comment.comment,
               hasReplies: comment.replies && comment.replies.length > 0,
               replies: comment.replies
                 ? comment.replies.map((reply: any) => ({
-                  id: reply.id,
-                  author: reply.username || 'User',
-                  authorAvatar:
-                    reply.user_profile_url &&
+                    id: reply.id,
+                    author: reply.username || 'User',
+                    authorAvatar:
+                      reply.user_profile_url &&
                       reply.user_profile_url.trim() !== ''
-                      ? reply.user_profile_url
-                      : null,
-                  text: reply.comment,
-                  parent_username: reply.parent_username || null,
-                }))
+                        ? reply.user_profile_url
+                        : null,
+                    text: reply.comment,
+                    parent_username: reply.parent_username || null,
+                  }))
                 : [],
             })
           );
@@ -569,10 +569,10 @@ export default function ClipsPage() {
       try {
         const { apiGet } = await import('@/utils/api');
         const savedMap: { [key: string]: boolean } = {};
-        
+
         // Check each clip's save status
         await Promise.all(
-          reels.map(async (reel) => {
+          reels.map(async reel => {
             try {
               const data = await apiGet<{
                 success: boolean;
@@ -584,7 +584,7 @@ export default function ClipsPage() {
             }
           })
         );
-        
+
         setSavedClips(savedMap);
       } catch (error) {
         console.error('Error checking save status:', error);
@@ -989,7 +989,10 @@ export default function ClipsPage() {
     if (Number.isNaN(date.getTime())) return '';
 
     const now = Date.now();
-    const diffInSeconds = Math.max(0, Math.floor((now - date.getTime()) / 1000));
+    const diffInSeconds = Math.max(
+      0,
+      Math.floor((now - date.getTime()) / 1000)
+    );
 
     // < 1 hour: show minutes for fresh uploads
     if (diffInSeconds < 3600) {
@@ -1189,7 +1192,6 @@ export default function ClipsPage() {
                   <div
                     key={reel.id}
                     className="w-full flex items-center justify-center px-2 sm:px-3 md:px-4 lg:px-6 relative snap-start"
-               
                   >
                     <div
                       className="
@@ -1325,7 +1327,6 @@ export default function ClipsPage() {
                         </div>
                       </div>
 
-                    
                       <div
                         className="absolute right-1.5 sm:right-2 md:right-3 lg:right-4 bottom-24 sm:bottom-28 md:bottom-32 lg:bottom-36 xl:bottom-10 2xl:bottom-26 flex flex-col items-center gap-2 sm:gap-2.5 md:gap-3 lg:gap-4 xl:gap-5"
                         style={{ pointerEvents: 'auto' }}
@@ -1427,8 +1428,8 @@ export default function ClipsPage() {
               <div className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-4 space-y-3 sm:space-y-4 relative">
                 {selectedReel ? (
                   selectedReel.comments &&
-                    Array.isArray(selectedReel.comments) &&
-                    selectedReel.comments.length > 0 ? (
+                  Array.isArray(selectedReel.comments) &&
+                  selectedReel.comments.length > 0 ? (
                     <>
                       {selectedReel.comments.map(comment => (
                         <div
@@ -1562,7 +1563,7 @@ export default function ClipsPage() {
                                     placeholder={`Reply to ${comment.author}...`}
                                     value={
                                       replyTexts[
-                                      `${selectedReel.id}-${comment.id}`
+                                        `${selectedReel.id}-${comment.id}`
                                       ] || ''
                                     }
                                     onChange={e =>
@@ -1671,7 +1672,7 @@ export default function ClipsPage() {
                 <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3">
                   <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-gray-300 overflow-hidden shrink-0 flex items-center justify-center border border-gray-200">
                     {currentUser?.profile_url &&
-                      currentUser.profile_url.trim() !== '' ? (
+                    currentUser.profile_url.trim() !== '' ? (
                       <img
                         src={getProfileUrl(currentUser.profile_url)}
                         alt={currentUser.full_name || 'User'}
@@ -1686,11 +1687,11 @@ export default function ClipsPage() {
                               'text-black font-semibold text-[10px] sm:text-xs';
                             fallback.textContent = currentUser?.full_name
                               ? currentUser.full_name
-                                .split(' ')
-                                .map(word => word[0])
-                                .join('')
-                                .toUpperCase()
-                                .slice(0, 2)
+                                  .split(' ')
+                                  .map(word => word[0])
+                                  .join('')
+                                  .toUpperCase()
+                                  .slice(0, 2)
                               : 'U';
                             parent.appendChild(fallback);
                           }
@@ -1700,18 +1701,18 @@ export default function ClipsPage() {
                       <span className="text-black font-semibold text-[10px] sm:text-xs">
                         {currentUser?.full_name
                           ? currentUser.full_name
-                            .split(' ')
-                            .map(word => word[0])
-                            .join('')
-                            .toUpperCase()
-                            .slice(0, 2)
-                          : userData?.full_name
-                            ? userData.full_name
                               .split(' ')
                               .map(word => word[0])
                               .join('')
                               .toUpperCase()
                               .slice(0, 2)
+                          : userData?.full_name
+                            ? userData.full_name
+                                .split(' ')
+                                .map(word => word[0])
+                                .join('')
+                                .toUpperCase()
+                                .slice(0, 2)
                             : 'U'}
                       </span>
                     )}
@@ -1779,10 +1780,11 @@ export default function ClipsPage() {
                   }
                 }}
                 disabled={currentReelIndex === 0}
-                className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-white border border-gray-300 flex items-center justify-center transition-colors shadow-lg ${currentReelIndex === 0
+                className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-white border border-gray-300 flex items-center justify-center transition-colors shadow-lg ${
+                  currentReelIndex === 0
                     ? 'opacity-50 cursor-not-allowed'
                     : 'hover:bg-gray-50'
-                  }`}
+                }`}
               >
                 <ChevronUp
                   size={16}
@@ -1804,10 +1806,11 @@ export default function ClipsPage() {
                   }
                 }}
                 disabled={currentReelIndex === reels.length - 1}
-                className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-white border border-gray-300 flex items-center justify-center transition-colors shadow-lg ${currentReelIndex === reels.length - 1
+                className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-white border border-gray-300 flex items-center justify-center transition-colors shadow-lg ${
+                  currentReelIndex === reels.length - 1
                     ? 'opacity-50 cursor-not-allowed'
                     : 'hover:bg-gray-50'
-                  }`}
+                }`}
               >
                 <ChevronDown
                   size={16}

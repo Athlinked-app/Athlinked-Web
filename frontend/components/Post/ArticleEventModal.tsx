@@ -1,11 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, type ChangeEvent } from 'react';
-import {
-  X,
-  Image as ImageIcon,
-  UploadCloud,
-} from 'lucide-react';
+import { X, Image as ImageIcon, UploadCloud } from 'lucide-react';
 import MentionInputField from '../Mention/MentionInputField';
 
 type EventType =
@@ -159,7 +155,9 @@ export default function ArticleEventModal({
     }
 
     const ensuredEventType =
-      postType === 'event' ? (selectedEventType ?? DEFAULT_EVENT_TYPE) : undefined;
+      postType === 'event'
+        ? (selectedEventType ?? DEFAULT_EVENT_TYPE)
+        : undefined;
 
     const normalizedTitle = isEvent
       ? title.trim() ||
@@ -169,8 +167,7 @@ export default function ArticleEventModal({
 
     const submitData = {
       title: normalizedTitle,
-      body:
-        postType === 'article' ? body.trim() : body.trim() || undefined,
+      body: postType === 'article' ? body.trim() : body.trim() || undefined,
       date: postType === 'event' ? date : undefined,
       location: postType === 'event' ? location.trim() : undefined,
       caption: caption.trim() || undefined,
@@ -178,8 +175,7 @@ export default function ArticleEventModal({
         postType === 'event'
           ? selectedImage || undefined
           : articleImage || undefined,
-      eventType:
-        postType === 'event' ? ensuredEventType : undefined,
+      eventType: postType === 'event' ? ensuredEventType : undefined,
     };
 
     setTitle('');
@@ -264,7 +260,7 @@ export default function ArticleEventModal({
                   <div className="flex flex-col items-center gap-2">
                     <ImageIcon className="w-12 h-12 text-gray-400" />
                     <span className="text-gray-600 font-medium">
-                      Select Image/Video 
+                      Select Image/Video
                     </span>
                   </div>
                 )}
@@ -336,12 +332,10 @@ export default function ArticleEventModal({
             </div>
           )}
 
-       
-
           {postType === 'article' && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description *
+                Description *
               </label>
               <textarea
                 value={body}
@@ -355,7 +349,6 @@ export default function ArticleEventModal({
 
           {postType === 'event' && (
             <>
-      
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Date *
@@ -409,9 +402,7 @@ export default function ArticleEventModal({
             type="button"
             onClick={handleSubmit}
             disabled={
-              isUploading ||
-              (isArticle && !body.trim()) ||
-              (isEvent && !date)
+              isUploading || (isArticle && !body.trim()) || (isEvent && !date)
             }
             className={`px-6 py-2 rounded-md font-semibold transition-colors disabled:cursor-not-allowed flex items-center gap-2 ${
               isUploading

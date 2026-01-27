@@ -241,7 +241,9 @@ export default function AcademicBackgrounds({
     }
   };
 
-  const getPdfUrl = (degreePdf: AcademicBackground['degreePdf']): string | null => {
+  const getPdfUrl = (
+    degreePdf: AcademicBackground['degreePdf']
+  ): string | null => {
     if (!degreePdf) return null;
     if (typeof degreePdf === 'string') {
       if (degreePdf.startsWith('http://') || degreePdf.startsWith('https://')) {
@@ -509,7 +511,9 @@ function ViewAcademicBackgroundPopup({
 }) {
   if (!open) return null;
 
-  const getPdfUrl = (degreePdf: AcademicBackground['degreePdf']): string | null => {
+  const getPdfUrl = (
+    degreePdf: AcademicBackground['degreePdf']
+  ): string | null => {
     if (!degreePdf) return null;
     if (typeof degreePdf === 'string') {
       if (degreePdf.startsWith('http://') || degreePdf.startsWith('https://')) {
