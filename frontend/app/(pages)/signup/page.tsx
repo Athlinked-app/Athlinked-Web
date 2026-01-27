@@ -17,7 +17,8 @@ function SignupContent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoadingOTP, setIsLoadingOTP] = useState(false);
   const [isGoogleUser, setIsGoogleUser] = useState(false);
-
+  const [isCompletingGoogleSignup, setIsCompletingGoogleSignup] =
+    useState(false);
   useEffect(() => {
     if (isAuthenticated()) {
       router.push('/home');
@@ -156,7 +157,10 @@ function SignupContent() {
       }
 
       // LAST STEP: Create user in database with ALL data
+      // LAST STEP: Create user in database with ALL data
       const googleData = JSON.parse(googleDataStr);
+
+      setIsCompletingGoogleSignup(true); // ADD THIS LINE
 
       try {
         const profileData: any = {
@@ -236,6 +240,7 @@ function SignupContent() {
       } catch (error) {
         console.error('Error completing Google signup:', error);
         alert('Failed to complete signup. Please try again.');
+        setIsCompletingGoogleSignup(false); // ADD THIS LINE
         return;
       }
     }
@@ -352,6 +357,7 @@ function SignupContent() {
             showConfirmPassword={showConfirmPassword}
             isLoadingOTP={isLoadingOTP}
             isGoogleUser={isGoogleUser}
+            isCompletingGoogleSignup={isCompletingGoogleSignup} // ADD THIS LINE
             onFormDataChange={setFormData}
             onUserTypeSelect={setSelectedUserType}
             onContinue={handleContinue}

@@ -11,6 +11,8 @@ interface SignupFormStepsProps {
   showConfirmPassword: boolean;
   isLoadingOTP?: boolean;
   isGoogleUser?: boolean; //   ADD THIS
+  isCompletingGoogleSignup?: boolean; // ADD THIS LINE
+
   onFormDataChange: (data: any) => void;
   onUserTypeSelect: (type: string) => void;
   onContinue: () => void;
@@ -27,6 +29,8 @@ export default function SignupFormSteps({
   showConfirmPassword,
   isLoadingOTP = false,
   isGoogleUser = false, //   ADD THIS
+  isCompletingGoogleSignup = false, // ADD THIS LINE
+
   onFormDataChange,
   onUserTypeSelect,
   onContinue,
@@ -71,6 +75,7 @@ export default function SignupFormSteps({
         formData={formData}
         onFormDataChange={onFormDataChange}
         isLoadingOTP={isLoadingOTP}
+        isCompletingGoogleSignup={isCompletingGoogleSignup} // ADD THIS LINE
         onContinue={onContinue}
       />
     );

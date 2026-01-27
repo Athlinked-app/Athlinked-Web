@@ -4,6 +4,7 @@ interface ParentDetailsFormProps {
   formData: any;
   onFormDataChange: (data: any) => void;
   isLoadingOTP?: boolean;
+  isCompletingGoogleSignup?: boolean; // ADD THIS LINE
   onContinue: () => void;
 }
 
@@ -11,6 +12,7 @@ export default function ParentDetailsForm({
   formData,
   onFormDataChange,
   isLoadingOTP = false,
+  isCompletingGoogleSignup = false, // ADD THIS LINE
   onContinue,
 }: ParentDetailsFormProps) {
   return (
@@ -53,10 +55,10 @@ export default function ParentDetailsForm({
 
       <button
         onClick={onContinue}
-        disabled={isLoadingOTP}
+        disabled={isLoadingOTP || isCompletingGoogleSignup} // CHANGE THIS LINE
         className="w-full bg-[#CB9729] text-gray-800 font-medium py-3 rounded-lg transition-all mb-4 text-sm sm:text-base flex items-center justify-center gap-2 disabled:opacity-70"
       >
-        {isLoadingOTP && (
+        {(isLoadingOTP || isCompletingGoogleSignup) && ( // CHANGE THIS LINE
           <svg
             className="animate-spin h-5 w-5 text-gray-800"
             xmlns="http://www.w3.org/2000/svg"
@@ -78,7 +80,14 @@ export default function ParentDetailsForm({
             ></path>
           </svg>
         )}
-        <span>{isLoadingOTP ? 'Sending OTP...' : 'Continue'}</span>
+        <span>
+          {isCompletingGoogleSignup
+            ? 'Creating Account...'
+            : isLoadingOTP
+              ? 'Sending OTP...'
+              : 'Continue'}
+        </span>{' '}
+        {/* CHANGE THIS ENTIRE SPAN */}
       </button>
 
       <div className="text-center text-xs sm:text-sm text-gray-600">

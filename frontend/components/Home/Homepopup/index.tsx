@@ -22,6 +22,11 @@ export default function HomePopup({
     // Only check if we have a userId
     if (!userId) return;
 
+    // ✅ NEW: Don't show popup if profile is 100% complete
+    if (profileCompletion >= 100) {
+      return;
+    }
+
     // Check localStorage for permanent hide (when user checked "don't show again")
     const permanentHideKey = `athlinked_hide_profile_popup_${userId}`;
     const isPermanentlyHidden = localStorage.getItem(permanentHideKey);
@@ -63,6 +68,28 @@ export default function HomePopup({
       }
     }
 
+    // ✅ NEW: Check if user clicked "Complete Profile" in this session
+    const completeProfileKey = `athlinked_clicked_complete_profile_${userId}`;
+    const completeProfileData = sessionStorage.getItem(completeProfileKey);
+
+    if (completeProfileData) {
+      try {
+        const parsed = JSON.parse(completeProfileData);
+        const savedSessionId = parsed.sessionId;
+
+        // Only hide if it's the same session
+        if (savedSessionId === currentSessionId) {
+          return; // Don't show popup this session
+        } else {
+          // Different session (new login), clear old data
+          sessionStorage.removeItem(completeProfileKey);
+        }
+      } catch (error) {
+        // Invalid data, clear it
+        sessionStorage.removeItem(completeProfileKey);
+      }
+    }
+
     // Show popup after a small delay for better UX
     const timer = setTimeout(() => {
       setShowPopup(true);
@@ -71,7 +98,7 @@ export default function HomePopup({
     return () => {
       clearTimeout(timer);
     };
-  }, [userId]);
+  }, [userId, profileCompletion]); // ✅ Added profileCompletion to dependencies
 
   const handleSkip = () => {
     if (userId) {
@@ -98,7 +125,18 @@ export default function HomePopup({
   };
 
   const handleCompleteProfile = () => {
+    // ✅ NEW: Store that user clicked "Complete Profile" in this session
+    if (userId) {
+      const sessionKey = `athlinked_session_id_${userId}`;
+      const currentSessionId = sessionStorage.getItem(sessionKey);
+      const completeProfileKey = `athlinked_clicked_complete_profile_${userId}`;
+      const dataToStore = JSON.stringify({ sessionId: currentSessionId });
+
+      sessionStorage.setItem(completeProfileKey, dataToStore);
+    }
+
     setShowPopup(false);
+
     if (onCompleteProfile) {
       onCompleteProfile();
     } else {
