@@ -81,7 +81,9 @@ async function startSignupService(userData) {
           `ℹ️ Parent account already exists for ${parentEmail}, skipping parent signup email`
         );
       } else {
-        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        // Use utility function to get frontend URL (uses deployed URL in production)
+        const { getFrontendUrl } = require('../utils/deepLinkUtils');
+        const baseUrl = getFrontendUrl();
         const signupLink = username
           ? `${baseUrl}/parent-signup?username=${encodeURIComponent(username)}`
           : `${baseUrl}/parent-signup?email=${encodeURIComponent(input.toLowerCase())}`;
@@ -89,6 +91,7 @@ async function startSignupService(userData) {
         console.log(
           `📧 Attempting to send parent signup link to: ${parentEmail}`
         );
+        console.log(`🔗 Parent signup link: ${signupLink}`);
         try {
           await sendParentSignupLink(parentEmail, username || input, signupLink);
         } catch (error) {

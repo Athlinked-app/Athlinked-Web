@@ -4,6 +4,22 @@
  */
 
 /**
+ * Get frontend URL (for web links)
+ * @returns {string} Frontend URL, defaults to deployed URL in production
+ */
+function getFrontendUrl() {
+  // Use FRONTEND_URL if set, otherwise use deployed URL
+  if (process.env.FRONTEND_URL) {
+    return process.env.FRONTEND_URL;
+  }
+  
+  // Default to deployed URL (not localhost)
+  return process.env.NODE_ENV === 'production' 
+    ? 'https://athlinked.randomw.dev'
+    : 'http://localhost:3000';
+}
+
+/**
  * Detect if request is from mobile app
  * @param {object} req - Express request object
  * @returns {boolean} True if mobile, false otherwise
@@ -37,7 +53,7 @@ function generatePasswordResetLink(token, isMobile = false) {
     return `https://${deepLinkDomain}/forgot-password?token=${encodedToken}`;
   } else {
     // Web URL
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+    const baseUrl = getFrontendUrl();
     return `${baseUrl}/forgot-password?token=${encodedToken}`;
   }
 }
@@ -50,7 +66,7 @@ function generatePasswordResetLink(token, isMobile = false) {
  * @returns {string|null} Deep link URL or null if invalid
  */
 function generateDeepLink(type, params, isMobile = false) {
-  const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const baseUrl = getFrontendUrl();
   const deepLinkScheme = process.env.DEEP_LINK_SCHEME || 'athlinked';
   
   // Extract domain from FRONTEND_URL for universal links
@@ -131,6 +147,7 @@ function generateDeepLink(type, params, isMobile = false) {
 }
 
 module.exports = {
+  getFrontendUrl,
   isMobileRequest,
   generatePasswordResetLink,
   generateDeepLink,
