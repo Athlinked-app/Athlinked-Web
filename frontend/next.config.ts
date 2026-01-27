@@ -16,8 +16,9 @@
 
 // export default nextConfig;
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
@@ -55,6 +56,27 @@ const nextConfig = {
       },
     ],
   },
+  // Ensure .well-known files are served with correct headers
+  // This is critical for Android App Links verification
+  async headers() {
+    return [
+      {
+        source: '/.well-known/:path*',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/json',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=3600',
+          },
+        ],
+      },
+    ];
+  },
 };
+
+export default nextConfig;
 
 module.exports = nextConfig;

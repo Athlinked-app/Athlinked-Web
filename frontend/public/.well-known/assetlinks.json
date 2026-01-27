@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "ai.randomwalk.athlinked",
+      "sha256_cert_fingerprints": [
+        "3B:26:86:26:23:0A:DA:C5:79:E4:FC:CC:29:87:3E:DF:BF:B2:DA:56:28:A0:F3:CD:17:AA:80:41:61:75:4A:B7"
+      ]
+    }
+  }
+]

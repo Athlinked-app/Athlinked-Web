@@ -19,9 +19,10 @@ function isEmail(str) {
 /**
  * Request password reset link
  * @param {string} emailOrUsername - User email or username
+ * @param {boolean} isMobile - Whether request is from mobile app
  * @returns {Promise<object>} Service result with email where reset link was sent
  */
-async function requestResetLinkService(emailOrUsername) {
+async function requestResetLinkService(emailOrUsername, isMobile = false) {
   try {
     if (!emailOrUsername) {
       throw new Error('Email or username is required');
@@ -58,14 +59,22 @@ async function requestResetLinkService(emailOrUsername) {
       username: user.username,
     });
 
-    // Create reset link
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    const resetLink = `${baseUrl}/forgot-password?token=${resetToken}`;
+    // Generate appropriate reset link based on client type
+    const { generatePasswordResetLink } = require('../utils/deepLinkUtils');
+    const resetLink = generatePasswordResetLink(resetToken, isMobile);
+
+    // Log generated link details for debugging
+    console.log('Generated reset link:', {
+      isMobile,
+      linkType: isMobile ? 'universal (HTTPS)' : 'web',
+      link: resetLink.substring(0, 50) + '...',
+      domain: isMobile ? (process.env.DEEP_LINK_DOMAIN || 'athlinked.randomw.dev') : 'web',
+    });
 
     // Send reset link via email
-    await sendPasswordResetLink(emailToSendLink, resetLink);
+    await sendPasswordResetLink(emailToSendLink, resetLink, isMobile);
 
-    console.log(`🔗 Password reset link sent to: ${emailToSendLink}`);
+    console.log(`🔗 Password reset link sent to: ${emailToSendLink} (${isMobile ? 'Mobile' : 'Web'})`);
 
     return {
       success: true,
