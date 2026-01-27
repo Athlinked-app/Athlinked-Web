@@ -105,18 +105,38 @@ app.get('/.well-known/assetlinks.json', (req, res) => {
       if (err) {
         console.error('Error serving assetlinks.json:', err);
         // Fallback: Return JSON directly if file read fails
-        res.status(500).json({
-          error: 'Failed to load assetlinks.json',
-          message: err.message
-        });
+        // This ensures the file is always served even if there's a file system issue
+        const assetLinks = [
+          {
+            relation: ['delegate_permission/common.handle_all_urls'],
+            target: {
+              namespace: 'android_app',
+              package_name: 'ai.randomwalk.athlinked',
+              sha256_cert_fingerprints: [
+                '3B:26:86:26:23:0A:DA:C5:79:E4:FC:CC:29:87:3E:DF:BF:B2:DA:56:28:A0:F3:CD:17:AA:80:41:61:75:4A:B7',
+              ],
+            },
+          },
+        ];
+        res.status(200).json(assetLinks);
       }
     });
   } catch (error) {
     console.error('Error in assetlinks.json route:', error);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: error.message
-    });
+    // Fallback: Return JSON directly on error
+    const assetLinks = [
+      {
+        relation: ['delegate_permission/common.handle_all_urls'],
+        target: {
+          namespace: 'android_app',
+          package_name: 'ai.randomwalk.athlinked',
+          sha256_cert_fingerprints: [
+            '3B:26:86:26:23:0A:DA:C5:79:E4:FC:CC:29:87:3E:DF:BF:B2:DA:56:28:A0:F3:CD:17:AA:80:41:61:75:4A:B7',
+          ],
+        },
+      },
+    ];
+    res.status(200).json(assetLinks);
   }
 });
 
