@@ -45,10 +45,12 @@ export default function RightSideBar({
   useEffect(() => {
     // Sync follow state instantly across the app (no refresh needed)
     const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{
-        userId: string;
-        isFollowing: boolean;
-      }>).detail;
+      const detail = (
+        event as CustomEvent<{
+          userId: string;
+          isFollowing: boolean;
+        }>
+      ).detail;
 
       if (!detail?.userId) return;
 
@@ -61,7 +63,8 @@ export default function RightSideBar({
 
     if (typeof window !== 'undefined') {
       window.addEventListener('athlinked:follow-changed', handler);
-      return () => window.removeEventListener('athlinked:follow-changed', handler);
+      return () =>
+        window.removeEventListener('athlinked:follow-changed', handler);
     }
   }, []);
 

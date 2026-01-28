@@ -44,13 +44,14 @@ export default function NetworkPage() {
     [key: string]: boolean;
   }>({});
 
-
   useEffect(() => {
     const handler = (event: Event) => {
-      const detail = (event as CustomEvent<{
-        userId: string;
-        isFollowing: boolean;
-      }>).detail;
+      const detail = (
+        event as CustomEvent<{
+          userId: string;
+          isFollowing: boolean;
+        }>
+      ).detail;
 
       if (!detail?.userId) return;
 
@@ -91,7 +92,6 @@ export default function NetworkPage() {
               });
             }
           } catch (error) {
-          
             console.error('Error fetching user profile:', error);
           }
         }
@@ -102,7 +102,6 @@ export default function NetworkPage() {
 
     fetchCurrentUserId();
   }, []);
-
 
   const fetchNetworkData = async () => {
     if (!currentUserId) return;
