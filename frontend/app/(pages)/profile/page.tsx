@@ -1439,9 +1439,7 @@ function ProfileContent() {
                   />
                 </>
               )}
-              {activeTab === 'stats' && (
-                <StatsTab userId={targetUserId} />
-              )}
+              {activeTab === 'stats' && <StatsTab userId={targetUserId} />}
               {activeTab === 'activity' && (
                 <div className="w-full bg-white rounded-lg px-6">
                   <h2 className="text-lg font-bold text-gray-900 mb-4">

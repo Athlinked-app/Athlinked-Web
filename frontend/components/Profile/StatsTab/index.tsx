@@ -115,7 +115,9 @@ export default function StatsTab({ userId }: { userId?: string | null }) {
           : null;
         if (primary) {
           const found = sportsList.some(s => s.toLowerCase() === primary);
-          setActiveSport(found ? primary : sportsList[0]?.toLowerCase() || 'football');
+          setActiveSport(
+            found ? primary : sportsList[0]?.toLowerCase() || 'football'
+          );
         } else {
           setActiveSport(sportsList[0]?.toLowerCase() || 'football');
         }
@@ -161,7 +163,8 @@ export default function StatsTab({ userId }: { userId?: string | null }) {
   useEffect(() => {
     if (!allAthleticPerformance.length) return;
     const sportMatch = allAthleticPerformance.find(
-      perf => perf.sport && perf.sport.toLowerCase() === activeSport.toLowerCase()
+      perf =>
+        perf.sport && perf.sport.toLowerCase() === activeSport.toLowerCase()
     );
     if (sportMatch) setAthleticPerformance(sportMatch);
     else setAthleticPerformance(allAthleticPerformance[0] || null);
@@ -253,7 +256,9 @@ export default function StatsTab({ userId }: { userId?: string | null }) {
     }
 
     // remove rows with only Year
-    profiles = profiles.filter(p => p.stats.some(s => s.field_label !== 'Year'));
+    profiles = profiles.filter(p =>
+      p.stats.some(s => s.field_label !== 'Year')
+    );
 
     const q = searchQuery.trim().toLowerCase();
     if (!q) return profiles;
@@ -262,7 +267,9 @@ export default function StatsTab({ userId }: { userId?: string | null }) {
       const year = p.stats.find(s => s.field_label === 'Year')?.value || '';
       if (p.position_name.toLowerCase().includes(q)) return true;
       if (year.toLowerCase().includes(q)) return true;
-      return p.stats.some(s => `${s.field_label} ${s.value}`.toLowerCase().includes(q));
+      return p.stats.some(s =>
+        `${s.field_label} ${s.value}`.toLowerCase().includes(q)
+      );
     });
   }, [activeSport, userProfiles, selectedPosition, searchQuery]);
 
@@ -437,4 +444,3 @@ export default function StatsTab({ userId }: { userId?: string | null }) {
     </div>
   );
 }
-

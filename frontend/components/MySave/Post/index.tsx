@@ -51,7 +51,10 @@ export default function MySavePost({
         if (data.success && Array.isArray(data.posts)) {
           setSavedPosts(data.posts);
         } else {
-          console.error('Saved posts API returned unsuccessful response:', data);
+          console.error(
+            'Saved posts API returned unsuccessful response:',
+            data
+          );
           setSavedPosts([]);
         }
       } catch (error) {

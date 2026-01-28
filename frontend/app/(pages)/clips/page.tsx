@@ -114,9 +114,9 @@ export default function ClipsPage() {
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({});
   const playPromisesRef = useRef<{ [key: string]: Promise<void> | null }>({});
   const lastWheelTimeRef = useRef(0);
-  const deleteMenuWrapperRefs = useRef<{ [key: string]: HTMLDivElement | null }>(
-    {}
-  );
+  const deleteMenuWrapperRefs = useRef<{
+    [key: string]: HTMLDivElement | null;
+  }>({});
   const fetchedAvatarUserIdsRef = useRef<Set<string>>(new Set());
   // Track which clips have had their comments fetched to avoid duplicate calls
   const fetchedCommentsRef = useRef<Set<string>>(new Set());
@@ -127,7 +127,9 @@ export default function ClipsPage() {
 
   // Close the 3-dots menu when clicking outside
   useEffect(() => {
-    const openIds = Object.keys(showDeleteMenu).filter(id => showDeleteMenu[id]);
+    const openIds = Object.keys(showDeleteMenu).filter(
+      id => showDeleteMenu[id]
+    );
     if (openIds.length === 0) return;
 
     const onPointerDown = (event: PointerEvent) => {
@@ -182,23 +184,23 @@ export default function ClipsPage() {
               author: comment.username || 'User',
               authorAvatar:
                 comment.user_profile_url &&
-                  comment.user_profile_url.trim() !== ''
+                comment.user_profile_url.trim() !== ''
                   ? comment.user_profile_url
                   : null,
               text: comment.comment,
               hasReplies: comment.replies && comment.replies.length > 0,
               replies: comment.replies
                 ? comment.replies.map((reply: any) => ({
-                  id: reply.id,
-                  author: reply.username || 'User',
-                  authorAvatar:
-                    reply.user_profile_url &&
+                    id: reply.id,
+                    author: reply.username || 'User',
+                    authorAvatar:
+                      reply.user_profile_url &&
                       reply.user_profile_url.trim() !== ''
-                      ? reply.user_profile_url
-                      : null,
-                  text: reply.comment,
-                  parent_username: reply.parent_username || null,
-                }))
+                        ? reply.user_profile_url
+                        : null,
+                    text: reply.comment,
+                    parent_username: reply.parent_username || null,
+                  }))
                 : [],
             })
           );
@@ -1309,7 +1311,9 @@ export default function ClipsPage() {
     if (profileUrl.startsWith('assets/')) return `/${profileUrl}`;
 
     // Normalize relative paths like `uploads/...` to `/uploads/...`
-    const normalized = profileUrl.startsWith('/') ? profileUrl : `/${profileUrl}`;
+    const normalized = profileUrl.startsWith('/')
+      ? profileUrl
+      : `/${profileUrl}`;
     return getResourceUrl(normalized) || profileUrl;
   };
 
@@ -1330,14 +1334,14 @@ export default function ClipsPage() {
           className="flex-1 relative bg-gray-200 overflow-hidden"
           style={{ height: 'calc(100vh - 73px)' }}
         >
-
           <div className="absolute inset-0  flex flex-col items-center justify-start right-0 lg:right-[calc(350px+1rem)] xl:right-[calc(380px+1rem)] 2xl:right-[calc(500px+1rem)]">
-     
             {reels.length > 0 && (
               <div className="w-full ">
                 <div className="w-full flex items-center justify-center px-2 sm:px-3 md:px-4 lg:px-6">
-                  <div className="w-full max-w-[280px] sm:max-w-[320px] md:max-w-[400px] lg:max-w-[480px] xl:max-w-[700px] 2xl:max-w-[1000px]     [@media(min-width:1920px)]:max-w-[1800px]
-    [@media(min-width:2560px)]:max-w-[2000px] bg-black rounded-t-lg py-6 flex items-center justify-between px-8">
+                  <div
+                    className="w-full max-w-[280px] sm:max-w-[320px] md:max-w-[400px] lg:max-w-[480px] xl:max-w-[700px] 2xl:max-w-[1000px]     [@media(min-width:1920px)]:max-w-[1800px]
+    [@media(min-width:2560px)]:max-w-[2000px] bg-black rounded-t-lg py-6 flex items-center justify-between px-8"
+                  >
                     <span className="text-white font-semibold text-sm sm:text-lg xl:text-xl">
                       Clips
                     </span>
@@ -1374,8 +1378,8 @@ export default function ClipsPage() {
                     key={reel.id}
                     className="w-full flex items-center justify-center px-2 sm:px-3 md:px-4 lg:px-6 relative snap-start"
                   >
-              <div
-  className="
+                    <div
+                      className="
     relative bg-black rounded-b-lg overflow-hidden shadow-2xl cursor-pointer w-full
     max-w-[280px] sm:max-w-[320px] md:max-w-[400px] lg:max-w-[480px] mb-1
     xl:max-w-[700px] 2xl:max-w-[1000px]
@@ -1388,8 +1392,8 @@ export default function ClipsPage() {
     [@media(min-width:1920px)]:aspect-[16/12]
     [@media(min-width:2560px)]:aspect-[18/12]
   "
-  onClick={e => handleVideoClick(e, reel.id)}
->
+                      onClick={e => handleVideoClick(e, reel.id)}
+                    >
                       <video
                         ref={el => {
                           if (el) {
@@ -1410,11 +1414,10 @@ export default function ClipsPage() {
                         muted={mutedReels[reel.id] ?? false}
                       />
 
-                 
-<div
-  className="absolute bottom-8 sm:bottom-10 md:bottom-12 lg:bottom-14 xl:bottom-20 2xl:bottom-32 [@media(min-width:1920px)]:bottom-16 [@media(min-width:2560px)]:bottom-48 left-0 right-0 p-1.5 sm:p-2 md:p-3 lg:p-4 z-10 w-96 2xl:w-[80%]"
-  style={{ pointerEvents: 'none' }}
->
+                      <div
+                        className="absolute bottom-8 sm:bottom-10 md:bottom-12 lg:bottom-14 xl:bottom-20 2xl:bottom-32 [@media(min-width:1920px)]:bottom-16 [@media(min-width:2560px)]:bottom-48 left-0 right-0 p-1.5 sm:p-2 md:p-3 lg:p-4 z-10 w-96 2xl:w-[80%]"
+                        style={{ pointerEvents: 'none' }}
+                      >
                         <div
                           className="flex items-start gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3"
                           style={{ pointerEvents: 'auto' }}
@@ -1422,7 +1425,9 @@ export default function ClipsPage() {
                           <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full bg-gray-300 overflow-hidden shrink-0 border-2 border-white flex items-center justify-center">
                             {(() => {
                               const authorName = getDisplayName(reel.author);
-                              const avatarUrl = getProfileUrl(reel.authorAvatar);
+                              const avatarUrl = getProfileUrl(
+                                reel.authorAvatar
+                              );
 
                               return avatarUrl ? (
                                 <img
@@ -1484,7 +1489,8 @@ export default function ClipsPage() {
                                   )}
                                 </div>
                               );
-                            })()}                       {reel.timestamp && (
+                            })()}{' '}
+                            {reel.timestamp && (
                               <p className="mt-0.5 text-white/80 text-[9px] sm:text-[10px] md:text-xs">
                                 {formatTimestamp(reel.timestamp)}
                               </p>
@@ -1494,9 +1500,9 @@ export default function ClipsPage() {
                       </div>
 
                       <div
-  className="absolute right-1.5 sm:right-2 md:right-3 lg:right-4 bottom-24 sm:bottom-28 md:bottom-32 lg:bottom-36 xl:bottom-20 2xl:bottom-30 [@media(min-width:1920px)]:bottom-10 [@media(min-width:2560px)]:bottom-48 flex flex-col items-center gap-2 sm:gap-2.5 md:gap-3 lg:gap-4 xl:gap-5"
-  style={{ pointerEvents: 'auto' }}
->
+                        className="absolute right-1.5 sm:right-2 md:right-3 lg:right-4 bottom-24 sm:bottom-28 md:bottom-32 lg:bottom-36 xl:bottom-20 2xl:bottom-30 [@media(min-width:1920px)]:bottom-10 [@media(min-width:2560px)]:bottom-48 flex flex-col items-center gap-2 sm:gap-2.5 md:gap-3 lg:gap-4 xl:gap-5"
+                        style={{ pointerEvents: 'auto' }}
+                      >
                         <button
                           onClick={e => {
                             e.stopPropagation();
@@ -1507,7 +1513,9 @@ export default function ClipsPage() {
                           <Heart
                             size={16}
                             className={`sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 ${
-                              likedReels[reel.id] ? 'text-red-500' : 'text-white'
+                              likedReels[reel.id]
+                                ? 'text-red-500'
+                                : 'text-white'
                             }`}
                             fill={likedReels[reel.id] ? 'currentColor' : 'none'}
                           />
@@ -1660,8 +1668,8 @@ export default function ClipsPage() {
               <div className="flex-1 overflow-y-auto p-2 sm:p-3 md:p-4 space-y-3 sm:space-y-4 relative">
                 {selectedReel ? (
                   selectedReel.comments &&
-                    Array.isArray(selectedReel.comments) &&
-                    selectedReel.comments.length > 0 ? (
+                  Array.isArray(selectedReel.comments) &&
+                  selectedReel.comments.length > 0 ? (
                     <>
                       {selectedReel.comments.map(comment => (
                         <div
@@ -1795,7 +1803,7 @@ export default function ClipsPage() {
                                     placeholder={`Reply to ${comment.author}...`}
                                     value={
                                       replyTexts[
-                                      `${selectedReel.id}-${comment.id}`
+                                        `${selectedReel.id}-${comment.id}`
                                       ] || ''
                                     }
                                     onChange={e =>
@@ -1904,7 +1912,7 @@ export default function ClipsPage() {
                 <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3">
                   <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-gray-300 overflow-hidden shrink-0 flex items-center justify-center border border-gray-200">
                     {currentUser?.profile_url &&
-                      currentUser.profile_url.trim() !== '' ? (
+                    currentUser.profile_url.trim() !== '' ? (
                       <img
                         src={getProfileUrl(currentUser.profile_url)}
                         alt={currentUser.full_name || 'User'}
@@ -1919,11 +1927,11 @@ export default function ClipsPage() {
                               'text-black font-semibold text-[10px] sm:text-xs';
                             fallback.textContent = currentUser?.full_name
                               ? currentUser.full_name
-                                .split(' ')
-                                .map(word => word[0])
-                                .join('')
-                                .toUpperCase()
-                                .slice(0, 2)
+                                  .split(' ')
+                                  .map(word => word[0])
+                                  .join('')
+                                  .toUpperCase()
+                                  .slice(0, 2)
                               : 'U';
                             parent.appendChild(fallback);
                           }
@@ -1933,18 +1941,18 @@ export default function ClipsPage() {
                       <span className="text-black font-semibold text-[10px] sm:text-xs">
                         {currentUser?.full_name
                           ? currentUser.full_name
-                            .split(' ')
-                            .map(word => word[0])
-                            .join('')
-                            .toUpperCase()
-                            .slice(0, 2)
-                          : userData?.full_name
-                            ? userData.full_name
                               .split(' ')
                               .map(word => word[0])
                               .join('')
                               .toUpperCase()
                               .slice(0, 2)
+                          : userData?.full_name
+                            ? userData.full_name
+                                .split(' ')
+                                .map(word => word[0])
+                                .join('')
+                                .toUpperCase()
+                                .slice(0, 2)
                             : 'U'}
                       </span>
                     )}
@@ -2012,10 +2020,11 @@ export default function ClipsPage() {
                   }
                 }}
                 disabled={currentReelIndex === 0}
-                className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-white border border-gray-300 flex items-center justify-center transition-colors shadow-lg ${currentReelIndex === 0
+                className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-white border border-gray-300 flex items-center justify-center transition-colors shadow-lg ${
+                  currentReelIndex === 0
                     ? 'opacity-50 cursor-not-allowed'
                     : 'hover:bg-gray-50'
-                  }`}
+                }`}
               >
                 <ChevronUp
                   size={16}
@@ -2037,10 +2046,11 @@ export default function ClipsPage() {
                   }
                 }}
                 disabled={currentReelIndex === reels.length - 1}
-                className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-white border border-gray-300 flex items-center justify-center transition-colors shadow-lg ${currentReelIndex === reels.length - 1
+                className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-white border border-gray-300 flex items-center justify-center transition-colors shadow-lg ${
+                  currentReelIndex === reels.length - 1
                     ? 'opacity-50 cursor-not-allowed'
                     : 'hover:bg-gray-50'
-                  }`}
+                }`}
               >
                 <ChevronDown
                   size={16}
