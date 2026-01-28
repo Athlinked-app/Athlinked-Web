@@ -332,6 +332,11 @@ router.post('/:clipId/like', authenticateToken, clipsController.likeClip);
 router.post('/:clipId/unlike', authenticateToken, clipsController.unlikeClip);
 
 /**
+ * Share endpoint (increments share_count)
+ */
+router.post('/:clipId/share', clipsController.shareClip);
+
+/**
  * @swagger
  * /api/clips/{clipId}/save-status:
  *   get:

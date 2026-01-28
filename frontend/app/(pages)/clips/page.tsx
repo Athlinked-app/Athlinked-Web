@@ -65,6 +65,9 @@ export default function ClipsPage() {
   const [currentReelIndex, setCurrentReelIndex] = useState(0);
   const [mutedReels, setMutedReels] = useState<{ [key: string]: boolean }>({});
   const [likedReels, setLikedReels] = useState<{ [key: string]: boolean }>({});
+  const [expandedCaptions, setExpandedCaptions] = useState<{
+    [key: string]: boolean;
+  }>({});
   const [pausedReels, setPausedReels] = useState<{ [key: string]: boolean }>(
     {}
   );
@@ -99,12 +102,41 @@ export default function ClipsPage() {
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({});
   const playPromisesRef = useRef<{ [key: string]: Promise<void> | null }>({});
   const lastWheelTimeRef = useRef(0);
+  const deleteMenuWrapperRefs = useRef<{ [key: string]: HTMLDivElement | null }>(
+    {}
+  );
+  const fetchedAvatarUserIdsRef = useRef<Set<string>>(new Set());
   // Track which clips have had their comments fetched to avoid duplicate calls
   const fetchedCommentsRef = useRef<Set<string>>(new Set());
   // Track ongoing fetch to prevent concurrent requests
   const fetchingCommentsRef = useRef<string | null>(null);
   // Debounce timer for scroll-based comment fetching
   const commentFetchTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Close the 3-dots menu when clicking outside
+  useEffect(() => {
+    const openIds = Object.keys(showDeleteMenu).filter(id => showDeleteMenu[id]);
+    if (openIds.length === 0) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node | null;
+      if (!target) return;
+
+      const clickedInsideSomeOpenMenu = openIds.some(id => {
+        const wrapper = deleteMenuWrapperRefs.current[id];
+        return wrapper ? wrapper.contains(target) : false;
+      });
+
+      if (!clickedInsideSomeOpenMenu) {
+        setShowDeleteMenu({});
+      }
+    };
+
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+    };
+  }, [showDeleteMenu]);
 
   // Define fetchComments early so it can be used in useEffects
   const fetchComments = useCallback(
@@ -733,20 +765,42 @@ export default function ClipsPage() {
     }
   };
 
-  const handleShareComplete = () => {
-    // Increment share count after successful share
-    if (selectedReelForShare) {
-      setReels(prev =>
-        prev.map(reel => {
-          if (reel.id === selectedReelForShare.id) {
-            return { ...reel, shares: (reel.shares || 0) + 1 };
-          }
-          return reel;
-        })
-      );
+  const handleShareComplete = async () => {
+    if (!selectedReelForShare) {
+      setShowShareModal(false);
+      return;
     }
-    setShowShareModal(false);
-    setSelectedReelForShare(null);
+
+    const reelId = selectedReelForShare.id;
+
+    // Optimistic UI update
+    setReels(prev =>
+      prev.map(reel =>
+        reel.id === reelId ? { ...reel, shares: (reel.shares || 0) + 1 } : reel
+      )
+    );
+
+    try {
+      const { apiPost } = await import('@/utils/api');
+      const result = await apiPost<{ success: boolean; share_count?: number }>(
+        `/clips/${reelId}/share`,
+        {}
+      );
+
+      if (result?.success && typeof result.share_count === 'number') {
+        setReels(prev =>
+          prev.map(reel =>
+            reel.id === reelId ? { ...reel, shares: result.share_count! } : reel
+          )
+        );
+      }
+    } catch (error) {
+      // Keep optimistic UI; backend persistence may have failed
+      console.error('Error updating share count:', error);
+    } finally {
+      setShowShareModal(false);
+      setSelectedReelForShare(null);
+    }
   };
 
   // Convert Reel to PostData format for ShareModal
@@ -943,6 +997,7 @@ export default function ClipsPage() {
         const fallbackName = userData?.full_name?.split(' ')[0] || 'User';
 
         // Transform backend data to frontend format
+        const initialLiked: { [key: string]: boolean } = {};
         const transformedClips: Reel[] = data.clips.map((clip: any) => ({
           id: clip.id,
           videoUrl: clip.video_url?.startsWith('http')
@@ -950,9 +1005,12 @@ export default function ClipsPage() {
             : getResourceUrl(clip.video_url) || clip.video_url,
           author: clip.username || fallbackName,
           authorAvatar:
-            clip.user_profile_url && clip.user_profile_url.trim() !== ''
-              ? clip.user_profile_url
-              : null,
+            getProfileUrl(
+              clip.user_profile_url ||
+                clip.author_profile_url ||
+                clip.profile_url ||
+                clip.userProfileUrl
+            ) || null,
           caption: clip.description || '',
           timestamp: clip.created_at,
           likes: clip.like_count || 0,
@@ -962,7 +1020,12 @@ export default function ClipsPage() {
           user_id: clip.user_id,
         }));
 
+        data.clips.forEach((clip: any) => {
+          if (clip?.id) initialLiked[String(clip.id)] = !!clip.is_liked;
+        });
+
         setReels(transformedClips);
+        setLikedReels(initialLiked);
 
         if (transformedClips.length > 0 && !selectedReelId) {
           setSelectedReelId(transformedClips[0].id);
@@ -1105,6 +1168,61 @@ export default function ClipsPage() {
     }
   }, [loading, userData]);
 
+  // If clips feed doesn't include avatar URL, fetch it from profile endpoint (same data used elsewhere)
+  useEffect(() => {
+    const missingUserIds = Array.from(
+      new Set(
+        reels
+          .map(r => r.user_id)
+          .filter(
+            (id): id is string =>
+              !!id &&
+              !fetchedAvatarUserIdsRef.current.has(id) &&
+              !reels.some(reel => reel.user_id === id && !!reel.authorAvatar)
+          )
+      )
+    );
+
+    if (missingUserIds.length === 0) return;
+
+    missingUserIds.forEach(id => fetchedAvatarUserIdsRef.current.add(id));
+
+    (async () => {
+      try {
+        const { apiGet } = await import('@/utils/api');
+
+        await Promise.all(
+          missingUserIds.map(async userId => {
+            try {
+              const profile = await apiGet<any>(`/profile/${userId}`);
+              const avatar =
+                getProfileUrl(
+                  profile?.profileImage ||
+                    profile?.profileImageUrl ||
+                    profile?.profile_url ||
+                    profile?.profileUrl
+                ) || null;
+
+              if (!avatar) return;
+
+              setReels(prev =>
+                prev.map(reel =>
+                  reel.user_id === userId && !reel.authorAvatar
+                    ? { ...reel, authorAvatar: avatar }
+                    : reel
+                )
+              );
+            } catch {
+              // ignore per-user fetch failures
+            }
+          })
+        );
+      } catch {
+        // ignore - profile endpoint may be unavailable
+      }
+    })();
+  }, [reels]);
+
   // Try to enable audio automatically on page load using multiple strategies
   useEffect(() => {
     // Strategy 1: Try to play a silent audio context to unlock audio (browser trick)
@@ -1148,13 +1266,28 @@ export default function ClipsPage() {
     );
   }
 
+  const getDisplayName = (name?: string | null): string =>
+    name && name.trim() !== '' ? name.trim() : 'User';
+
+  const getInitials = (name?: string | null): string => {
+    const safe = getDisplayName(name);
+    const parts = safe.split(/\s+/).filter(Boolean);
+    const first = parts[0]?.[0] ?? 'U';
+    const second = parts[1]?.[0] ?? '';
+    return `${first}${second}`.toUpperCase();
+  };
+
   const getProfileUrl = (profileUrl?: string | null): string | undefined => {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
     if (profileUrl.startsWith('http')) return profileUrl;
-    if (profileUrl.startsWith('/') && !profileUrl.startsWith('/assets')) {
-      return getResourceUrl(profileUrl) || profileUrl;
-    }
-    return profileUrl;
+
+    // Allow Next public assets (served from frontend)
+    if (profileUrl.startsWith('/assets')) return profileUrl;
+    if (profileUrl.startsWith('assets/')) return `/${profileUrl}`;
+
+    // Normalize relative paths like `uploads/...` to `/uploads/...`
+    const normalized = profileUrl.startsWith('/') ? profileUrl : `/${profileUrl}`;
+    return getResourceUrl(normalized) || profileUrl;
   };
 
   return (
@@ -1174,25 +1307,38 @@ export default function ClipsPage() {
           className="flex-1 relative bg-gray-200 overflow-hidden"
           style={{ height: 'calc(100vh - 73px)' }}
         >
-          {/* Scrollable Reels Container - Always has space for comments on the right */}
-          {/* Scrollable Reels Container - Always has space for comments on the right */}
-          <div className="absolute inset-0 flex items-center justify-center right-0 lg:right-[calc(350px+1rem)] xl:right-[calc(380px+1rem)] 2xl:right-[calc(500px+1rem)]">
-            {/* Create Button - Fixed on video container when videos exist */}
+
+          <div className="absolute inset-0  flex flex-col items-center justify-start right-0 lg:right-[calc(350px+1rem)] xl:right-[calc(380px+1rem)] 2xl:right-[calc(500px+1rem)]">
+     
             {reels.length > 0 && (
-              <div className="absolute top-2 sm:top-3 md:top-4 lg:top-8 xl:top-8 2xl:top-8 left-24 xl-left-502xl:left-100 -translate-x-1/2 z-30">
-                <button
-                  onClick={() => setShowUploadModal(true)}
-                  className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-1.5 sm:gap-2 shadow-lg transition-colors"
-                >
-                  <Plus size={16} className="sm:w-[18px] sm:h-[18px]" />
-                  <span className="text-xs sm:text-sm font-medium">Create</span>
-                </button>
+              <div className="w-full ">
+                <div className="w-full flex items-center justify-center px-2 sm:px-3 md:px-4 lg:px-6">
+                  <div className="w-full max-w-[280px] sm:max-w-[320px] md:max-w-[400px] lg:max-w-[480px] xl:max-w-[700px] 2xl:max-w-[1000px]     [@media(min-width:1920px)]:max-w-[1800px]
+    [@media(min-width:2560px)]:max-w-[2000px] bg-black rounded-t-lg py-6 flex items-center justify-between px-8">
+                    <span className="text-white font-semibold text-sm sm:text-lg xl:text-xl">
+                      Clips
+                    </span>
+                    <button
+                      onClick={() => setShowUploadModal(true)}
+                      className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-md border-2 border-[#DBB669] px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-1.5 sm:gap-2 shadow-lg transition-colors"
+                    >
+                      <img
+                        src="/assets/Clips/upload.png"
+                        alt="Upload"
+                        className="w-4 h-4 sm:w-[18px] sm:h-[18px]"
+                      />
+                      <span className="text-xs sm:text-sm font-medium">
+                        Create
+                      </span>
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
             <div
               ref={scrollContainerRef}
               onWheel={handleWheelScroll}
-              className={`w-full h-full ${reels.length > 0 ? 'overflow-y-scroll snap-y snap-mandatory hide-scrollbar' : 'overflow-hidden'}`}
+              className={`w-full flex-1 ${reels.length > 0 ? 'overflow-y-scroll snap-y snap-mandatory hide-scrollbar' : 'overflow-hidden'}`}
               style={{
                 scrollBehavior: 'smooth',
                 scrollSnapType: reels.length > 0 ? 'y mandatory' : 'none',
@@ -1205,18 +1351,22 @@ export default function ClipsPage() {
                     key={reel.id}
                     className="w-full flex items-center justify-center px-2 sm:px-3 md:px-4 lg:px-6 relative snap-start"
                   >
-                    <div
-                      className="
-    relative bg-black rounded-lg overflow-hidden shadow-2xl cursor-pointer w-full
+              <div
+  className="
+    relative bg-black rounded-b-lg overflow-hidden shadow-2xl cursor-pointer w-full
     max-w-[280px] sm:max-w-[320px] md:max-w-[400px] lg:max-w-[480px] mb-1
-    xl:max-w-[700px] 2xl:max-w-[1000px] 
+    xl:max-w-[700px] 2xl:max-w-[1000px]
+    [@media(min-width:1920px)]:max-w-[1800px]
+    [@media(min-width:2560px)]:max-w-[2000px]
 
     aspect-[9/12]
     xl:aspect-[11/12]
     2xl:aspect-[12/12]
+    [@media(min-width:1920px)]:aspect-[16/12]
+    [@media(min-width:2560px)]:aspect-[18/12]
   "
-                      onClick={e => handleVideoClick(e, reel.id)}
-                    >
+  onClick={e => handleVideoClick(e, reel.id)}
+>
                       <video
                         ref={el => {
                           if (el) {
@@ -1230,16 +1380,154 @@ export default function ClipsPage() {
                           }
                         }}
                         src={reel.videoUrl}
-                        className="w-full h-[90%] 2xl:h-[80%] object-top  mt-20 "
+                        className="w-full h-[80%] 2xl:h-[90%] object-top  mt-0 "
                         playsInline
                         loop
                         preload="auto"
                         muted={mutedReels[reel.id] ?? false}
                       />
 
-                      {/* Top Right - More Options Menu (Save for all, Delete only for owned clips) */}
-                      <div className="absolute top-1.5 sm:top-2 md:top-3 lg:top-4 xl:top-6 right-1.5 sm:right-2 md:right-3 lg:right-4 z-20">
-                        <div className="relative">
+                 
+<div
+  className="absolute bottom-8 sm:bottom-10 md:bottom-12 lg:bottom-14 xl:bottom-20 2xl:bottom-32 [@media(min-width:1920px)]:bottom-16 [@media(min-width:2560px)]:bottom-48 left-0 right-0 p-1.5 sm:p-2 md:p-3 lg:p-4 z-10 w-96 2xl:w-[80%]"
+  style={{ pointerEvents: 'none' }}
+>
+                        <div
+                          className="flex items-start gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3"
+                          style={{ pointerEvents: 'auto' }}
+                        >
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full bg-gray-300 overflow-hidden shrink-0 border-2 border-white flex items-center justify-center">
+                            {(() => {
+                              const authorName = getDisplayName(reel.author);
+                              const avatarUrl = getProfileUrl(reel.authorAvatar);
+
+                              return avatarUrl ? (
+                                <img
+                                  src={avatarUrl}
+                                  alt={authorName}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-white font-semibold text-[9px] sm:text-[10px] md:text-xs">
+                                  {getInitials(authorName)}
+                                </span>
+                              );
+                            })()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="mb-0.5 sm:mb-1">
+                              <span className="font-semibold text-white text-[10px] sm:text-xs md:text-sm truncate block">
+                                {getDisplayName(reel.author)}
+                              </span>
+                            </div>
+                            {(() => {
+                              const caption = reel.caption || '';
+                              const isExpanded = !!expandedCaptions[reel.id];
+                              const shouldShowToggle = caption.length > 90;
+
+                              return (
+                                <div>
+                                  <p
+                                    className={`text-white text-[10px] sm:text-xs md:text-sm leading-relaxed ${
+                                      isExpanded
+                                        ? ''
+                                        : 'line-clamp-2 sm:line-clamp-3'
+                                    }`}
+                                  >
+                                    {caption}
+                                  </p>
+                                  {shouldShowToggle && (
+                                    <button
+                                      type="button"
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        setExpandedCaptions(prev => ({
+                                          ...prev,
+                                          [reel.id]: !isExpanded,
+                                        }));
+
+                                        // When expanding, nudge the scroll slightly up so the full caption is visible.
+                                        if (!isExpanded) {
+                                          scrollContainerRef.current?.scrollBy({
+                                            top: -80,
+                                            behavior: 'smooth',
+                                          });
+                                        }
+                                      }}
+                                      className="mt-0.5 text-white/80 text-[9px] sm:text-[10px] md:text-xs underline underline-offset-2"
+                                    >
+                                      {isExpanded ? 'Show less' : 'Read more'}
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })()}                       {reel.timestamp && (
+                              <p className="mt-0.5 text-white/80 text-[9px] sm:text-[10px] md:text-xs">
+                                {formatTimestamp(reel.timestamp)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div
+  className="absolute right-1.5 sm:right-2 md:right-3 lg:right-4 bottom-24 sm:bottom-28 md:bottom-32 lg:bottom-36 xl:bottom-20 2xl:bottom-30 [@media(min-width:1920px)]:bottom-10 [@media(min-width:2560px)]:bottom-48 flex flex-col items-center gap-2 sm:gap-2.5 md:gap-3 lg:gap-4 xl:gap-5"
+  style={{ pointerEvents: 'auto' }}
+>
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleLike(reel.id);
+                          }}
+                          className="flex flex-col items-center gap-0.5 sm:gap-1 text-white hover:scale-110 transition-transform"
+                        >
+                          <Heart
+                            size={16}
+                            className={`sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6 ${
+                              likedReels[reel.id] ? 'text-red-500' : 'text-white'
+                            }`}
+                            fill={likedReels[reel.id] ? 'currentColor' : 'none'}
+                          />
+                          <span className="text-[9px] sm:text-[10px] md:text-xs font-medium">
+                            {reel.likes}
+                          </span>
+                        </button>
+
+                        <button
+                          onClick={() => handleShare(reel.id)}
+                          className="flex flex-col items-center gap-0.5 sm:gap-1 text-white hover:scale-110 transition-transform"
+                        >
+                          <Share2
+                            size={16}
+                            className="sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6"
+                          />
+                          <span className="text-[9px] sm:text-[10px] md:text-xs font-medium">
+                            {reel.shares}
+                          </span>
+                        </button>
+
+                        <button
+                          onClick={() => handleToggleMute(reel.id)}
+                          className="flex flex-col items-center gap-0.5 sm:gap-1 text-white hover:scale-110 transition-transform"
+                        >
+                          {mutedReels[reel.id] ? (
+                            <VolumeX
+                              size={16}
+                              className="sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6"
+                            />
+                          ) : (
+                            <Volume2
+                              size={16}
+                              className="sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6"
+                            />
+                          )}
+                        </button>
+                        <div
+                          className="relative"
+                          ref={el => {
+                            deleteMenuWrapperRefs.current[reel.id] = el;
+                          }}
+                        >
                           <button
                             onClick={() =>
                               setShowDeleteMenu(prev => ({
@@ -1255,7 +1543,7 @@ export default function ClipsPage() {
                             />
                           </button>
                           {showDeleteMenu[reel.id] && (
-                            <div className="absolute top-full right-0 mt-1.5 sm:mt-2 bg-white rounded-lg shadow-lg overflow-hidden z-30 min-w-[110px] sm:min-w-[130px] md:min-w-[150px]">
+                            <div className="absolute bottom-10 right-10 mt-1.5 sm:mt-2 bg-white rounded-lg shadow-lg overflow-hidden z-30 min-w-[110px] sm:min-w-[130px] md:min-w-[150px]">
                               <button
                                 onClick={() => handleSaveClip(reel.id)}
                                 className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 md:px-4 py-1.5 sm:py-2 text-gray-700 hover:bg-gray-50 transition-colors w-full text-left border-b border-gray-200"
@@ -1295,101 +1583,6 @@ export default function ClipsPage() {
                           )}
                         </div>
                       </div>
-                      <div
-                        className="absolute bottom-8 sm:bottom-10 md:bottom-12 lg:bottom-14 xl:bottom-20 2xl:bottom-32 left-0 right-0 p-1.5 sm:p-2 md:p-3 lg:p-4 bg-gradient-to-t from-black/80 via-black/40 to-transparent z-10 w-44"
-                        style={{ pointerEvents: 'none' }}
-                      >
-                        <div
-                          className="flex items-start gap-1.5 sm:gap-2 md:gap-2.5 lg:gap-3"
-                          style={{ pointerEvents: 'auto' }}
-                        >
-                          <div className="w-7 h-7 sm:w-8 sm:h-8 md:w-9 md:h-9 lg:w-10 lg:h-10 rounded-full bg-gray-300 overflow-hidden shrink-0 border-2 border-white flex items-center justify-center">
-                            {reel.authorAvatar ? (
-                              <img
-                                src={reel.authorAvatar}
-                                alt={reel.author}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-white font-semibold text-[9px] sm:text-[10px] md:text-xs">
-                                {reel.author
-                                  .split(' ')
-                                  .map(word => word[0])
-                                  .join('')
-                                  .toUpperCase()
-                                  .slice(0, 2)}
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="mb-0.5 sm:mb-1">
-                              <span className="font-semibold text-white text-[10px] sm:text-xs md:text-sm truncate block">
-                                {reel.author}
-                              </span>
-                            </div>
-                            <p className="text-white text-[10px] sm:text-xs md:text-sm leading-relaxed line-clamp-2 sm:line-clamp-3">
-                              {reel.caption}
-                            </p>
-                            {reel.timestamp && (
-                              <p className="mt-0.5 text-white/80 text-[9px] sm:text-[10px] md:text-xs">
-                                {formatTimestamp(reel.timestamp)}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div
-                        className="absolute right-1.5 sm:right-2 md:right-3 lg:right-4 bottom-24 sm:bottom-28 md:bottom-32 lg:bottom-36 xl:bottom-10 2xl:bottom-26 flex flex-col items-center gap-2 sm:gap-2.5 md:gap-3 lg:gap-4 xl:gap-5"
-                        style={{ pointerEvents: 'auto' }}
-                      >
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            handleLike(reel.id);
-                          }}
-                          className="flex flex-col items-center gap-0.5 sm:gap-1 text-white hover:scale-110 transition-transform"
-                        >
-                          <Heart
-                            size={16}
-                            className="sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6"
-                            fill={likedReels[reel.id] ? 'currentColor' : 'none'}
-                          />
-                          <span className="text-[9px] sm:text-[10px] md:text-xs font-medium">
-                            {reel.likes}
-                          </span>
-                        </button>
-
-                        <button
-                          onClick={() => handleShare(reel.id)}
-                          className="flex flex-col items-center gap-0.5 sm:gap-1 text-white hover:scale-110 transition-transform"
-                        >
-                          <Share2
-                            size={16}
-                            className="sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6"
-                          />
-                          <span className="text-[9px] sm:text-[10px] md:text-xs font-medium">
-                            {reel.shares}
-                          </span>
-                        </button>
-
-                        <button
-                          onClick={() => handleToggleMute(reel.id)}
-                          className="flex flex-col items-center gap-0.5 sm:gap-1 text-white hover:scale-110 transition-transform"
-                        >
-                          {mutedReels[reel.id] ? (
-                            <VolumeX
-                              size={16}
-                              className="sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6"
-                            />
-                          ) : (
-                            <Volume2
-                              size={16}
-                              className="sm:w-4 sm:h-4 md:w-5 md:h-5 lg:w-6 lg:h-6"
-                            />
-                          )}
-                        </button>
-                      </div>
                     </div>
                   </div>
                 ))
@@ -1406,7 +1599,11 @@ export default function ClipsPage() {
                       onClick={() => setShowUploadModal(true)}
                       className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1.5 sm:gap-2 shadow-lg transition-colors mx-auto"
                     >
-                      <Plus size={16} className="sm:w-5 sm:h-5" />
+                      <img
+                        src="/assets/Clips/upload.png"
+                        alt="Upload"
+                        className="w-4 h-4 sm:w-5 sm:h-5"
+                      />
                       <span className="text-xs sm:text-sm font-medium">
                         Create
                       </span>

@@ -391,6 +391,7 @@ module.exports = {
   deleteClip,
   likeClip,
   unlikeClip,
+  shareClip,
   checkClipSaveStatus,
   saveClip,
   unsaveClip,
@@ -443,6 +444,26 @@ async function unlikeClip(req, res) {
     return res.status(200).json(result);
   } catch (error) {
     console.error('Unlike clip error:', error);
+    if (error.message === 'Clip not found') {
+      return res.status(404).json({ success: false, message: error.message });
+    }
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
+/**
+ * Controller to increment share count
+ */
+async function shareClip(req, res) {
+  try {
+    const { clipId } = req.params;
+    const result = await clipsService.shareClipService(clipId);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Share clip error:', error);
     if (error.message === 'Clip not found') {
       return res.status(404).json({ success: false, message: error.message });
     }
