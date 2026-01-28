@@ -9,6 +9,11 @@ import ShareModal from '@/components/Share/ShareModal';
 import SaveModal from '@/components/Save/SaveModal';
 import type { PostData } from '@/components/Post';
 import { getResourceUrl } from '@/utils/config';
+
+// This page reads search params and user auth data on the client.
+// Mark it as fully dynamic so Next.js doesn't try to prerender it
+// and complain about missing Suspense boundaries for useSearchParams.
+export const dynamic = 'force-dynamic';
 import {
   Heart,
   Share2,
