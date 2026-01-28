@@ -375,6 +375,60 @@ async function getAllUserSportProfilesService(userId) {
   }
 }
 
+/**
+ * Get complete stats data for a user (optimized - single query)
+ * Combines user data, athletic performance, profiles, stats, and sports
+ */
+async function getUserStatsCompleteService(userId) {
+  try {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+
+    const completeData = await statsModel.getUserStatsComplete(userId);
+
+    if (!completeData) {
+      return {
+        success: false,
+        message: 'User not found',
+      };
+    }
+
+    // Convert S3 keys to presigned URLs
+    const { convertKeyToPresignedUrl } = require('../utils/s3');
+    const profileUrl = completeData.profile_image_url
+      ? await convertKeyToPresignedUrl(completeData.profile_image_url)
+      : null;
+    const coverUrl = completeData.cover_image_url
+      ? await convertKeyToPresignedUrl(completeData.cover_image_url)
+      : null;
+
+    return {
+      success: true,
+      user: {
+        id: completeData.user_id,
+        full_name: completeData.full_name,
+        profile_url: profileUrl,
+        cover_url: coverUrl,
+        bio: completeData.bio,
+        education: completeData.education,
+        city: completeData.city,
+        primary_sport: completeData.primary_sport,
+        sports_played: completeData.sports_played,
+        dob: completeData.dob,
+        user_type: completeData.user_type,
+      },
+      athleticPerformance: completeData.athletic_performance,
+      allAthleticPerformance: completeData.all_athletic_performance || [],
+      sports: completeData.sports,
+      profiles: completeData.profiles,
+    };
+  } catch (error) {
+    console.error('Get user stats complete service error:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   getAllSportsService,
   getPositionsBySportService,
@@ -384,4 +438,5 @@ module.exports = {
   getUserStatsByProfileService,
   getAllUserSportProfilesService,
   saveStatsCombinedService,
+  getUserStatsCompleteService,
 };
