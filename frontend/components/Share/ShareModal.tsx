@@ -147,17 +147,31 @@ export default function ShareModal({
     return getResourceUrl(url) || url;
   };
 
+  const isClipShare = (): boolean => {
+    const pt = (post as any)?.post_type;
+    return pt === 'clip' || pt === 'clips' || (post as any)?.type === 'clip';
+  };
+
+  const getShareUrl = (): string => {
+    if (isClipShare()) {
+      return `${window.location.origin}/clips?clipId=${encodeURIComponent(
+        String(post.id)
+      )}`;
+    }
+    return `${window.location.origin}/post/${post.id}`;
+  };
+
   const handleShareToWhatsApp = () => {
-    const postUrl = `${window.location.origin}/post/${post.id}`;
+    const postUrl = getShareUrl();
     const text = message.trim()
       ? `${message.trim()}\n\n${postUrl}`
-      : `Check out this post: ${postUrl}`;
+      : `Check out this ${isClipShare() ? 'clip' : 'post'}: ${postUrl}`;
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(whatsappUrl, '_blank');
   };
 
   const handleCopyLink = async () => {
-    const postUrl = `${window.location.origin}/post/${post.id}`;
+    const postUrl = getShareUrl();
     try {
       await navigator.clipboard.writeText(postUrl);
       setLinkCopied(true);
@@ -194,13 +208,15 @@ export default function ShareModal({
         throw new Error('Socket connection failed. Please try again.');
       }
 
-      const shareMessage = message.trim() || `Check out this post!`;
-      const postUrl = `${window.location.origin}/post/${post.id}`;
+      const shareMessage =
+        message.trim() || `Check out this ${isClipShare() ? 'clip' : 'post'}!`;
+      const postUrl = getShareUrl();
 
       const postData = {
         id: post.id,
         username: post.username,
         user_profile_url: post.user_profile_url,
+        user_id: (post as any).user_id,
         post_type: post.post_type,
         caption: post.caption,
         media_url: post.media_url || post.image_url,
@@ -211,6 +227,10 @@ export default function ShareModal({
         event_location: post.event_location,
         event_type: post.event_type,
         created_at: post.created_at,
+        like_count: (post as any).like_count,
+        comment_count: (post as any).comment_count,
+        save_count: (post as any).save_count,
+        share_count: (post as any).share_count,
         post_url: postUrl,
       };
 

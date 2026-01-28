@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import NavigationBar from '@/components/NavigationBar';
 import Header from '@/components/Header';
 import FileUploadModal from '@/components/Clips/FileUploadModal';
@@ -8,6 +9,11 @@ import ShareModal from '@/components/Share/ShareModal';
 import SaveModal from '@/components/Save/SaveModal';
 import type { PostData } from '@/components/Post';
 import { getResourceUrl } from '@/utils/config';
+
+// This page reads search params and user auth data on the client.
+// Mark it as fully dynamic so Next.js doesn't try to prerender it
+// and complain about missing Suspense boundaries for useSearchParams.
+export const dynamic = 'force-dynamic';
 import {
   Heart,
   Share2,
@@ -55,6 +61,11 @@ interface Reel {
 }
 
 export default function ClipsPage() {
+  const searchParams = useSearchParams();
+  const clipIdFromQuery =
+    searchParams.get('clipId') ||
+    searchParams.get('clip_id') ||
+    searchParams.get('clip');
   const [userData, setUserData] = useState<UserData | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<{
@@ -98,6 +109,7 @@ export default function ClipsPage() {
   const [savedClipId, setSavedClipId] = useState<string | null>(null);
   const [savedClips, setSavedClips] = useState<{ [key: string]: boolean }>({});
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const didScrollToClipParamRef = useRef(false);
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const audioRefs = useRef<{ [key: string]: HTMLAudioElement | null }>({});
   const playPromisesRef = useRef<{ [key: string]: Promise<void> | null }>({});
@@ -279,11 +291,8 @@ export default function ClipsPage() {
     const now = Date.now();
     const COOLDOWN_MS = 400;
     if (now - lastWheelTimeRef.current < COOLDOWN_MS) {
-      event.preventDefault();
       return;
     }
-
-    event.preventDefault();
 
     const reelHeight = container.clientHeight;
     let targetIndex = currentReelIndex;
@@ -650,22 +659,18 @@ export default function ClipsPage() {
       ...prev,
       [clipId]: !wasSaved,
     }));
-    setSaveAlertMessage(wasSaved ? 'This clip is unsaved' : 'Clip is saved');
+    setSaveAlertMessage(wasSaved ? 'Clip is unsaved' : 'Clip is saved');
     setSavedClipId(clipId);
     setShowSaveAlert(true);
 
     try {
       const { apiPost } = await import('@/utils/api');
-      const endpoint = wasSaved ? '/save/unsave' : '/save';
-
-      const result = await apiPost<{
-        success: boolean;
-        message?: string;
-      }>(endpoint, {
-        type: 'clip',
-        id: clipId,
-        user_id: currentUserId,
-      });
+      // Use clip-specific endpoints so state persists and matches the clips page
+      const endpoint = wasSaved ? `/clips/${clipId}/unsave` : `/clips/${clipId}/save`;
+      const result = await apiPost<{ success: boolean; message?: string }>(
+        endpoint,
+        {}
+      );
 
       if (!result.success) {
         // Revert optimistic update on error
@@ -812,7 +817,8 @@ export default function ClipsPage() {
       username: reel.author,
       user_profile_url: reel.authorAvatar,
       user_id: reel.user_id,
-      post_type: 'video',
+      // Mark as a clip so ShareModal/Messages can build the correct /clips link
+      post_type: 'clip' as any,
       caption: reel.caption,
       media_url: reel.videoUrl,
       like_count: reel.likes,
@@ -1169,6 +1175,23 @@ export default function ClipsPage() {
       fetchClips();
     }
   }, [loading, userData]);
+
+  // If navigated from Messages with ?clipId=..., jump to that clip
+  useEffect(() => {
+    if (!clipIdFromQuery || didScrollToClipParamRef.current) return;
+    if (!reels.length) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const idx = reels.findIndex(r => String(r.id) === String(clipIdFromQuery));
+    if (idx < 0) return;
+
+    didScrollToClipParamRef.current = true;
+    const reelHeight = container.clientHeight;
+    container.scrollTo({ top: idx * reelHeight, behavior: 'smooth' });
+    setCurrentReelIndex(idx);
+    setSelectedReelId(reels[idx].id);
+  }, [clipIdFromQuery, reels]);
 
   // If clips feed doesn't include avatar URL, fetch it from profile endpoint (same data used elsewhere)
   useEffect(() => {
