@@ -315,6 +315,41 @@ async function getAllUserSportProfiles(req, res) {
   }
 }
 
+/**
+ * Get complete stats data for a user (optimized endpoint)
+ * GET /api/user/:userId/stats-complete
+ */
+async function getUserStatsComplete(req, res) {
+  try {
+    const userId =
+      req.params.userId ||
+      req.query.user_id ||
+      req.body.user_id ||
+      req.user?.id;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User ID is required',
+      });
+    }
+
+    const result = await statsService.getUserStatsCompleteService(userId);
+
+    if (!result.success) {
+      return res.status(404).json(result);
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Get user stats complete controller error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 module.exports = {
   getAllSports,
   getPositionsBySport,
@@ -324,4 +359,5 @@ module.exports = {
   saveStatsCombined,
   getUserStatsByProfile,
   getAllUserSportProfiles,
+  getUserStatsComplete,
 };
