@@ -88,7 +88,6 @@ export default function Article({
                     <FileText className="w-12 h-12 text-white opacity-80" />
                   </div>
                   {/* Title overlay at bottom */}
-              
                 </div>
               ) : (
                 <div className="w-full h-full flex flex-col items-center justify-center bg-gray-200 text-gray-900 p-2">

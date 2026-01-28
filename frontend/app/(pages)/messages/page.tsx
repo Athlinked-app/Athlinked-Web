@@ -1545,18 +1545,20 @@ function MessagesPageContent() {
                                     )}
                                     {msg.post_data.post_url &&
                                       !isClipPostData(msg.post_data) && (
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          const mapped = mapPostDataToPost(msg.post_data);
-                                          setSelectedPost(mapped);
-                                          setIsPostModalOpen(true);
-                                        }}
-                                        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
-                                      >
-                                        View Post →
-                                      </button>
-                                    )}
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            const mapped = mapPostDataToPost(
+                                              msg.post_data
+                                            );
+                                            setSelectedPost(mapped);
+                                            setIsPostModalOpen(true);
+                                          }}
+                                          className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                        >
+                                          View Post →
+                                        </button>
+                                      )}
                                   </div>
                                 </div>
                               ) : msg.media_url ? (

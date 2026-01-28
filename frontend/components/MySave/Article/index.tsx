@@ -51,7 +51,10 @@ export default function MySaveArticle({
         if (data.success && Array.isArray(data.posts)) {
           setSavedPosts(data.posts);
         } else {
-          console.error('Saved posts API returned unsuccessful response:', data);
+          console.error(
+            'Saved posts API returned unsuccessful response:',
+            data
+          );
           setSavedPosts([]);
         }
       } catch (error) {
@@ -66,7 +69,9 @@ export default function MySaveArticle({
   }, [currentUserId]);
 
   // Filter posts to show only saved articles
-  const filteredArticles = savedPosts.filter(post => post.post_type === 'article');
+  const filteredArticles = savedPosts.filter(
+    post => post.post_type === 'article'
+  );
 
   // Get thumbnail URL for an article with proper URL formatting
   const getThumbnailUrl = (post: PostData): string | null => {
