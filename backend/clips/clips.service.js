@@ -687,10 +687,50 @@ module.exports = {
   deleteClipService,
   likeClipService,
   unlikeClipService,
+  shareClipService,
   saveClipService,
   unsaveClipService,
   getSavedClipsService,
 };
+
+async function shareClipService(clipId) {
+  const client = await pool.connect();
+  try {
+    const clip = await clipsModel.getClipById(clipId);
+    if (!clip) {
+      throw new Error('Clip not found');
+    }
+
+    await client.query('BEGIN');
+    try {
+      const shareResult = await clipsModel.incrementShareCount(clipId, client);
+      await client.query('COMMIT');
+      return {
+        success: true,
+        message: 'Share count updated',
+        share_count: shareResult.share_count,
+      };
+    } catch (error) {
+      try {
+        await client.query('ROLLBACK');
+      } catch (rollbackError) {
+        console.error('Error during rollback:', rollbackError);
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error('Share clip service error:', error);
+    throw error;
+  } finally {
+    if (client) {
+      try {
+        client.release();
+      } catch (releaseError) {
+        console.error('Error releasing database connection:', releaseError);
+      }
+    }
+  }
+}
 
 async function likeClipService(clipId, userId) {
   const client = await pool.connect();

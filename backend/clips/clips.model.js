@@ -83,6 +83,35 @@ setTimeout(async () => {
   }
 }, 2500); // Wait 2.5 seconds for DB connection pool to initialize
 
+// Ensure clips table has share_count column
+// Delay execution to allow database connection pool to initialize
+setTimeout(async () => {
+  try {
+    await retryQuery(async () => {
+      const checkColumnQuery = `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'clips' AND column_name = 'share_count'
+      `;
+      const columnResult = await pool.query(checkColumnQuery);
+
+      if (columnResult.rows.length === 0) {
+        const addColumnQuery = `
+          ALTER TABLE clips 
+          ADD COLUMN share_count INTEGER DEFAULT 0
+        `;
+        await pool.query(addColumnQuery);
+        console.log('Added share_count column to clips table');
+      }
+    });
+  } catch (err) {
+    console.error(
+      'Error ensuring clips table has share_count column:',
+      err.message || err
+    );
+  }
+}, 2600); // Wait 2.6 seconds for DB connection pool to initialize
+
 // Ensure clip_saves table exists for persisting saves on clips
 // Delay execution to allow database connection pool to initialize
 setTimeout(async () => {
@@ -246,11 +275,13 @@ async function getClipsFeed(page = 1, limit = 10, viewerUserId = null) {
         c.video_url,
         c.description,
         c.like_count,
+        c.share_count,
         c.comment_count,
         c.save_count,
         c.username,
         c.user_profile_url,
-        c.created_at
+        c.created_at,
+        false as is_liked
       FROM clips c
       LEFT JOIN users u ON c.user_id = u.id
       WHERE u.is_featured = true
@@ -278,17 +309,23 @@ async function getClipsFeed(page = 1, limit = 10, viewerUserId = null) {
         c.video_url,
         c.description,
         c.like_count,
+        c.share_count,
         c.comment_count,
         c.save_count,
         c.username,
         c.user_profile_url,
         c.created_at,
+        CASE
+          WHEN cl.clip_id IS NOT NULL THEN true
+          ELSE false
+        END as is_liked,
         CASE 
           WHEN cs.clip_id IS NOT NULL THEN true 
           ELSE false 
         END as is_saved
       FROM clips c
       LEFT JOIN users u ON c.user_id = u.id
+      LEFT JOIN clip_likes cl ON c.id = cl.clip_id AND cl.user_id = $1
       LEFT JOIN clip_saves cs ON c.id = cs.clip_id AND cs.user_id = $1
       WHERE (
         -- User sees their own clips
@@ -745,6 +782,7 @@ module.exports = {
   checkClipLikeStatus,
   likeClip,
   unlikeClip,
+  incrementShareCount,
   // Save helpers
   saveClip,
   unsaveClip,
@@ -800,6 +838,23 @@ async function unlikeClip(clipId, userId, client = null) {
     return { like_count: updateResult.rows[0].like_count };
   } catch (error) {
     console.error('Error unliking clip:', error);
+    throw error;
+  }
+}
+
+async function incrementShareCount(clipId, client = null) {
+  const updateCountQuery =
+    'UPDATE clips SET share_count = COALESCE(share_count, 0) + 1 WHERE id = $1 RETURNING share_count';
+
+  try {
+    const dbClient = client || pool;
+    const updateResult = await dbClient.query(updateCountQuery, [clipId]);
+    if (!updateResult.rows[0]) {
+      throw new Error('Clip not found');
+    }
+    return { share_count: updateResult.rows[0].share_count };
+  } catch (error) {
+    console.error('Error incrementing share count:', error);
     throw error;
   }
 }
