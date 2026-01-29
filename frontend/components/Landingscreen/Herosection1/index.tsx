@@ -8,7 +8,7 @@ export default function HeroSection() {
         src="/assets/Homescreen/MobileHeosection1.png"
         alt="Athletes in action"
         fill
-        className="object-fill object-center lg:hidden"
+        className="object-cover object-center lg:hidden"
         priority
         quality={80}
       />

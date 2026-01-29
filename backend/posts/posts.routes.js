@@ -127,6 +127,29 @@ router.get('/saved/:userId', authenticateToken, postsController.getSavedPosts);
 
 /**
  * @swagger
+ * /api/posts/{postId}:
+ *   get:
+ *     summary: Get a single post by ID
+ *     description: Retrieve a single post by ID (optional auth for shared links)
+ *     tags: [Posts]
+ *     security: []
+ *     parameters:
+ *       - in: path
+ *         name: postId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Post ID (UUID)
+ *     responses:
+ *       200:
+ *         description: Post retrieved successfully
+ *       404:
+ *         description: Post not found
+ */
+router.get('/:postId', optionalAuth, postsController.getPostById);
+
+/**
+ * @swagger
  * /api/posts/{postId}/like-status:
  *   get:
  *     summary: Check like status
