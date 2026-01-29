@@ -8,7 +8,7 @@ export default function HeroSection() {
         src="/assets/Homescreen/MobileHeosection1.png"
         alt="Athletes in action"
         fill
-        className="object-cover md:hidden"
+        className="object-fill object-center lg:hidden"
         priority
         quality={80}
       />
@@ -16,7 +16,7 @@ export default function HeroSection() {
         src="/assets/Homescreen/Herosection1.png"
         alt="Athletes in action"
         fill
-        className="hidden md:block object-cover"
+        className="hidden lg:block object-cover"
         priority
         quality={80}
       />
@@ -25,13 +25,13 @@ export default function HeroSection() {
 
       <div className="relative z-10 flex items-center h-full px-8 md:px-16 lg:px-24 pb-20">
         <div className="max-w-4xl">
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
             Connect, Compete,
             <br />
             and <span className="text-white">Get Discovered</span>
           </h1>
 
-          <p className="text-lg md:text-2xl text-gray-200 mb-8 font-medium max-w-8xl ">
+          <p className="text-base md:text-2xl text-gray-200 mb-8 font-medium max-w-8xl ">
             AthLinked is the premier platform for young athletes aged 12-21 to
             showcase their talent. Here, athletes can connect with college
             recruiters, scouts, and coaches from top organizations and colleges,
