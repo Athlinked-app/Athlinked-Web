@@ -106,9 +106,30 @@ async function findRecentlyDeletedAccount(emailOrUsername) {
   return null;
 }
 
+/**
+ * Find deleted account by email or username (checks both)
+ * Used for login validation - checks if account was EVER deleted
+ * @param {string} emailOrUsername - Email or username to check
+ * @returns {Promise<object|null>} Deleted account data if found, null otherwise
+ */
+async function findDeletedAccountByEmailOrUsername(emailOrUsername) {
+  const normalizedInput = emailOrUsername.toLowerCase().trim();
+  const isEmail = normalizedInput.includes('@');
+
+  let deletedAccount;
+  if (isEmail) {
+    deletedAccount = await findDeletedAccountByEmail(normalizedInput);
+  } else {
+    deletedAccount = await findDeletedAccountByUsername(normalizedInput);
+  }
+
+  return deletedAccount || null;
+}
+
 module.exports = {
   storeDeletedAccount,
   findDeletedAccountByEmail,
   findDeletedAccountByUsername,
   findRecentlyDeletedAccount,
+  findDeletedAccountByEmailOrUsername,
 };

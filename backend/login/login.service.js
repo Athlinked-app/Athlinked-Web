@@ -26,6 +26,16 @@ async function loginService(emailOrUsername, password, req = null) {
     }
 
     const normalizedInput = emailOrUsername.toLowerCase().trim();
+    
+    // SECURITY: Check if account was deleted FIRST (before checking users table)
+    // This prevents login even if user somehow still exists in users table
+    const deletedAccount = await deletedAccountsModel.findDeletedAccountByEmailOrUsername(normalizedInput);
+    
+    if (deletedAccount) {
+      // Account was deleted - reject login regardless of when it was deleted
+      throw new Error('ACCOUNT_DELETED');
+    }
+
     let user;
 
     // Check if input is email or username
@@ -35,16 +45,8 @@ async function loginService(emailOrUsername, password, req = null) {
       user = await loginModel.findByUsername(normalizedInput);
     }
 
-    // If user not found, check if account was recently deleted
+    // If user not found, return generic error (don't reveal if account exists)
     if (!user) {
-      const deletedAccount =
-        await deletedAccountsModel.findRecentlyDeletedAccount(normalizedInput);
-
-      if (deletedAccount) {
-        // Account was recently deleted - return special error
-        throw new Error('ACCOUNT_DELETED_RECENTLY');
-      }
-
       throw new Error('Invalid email/username or password');
     }
 
