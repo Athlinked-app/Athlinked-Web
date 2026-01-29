@@ -493,8 +493,8 @@ export default function OpportunitiesPage() {
         </div>
         <div className="flex-1 bg-white mt-0 md:ml-5 md:mr-5 md:mb-5 rounded-xl flex flex-col md:h-[620px] overflow-y-auto">
           <div className="border-b border-gray-200">
-            <div className="md:max-w-7xl mx-auto md:px-6 px-4">
-              <div className="flex md:gap-8 gap-6">
+            <div className="md:max-w-7xl mx-auto md:px-6 px-0">
+              <div className="flex md:gap-8 gap-2">
                 <button
                   onClick={() => setActiveTab('all')}
                   className={`py-4 px-2 text-base font-medium relative transition-colors ${
