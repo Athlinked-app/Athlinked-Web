@@ -96,14 +96,24 @@ export function initializeSocket(): Socket | null {
   });
 
   globalSocket.on('connect_error', (error: any) => {
+    // Ignore empty error objects - they're often false positives from socket.io
+    if (!error) {
+      return;
+    }
+
+    // Check if it's an empty object
+    if (typeof error === 'object' && Object.keys(error).length === 0) {
+      // Silently ignore empty error objects
+      return;
+    }
+
     // Only log if error has meaningful content
     if (
-      error &&
-      (error.message ||
-        error.description ||
-        error.type ||
-        error.code ||
-        typeof error === 'string')
+      error.message ||
+      error.description ||
+      error.type ||
+      error.code ||
+      typeof error === 'string'
     ) {
       console.error('❌ Socket connection error:', error);
       if (typeof error === 'string') {
@@ -120,17 +130,27 @@ export function initializeSocket(): Socket | null {
         });
       }
     }
-    // Ignore empty error objects - they're often false positives from socket.io
   });
 
   globalSocket.on('error', (error: any) => {
+    // Ignore empty error objects - they're often false positives from socket.io
+    if (!error) {
+      return;
+    }
+
+    // Check if it's an empty object
+    if (typeof error === 'object' && Object.keys(error).length === 0) {
+      // Silently ignore empty error objects
+      return;
+    }
+
     // Only log if error has meaningful content
     if (
-      error &&
-      (error.message ||
-        error.description ||
-        error.type ||
-        typeof error === 'string')
+      error.message ||
+      error.description ||
+      error.type ||
+      error.code ||
+      typeof error === 'string'
     ) {
       console.error('❌ Socket error event:', error);
       if (typeof error === 'string') {
@@ -147,7 +167,6 @@ export function initializeSocket(): Socket | null {
         });
       }
     }
-    // Ignore empty error objects - they're often false positives from socket.io
   });
 
   return globalSocket;

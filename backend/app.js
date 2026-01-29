@@ -202,6 +202,94 @@ app.use('/api/favorites', favoritesRoutes);
 app.use('/api/save', savesRoutes);
 app.use('/api/my-activity', activityRoutes);
 
+// FCM Token Registration Endpoint
+app.post('/api/save-fcm-token', async (req, res) => {
+  console.log('Register Device Body:', req.body);
+  console.log('Request headers:', req.headers);
+  console.log('Content-Type:', req.headers['content-type']);
+  
+  try {
+    const { userId, token, platform } = req.body;
+    
+    // Validate required fields
+    if (!userId || !token || !platform) {
+      console.log('Missing required fields:', { userId: !!userId, token: !!token, platform: !!platform });
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: userId, token, and platform are required',
+      });
+    }
+    
+    // Get database connection
+    const pool = require('./config/db');
+    
+    // Check if token already exists for this user
+    const checkQuery = `
+      SELECT id, user_id, token, platform, updated_at
+      FROM fcm_tokens
+      WHERE user_id = $1 AND token = $2
+    `;
+    
+    const checkResult = await pool.query(checkQuery, [userId, token]);
+    
+    let result;
+    
+    if (checkResult.rows.length > 0) {
+      // Token exists, update the timestamp
+      console.log('Token exists, updating timestamp...');
+      const updateQuery = `
+        UPDATE fcm_tokens 
+        SET updated_at = NOW(), platform = $3
+        WHERE user_id = $1 AND token = $2
+        RETURNING *
+      `;
+      result = await pool.query(updateQuery, [userId, token, platform]);
+      console.log('FCM token updated:', result.rows[0]?.id);
+    } else {
+      // Token doesn't exist, insert new row
+      console.log('Token does not exist, inserting new row...');
+      const insertQuery = `
+        INSERT INTO fcm_tokens (user_id, token, platform, created_at, updated_at)
+        VALUES ($1, $2, $3, NOW(), NOW())
+        RETURNING *
+      `;
+      result = await pool.query(insertQuery, [userId, token, platform]);
+      console.log('FCM token inserted:', result.rows[0]?.id);
+    }
+    
+    console.log('FCM token saved successfully:', {
+      userId,
+      token: token.substring(0, 20) + '...',
+      platform,
+      rowId: result.rows[0]?.id,
+    });
+    
+    return res.status(200).json({
+      success: true,
+      message: 'FCM token saved successfully',
+      data: {
+        id: result.rows[0]?.id,
+        userId: result.rows[0]?.user_id,
+        platform: result.rows[0]?.platform,
+        updatedAt: result.rows[0]?.updated_at,
+      },
+    });
+  } catch (error) {
+    console.error('Error saving FCM token:', error);
+    console.error('Error details:', {
+      code: error.code,
+      message: error.message,
+      detail: error.detail,
+    });
+    
+    return res.status(500).json({
+      success: false,
+      message: 'Error saving FCM token',
+      error: error.message,
+    });
+  }
+});
+
 app.use((req, res) => {
   res.status(404).json({
     success: false,

@@ -113,3 +113,7 @@ build/
 
 # TernJS port file
 .tern-port
+
+# Firebase service account (contains sensitive credentials)
+config/service-account.json
+*.firebase-adminsdk*.json

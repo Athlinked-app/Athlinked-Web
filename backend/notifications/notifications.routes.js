@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticateToken } = require('../middleware/auth');
 const notificationController = require('./notifications.controller');
+const fcmTokensController = require('./fcm-tokens.controller');
 
 /**
  * @swagger
@@ -112,6 +113,169 @@ router.post(
   '/read-all',
   authenticateToken,
   notificationController.markAllAsRead
+);
+
+/**
+ * @swagger
+ * /api/notifications/register-device:
+ *   post:
+ *     summary: Register or update FCM device token
+ *     description: Register or update FCM token for push notifications. Called by mobile app on login or startup.
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - fcmToken
+ *               - platform
+ *             properties:
+ *               fcmToken:
+ *                 type: string
+ *                 description: FCM token from mobile device
+ *                 example: "dGhpcyBpcyBhIGZha2UgZmNtIHRva2Vu"
+ *               platform:
+ *                 type: string
+ *                 enum: [ios, android, web]
+ *                 description: Platform type
+ *                 example: "android"
+ *     responses:
+ *       200:
+ *         description: FCM token registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "FCM token registered successfully"
+ *                 token:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     platform:
+ *                       type: string
+ *                     createdAt:
+ *                       type: string
+ *                     updatedAt:
+ *                       type: string
+ *       400:
+ *         description: Bad request - missing required fields
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.post(
+  '/register-device',
+  authenticateToken,
+  fcmTokensController.registerDevice
+);
+
+/**
+ * @swagger
+ * /api/notifications/tokens:
+ *   get:
+ *     summary: Get user's FCM tokens
+ *     description: Get all FCM tokens registered for the authenticated user
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: FCM tokens retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 tokens:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       platform:
+ *                         type: string
+ *                       createdAt:
+ *                         type: string
+ *                       updatedAt:
+ *                         type: string
+ *                 count:
+ *                   type: integer
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal server error
+ */
+router.get(
+  '/tokens',
+  authenticateToken,
+  fcmTokensController.getUserTokens
+);
+
+/**
+ * @swagger
+ * /api/notifications/remove-token:
+ *   post:
+ *     summary: Remove FCM token
+ *     description: Remove an FCM token (called when user logs out or uninstalls app)
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - fcmToken
+ *             properties:
+ *               fcmToken:
+ *                 type: string
+ *                 description: FCM token to remove
+ *                 example: "dGhpcyBpcyBhIGZha2UgZmNtIHRva2Vu"
+ *     responses:
+ *       200:
+ *         description: FCM token removed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: "FCM token removed successfully"
+ *       400:
+ *         description: Bad request - missing fcmToken
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: FCM token not found
+ *       500:
+ *         description: Internal server error
+ */
+router.post(
+  '/remove-token',
+  authenticateToken,
+  fcmTokensController.removeToken
 );
 
 /**
