@@ -25,6 +25,7 @@ export default function SettingsPage() {
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [activeSettingsItem, setActiveSettingsItem] =
     useState<string>('personal-info');
+  const [showMobileNav, setShowMobileNav] = useState(true);
 
   async function fetchCurrentUser() {
     try {
@@ -70,8 +71,13 @@ export default function SettingsPage() {
 
   const handleSettingsItemClick = (itemId: string) => {
     setActiveSettingsItem(itemId);
-    // TODO: Handle navigation to different settings pages
+    // On mobile, hide navigation and show content
+    setShowMobileNav(false);
     console.log('Settings item clicked:', itemId);
+  };
+
+  const handleBackToNav = () => {
+    setShowMobileNav(true);
   };
 
   // Construct profile URL - return undefined if no profileUrl exists (don't use default)
@@ -105,16 +111,50 @@ export default function SettingsPage() {
       <main className="flex flex-1 w-full mt-5 overflow-hidden">
         {/* Settings Content */}
         <div className="flex-1 flex gap-4 px-4 overflow-hidden">
-          {/* Settings Navigation Sidebar */}
-          <div className="w-80 flex-shrink-0">
+          {/* Settings Navigation Sidebar - Desktop always visible, Mobile toggleable */}
+          <div
+            className={`
+            w-80 flex-shrink-0
+            ${showMobileNav ? 'block w-full' : 'hidden'}
+            md:block md:w-80
+          `}
+          >
             <SettingsNavigation
               activeItem={activeSettingsItem}
               onItemClick={handleSettingsItemClick}
             />
           </div>
 
-          {/* Settings Content Area */}
-          <div className="flex-1 bg-white rounded-lg border border-gray-200 p-6 overflow-y-auto">
+          {/* Settings Content Area - Desktop always visible, Mobile toggleable */}
+          <div
+            className={`
+            flex-1 bg-white rounded-lg border border-gray-200 p-6 overflow-y-auto
+            ${!showMobileNav ? 'block w-full' : 'hidden'}
+            md:block md:flex-1 md:p-6
+          `}
+          >
+            {/* Mobile Back Button */}
+            <button
+              onClick={handleBackToNav}
+              className="md:hidden mb-4 flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <svg
+                className="w-5 h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Back to Settings
+            </button>
+
             {activeSettingsItem === 'about' ? (
               <AboutUs />
             ) : activeSettingsItem === 'terms' ? (
