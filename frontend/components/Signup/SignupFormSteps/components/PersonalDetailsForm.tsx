@@ -375,7 +375,13 @@ export default function PersonalDetailsForm({
       confirmPassword: confirmPasswordError,
     });
 
-    if (nameError || dobError || emailError || passwordError || confirmPasswordError) {
+    if (
+      nameError ||
+      dobError ||
+      emailError ||
+      passwordError ||
+      confirmPasswordError
+    ) {
       return;
     }
 

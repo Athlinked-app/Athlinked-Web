@@ -430,19 +430,19 @@ export default function MyAthletesPage() {
         </div>
 
         <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-          <div className="flex-1 overflow-y-auto pr-3 min-h-0 flex justify-center">
+          <div className="flex-1 overflow-y-auto px-2 sm:px-3 md:pr-3 min-h-0 flex justify-center">
             <div className="flex flex-col gap-4 pb-4 w-full max-w-full">
               {/* My Children Section */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-gray-900">
+              <div className="bg-white rounded-lg shadow-sm p-3 sm:p-4 md:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                     My Children & Their Activity
                   </h2>
                   {myAthletes.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex overflow-x-auto gap-2 pb-2 sm:pb-0 sm:flex-wrap hide-scrollbar">
                       <button
                         onClick={() => setActiveFilter('all')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                           activeFilter === 'all'
                             ? 'bg-[#CB9729] text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -452,7 +452,7 @@ export default function MyAthletesPage() {
                       </button>
                       <button
                         onClick={() => setActiveFilter('posts')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                           activeFilter === 'posts'
                             ? 'bg-[#CB9729] text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -462,7 +462,7 @@ export default function MyAthletesPage() {
                       </button>
                       <button
                         onClick={() => setActiveFilter('clips')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                           activeFilter === 'clips'
                             ? 'bg-[#CB9729] text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -472,7 +472,7 @@ export default function MyAthletesPage() {
                       </button>
                       <button
                         onClick={() => setActiveFilter('articles')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                           activeFilter === 'articles'
                             ? 'bg-[#CB9729] text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -482,7 +482,7 @@ export default function MyAthletesPage() {
                       </button>
                       <button
                         onClick={() => setActiveFilter('videos')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                           activeFilter === 'videos'
                             ? 'bg-[#CB9729] text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -492,7 +492,7 @@ export default function MyAthletesPage() {
                       </button>
                       <button
                         onClick={() => setActiveFilter('templates')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
                           activeFilter === 'templates'
                             ? 'bg-[#CB9729] text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -508,7 +508,7 @@ export default function MyAthletesPage() {
                     <p className="text-gray-500">No children found.</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {myAthletes.map(athlete => {
                       const profileImageUrl = getProfileUrl(athlete.profileUrl);
                       const isExpanded = expandedAthletes.has(athlete.id);
@@ -529,11 +529,11 @@ export default function MyAthletesPage() {
                         >
                           {/* Athlete Header */}
                           <div
-                            className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors cursor-pointer"
+                            className="flex items-center justify-between p-3 sm:p-4 hover:bg-gray-50 transition-colors cursor-pointer"
                             onClick={() => toggleAthleteExpanded(athlete.id)}
                           >
-                            <div className="flex items-center gap-3 flex-1">
-                              <div className="w-12 h-12 rounded-full bg-teal-400 overflow-hidden flex items-center justify-center flex-shrink-0">
+                            <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-teal-400 overflow-hidden flex items-center justify-center flex-shrink-0">
                                 {profileImageUrl ? (
                                   <img
                                     src={profileImageUrl}
@@ -541,13 +541,13 @@ export default function MyAthletesPage() {
                                     className="w-full h-full object-cover"
                                   />
                                 ) : (
-                                  <span className="text-white font-semibold text-sm">
+                                  <span className="text-white font-semibold text-xs sm:text-sm">
                                     {getInitials(athlete.name)}
                                   </span>
                                 )}
                               </div>
-                              <div className="flex-1">
-                                <p className="text-xs text-gray-500">
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs text-gray-500 truncate">
                                   {athlete.primary_sport
                                     ? athlete.primary_sport
                                         .charAt(0)
@@ -557,10 +557,10 @@ export default function MyAthletesPage() {
                                         .toLowerCase()
                                     : 'Athlete'}
                                 </p>
-                                <p className="text-sm font-semibold text-gray-900">
+                                <p className="text-sm font-semibold text-gray-900 truncate">
                                   {athlete.name}
                                 </p>
-                                <p className="text-xs text-gray-400 mt-1">
+                                <p className="text-xs text-gray-400 mt-0.5 sm:mt-1">
                                   {totalActivities}{' '}
                                   {totalActivities === 1
                                     ? 'activity'
@@ -568,28 +568,37 @@ export default function MyAthletesPage() {
                                 </p>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                               <button
-                                className="text-gray-400 hover:text-gray-600"
+                                className="text-gray-400 hover:text-gray-600 p-1"
                                 onClick={e => {
                                   e.stopPropagation();
                                   handleAthleteClick(athlete.id);
                                 }}
                                 title="View Profile"
                               >
-                                <MoreVertical size={20} />
+                                <MoreVertical
+                                  size={18}
+                                  className="sm:w-5 sm:h-5"
+                                />
                               </button>
                               <button
-                                className="text-gray-400 hover:text-gray-600"
+                                className="text-gray-400 hover:text-gray-600 p-1"
                                 onClick={e => {
                                   e.stopPropagation();
                                   toggleAthleteExpanded(athlete.id);
                                 }}
                               >
                                 {isExpanded ? (
-                                  <ChevronUp size={20} />
+                                  <ChevronUp
+                                    size={18}
+                                    className="sm:w-5 sm:h-5"
+                                  />
                                 ) : (
-                                  <ChevronDown size={20} />
+                                  <ChevronDown
+                                    size={18}
+                                    className="sm:w-5 sm:h-5"
+                                  />
                                 )}
                               </button>
                             </div>
@@ -597,13 +606,13 @@ export default function MyAthletesPage() {
 
                           {/* Activities Section */}
                           {isExpanded && (
-                            <div className="border-t border-gray-200 p-4 bg-gray-50">
+                            <div className="border-t border-gray-200 p-3 sm:p-4 bg-gray-50">
                               {totalActivities === 0 ? (
                                 <p className="text-center text-gray-500 py-4">
                                   No activities yet.
                                 </p>
                               ) : (
-                                <div className="space-y-6">
+                                <div className="space-y-4 sm:space-y-6">
                                   {/* Posts */}
                                   {(activeFilter === 'all' ||
                                     activeFilter === 'posts') &&
@@ -611,7 +620,7 @@ export default function MyAthletesPage() {
                                     athleteActivities.posts.length > 0 && (
                                       <div>
                                         {activeFilter === 'all' && (
-                                          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                                          <h3 className="text-sm font-semibold text-gray-700 mb-2 sm:mb-3">
                                             Posts (
                                             {athleteActivities.posts.length})
                                           </h3>
@@ -621,10 +630,10 @@ export default function MyAthletesPage() {
                                             (post: PostData) => (
                                               <div
                                                 key={post.id}
-                                                className="bg-white rounded-lg p-2 border border-gray-200 flex items-start gap-3"
+                                                className="bg-white rounded-lg p-2 border border-gray-200 flex items-start gap-2 sm:gap-3"
                                               >
                                                 {/* Compact post preview */}
-                                                <div className="flex-shrink-0 w-16 h-16 rounded overflow-hidden bg-gray-100">
+                                                <div className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded overflow-hidden bg-gray-100">
                                                   {post.media_url ||
                                                   post.image_url ? (
                                                     post.post_type ===
@@ -678,7 +687,7 @@ export default function MyAthletesPage() {
                                                   )}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                  <p className="text-xs text-gray-500 mb-1">
+                                                  <p className="text-xs text-gray-500 mb-0.5 sm:mb-1">
                                                     {post.post_type
                                                       ? post.post_type
                                                           .charAt(0)
@@ -686,7 +695,7 @@ export default function MyAthletesPage() {
                                                         post.post_type.slice(1)
                                                       : 'Post'}
                                                   </p>
-                                                  <p className="text-sm text-gray-900 line-clamp-2 mb-1">
+                                                  <p className="text-xs sm:text-sm text-gray-900 line-clamp-2 mb-0.5 sm:mb-1">
                                                     {post.caption ||
                                                       post.article_title ||
                                                       post.event_title ||
@@ -705,7 +714,7 @@ export default function MyAthletesPage() {
                                                     onClick={() =>
                                                       handleDeletePost(post.id)
                                                     }
-                                                    className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                                                    className="p-1 sm:p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
                                                     title="Delete post"
                                                   >
                                                     <Trash2 size={14} />
@@ -725,12 +734,12 @@ export default function MyAthletesPage() {
                                     athleteActivities.clips.length > 0 && (
                                       <div>
                                         {activeFilter === 'all' && (
-                                          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                                          <h3 className="text-sm font-semibold text-gray-700 mb-2 sm:mb-3">
                                             Clips (
                                             {athleteActivities.clips.length})
                                           </h3>
                                         )}
-                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                                           {athleteActivities.clips.map(
                                             (clip: any) => {
                                               const clipVideoUrl =
@@ -757,11 +766,11 @@ export default function MyAthletesPage() {
                                                   />
                                                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                                                     <Play
-                                                      className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                                      className="w-6 h-6 sm:w-8 sm:h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity"
                                                       fill="white"
                                                     />
                                                   </div>
-                                                  <div className="absolute top-2 right-2">
+                                                  <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
                                                     <button
                                                       onClick={e => {
                                                         e.stopPropagation();
@@ -769,14 +778,17 @@ export default function MyAthletesPage() {
                                                           clip.id
                                                         );
                                                       }}
-                                                      className="opacity-0 group-hover:opacity-100 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all"
+                                                      className="opacity-0 group-hover:opacity-100 p-1 sm:p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all"
                                                       title="Delete clip"
                                                     >
-                                                      <Trash2 size={14} />
+                                                      <Trash2
+                                                        size={12}
+                                                        className="sm:w-3.5 sm:h-3.5"
+                                                      />
                                                     </button>
                                                   </div>
                                                   {clip.description && (
-                                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1.5 sm:p-2">
                                                       <p className="text-white text-xs line-clamp-2">
                                                         {clip.description}
                                                       </p>
@@ -797,24 +809,24 @@ export default function MyAthletesPage() {
                                     athleteActivities.articles.length > 0 && (
                                       <div>
                                         {activeFilter === 'all' && (
-                                          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                                          <h3 className="text-sm font-semibold text-gray-700 mb-2 sm:mb-3">
                                             Articles (
                                             {athleteActivities.articles.length})
                                           </h3>
                                         )}
-                                        <div className="space-y-3">
+                                        <div className="space-y-2 sm:space-y-3">
                                           {athleteActivities.articles.map(
                                             (article: any) => (
                                               <div
                                                 key={article.id}
-                                                className="bg-white rounded-lg p-4 border border-gray-200 flex items-center justify-between"
+                                                className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200 flex items-start sm:items-center justify-between gap-2 sm:gap-0"
                                               >
-                                                <div className="flex-1">
-                                                  <h4 className="font-semibold text-gray-900">
+                                                <div className="flex-1 min-w-0">
+                                                  <h4 className="font-semibold text-sm sm:text-base text-gray-900 truncate">
                                                     {article.title}
                                                   </h4>
                                                   {article.description && (
-                                                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 line-clamp-2">
                                                       {article.description}
                                                     </p>
                                                   )}
@@ -837,10 +849,13 @@ export default function MyAthletesPage() {
                                                       article.id
                                                     )
                                                   }
-                                                  className="ml-4 p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                  className="ml-2 sm:ml-4 p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
                                                   title="Delete article"
                                                 >
-                                                  <Trash2 size={18} />
+                                                  <Trash2
+                                                    size={16}
+                                                    className="sm:w-4.5 sm:h-4.5"
+                                                  />
                                                 </button>
                                               </div>
                                             )
@@ -856,12 +871,12 @@ export default function MyAthletesPage() {
                                     athleteActivities.videos.length > 0 && (
                                       <div>
                                         {activeFilter === 'all' && (
-                                          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                                          <h3 className="text-sm font-semibold text-gray-700 mb-2 sm:mb-3">
                                             Videos (
                                             {athleteActivities.videos.length})
                                           </h3>
                                         )}
-                                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                                           {athleteActivities.videos.map(
                                             (video: any) => {
                                               const videoUrl =
@@ -899,11 +914,11 @@ export default function MyAthletesPage() {
                                                   />
                                                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
                                                     <Play
-                                                      className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                                      className="w-6 h-6 sm:w-8 sm:h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity"
                                                       fill="white"
                                                     />
                                                   </div>
-                                                  <div className="absolute top-2 right-2">
+                                                  <div className="absolute top-1 right-1 sm:top-2 sm:right-2">
                                                     <button
                                                       onClick={e => {
                                                         e.stopPropagation();
@@ -917,14 +932,17 @@ export default function MyAthletesPage() {
                                                           );
                                                         }
                                                       }}
-                                                      className="opacity-0 group-hover:opacity-100 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all"
+                                                      className="opacity-0 group-hover:opacity-100 p-1 sm:p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all"
                                                       title="Delete video"
                                                     >
-                                                      <Trash2 size={14} />
+                                                      <Trash2
+                                                        size={12}
+                                                        className="sm:w-3.5 sm:h-3.5"
+                                                      />
                                                     </button>
                                                   </div>
                                                   {video.title && (
-                                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+                                                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1.5 sm:p-2">
                                                       <p className="text-white text-xs line-clamp-2 font-semibold">
                                                         {video.title}
                                                       </p>
@@ -945,13 +963,13 @@ export default function MyAthletesPage() {
                                     athleteActivities.templates.length > 0 && (
                                       <div>
                                         {activeFilter === 'all' && (
-                                          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                                          <h3 className="text-sm font-semibold text-gray-700 mb-2 sm:mb-3">
                                             Templates (
                                             {athleteActivities.templates.length}
                                             )
                                           </h3>
                                         )}
-                                        <div className="space-y-3">
+                                        <div className="space-y-2 sm:space-y-3">
                                           {athleteActivities.templates.map(
                                             (template: any) => {
                                               const isResource =
@@ -962,32 +980,32 @@ export default function MyAthletesPage() {
                                               return (
                                                 <div
                                                   key={template.id}
-                                                  className="bg-white rounded-lg p-4 border border-gray-200 flex items-center justify-between"
+                                                  className="bg-white rounded-lg p-3 sm:p-4 border border-gray-200 flex items-start sm:items-center justify-between gap-2"
                                                 >
-                                                  <div className="flex items-center gap-3 flex-1">
-                                                    <div className="flex-shrink-0 w-12 h-12 rounded bg-gray-100 flex items-center justify-center">
-                                                      <span className="text-2xl">
+                                                  <div className="flex items-start sm:items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                                    <div className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded bg-gray-100 flex items-center justify-center">
+                                                      <span className="text-xl sm:text-2xl">
                                                         📄
                                                       </span>
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                      <h4 className="font-semibold text-gray-900">
+                                                      <h4 className="font-semibold text-sm sm:text-base text-gray-900 truncate">
                                                         {template.title ||
                                                           'Untitled Template'}
                                                       </h4>
                                                       {template.description && (
-                                                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                                                        <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 line-clamp-2">
                                                           {template.description}
                                                         </p>
                                                       )}
                                                       {template.file_type && (
-                                                        <p className="text-xs text-gray-400 mt-1">
+                                                        <p className="text-xs text-gray-400 mt-0.5 sm:mt-1">
                                                           Type:{' '}
                                                           {template.file_type}
                                                         </p>
                                                       )}
                                                       {template.created_at && (
-                                                        <p className="text-xs text-gray-400 mt-1">
+                                                        <p className="text-xs text-gray-400 mt-0.5 sm:mt-1">
                                                           {new Date(
                                                             template.created_at
                                                           ).toLocaleDateString()}
@@ -995,7 +1013,7 @@ export default function MyAthletesPage() {
                                                       )}
                                                     </div>
                                                   </div>
-                                                  <div className="flex items-center gap-2">
+                                                  <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                                                     {template.file_url && (
                                                       <a
                                                         href={
@@ -1010,7 +1028,7 @@ export default function MyAthletesPage() {
                                                         }
                                                         target="_blank"
                                                         rel="noopener noreferrer"
-                                                        className="px-3 py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                                        className="px-2 py-1 sm:px-3 sm:py-1.5 text-xs bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                                                         onClick={e =>
                                                           e.stopPropagation()
                                                         }
@@ -1030,10 +1048,13 @@ export default function MyAthletesPage() {
                                                           );
                                                         }
                                                       }}
-                                                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                      className="p-1.5 sm:p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                       title="Delete template"
                                                     >
-                                                      <Trash2 size={18} />
+                                                      <Trash2
+                                                        size={16}
+                                                        className="sm:w-[18px] sm:h-[18px]"
+                                                      />
                                                     </button>
                                                   </div>
                                                 </div>
@@ -1067,7 +1088,7 @@ export default function MyAthletesPage() {
                                           athleteActivities.templates.length ===
                                             0))) && (
                                       <div className="text-center py-8 text-gray-500">
-                                        <p>
+                                        <p className="text-sm">
                                           No {activeFilter} found for this
                                           athlete.
                                         </p>
@@ -1094,23 +1115,25 @@ export default function MyAthletesPage() {
 
       {/* Clip Detail Modal */}
       {selectedClip && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
           <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setSelectedClip(null)}
           />
           <div className="relative z-10 w-full max-w-4xl bg-white rounded-xl shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold text-gray-900">Clip Details</h2>
+            <div className="sticky top-0 z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
+              <h2 className="text-lg sm:text-xl font-bold text-gray-900">
+                Clip Details
+              </h2>
               <button
                 onClick={() => setSelectedClip(null)}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 transition-colors"
               >
-                <X className="w-5 h-5 text-gray-600" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
               </button>
             </div>
-            <div className="p-6">
-              <div className="space-y-4">
+            <div className="p-4 sm:p-6">
+              <div className="space-y-3 sm:space-y-4">
                 {/* Video Player */}
                 <div className="w-full">
                   <video
@@ -1129,16 +1152,16 @@ export default function MyAthletesPage() {
                 <div className="space-y-2">
                   {selectedClip.description && (
                     <div>
-                      <p className="text-sm font-semibold text-gray-700 mb-1">
+                      <p className="text-xs sm:text-sm font-semibold text-gray-700 mb-1">
                         Description
                       </p>
-                      <p className="text-gray-700">
+                      <p className="text-sm sm:text-base text-gray-700">
                         {selectedClip.description}
                       </p>
                     </div>
                   )}
 
-                  <div className="flex items-center gap-6 text-gray-600 text-sm">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-gray-600 text-xs sm:text-sm">
                     <span className="flex items-center gap-1">
                       <span className="font-semibold">
                         {selectedClip.like_count || 0}
@@ -1158,7 +1181,7 @@ export default function MyAthletesPage() {
                     )}
                   </div>
 
-                  <div className="pt-4 border-t border-gray-200 flex gap-2">
+                  <div className="pt-3 sm:pt-4 border-t border-gray-200 flex gap-2">
                     <button
                       onClick={() => {
                         if (
@@ -1170,7 +1193,7 @@ export default function MyAthletesPage() {
                           setSelectedClip(null);
                         }
                       }}
-                      className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                      className="px-3 py-1.5 sm:px-4 sm:py-2 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                     >
                       Delete Clip
                     </button>
@@ -1181,6 +1204,17 @@ export default function MyAthletesPage() {
           </div>
         </div>
       )}
+
+      {/* Add custom CSS for hiding scrollbar on filter buttons */}
+      <style jsx>{`
+        .hide-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 }

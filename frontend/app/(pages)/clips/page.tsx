@@ -666,7 +666,9 @@ export default function ClipsPage() {
     try {
       const { apiPost } = await import('@/utils/api');
       // Use clip-specific endpoints so state persists and matches the clips page
-      const endpoint = wasSaved ? `/clips/${clipId}/unsave` : `/clips/${clipId}/save`;
+      const endpoint = wasSaved
+        ? `/clips/${clipId}/unsave`
+        : `/clips/${clipId}/save`;
       const result = await apiPost<{ success: boolean; message?: string }>(
         endpoint,
         {}
