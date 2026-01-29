@@ -5,18 +5,17 @@
 
 /**
  * Get frontend URL (for web links)
- * @returns {string} Frontend URL, defaults to deployed URL in production
+ * @returns {string} Frontend URL, always uses deployed URL (never localhost)
  */
 function getFrontendUrl() {
-  // Use FRONTEND_URL if set, otherwise use deployed URL
+  // Use FRONTEND_URL if set (allows override for custom domains)
   if (process.env.FRONTEND_URL) {
     return process.env.FRONTEND_URL;
   }
   
-  // Default to deployed URL (not localhost)
-  return process.env.NODE_ENV === 'production' 
-    ? 'https://athlinked.randomw.dev'
-    : 'http://localhost:3000';
+  // Always default to deployed URL for web (never localhost)
+  // This ensures parent signup links and other web links work in production
+  return 'https://athlinked.randomw.dev';
 }
 
 /**
