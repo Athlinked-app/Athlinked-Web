@@ -924,4 +924,21 @@ export default function EditProfileModal({
       </div>
     );
   }
+
+  return (
+    <EditProfilePopup
+      open={open}
+      onClose={onClose}
+      userData={{
+        full_name: fullName,
+        profile_url: profileImagePreview,
+        background_image_url: backgroundImagePreview,
+        sports_played: sportsPlayed,
+        bio: bio,
+        education: education,
+        city: location,
+      }}
+      onSave={handleEditPopupSave}
+    />
+  );
 }

@@ -16,6 +16,7 @@ import {
   MessageSquare,
   Share2,
   Bookmark,
+  ArrowLeft,
 } from 'lucide-react';
 import io, { Socket } from 'socket.io-client';
 import EmojiPicker from '@/components/Message/EmojiPicker';
@@ -86,6 +87,8 @@ interface SearchUser {
 
 function MessagesPageContent() {
   const searchParams = useSearchParams();
+  // Add this new state near the other useState declarations (after line 97)
+  const [isMobileView, setIsMobileView] = useState(false);
   const router = useRouter();
   const userIdFromUrl = searchParams.get('userId');
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -109,7 +112,9 @@ function MessagesPageContent() {
   const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
   const [videoModalUrl, setVideoModalUrl] = useState<string | null>(null);
   const [isClipModalOpen, setIsClipModalOpen] = useState(false);
-  const [clipModalData, setClipModalData] = useState<ClipModalData | null>(null);
+  const [clipModalData, setClipModalData] = useState<ClipModalData | null>(
+    null
+  );
   const [clipComments, setClipComments] = useState<ClipComment[]>([]);
   const [clipCommentInput, setClipCommentInput] = useState('');
   const [isClipCommentsOpen, setIsClipCommentsOpen] = useState(false);
@@ -168,6 +173,18 @@ function MessagesPageContent() {
     };
 
     fetchCurrentUser();
+  }, []);
+
+  // Add this useEffect after the state declarations
+  useEffect(() => {
+    const checkMobileView = () => {
+      setIsMobileView(window.innerWidth < 640); // 640px is sm breakpoint (mobile only)
+    };
+
+    checkMobileView();
+    window.addEventListener('resize', checkMobileView);
+
+    return () => window.removeEventListener('resize', checkMobileView);
   }, []);
 
   useEffect(() => {
@@ -291,9 +308,9 @@ function MessagesPageContent() {
                   return prev.map(msg =>
                     msg.message_id === data.message_id
                       ? {
-                        ...msg,
-                        is_delivered: data.is_delivered || msg.is_delivered,
-                      }
+                          ...msg,
+                          is_delivered: data.is_delivered || msg.is_delivered,
+                        }
                       : msg
                   );
                 }
@@ -1227,12 +1244,7 @@ function MessagesPageContent() {
 
   const openClipFromPostData = (pd: any) => {
     const clipId =
-      pd?.clip_id ||
-      pd?.clipId ||
-      pd?.id ||
-      pd?.post_id ||
-      pd?.postId ||
-      null;
+      pd?.clip_id || pd?.clipId || pd?.id || pd?.post_id || pd?.postId || null;
 
     if (clipId) {
       router.push(`/clips?clipId=${encodeURIComponent(String(clipId))}`);
@@ -1255,12 +1267,7 @@ function MessagesPageContent() {
 
   const openClipModalFromPostData = async (pd: any) => {
     const clipId =
-      pd?.clip_id ||
-      pd?.clipId ||
-      pd?.id ||
-      pd?.post_id ||
-      pd?.postId ||
-      null;
+      pd?.clip_id || pd?.clipId || pd?.id || pd?.post_id || pd?.postId || null;
 
     const videoUrl = getVideoUrlFromPostData(pd);
     if (!clipId || !videoUrl) {
@@ -1340,45 +1347,52 @@ function MessagesPageContent() {
     setClipModalData(prev =>
       prev
         ? {
-          ...prev,
-          is_liked: !wasLiked,
-          like_count: Math.max(0, prev.like_count + (wasLiked ? -1 : 1)),
-        }
+            ...prev,
+            is_liked: !wasLiked,
+            like_count: Math.max(0, prev.like_count + (wasLiked ? -1 : 1)),
+          }
         : prev
     );
 
     try {
       const { apiPost } = await import('@/utils/api');
-      const endpoint = wasLiked ? `/clips/${clipId}/unlike` : `/clips/${clipId}/like`;
-      const result = await apiPost<{ success: boolean; like_count?: number; message?: string }>(
-        endpoint,
-        {}
-      );
+      const endpoint = wasLiked
+        ? `/clips/${clipId}/unlike`
+        : `/clips/${clipId}/like`;
+      const result = await apiPost<{
+        success: boolean;
+        like_count?: number;
+        message?: string;
+      }>(endpoint, {});
 
       if (!result?.success) {
         // revert
         setClipModalData(prev =>
           prev
             ? {
-              ...prev,
-              is_liked: wasLiked,
-              like_count: Math.max(0, prev.like_count + (wasLiked ? 1 : -1)),
-            }
+                ...prev,
+                is_liked: wasLiked,
+                like_count: Math.max(0, prev.like_count + (wasLiked ? 1 : -1)),
+              }
             : prev
         );
-        alert(result?.message || 'Failed to update like status. Please try again.');
+        alert(
+          result?.message || 'Failed to update like status. Please try again.'
+        );
       } else if (typeof result.like_count === 'number') {
-        setClipModalData(prev => (prev ? { ...prev, like_count: result.like_count! } : prev));
+        setClipModalData(prev =>
+          prev ? { ...prev, like_count: result.like_count! } : prev
+        );
       }
     } catch (e) {
       // revert
       setClipModalData(prev =>
         prev
           ? {
-            ...prev,
-            is_liked: wasLiked,
-            like_count: Math.max(0, prev.like_count + (wasLiked ? 1 : -1)),
-          }
+              ...prev,
+              is_liked: wasLiked,
+              like_count: Math.max(0, prev.like_count + (wasLiked ? 1 : -1)),
+            }
           : prev
       );
       console.error('Error liking clip:', e);
@@ -1395,14 +1409,20 @@ function MessagesPageContent() {
 
     try {
       const { apiPost } = await import('@/utils/api');
-      const endpoint = wasSaved ? `/clips/${clipId}/unsave` : `/clips/${clipId}/save`;
-      const result = await apiPost<{ success: boolean; message?: string; save_count?: number }>(
-        endpoint,
-        {}
-      );
+      const endpoint = wasSaved
+        ? `/clips/${clipId}/unsave`
+        : `/clips/${clipId}/save`;
+      const result = await apiPost<{
+        success: boolean;
+        message?: string;
+        save_count?: number;
+      }>(endpoint, {});
       if (!result?.success) {
         // Treat "already saved" as success (idempotent)
-        if (typeof result?.message === 'string' && result.message.includes('already saved')) {
+        if (
+          typeof result?.message === 'string' &&
+          result.message.includes('already saved')
+        ) {
           setClipModalData(prev => (prev ? { ...prev, is_saved: true } : prev));
           return;
         }
@@ -1499,8 +1519,15 @@ function MessagesPageContent() {
           <NavigationBar activeItem="message" />
         </div>
 
-        <div className="flex-1 flex gap-3 pr-4 overflow-hidden">
-          <div className="w-80 bg-white rounded-lg border border-gray-200 flex flex-col overflow-hidden">
+        <div className="flex-1 flex gap-3 pr-0 md:pr-4 overflow-hidden">
+          {/* Conversation List - hide on mobile when chat is open */}
+          <div
+            className={`${
+              isMobileView && selectedConversation
+                ? 'hidden'
+                : 'w-full md:w-60 sm:w-80'
+            } bg-white rounded-lg border border-gray-200 flex flex-col overflow-hidden`}
+          >
             <div className="p-4 border-b border-gray-200 relative">
               <h2 className="text-xl font-semibold text-black mb-4">
                 Messages
@@ -1585,11 +1612,12 @@ function MessagesPageContent() {
                   <div
                     key={conv.conversation_id}
                     onClick={() => setSelectedConversation(conv)}
-                    className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${selectedConversation?.conversation_id ===
-                        conv.conversation_id
+                    className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
+                      selectedConversation?.conversation_id ===
+                      conv.conversation_id
                         ? 'bg-yellow-50'
                         : ''
-                      }`}
+                    }`}
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center shrink-0">
@@ -1635,11 +1663,29 @@ function MessagesPageContent() {
               )}
             </div>
           </div>
-
-          <div className="flex-1 bg-white rounded-lg border border-gray-200 flex flex-col overflow-hidden">
+          {/* Chat Box - full screen on mobile, side-by-side on desktop */}
+          <div
+            className={`${
+              isMobileView
+                ? selectedConversation
+                  ? 'fixed inset-0 z-50'
+                  : 'hidden'
+                : 'flex-1'
+            } bg-white rounded-lg sm:border border-gray-200 flex flex-col overflow-hidden`}
+          >
             {selectedConversation ? (
               <>
                 <div className="p-4 border-b border-gray-200 flex items-center justify-between gap-3">
+                  {/* Back button for mobile */}
+                  {isMobileView && (
+                    <button
+                      onClick={() => setSelectedConversation(null)}
+                      className="p-2 -ml-2 hover:bg-gray-100 rounded-full transition-colors md:hidden"
+                      aria-label="Back to conversations"
+                    >
+                      <ArrowLeft size={20} className="text-gray-600" />
+                    </button>
+                  )}
                   <div className="flex items-center gap-3 flex-1">
                     <div className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center">
                       {selectedConversation.other_user_profile_image ? (
@@ -1694,7 +1740,7 @@ function MessagesPageContent() {
                     const showDate =
                       index === 0 ||
                       new Date(msg.created_at).toDateString() !==
-                      new Date(messages[index - 1].created_at).toDateString();
+                        new Date(messages[index - 1].created_at).toDateString();
 
                     return (
                       <div key={msg.message_id}>
@@ -1704,8 +1750,9 @@ function MessagesPageContent() {
                           </div>
                         )}
                         <div
-                          className={`flex gap-3 ${isOwnMessage ? 'flex-row-reverse' : 'flex-row'
-                            } group`}
+                          className={`flex gap-3 ${
+                            isOwnMessage ? 'flex-row-reverse' : 'flex-row'
+                          } group`}
                           onMouseEnter={() =>
                             isOwnMessage && setHoveredMessageId(msg.message_id)
                           }
@@ -1734,10 +1781,11 @@ function MessagesPageContent() {
                           )}
                           <div className="relative flex items-start gap-2">
                             <div
-                              className={`max-w-xs lg:max-w-md rounded-lg overflow-hidden ${isOwnMessage
+                              className={`max-w-xs lg:max-w-md rounded-lg overflow-hidden ${
+                                isOwnMessage
                                   ? 'bg-white border border-gray-200'
                                   : 'bg-gray-100'
-                                }`}
+                              }`}
                             >
                               {msg.post_data && msg.message_type === 'post' ? (
                                 <div className="w-full border border-gray-200 rounded-lg overflow-hidden bg-white max-w-md">
@@ -1889,7 +1937,11 @@ function MessagesPageContent() {
                                       (isClipPostData(msg.post_data) ? (
                                         <button
                                           type="button"
-                                          onClick={() => openClipModalFromPostData(msg.post_data)}
+                                          onClick={() =>
+                                            openClipModalFromPostData(
+                                              msg.post_data
+                                            )
+                                          }
                                           className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
                                         >
                                           View Clip →
@@ -2081,7 +2133,7 @@ function MessagesPageContent() {
                   <div ref={messagesEndRef} />
                 </div>
 
-                <div className="p-4 border-t border-gray-200">
+                <div className="p-2 md:p-4 border-t  border-gray-200">
                   {(selectedFile || selectedGIF || filePreview) && (
                     <div className="mb-2 relative">
                       <div className="relative inline-block max-w-xs">
@@ -2126,7 +2178,7 @@ function MessagesPageContent() {
                     </div>
                   )}
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex  items-center gap-2">
                     <EmojiPicker onEmojiSelect={handleEmojiSelect} />
                     <GIFPicker onGIFSelect={handleGIFSelect} />
                     <input
@@ -2139,7 +2191,7 @@ function MessagesPageContent() {
                           handleSendMessage();
                         }
                       }}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black"
+                      className="flex-1 md:px-4 md:py-2 px-2 py-2 text-xs md:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black"
                     />
                     <FileUpload onFileSelect={handleFileSelect} />
                     <button
@@ -2331,10 +2383,11 @@ function MessagesPageContent() {
                       className="flex items-center gap-2 text-gray-800 hover:text-gray-900"
                     >
                       <Heart
-                        className={`w-5 h-5 ${clipModalData.is_liked
+                        className={`w-5 h-5 ${
+                          clipModalData.is_liked
                             ? 'text-red-500'
                             : 'text-gray-700'
-                          }`}
+                        }`}
                         fill={clipModalData.is_liked ? 'currentColor' : 'none'}
                       />
                       <span className="text-sm font-medium">
@@ -2385,7 +2438,9 @@ function MessagesPageContent() {
                   <div className="bg-white border border-gray-200 rounded-lg p-3">
                     <div className="space-y-3">
                       {clipComments.length === 0 ? (
-                        <p className="text-sm text-gray-500">No comments yet.</p>
+                        <p className="text-sm text-gray-500">
+                          No comments yet.
+                        </p>
                       ) : (
                         clipComments.map(c => (
                           <div key={c.id} className="text-sm">

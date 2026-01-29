@@ -6,7 +6,7 @@ interface AboutMeProps {
 
 export default function AboutMe({ bio }: AboutMeProps) {
   return (
-    <div className="w-full bg-white rounded-lg px-6 py-5">
+    <div className="w-full bg-white rounded-lg px-1 md:px-3 py-5">
       <h2 className="text-lg font-bold text-gray-900 mb-3">About Me</h2>
       <div className="space-y-2">
         {bio ? (

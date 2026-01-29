@@ -184,7 +184,8 @@ export default function HamburgerMenu({ isOpen, onClose }: HamburgerMenuProps) {
 
     const onNotificationUpdated = () => fetchNotificationCount();
     window.addEventListener('notification-updated', onNotificationUpdated);
-    return () => window.removeEventListener('notification-updated', onNotificationUpdated);
+    return () =>
+      window.removeEventListener('notification-updated', onNotificationUpdated);
   }, []);
 
   const userName = userData?.full_name || 'User';
@@ -322,11 +323,14 @@ export default function HamburgerMenu({ isOpen, onClose }: HamburgerMenuProps) {
                         <Icon
                           className={`w-5 h-5 ${isActive ? 'text-[#CB9729]' : 'text-gray-600'}`}
                         />
-                        {item.id === 'notifications' && notificationCount > 0 && (
-                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
-                            {notificationCount > 99 ? '99+' : notificationCount}
-                          </span>
-                        )}
+                        {item.id === 'notifications' &&
+                          notificationCount > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+                              {notificationCount > 99
+                                ? '99+'
+                                : notificationCount}
+                            </span>
+                          )}
                         {item.id === 'message' && messageCount > 0 && (
                           <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
                             {messageCount > 99 ? '99+' : messageCount}
