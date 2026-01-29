@@ -3,7 +3,7 @@ import { Geist, Geist_Mono, Manrope } from 'next/font/google';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import './globals.css';
 import AuthProvider from '@/components/Auth/AuthProvider';
-import MobileFooter from '@/components/mobilefooter';
+
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -53,7 +53,7 @@ export default function RootLayout({
       <body className={manrope.className}>
         <GoogleOAuthWrapper>
           {children}
-          <MobileFooter />
+      
         </GoogleOAuthWrapper>
       </body>
     </html>
