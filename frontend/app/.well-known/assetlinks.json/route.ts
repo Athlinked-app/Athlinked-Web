@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
  * Serve Android App Links verification file
  * This route ensures assetlinks.json is served with correct headers
  * Path: /.well-known/assetlinks.json
- * 
+ *
  * This is a backup route for cases where static file serving might not work
  * (e.g., with Cloudflare or other CDNs that might interfere)
  */

@@ -43,7 +43,7 @@ export default function MentionInput({
 
       try {
         const { apiGet } = await import('@/utils/api');
-        
+
         // Fetch both followers and following users
         const [followersData, followingData] = await Promise.all([
           apiGet<{
@@ -58,7 +58,7 @@ export default function MentionInput({
 
         // Combine both lists and remove duplicates by user ID
         const allUsers = new Map<string, any>();
-        
+
         if (followersData.success && followersData.followers) {
           followersData.followers.forEach((user: any) => {
             allUsers.set(user.id, {
@@ -69,7 +69,7 @@ export default function MentionInput({
             });
           });
         }
-        
+
         if (followingData.success && followingData.following) {
           followingData.following.forEach((user: any) => {
             allUsers.set(user.id, {

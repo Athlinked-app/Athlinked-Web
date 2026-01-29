@@ -328,7 +328,9 @@ export default function Post({
     const wasSaved = isSaved;
     // Optimistic update
     setIsSaved(!isSaved);
-    setSaveAlertMessage(wasSaved ? 'This post is unsaved' : 'This post is saved');
+    setSaveAlertMessage(
+      wasSaved ? 'This post is unsaved' : 'This post is saved'
+    );
     setShowSaveAlert(true);
 
     try {
@@ -1004,8 +1006,9 @@ export default function Post({
                   const src =
                     post.media_url && post.media_url.startsWith('http')
                       ? post.media_url
-                      : getResourceUrl(post.media_url || post.image_url || '') ||
-                        '';
+                      : getResourceUrl(
+                          post.media_url || post.image_url || ''
+                        ) || '';
                   const isVideo =
                     post.post_type === 'video' ||
                     (post.media_url && post.media_url.match(/\.(mp4|mov)$/i));

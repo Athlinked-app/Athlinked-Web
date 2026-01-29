@@ -18,7 +18,6 @@ export const API_BASE_URL = normalizeApiBaseUrl(
   process.env.NEXT_PUBLIC_API_URL!
 );
 
-
 /**
  * Get the full URL for a resource (image, file, etc.)
  * @param path - Relative path (e.g., '/uploads/profile/image.jpg')

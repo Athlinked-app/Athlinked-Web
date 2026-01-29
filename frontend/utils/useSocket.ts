@@ -31,7 +31,7 @@ export function initializeSocket(): Socket | null {
   }
 
   console.log('Initializing WebSocket connection to:', API_BASE_URL);
-  
+
   try {
     globalSocket = io(API_BASE_URL, {
       transports: ['websocket', 'polling'], // Fallback to polling if websocket fails
@@ -53,13 +53,23 @@ export function initializeSocket(): Socket | null {
         try {
           if (globalSocket && globalSocket.connected && currentUserId) {
             console.log('Emitting userId event...');
-            globalSocket.emit('userId', { userId: currentUserId }, (response: any) => {
-              if (response && response.error) {
-                console.error('❌ Error response from userId event:', response.error);
-              } else {
-                console.log('✅ userId sent successfully, response:', response);
+            globalSocket.emit(
+              'userId',
+              { userId: currentUserId },
+              (response: any) => {
+                if (response && response.error) {
+                  console.error(
+                    '❌ Error response from userId event:',
+                    response.error
+                  );
+                } else {
+                  console.log(
+                    '✅ userId sent successfully, response:',
+                    response
+                  );
+                }
               }
-            });
+            );
           } else {
             console.warn('⚠️ Socket not ready when trying to send userId', {
               socketExists: !!globalSocket,
@@ -81,13 +91,20 @@ export function initializeSocket(): Socket | null {
     return null;
   }
 
-  globalSocket.on('disconnect', (reason) => {
+  globalSocket.on('disconnect', reason => {
     console.log('❌ Socket disconnected:', reason);
   });
 
   globalSocket.on('connect_error', (error: any) => {
     // Only log if error has meaningful content
-    if (error && (error.message || error.description || error.type || error.code || typeof error === 'string')) {
+    if (
+      error &&
+      (error.message ||
+        error.description ||
+        error.type ||
+        error.code ||
+        typeof error === 'string')
+    ) {
       console.error('❌ Socket connection error:', error);
       if (typeof error === 'string') {
         console.error('Error string:', error);
@@ -108,7 +125,13 @@ export function initializeSocket(): Socket | null {
 
   globalSocket.on('error', (error: any) => {
     // Only log if error has meaningful content
-    if (error && (error.message || error.description || error.type || typeof error === 'string')) {
+    if (
+      error &&
+      (error.message ||
+        error.description ||
+        error.type ||
+        typeof error === 'string')
+    ) {
       console.error('❌ Socket error event:', error);
       if (typeof error === 'string') {
         console.error('Error string:', error);
@@ -137,13 +160,13 @@ export function getSocket(): Socket | null {
   if (!globalSocket) {
     return initializeSocket();
   }
-  
+
   // If socket exists but not connected, try to reconnect
   if (!globalSocket.connected) {
     console.log('Socket exists but not connected, attempting to reconnect...');
     globalSocket.connect();
   }
-  
+
   return globalSocket;
 }
 
