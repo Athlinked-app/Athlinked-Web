@@ -160,7 +160,7 @@ export default function SocialHandles({
 
   return (
     <>
-      <div className="w-full bg-white rounded-lg px-6 py-5">
+      <div className="w-full bg-white rounded-lg px-1 md:px-3 py-5">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-lg font-bold text-gray-900">Social Handles</h2>
           {isOwnProfile && (

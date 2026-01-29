@@ -168,180 +168,180 @@ export default function Header({
 
   return (
     <>
-    <nav className="flex items-center justify-between px-3 sm:px-3 md:px-4 lg:px-6 py-6 md:py-3 bg-white">
-      <div className="flex items-center gap-2">
-        {/* Hamburger - mobile only */}
-        <button
-          type="button"
-          onClick={() => setMobileMenuOpen(true)}
-          className="md:hidden p-1.5 rounded-lg text-gray-700 hover:bg-gray-100 focus:outline-none"
-          aria-label="Open menu"
-        >
-          <Menu className="w-6 h-6" />
-        </button>
-        <Link href="/" className="flex items-center gap-1 sm:gap-2">
-          <Image
-            src="/assets/Homescreen/Logo.png"
-            alt="ATHLINKED Logo"
-            width={180}
-            height={50}
-            className="w-32 h-8 md:w-[145px] md:h-[35px]"
-            priority
-          />
-        </Link>
-      </div>
-
-      {/* Profile avatar + popup - hidden on mobile */}
-      <div className="hidden md:flex items-center relative">
-        <div className="ml-1 sm:ml-2">
+      <nav className="flex items-center justify-between px-3 sm:px-3 md:px-4 lg:px-6 py-6 md:py-3 bg-white">
+        <div className="flex items-center gap-2">
+          {/* Hamburger - mobile only */}
           <button
-            onClick={() => setShowPopup(!showPopup)}
-            className="focus:outline-none"
+            type="button"
+            onClick={() => setMobileMenuOpen(true)}
+            className="md:hidden p-1.5 rounded-lg text-gray-700 hover:bg-gray-100 focus:outline-none"
+            aria-label="Open menu"
           >
-            {validUserProfileUrl ? (
-              <Image
-                src={validUserProfileUrl}
-                alt={`${userName} profile avatar`}
-                width={48}
-                height={48}
-                className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full object-cover border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
-                priority
-              />
-            ) : (
-              <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-300 border border-gray-200 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
-                <span className="text-gray-600 font-semibold text-xs sm:text-sm md:text-base">
-                  {getInitials(userName)}
-                </span>
-              </div>
-            )}
+            <Menu className="w-6 h-6" />
           </button>
+          <Link href="/" className="flex items-center gap-1 sm:gap-2">
+            <Image
+              src="/assets/Homescreen/Logo.png"
+              alt="ATHLINKED Logo"
+              width={180}
+              height={50}
+              className="w-32 h-8 md:w-[145px] md:h-[35px]"
+              priority
+            />
+          </Link>
         </div>
 
-        {/* Profile Popup */}
-        {showPopup && (
-          <div
-            ref={popupRef}
-            className="absolute top-full right-0 mt-1 sm:mt-2 w-64 sm:w-72 md:w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
-          >
-            {/* Profile Section */}
-            <div className="p-3 sm:p-4 md:p-5 border-b border-gray-200">
-              <div
-                className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
-                onClick={() => {
-                  router.push('/profile');
-                  setShowPopup(false);
-                }}
-              >
-                <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center shrink-0">
-                  {validUserProfileUrl ? (
-                    <img
-                      src={validUserProfileUrl}
-                      alt={userName}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-gray-600 font-semibold text-xs sm:text-sm md:text-base">
-                      {getInitials(userName)}
-                    </span>
-                  )}
+        {/* Profile avatar + popup - hidden on mobile */}
+        <div className="hidden md:flex items-center relative">
+          <div className="ml-1 sm:ml-2">
+            <button
+              onClick={() => setShowPopup(!showPopup)}
+              className="focus:outline-none"
+            >
+              {validUserProfileUrl ? (
+                <Image
+                  src={validUserProfileUrl}
+                  alt={`${userName} profile avatar`}
+                  width={48}
+                  height={48}
+                  className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full object-cover border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
+                  priority
+                />
+              ) : (
+                <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-300 border border-gray-200 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
+                  <span className="text-gray-600 font-semibold text-xs sm:text-sm md:text-base">
+                    {getInitials(userName)}
+                  </span>
                 </div>
-                <div className="flex flex-col leading-tight min-w-0">
-                  <span className="text-xs sm:text-sm text-gray-500 truncate">
-                    {userRole}
-                  </span>
-                  <span className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 truncate">
-                    {userName}
-                  </span>
+              )}
+            </button>
+          </div>
+
+          {/* Profile Popup */}
+          {showPopup && (
+            <div
+              ref={popupRef}
+              className="absolute top-full right-0 mt-1 sm:mt-2 w-64 sm:w-72 md:w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50"
+            >
+              {/* Profile Section */}
+              <div className="p-3 sm:p-4 md:p-5 border-b border-gray-200">
+                <div
+                  className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => {
+                    router.push('/profile');
+                    setShowPopup(false);
+                  }}
+                >
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-gray-300 overflow-hidden border border-gray-200 flex items-center justify-center shrink-0">
+                    {validUserProfileUrl ? (
+                      <img
+                        src={validUserProfileUrl}
+                        alt={userName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-gray-600 font-semibold text-xs sm:text-sm md:text-base">
+                        {getInitials(userName)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col leading-tight min-w-0">
+                    <span className="text-xs sm:text-sm text-gray-500 truncate">
+                      {userRole}
+                    </span>
+                    <span className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 truncate">
+                      {userName}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Options Section */}
-            <div className="py-1 sm:py-2">
-              <button
-                onClick={() => {
-                  // Navigate to settings page or open settings modal
-                  router.push('/settings');
-                  setShowPopup(false);
-                }}
-                className="w-full flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-left hover:bg-gray-50 transition-colors"
-              >
-                <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 shrink-0" />
-                <span className="text-sm sm:text-base text-gray-900 font-medium">
-                  Settings
-                </span>
-              </button>
-              <button
-                onClick={() => {
-                  setShowLogoutConfirm(true);
-                  setShowPopup(false);
-                }}
-                className="w-full flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-left hover:bg-gray-50 transition-colors"
-              >
-                <LogOut className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 shrink-0" />
-                <span className="text-sm sm:text-base text-gray-900 font-medium">
-                  Logout
-                </span>
-              </button>
+              {/* Options Section */}
+              <div className="py-1 sm:py-2">
+                <button
+                  onClick={() => {
+                    // Navigate to settings page or open settings modal
+                    router.push('/settings');
+                    setShowPopup(false);
+                  }}
+                  className="w-full flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-left hover:bg-gray-50 transition-colors"
+                >
+                  <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 shrink-0" />
+                  <span className="text-sm sm:text-base text-gray-900 font-medium">
+                    Settings
+                  </span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLogoutConfirm(true);
+                    setShowPopup(false);
+                  }}
+                  className="w-full flex items-center gap-2 sm:gap-3 px-4 sm:px-5 md:px-6 py-2 sm:py-2.5 md:py-3 text-left hover:bg-gray-50 transition-colors"
+                >
+                  <LogOut className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 shrink-0" />
+                  <span className="text-sm sm:text-base text-gray-900 font-medium">
+                    Logout
+                  </span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Logout Confirmation Modal - hidden on mobile */}
+        {showLogoutConfirm && (
+          <div className="hidden md:block">
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 backdrop-blur-sm z-50"
+              onClick={() => setShowLogoutConfirm(false)}
+            ></div>
+
+            {/* Modal */}
+            <div className="fixed inset-0 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg shadow-xl p-4 sm:p-5 md:p-6 max-w-md w-full mx-3 sm:mx-4">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
+                    Confirm Logout
+                  </h3>
+                  <button
+                    onClick={() => setShowLogoutConfirm(false)}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X size={18} className="sm:w-5 sm:h-5" />
+                  </button>
+                </div>
+
+                <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-5 md:mb-6">
+                  Are you sure you want to logout? You will need to login again
+                  to access your account.
+                </p>
+
+                <div className="flex gap-2 sm:gap-3 justify-end">
+                  <button
+                    onClick={() => setShowLogoutConfirm(false)}
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base bg-[#CB9729] hover:bg-[#d4a846] text-white rounded-lg transition-colors font-medium"
+                  >
+                    Yes, Logout
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
-      </div>
+      </nav>
 
-      {/* Logout Confirmation Modal - hidden on mobile */}
-      {showLogoutConfirm && (
-        <div className="hidden md:block">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 backdrop-blur-sm z-50"
-            onClick={() => setShowLogoutConfirm(false)}
-          ></div>
-
-          {/* Modal */}
-          <div className="fixed inset-0 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-xl p-4 sm:p-5 md:p-6 max-w-md w-full mx-3 sm:mx-4">
-              <div className="flex items-center justify-between mb-3 sm:mb-4">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900">
-                  Confirm Logout
-                </h3>
-                <button
-                  onClick={() => setShowLogoutConfirm(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X size={18} className="sm:w-5 sm:h-5" />
-                </button>
-              </div>
-
-              <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-5 md:mb-6">
-                Are you sure you want to logout? You will need to login again to
-                access your account.
-              </p>
-
-              <div className="flex gap-2 sm:gap-3 justify-end">
-                <button
-                  onClick={() => setShowLogoutConfirm(false)}
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors font-medium"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base bg-[#CB9729] hover:bg-[#d4a846] text-white rounded-lg transition-colors font-medium"
-                >
-                  Yes, Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </nav>
-
-    {/* Mobile hamburger drawer */}
-    <HamburgerMenu
-      isOpen={mobileMenuOpen}
-      onClose={() => setMobileMenuOpen(false)}
-    />
+      {/* Mobile hamburger drawer */}
+      <HamburgerMenu
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+      />
     </>
   );
 }
