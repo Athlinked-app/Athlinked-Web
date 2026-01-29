@@ -249,7 +249,7 @@ async function getClipsFeed(page = 1, limit = 10, viewerUserId = null) {
         c.comment_count,
         c.save_count,
         c.username,
-        c.user_profile_url,
+        u.profile_url as user_profile_url,
         c.created_at
       FROM clips c
       LEFT JOIN users u ON c.user_id = u.id
@@ -281,7 +281,7 @@ async function getClipsFeed(page = 1, limit = 10, viewerUserId = null) {
         c.comment_count,
         c.save_count,
         c.username,
-        c.user_profile_url,
+        u.profile_url as user_profile_url,
         c.created_at,
         CASE 
           WHEN cs.clip_id IS NOT NULL THEN true 
@@ -518,10 +518,11 @@ async function getClipsByUserId(userId, limit = 50, viewerUserId = null) {
       c.comment_count,
       c.save_count,
       c.username,
-      c.user_profile_url,
+      u.profile_url as user_profile_url,
       c.created_at
       ${isSavedField}
     FROM clips c
+    LEFT JOIN users u ON c.user_id = u.id
     ${joinClause}
     WHERE c.user_id = $1
     ORDER BY c.created_at DESC
@@ -695,7 +696,7 @@ async function getSavedClipsByUserId(userId, limit = 50) {
       c.id,
       c.user_id,
       c.username,
-      c.user_profile_url,
+      clip_author.profile_url as user_profile_url,
       c.video_url,
       c.description,
       c.like_count,
@@ -703,7 +704,7 @@ async function getSavedClipsByUserId(userId, limit = 50) {
       c.created_at,
       c.user_id as clip_author_id,
       c.username as clip_author_username,
-      c.user_profile_url as clip_author_profile_url,
+      clip_author.profile_url as clip_author_profile_url,
       COALESCE(u.full_name, c.username) as author_name,
       u.profile_url as author_profile_url,
       u.id as author_id,
@@ -715,6 +716,7 @@ async function getSavedClipsByUserId(userId, limit = 50) {
       c.save_count
     FROM clips c
     INNER JOIN clip_saves cs ON c.id = cs.clip_id
+    LEFT JOIN users clip_author ON c.user_id = clip_author.id
     LEFT JOIN users u ON COALESCE(cs.clip_author_id, c.user_id) = u.id
     WHERE cs.user_id = $1
     ORDER BY cs.created_at DESC
