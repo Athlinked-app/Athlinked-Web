@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import Header from '@/components/Header';
@@ -54,6 +55,7 @@ interface OpportunityItem {
 }
 
 export default function SearchPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searchPosts, setSearchPosts] = useState<PostData[]>([]);
@@ -1038,9 +1040,16 @@ export default function SearchPage() {
           {searchResults.map(person => (
             <div
               key={person.id}
-              className="p-4 hover:bg-gray-50 transition-colors"
+              className="p-4 hover:bg-gray-50 transition-colors flex items-center gap-3"
             >
-              <div className="flex items-center gap-3">
+              <div
+                className="flex flex-1 items-center gap-3 min-w-0 cursor-pointer"
+                onClick={() =>
+                  router.push(
+                    `/profile?userId=${encodeURIComponent(person.id)}`
+                  )
+                }
+              >
                 <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
                   {person.avatar ? (
                     <img
@@ -1060,17 +1069,20 @@ export default function SearchPage() {
                   </p>
                   <p className="text-xs text-gray-500">{person.role}</p>
                 </div>
-                <button
-                  onClick={() => handleFollow(person.id, person.isFollowing)}
-                  className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors flex-shrink-0 ${
-                    person.isFollowing
-                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  {person.isFollowing ? 'Following' : 'Follow'}
-                </button>
               </div>
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  handleFollow(person.id, person.isFollowing);
+                }}
+                className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors flex-shrink-0 ${
+                  person.isFollowing
+                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {person.isFollowing ? 'Following' : 'Follow'}
+              </button>
             </div>
           ))}
         </div>
@@ -1229,9 +1241,16 @@ export default function SearchPage() {
                 {searchResults.map(person => (
                   <div
                     key={person.id}
-                    className="p-4 hover:bg-gray-50 transition-colors"
+                    className="p-4 hover:bg-gray-50 transition-colors flex items-center gap-3"
                   >
-                    <div className="flex items-center gap-3">
+                    <div
+                      className="flex flex-1 items-center gap-3 min-w-0 cursor-pointer"
+                      onClick={() =>
+                        router.push(
+                          `/profile?userId=${encodeURIComponent(person.id)}`
+                        )
+                      }
+                    >
                       <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
                         {person.avatar ? (
                           <img
@@ -1251,19 +1270,20 @@ export default function SearchPage() {
                         </p>
                         <p className="text-xs text-gray-500">{person.role}</p>
                       </div>
-                      <button
-                        onClick={() =>
-                          handleFollow(person.id, person.isFollowing)
-                        }
-                        className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors flex-shrink-0 ${
-                          person.isFollowing
-                            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        {person.isFollowing ? 'Following' : 'Follow'}
-                      </button>
                     </div>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleFollow(person.id, person.isFollowing);
+                      }}
+                      className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors flex-shrink-0 ${
+                        person.isFollowing
+                          ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {person.isFollowing ? 'Following' : 'Follow'}
+                    </button>
                   </div>
                 ))}
               </div>
@@ -1568,10 +1588,10 @@ export default function SearchPage() {
           <NavigationBar activeItem="search" />
         </div>
         <div className="flex-1 flex flex-col  overflow-hidden min-w-0">
-          <div className="flex-1 overflow-y-auto pr-3 min-h-0">
+          <div className="flex-1 overflow-y-auto md:pr-3 min-h-0 px-2 md:px-0">
             <div className="flex flex-col gap-4 pb-4">
               {/* Search Header */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="bg-white rounded-lg shadow-sm p-6 ">
                 <h1 className="text-2xl font-bold text-gray-900 mb-4">
                   Search
                 </h1>

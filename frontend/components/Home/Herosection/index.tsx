@@ -287,7 +287,7 @@ export default function HomeHerosection({
 
   return (
     <div className="w-full">
-      <div className="w-full bg-white border border-gray-200 rounded-lg sm:rounded-xl shadow-sm p-2 sm:p-3 md:p-4">
+      <div className="w-full bg-white border border-gray-200  sm:rounded-xl shadow-sm p-2 sm:p-3 md:p-4">
         <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3">
           <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full overflow-hidden bg-gray-200 border border-gray-200 flex items-center justify-center shrink-0">
             {userProfileUrl && userProfileUrl.trim() !== '' ? (
@@ -343,7 +343,7 @@ export default function HomeHerosection({
         </div>
 
         <div className="mt-2 sm:mt-3 md:mt-4 border-t border-gray-200 pt-2 sm:pt-2.5 md:pt-3">
-          <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-gray-200">
+          <div className="grid grid-cols-4 sm:grid-cols-4 divide-x divide-gray-200">
             <button
               type="button"
               onClick={() => {

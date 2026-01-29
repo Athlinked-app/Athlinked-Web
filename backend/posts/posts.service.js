@@ -220,6 +220,25 @@ async function getPostsFeedService(page = 1, limit = 50, viewerUserId = null, po
   }
 }
 
+async function getPostByIdService(postId, viewerUserId = null) {
+  try {
+    const post = await postsModel.getPostById(postId);
+    if (!post) return { success: false, post: null };
+
+    if (post.user_profile_url) {
+      post.user_profile_url = await convertKeyToPresignedUrl(post.user_profile_url);
+    }
+    if (post.media_url) {
+      post.media_url = await convertKeyToPresignedUrl(post.media_url);
+    }
+
+    return { success: true, post };
+  } catch (error) {
+    console.error('Get post by id service error:', error);
+    throw error;
+  }
+}
+
 async function checkLikeStatusService(postId, userId) {
   try {
     const isLiked = await postsModel.checkLikeStatus(postId, userId);
@@ -744,6 +763,7 @@ async function getSavedPostsService(userId, limit = 50) {
 module.exports = {
   createPostService,
   getPostsFeedService,
+  getPostByIdService,
   checkLikeStatusService,
   likePostService,
   unlikePostService,

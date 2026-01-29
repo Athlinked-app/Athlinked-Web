@@ -13,7 +13,6 @@ import {
   Bell,
   BarChart3,
   Package,
-  HelpCircle,
   LogOut,
   X,
   UserCheck,
@@ -44,7 +43,6 @@ const MENU_ITEMS = [
   { id: 'notifications', icon: Bell, label: 'Notifications' },
   { id: 'stats', icon: BarChart3, label: 'Stats' },
   { id: 'resource', icon: Package, label: 'Resource' },
-  { id: 'help', icon: HelpCircle, label: "Help & FAQ's" },
   { id: 'settings', icon: Settings, label: 'Settings' },
   { id: 'logout', icon: LogOut, label: 'Logout' },
 ];
@@ -73,8 +71,7 @@ function getHref(id: string): string {
       return '/notifications';
     case 'settings':
       return '/settings';
-    case 'help':
-      return '/help';
+ 
     default:
       return '#';
   }
@@ -102,7 +99,7 @@ export default function HamburgerMenu({ isOpen, onClose }: HamburgerMenuProps) {
     '/messages': 'message',
     '/notifications': 'notifications',
     '/settings': 'settings',
-    '/help': 'help',
+  
   };
   const activeItem =
     pathToActiveId[pathname] ??

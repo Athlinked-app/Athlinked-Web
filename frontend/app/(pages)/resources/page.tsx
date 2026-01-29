@@ -546,7 +546,7 @@ export default function ManageResourcesPage() {
           <NavigationBar activeItem="resource" />
         </div>
 
-        <div className="flex-1 flex overflow-y-auto">
+        <div className="flex-1 flex overflow-y-auto px-2 md:px-0">
           <div className="flex-1 bg-white rounded-xl flex flex-col">
             {/* Tabs Navigation */}
             <div className="border-b border-gray-200">

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Settings, LogOut, X, Menu } from 'lucide-react';
@@ -24,12 +24,31 @@ export default function Header({
   userProfileUrl: propUserProfileUrl,
 }: HeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showPopup, setShowPopup] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
+
+  const isHome =
+    pathname === '/' || pathname === '/home' || pathname === '/Landingpage';
+
+  const pageTitle = (() => {
+    if (isHome) return '';
+    if (pathname.startsWith('/opportunities')) return 'Opportunities';
+    if (pathname.startsWith('/resources')) return 'Resources';
+    if (pathname.startsWith('/network')) return 'My Network';
+    if (pathname.startsWith('/stats')) return 'Stats';
+    if (pathname.startsWith('/clips')) return 'Clips';
+    if (pathname.startsWith('/notifications')) return 'Notifications';
+    if (pathname.startsWith('/messages')) return 'Messages';
+      if (pathname.startsWith('/profile')) return 'Profile';
+      if(pathname.startsWith('/settings')) return 'Settings';
+      if(pathname.startsWith('/search')) return 'Search';
+    return '';
+  })();
 
   useEffect(() => {
     let isMounted = true;
@@ -168,28 +187,38 @@ export default function Header({
 
   return (
     <>
-      <nav className="flex items-center justify-between px-3 sm:px-3 md:px-4 lg:px-6 py-6 md:py-3 bg-white">
-        <div className="flex items-center gap-2">
-          {/* Hamburger - mobile only */}
-          <button
-            type="button"
-            onClick={() => setMobileMenuOpen(true)}
-            className="md:hidden p-1.5 rounded-lg text-gray-700 hover:bg-gray-100 focus:outline-none"
-            aria-label="Open menu"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-          <Link href="/" className="flex items-center gap-1 sm:gap-2">
-            <Image
-              src="/assets/Homescreen/Logo.png"
-              alt="ATHLINKED Logo"
-              width={180}
-              height={50}
-              className="w-32 h-8 md:w-[145px] md:h-[35px]"
-              priority
-            />
-          </Link>
-        </div>
+    <nav className="flex items-center justify-between px-3 sm:px-3 md:px-4 lg:px-6 py-6 md:py-3 bg-white">
+      <div className="flex items-center gap-2">
+        {/* Hamburger - mobile only */}
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(true)}
+          className="md:hidden p-1.5 rounded-lg text-gray-700 hover:bg-gray-100 focus:outline-none"
+          aria-label="Open menu"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+        {/* Logo: on home always; on web (md+) show on all pages */}
+        <Link
+          href="/"
+          className={`flex items-center gap-1 sm:gap-2 ${!isHome ? 'hidden md:flex' : ''}`}
+        >
+          <Image
+            src="/assets/Homescreen/Logo.png"
+            alt="ATHLINKED Logo"
+            width={180}
+            height={50}
+            className="w-32 h-8 md:w-[145px] md:h-[35px]"
+            priority
+          />
+        </Link>
+        {/* Page title: mobile only when not home */}
+        {!isHome && (
+          <span className="md:hidden text-lg sm:text-xl font-semibold text-black">
+            {pageTitle}
+          </span>
+        )}
+      </div>
 
         {/* Profile avatar + popup - hidden on mobile */}
         <div className="hidden md:flex items-center relative">

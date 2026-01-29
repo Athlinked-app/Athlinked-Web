@@ -817,7 +817,7 @@ export default function Post({
           </span>
         </div>
 
-        <div className="flex items-center justify-between gap-1 sm:gap-2">
+        <div className="flex items-center justify-between gap-14 sm:gap-2">
           <button
             onClick={handleLike}
             className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md transition-colors flex-1 sm:flex-none ${
@@ -997,10 +997,11 @@ export default function Post({
           />
 
           <div
-            className="relative z-10 w-full h-full sm:h-[80vh] sm:max-w-5xl bg-white sm:rounded-xl shadow-2xl overflow-hidden flex flex-col sm:flex-row"
+            className="relative z-10 w-full max-h-[80vh] h-full sm:max-h-none sm:h-[80vh] sm:max-w-5xl bg-white sm:rounded-xl shadow-2xl overflow-hidden flex flex-col sm:flex-row mx-3 sm:mx-0"
             onClick={e => e.stopPropagation()}
           >
-            <div className="w-full sm:w-1/2 h-1/3 sm:h-full bg-black flex items-center justify-center">
+            {/* Image/media: hidden on mobile, show from sm up */}
+            <div className="hidden sm:flex w-full sm:w-1/2 h-1/3 sm:h-full bg-black items-center justify-center">
               {post.media_url || post.image_url ? (
                 (() => {
                   const src =
@@ -1025,7 +1026,7 @@ export default function Post({
 
                   // Image: keep black theme, but add a blurred cover background so it looks nicer
                   return (
-                    <div className="relative w-full h-full bg-black overflow-hidden">
+                    <div className="relative w-full h-full bg-black overflow-hidden ">
                       <img
                         src={src}
                         alt=""
@@ -1045,7 +1046,8 @@ export default function Post({
                 <div className="text-white">No media available</div>
               )}
             </div>
-            <div className="w-full sm:w-1/2 h-2/3 sm:h-full flex flex-col">
+            {/* Comment panel: full width/height on mobile, half on sm+ */}
+            <div className="w-full sm:w-1/2 h-full flex flex-col min-h-0">
               <CommentsPanel
                 post={post}
                 currentUserProfileUrl={currentUserProfileUrl}
