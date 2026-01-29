@@ -332,7 +332,8 @@ if (flow === 'login') {
             );
           } else {
             const { sendParentSignupLink } = require('../utils/email');
-            const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+            const { getFrontendUrl } = require('../utils/deepLinkUtils');
+            const baseUrl = getFrontendUrl();
             const signupLink = updatedUser.email
               ? `${baseUrl}/parent-signup?email=${encodeURIComponent(updatedUser.email)}`
               : `${baseUrl}/parent-signup?username=${encodeURIComponent(updatedUser.username || '')}`;
@@ -475,7 +476,8 @@ if (flow === 'login') {
             );
           } else {
             const { sendParentSignupLink } = require('../utils/email');
-            const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+            const { getFrontendUrl } = require('../utils/deepLinkUtils');
+            const baseUrl = getFrontendUrl();
             const signupLink = updatedUser.email
               ? `${baseUrl}/parent-signup?email=${encodeURIComponent(updatedUser.email)}`
               : `${baseUrl}/parent-signup?username=${encodeURIComponent(updatedUser.username || '')}`;
@@ -592,7 +594,8 @@ if (flow === 'login') {
           `ℹ️ Parent account already exists for ${parent_email}, skipping parent signup email`
         );
       } else {
-        const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+        const { getFrontendUrl } = require('../utils/deepLinkUtils');
+        const baseUrl = getFrontendUrl();
         const signupLink = `${baseUrl}/parent-signup?email=${encodeURIComponent(athlete_email.toLowerCase())}`;
 
         await sendParentSignupLink(
