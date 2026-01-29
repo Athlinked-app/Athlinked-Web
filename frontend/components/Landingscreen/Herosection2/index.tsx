@@ -4,7 +4,7 @@ import Link from 'next/link';
 export default function Herosection2() {
   return (
     <div className="w-full bg-[#D4D4D4]">
-      <section className="w-full px-8  md:px-16 lg:px-6 mt-5">
+      <section className="w-full px-8  md:px-6 lg:px-6 mt-5">
         <div className=" mx-auto bg-white rounded-lg p-6">
           <h2 className="text-4xl md:text-4xl font-bold text-[#171717] mb-4">
             Everything You Need to Succeed
@@ -94,7 +94,7 @@ export default function Herosection2() {
         </div>
       </section>
 
-      <section className="w-full px-8 py-4 md:px-16 lg:px-6 ">
+      <section className="w-full px-8 py-4 md:px-6 lg:px-6 ">
         <div className=" mx-auto bg-white rounded-lg p-6">
           <h2 className="text-4xl md:text-4xl font-bold text-[#171717] mb-4">
             Who We Support

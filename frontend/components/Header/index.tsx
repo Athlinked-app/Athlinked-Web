@@ -4,8 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Settings, LogOut, X } from 'lucide-react';
+import { Settings, LogOut, X, Menu } from 'lucide-react';
 import { getResourceUrl } from '@/utils/api';
+import HamburgerMenu from '@/components/Hamburgermenu';
 type HeaderProps = {
   userName?: string;
   userProfileUrl?: string;
@@ -27,6 +28,7 @@ export default function Header({
   const [loading, setLoading] = useState(true);
   const [showPopup, setShowPopup] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -165,8 +167,18 @@ export default function Header({
     : 'User';
 
   return (
-    <nav className="flex items-center justify-between px-2 sm:px-3 md:px-4 lg:px-6 py-2 md:py-3 bg-white">
-      <div className="flex items-center">
+    <>
+    <nav className="flex items-center justify-between px-3 sm:px-3 md:px-4 lg:px-6 py-6 md:py-3 bg-white">
+      <div className="flex items-center gap-2">
+        {/* Hamburger - mobile only */}
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen(true)}
+          className="md:hidden p-1.5 rounded-lg text-gray-700 hover:bg-gray-100 focus:outline-none"
+          aria-label="Open menu"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
         <Link href="/" className="flex items-center gap-1 sm:gap-2">
           <Image
             src="/assets/Homescreen/Logo.png"
@@ -179,7 +191,8 @@ export default function Header({
         </Link>
       </div>
 
-      <div className="flex items-center relative">
+      {/* Profile avatar + popup - hidden on mobile */}
+      <div className="hidden md:flex items-center relative">
         <div className="ml-1 sm:ml-2">
           <button
             onClick={() => setShowPopup(!showPopup)}
@@ -275,9 +288,9 @@ export default function Header({
         )}
       </div>
 
-      {/* Logout Confirmation Modal */}
+      {/* Logout Confirmation Modal - hidden on mobile */}
       {showLogoutConfirm && (
-        <>
+        <div className="hidden md:block">
           {/* Backdrop */}
           <div
             className="fixed inset-0 backdrop-blur-sm z-50"
@@ -320,8 +333,15 @@ export default function Header({
               </div>
             </div>
           </div>
-        </>
+        </div>
       )}
     </nav>
+
+    {/* Mobile hamburger drawer */}
+    <HamburgerMenu
+      isOpen={mobileMenuOpen}
+      onClose={() => setMobileMenuOpen(false)}
+    />
+    </>
   );
 }
