@@ -100,7 +100,7 @@ export default function SettingsNavigation({
       </div>
 
       {/* Delete Account Button */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 mb-20 md:mb-0 border-t border-gray-200">
         <button
           onClick={handleDeleteAccount}
           className="w-full flex items-center justify-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors"

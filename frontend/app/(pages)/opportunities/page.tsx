@@ -489,7 +489,7 @@ export default function OpportunitiesPage() {
 
       <div className="flex p-3 md:p-5 flex-1">
         <div className="hidden md:flex">
-        <NavigationBar activeItem="opportunities" />
+          <NavigationBar activeItem="opportunities" />
         </div>
         <div className="flex-1 bg-white mt-0 md:ml-5 md:mr-5 md:mb-5 rounded-xl flex flex-col md:h-[620px] overflow-y-auto">
           <div className="border-b border-gray-200">

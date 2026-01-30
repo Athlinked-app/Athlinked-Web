@@ -447,7 +447,7 @@ export default function NetworkPage() {
                         <div
                           key={request.id}
                           className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                          >
+                        >
                           <div
                             className="flex items-center gap-3 cursor-pointer"
                             onClick={() =>

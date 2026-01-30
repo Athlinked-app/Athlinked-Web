@@ -133,7 +133,10 @@ export default function SinglePostPage() {
         <main className="flex-1 flex items-center justify-center p-4">
           <div className="text-center text-black bg-white rounded-xl border border-gray-200 p-6">
             <p>Invalid post link.</p>
-            <Link href="/home" className="text-blue-600 underline mt-2 inline-block">
+            <Link
+              href="/home"
+              className="text-blue-600 underline mt-2 inline-block"
+            >
               Go to home
             </Link>
           </div>
