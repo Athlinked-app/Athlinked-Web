@@ -1033,7 +1033,7 @@ export default function Post({
                         aria-hidden="true"
                         className="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-60"
                       />
-                      <div className="absolute inset-0 bg-black/40" />
+                      <div className="absolute inset-0 bg-white" />
                       <img
                         src={src}
                         alt={post.caption || post.description || 'Post media'}

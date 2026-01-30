@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import SignupHero from '@/components/Signup/SignupHero';
 import ProgressStepper from '@/components/Signup/ProgressStepper';

@@ -1,10 +1,9 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, X } from 'lucide-react';
 import { apiDelete } from '@/utils/api';
-import { logout, getCurrentUser } from '@/utils/auth';
+import { logout, getCurrentUser, isAuthenticated } from '@/utils/auth';
 import Header from '@/components/Header';
 import NavigationBar from '@/components/NavigationBar';
 import { getResourceUrl } from '@/utils/config';
@@ -13,9 +12,16 @@ export default function DeleteAccountPage() {
   const router = useRouter();
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [emailInput, setEmailInput] = useState('');
+const [emailInput, setEmailInput] = useState('');
   const [emailError, setEmailError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Check authentication and redirect if not logged in
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push('/login');
+    }
+  }, [router]);
 
   // Fetch current user email when page loads
   useEffect(() => {
