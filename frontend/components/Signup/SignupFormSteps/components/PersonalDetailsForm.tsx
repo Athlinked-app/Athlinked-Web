@@ -388,44 +388,44 @@ export default function PersonalDetailsForm({
     onContinue();
   };
 
-return (
-  <>
-    <style jsx global>{`
-      input[type="date"]::-webkit-datetime-edit-fields-wrapper {
-        padding: 0;
-      }
-      
-      input[type="date"]::-webkit-datetime-edit-text {
-        color: #111827;
-        padding: 0 2px;
-      }
-      
-      input[type="date"]::-webkit-datetime-edit-month-field,
-      input[type="date"]::-webkit-datetime-edit-day-field,
-      input[type="date"]::-webkit-datetime-edit-year-field {
-        color: #111827;
-        background-color: transparent !important;
-      }
-      
-      input[type="date"]::-webkit-datetime-edit-month-field:focus,
-      input[type="date"]::-webkit-datetime-edit-day-field:focus,
-      input[type="date"]::-webkit-datetime-edit-year-field:focus {
-        background-color: transparent !important;
-        outline: none !important;
-        color: #111827 !important;
-      }
+  return (
+    <>
+      <style jsx global>{`
+        input[type='date']::-webkit-datetime-edit-fields-wrapper {
+          padding: 0;
+        }
 
-      input[type="date"]::selection,
-      input[type="date"]::-moz-selection {
-        background-color: transparent !important;
-        color: inherit !important;
-      }
+        input[type='date']::-webkit-datetime-edit-text {
+          color: #111827;
+          padding: 0 2px;
+        }
 
-      input[type="date"]::-webkit-calendar-picker-indicator {
-        cursor: pointer;
-      }
-    `}</style>
-    <div className="space-y-4 mb-6">
+        input[type='date']::-webkit-datetime-edit-month-field,
+        input[type='date']::-webkit-datetime-edit-day-field,
+        input[type='date']::-webkit-datetime-edit-year-field {
+          color: #111827;
+          background-color: transparent !important;
+        }
+
+        input[type='date']::-webkit-datetime-edit-month-field:focus,
+        input[type='date']::-webkit-datetime-edit-day-field:focus,
+        input[type='date']::-webkit-datetime-edit-year-field:focus {
+          background-color: transparent !important;
+          outline: none !important;
+          color: #111827 !important;
+        }
+
+        input[type='date']::selection,
+        input[type='date']::-moz-selection {
+          background-color: transparent !important;
+          color: inherit !important;
+        }
+
+        input[type='date']::-webkit-calendar-picker-indicator {
+          cursor: pointer;
+        }
+      `}</style>
+      <div className="space-y-4 mb-6">
         {/* Full Name - HIDE for Google users */}
         {!isGoogleUser && (
           <div>

@@ -156,7 +156,11 @@ export default function AthleticAndPerformancePopup({
     const heightNum = height.trim() ? Number(height) : NaN;
     if (!height.trim()) {
       errors.height = 'Height is required';
-    } else if (Number.isNaN(heightNum) || heightNum < HEIGHT_CM_MIN || heightNum > HEIGHT_CM_MAX) {
+    } else if (
+      Number.isNaN(heightNum) ||
+      heightNum < HEIGHT_CM_MIN ||
+      heightNum > HEIGHT_CM_MAX
+    ) {
       errors.height = `Height must be between ${HEIGHT_CM_MIN} and ${HEIGHT_CM_MAX} cm (up to 3 decimal places)`;
     } else if (!DECIMAL_UP_TO_3_REGEX.test(height.trim())) {
       errors.height = 'Height can have up to 3 decimal places';
@@ -165,17 +169,26 @@ export default function AthleticAndPerformancePopup({
     const weightNum = weight.trim() ? Number(weight) : NaN;
     if (!weight.trim()) {
       errors.weight = 'Weight is required';
-    } else if (Number.isNaN(weightNum) || weightNum < WEIGHT_LBS_MIN || weightNum > WEIGHT_LBS_MAX) {
+    } else if (
+      Number.isNaN(weightNum) ||
+      weightNum < WEIGHT_LBS_MIN ||
+      weightNum > WEIGHT_LBS_MAX
+    ) {
       errors.weight = `Weight must be between ${WEIGHT_LBS_MIN} and ${WEIGHT_LBS_MAX} lbs (up to 3 decimal places)`;
     } else if (!DECIMAL_UP_TO_3_REGEX.test(weight.trim())) {
       errors.weight = 'Weight can have up to 3 decimal places';
     }
 
     if (!sport) errors.sport = 'Please select a sport';
-    if (!athleteHandedness) errors.athleteHandedness = 'Please select handedness';
+    if (!athleteHandedness)
+      errors.athleteHandedness = 'Please select handedness';
 
-    if (dominantSideOrFoot.trim() && !DOMINANT_SIDE_ALPHA_REGEX.test(dominantSideOrFoot)) {
-      errors.dominantSideOrFoot = 'Dominant Side or Foot can only contain letters and spaces';
+    if (
+      dominantSideOrFoot.trim() &&
+      !DOMINANT_SIDE_ALPHA_REGEX.test(dominantSideOrFoot)
+    ) {
+      errors.dominantSideOrFoot =
+        'Dominant Side or Foot can only contain letters and spaces';
     } else if (dominantSideOrFoot.length > DOMINANT_SIDE_MAX_LENGTH) {
       errors.dominantSideOrFoot = `Maximum ${DOMINANT_SIDE_MAX_LENGTH} characters`;
     }
@@ -183,24 +196,40 @@ export default function AthleticAndPerformancePopup({
     const jerseyNum = jerseyNumber.trim() ? Number(jerseyNumber) : NaN;
     if (!jerseyNumber.trim()) {
       errors.jerseyNumber = 'Jersey number is required';
-    } else if (Number.isNaN(jerseyNum) || jerseyNum < JERSEY_NUMBER_MIN || jerseyNum > JERSEY_NUMBER_MAX) {
+    } else if (
+      Number.isNaN(jerseyNum) ||
+      jerseyNum < JERSEY_NUMBER_MIN ||
+      jerseyNum > JERSEY_NUMBER_MAX
+    ) {
       errors.jerseyNumber = `Jersey number must be between ${JERSEY_NUMBER_MIN} and ${JERSEY_NUMBER_MAX}`;
     }
 
-    const trainingNum = trainingHoursPerWeek.trim() ? Number(trainingHoursPerWeek) : NaN;
+    const trainingNum = trainingHoursPerWeek.trim()
+      ? Number(trainingHoursPerWeek)
+      : NaN;
     if (!trainingHoursPerWeek.trim()) {
       errors.trainingHoursPerWeek = 'Training hours per week is required';
-    } else if (Number.isNaN(trainingNum) || trainingNum < TRAINING_HOURS_MIN || trainingNum > TRAINING_HOURS_MAX) {
+    } else if (
+      Number.isNaN(trainingNum) ||
+      trainingNum < TRAINING_HOURS_MIN ||
+      trainingNum > TRAINING_HOURS_MAX
+    ) {
       errors.trainingHoursPerWeek = `Training hours must be between ${TRAINING_HOURS_MIN} and ${TRAINING_HOURS_MAX} per week`;
     }
 
-    if (!multiSportAthlete) errors.multiSportAthlete = 'Please select an option';
-    if (!coachVerifiedProfile) errors.coachVerifiedProfile = 'Please select an option';
+    if (!multiSportAthlete)
+      errors.multiSportAthlete = 'Please select an option';
+    if (!coachVerifiedProfile)
+      errors.coachVerifiedProfile = 'Please select an option';
 
     const handNum = hand.trim() ? Number(hand) : NaN;
     if (!hand.trim()) {
       errors.hand = 'Hand value is required';
-    } else if (Number.isNaN(handNum) || handNum < HAND_MIN || handNum > HAND_MAX) {
+    } else if (
+      Number.isNaN(handNum) ||
+      handNum < HAND_MIN ||
+      handNum > HAND_MAX
+    ) {
       errors.hand = `Hand must be between ${HAND_MIN} and ${HAND_MAX}`;
     }
 
@@ -386,15 +415,24 @@ export default function AthleticAndPerformancePopup({
               onBlur={() => {
                 if (height.trim()) {
                   const n = Number(height);
-                  if (Number.isNaN(n) || n < HEIGHT_CM_MIN || n > HEIGHT_CM_MAX) {
-                    setFieldError('height', `Height must be between ${HEIGHT_CM_MIN} and ${HEIGHT_CM_MAX} cm (up to 3 decimal places)`);
+                  if (
+                    Number.isNaN(n) ||
+                    n < HEIGHT_CM_MIN ||
+                    n > HEIGHT_CM_MAX
+                  ) {
+                    setFieldError(
+                      'height',
+                      `Height must be between ${HEIGHT_CM_MIN} and ${HEIGHT_CM_MAX} cm (up to 3 decimal places)`
+                    );
                   }
                 }
               }}
               placeholder={`${HEIGHT_CM_MIN}-${HEIGHT_CM_MAX} cm (e.g. 175.5)`}
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900 ${fieldErrors.height ? 'border-red-500' : 'border-gray-300'}`}
             />
-            {fieldErrors.height && <p className="mt-1 text-xs text-red-600">{fieldErrors.height}</p>}
+            {fieldErrors.height && (
+              <p className="mt-1 text-xs text-red-600">{fieldErrors.height}</p>
+            )}
           </div>
 
           <div>
@@ -415,15 +453,24 @@ export default function AthleticAndPerformancePopup({
               onBlur={() => {
                 if (weight.trim()) {
                   const n = Number(weight);
-                  if (Number.isNaN(n) || n < WEIGHT_LBS_MIN || n > WEIGHT_LBS_MAX) {
-                    setFieldError('weight', `Weight must be between ${WEIGHT_LBS_MIN} and ${WEIGHT_LBS_MAX} lbs (up to 3 decimal places)`);
+                  if (
+                    Number.isNaN(n) ||
+                    n < WEIGHT_LBS_MIN ||
+                    n > WEIGHT_LBS_MAX
+                  ) {
+                    setFieldError(
+                      'weight',
+                      `Weight must be between ${WEIGHT_LBS_MIN} and ${WEIGHT_LBS_MAX} lbs (up to 3 decimal places)`
+                    );
                   }
                 }
               }}
               placeholder={`${WEIGHT_LBS_MIN}-${WEIGHT_LBS_MAX} lbs (e.g. 185.25)`}
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900 ${fieldErrors.weight ? 'border-red-500' : 'border-gray-300'}`}
             />
-            {fieldErrors.weight && <p className="mt-1 text-xs text-red-600">{fieldErrors.weight}</p>}
+            {fieldErrors.weight && (
+              <p className="mt-1 text-xs text-red-600">{fieldErrors.weight}</p>
+            )}
           </div>
 
           {/* Select Sport Dropdown */}
@@ -444,7 +491,9 @@ export default function AthleticAndPerformancePopup({
               }}
               dropdownRef={sportRef}
             />
-            {fieldErrors.sport && <p className="mt-1 text-xs text-red-600">{fieldErrors.sport}</p>}
+            {fieldErrors.sport && (
+              <p className="mt-1 text-xs text-red-600">{fieldErrors.sport}</p>
+            )}
           </div>
 
           {/* Athlete Handedness Dropdown */}
@@ -465,7 +514,11 @@ export default function AthleticAndPerformancePopup({
               }}
               dropdownRef={handednessRef}
             />
-            {fieldErrors.athleteHandedness && <p className="mt-1 text-xs text-red-600">{fieldErrors.athleteHandedness}</p>}
+            {fieldErrors.athleteHandedness && (
+              <p className="mt-1 text-xs text-red-600">
+                {fieldErrors.athleteHandedness}
+              </p>
+            )}
           </div>
 
           <div>
@@ -477,7 +530,10 @@ export default function AthleticAndPerformancePopup({
               value={dominantSideOrFoot}
               onChange={e => {
                 const v = e.target.value;
-                if (DOMINANT_SIDE_ALPHA_REGEX.test(v) && v.length <= DOMINANT_SIDE_MAX_LENGTH) {
+                if (
+                  DOMINANT_SIDE_ALPHA_REGEX.test(v) &&
+                  v.length <= DOMINANT_SIDE_MAX_LENGTH
+                ) {
                   setDominantSideOrFoot(v);
                   clearFieldError('dominantSideOrFoot');
                 }
@@ -486,7 +542,11 @@ export default function AthleticAndPerformancePopup({
               maxLength={DOMINANT_SIDE_MAX_LENGTH}
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900 ${fieldErrors.dominantSideOrFoot ? 'border-red-500' : 'border-gray-300'}`}
             />
-            {fieldErrors.dominantSideOrFoot && <p className="mt-1 text-xs text-red-600">{fieldErrors.dominantSideOrFoot}</p>}
+            {fieldErrors.dominantSideOrFoot && (
+              <p className="mt-1 text-xs text-red-600">
+                {fieldErrors.dominantSideOrFoot}
+              </p>
+            )}
             <p className="mt-1 text-xs text-gray-500">
               Letters and spaces only, max {DOMINANT_SIDE_MAX_LENGTH} characters
             </p>
@@ -511,7 +571,11 @@ export default function AthleticAndPerformancePopup({
               placeholder={`${JERSEY_NUMBER_MIN}-${JERSEY_NUMBER_MAX}`}
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900 ${fieldErrors.jerseyNumber ? 'border-red-500' : 'border-gray-300'}`}
             />
-            {fieldErrors.jerseyNumber && <p className="mt-1 text-xs text-red-600">{fieldErrors.jerseyNumber}</p>}
+            {fieldErrors.jerseyNumber && (
+              <p className="mt-1 text-xs text-red-600">
+                {fieldErrors.jerseyNumber}
+              </p>
+            )}
           </div>
 
           <div>
@@ -533,7 +597,11 @@ export default function AthleticAndPerformancePopup({
               placeholder={`${TRAINING_HOURS_MIN}-${TRAINING_HOURS_MAX} hours`}
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900 ${fieldErrors.trainingHoursPerWeek ? 'border-red-500' : 'border-gray-300'}`}
             />
-            {fieldErrors.trainingHoursPerWeek && <p className="mt-1 text-xs text-red-600">{fieldErrors.trainingHoursPerWeek}</p>}
+            {fieldErrors.trainingHoursPerWeek && (
+              <p className="mt-1 text-xs text-red-600">
+                {fieldErrors.trainingHoursPerWeek}
+              </p>
+            )}
           </div>
 
           {/* Multi-Sport Athlete */}
@@ -571,7 +639,11 @@ export default function AthleticAndPerformancePopup({
                 <span className="text-gray-700">No</span>
               </label>
             </div>
-            {fieldErrors.multiSportAthlete && <p className="mt-1 text-xs text-red-600">{fieldErrors.multiSportAthlete}</p>}
+            {fieldErrors.multiSportAthlete && (
+              <p className="mt-1 text-xs text-red-600">
+                {fieldErrors.multiSportAthlete}
+              </p>
+            )}
           </div>
 
           {/* Coach-Verified Profile */}
@@ -609,7 +681,11 @@ export default function AthleticAndPerformancePopup({
                 <span className="text-gray-700">No</span>
               </label>
             </div>
-            {fieldErrors.coachVerifiedProfile && <p className="mt-1 text-xs text-red-600">{fieldErrors.coachVerifiedProfile}</p>}
+            {fieldErrors.coachVerifiedProfile && (
+              <p className="mt-1 text-xs text-red-600">
+                {fieldErrors.coachVerifiedProfile}
+              </p>
+            )}
           </div>
 
           <div>
@@ -631,7 +707,9 @@ export default function AthleticAndPerformancePopup({
               placeholder={`${HAND_MIN}-${HAND_MAX}`}
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900 ${fieldErrors.hand ? 'border-red-500' : 'border-gray-300'}`}
             />
-            {fieldErrors.hand && <p className="mt-1 text-xs text-red-600">{fieldErrors.hand}</p>}
+            {fieldErrors.hand && (
+              <p className="mt-1 text-xs text-red-600">{fieldErrors.hand}</p>
+            )}
           </div>
 
           <div>
@@ -653,7 +731,9 @@ export default function AthleticAndPerformancePopup({
               placeholder={`${ARM_MIN}-${ARM_MAX}`}
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900 ${fieldErrors.arm ? 'border-red-500' : 'border-gray-300'}`}
             />
-            {fieldErrors.arm && <p className="mt-1 text-xs text-red-600">{fieldErrors.arm}</p>}
+            {fieldErrors.arm && (
+              <p className="mt-1 text-xs text-red-600">{fieldErrors.arm}</p>
+            )}
           </div>
         </div>
 
