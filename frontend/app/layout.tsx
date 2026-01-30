@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   title: 'AthLinked - Connect with Athletes',
   description:
     'Sports networking platform for athletes, coaches, and businesses',
+  icons: {
+    // Use the app logo as the browser tab icon
+    icon: [{ url: new URL('./logo.jpg', import.meta.url), type: 'image/jpeg' }],
+  },
 };
 
 function GoogleOAuthWrapper({ children }: { children: React.ReactNode }) {

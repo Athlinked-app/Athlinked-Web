@@ -23,6 +23,7 @@ import HealthAndReadinessComponent from '@/components/Profile/HealthandReadiness
 import type { HealthAndReadiness } from '@/components/Profile/HealthandReadiness';
 import VideoAndMediaComponent from '@/components/Profile/VideoandMedia';
 import AthleticData from '@/components/Profile/AthleticData';
+import StatsTab from '@/components/Profile/StatsTab';
 import type { VideoAndMedia } from '@/components/Profile/VideoandMedia';
 import Posts from '@/components/Activity/Posts';
 import Clips from '@/components/Activity/Clips';
@@ -74,7 +75,7 @@ function ProfileContent() {
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'profile' | 'activity' | 'mysave' | 'favourites'
+    'profile' | 'stats' | 'activity' | 'mysave' | 'favourites'
   >('profile');
   const [activeFilter, setActiveFilter] = useState<
     'posts' | 'clips' | 'article' | 'event'
@@ -133,6 +134,14 @@ function ProfileContent() {
       setActiveTab('profile');
     }
   }, [isViewingOwnProfile, activeTab]);
+
+  // Ensure "stats" tab is only usable on other user's athlete profile
+  useEffect(() => {
+    const canViewStats = !isViewingOwnProfile && isAthlete;
+    if (!canViewStats && activeTab === 'stats') {
+      setActiveTab('profile');
+    }
+  }, [isViewingOwnProfile, isAthlete, activeTab]);
 
   const fetchPosts = async () => {
     try {
@@ -912,7 +921,7 @@ function ProfileContent() {
       />
 
       <main className="flex flex-1 w-full mt-5 overflow-hidden">
-        <div className="  flex-[3] flex-shrink-0 border-r border-gray-200 overflow-hidden px-6 flex flex-col">
+        <div className="  flex-3 shrink-0 border-r border-gray-200 overflow-hidden px-6 flex flex-col">
           <EditProfileModal
             key={`${viewUserId || currentUserId}-${profileData?.profileImage}-${profileData?.bio}-${profileData?.education}-${profileData?.city}`}
             open={true}
@@ -1291,7 +1300,7 @@ function ProfileContent() {
           )}
 
           <div className="bg-white mt-2 rounded-lg flex flex-col flex-1 min-h-0">
-            <div className="flex items-center border-b border-gray-200 flex-shrink-0">
+            <div className="flex items-center border-b border-gray-200 shrink-0">
               <button
                 onClick={() => setActiveTab('profile')}
                 className={`px-6 py-3 font-medium text-sm transition-colors relative ${
@@ -1305,6 +1314,26 @@ function ProfileContent() {
                   <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
                 )}
               </button>
+
+              {/* Stats tab only on other user's athlete profile */}
+              {!isViewingOwnProfile && isAthlete && (
+                <>
+                  <div className="h-6 w-px bg-gray-200"></div>
+                  <button
+                    onClick={() => setActiveTab('stats')}
+                    className={`px-6 py-3 font-medium text-sm transition-colors relative ${
+                      activeTab === 'stats'
+                        ? 'text-[#CB9729]'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Stats
+                    {activeTab === 'stats' && (
+                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
+                    )}
+                  </button>
+                </>
+              )}
               {/* Show Activity, My Save, and Favourites tabs only when viewing own profile */}
               {isViewingOwnProfile && (
                 <>
@@ -1410,6 +1439,7 @@ function ProfileContent() {
                   />
                 </>
               )}
+              {activeTab === 'stats' && <StatsTab userId={targetUserId} />}
               {activeTab === 'activity' && (
                 <div className="w-full bg-white rounded-lg px-6">
                   <h2 className="text-lg font-bold text-gray-900 mb-4">
@@ -1482,7 +1512,7 @@ function ProfileContent() {
                   )}
                   {activeFilter === 'clips' && (
                     <Clips
-                      currentUserId={targetUserId || undefined}
+                      currentUserId={currentUserId || undefined}
                       currentUserProfileUrl={getProfileUrl(
                         viewUserId
                           ? viewUser?.profile_url || null
@@ -1669,7 +1699,7 @@ function ProfileContent() {
             </div>
           </div>
         </div>
-        <div className="hidden lg:flex flex-1 flex-shrink-0">
+        <div className="hidden lg:flex flex-1 shrink-0">
           <RightSideBar />
         </div>
       </main>

@@ -132,7 +132,6 @@ export default function EditProfilePopup({
   // This ensures sports are always synced with the latest userData
   useEffect(() => {
     if (open) {
-
       if (userData?.sports_played !== undefined) {
         // Handle empty string - clear sports
         if (!userData.sports_played || userData.sports_played.trim() === '') {

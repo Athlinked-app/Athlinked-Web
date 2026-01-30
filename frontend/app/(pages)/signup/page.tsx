@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
 import SignupHero from '@/components/Signup/SignupHero';
 import ProgressStepper from '@/components/Signup/ProgressStepper';
 import SignupFormSteps from '@/components/Signup/SignupFormSteps';
@@ -17,7 +18,8 @@ function SignupContent() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoadingOTP, setIsLoadingOTP] = useState(false);
   const [isGoogleUser, setIsGoogleUser] = useState(false);
-
+  const [isCompletingGoogleSignup, setIsCompletingGoogleSignup] =
+    useState(false);
   useEffect(() => {
     if (isAuthenticated()) {
       router.push('/home');
@@ -100,6 +102,13 @@ function SignupContent() {
       selectedUserType === 'athlete' ? athleteSteps : otherStepsRegular;
   }
 
+  // Handle going back to previous step
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
   // GOOGLE SIGN-IN HANDLER - UPDATED
   const handleGoogleSignIn = (userData: any) => {
     console.log('Google sign-in data received:', userData);
@@ -156,7 +165,10 @@ function SignupContent() {
       }
 
       // LAST STEP: Create user in database with ALL data
+      // LAST STEP: Create user in database with ALL data
       const googleData = JSON.parse(googleDataStr);
+
+      setIsCompletingGoogleSignup(true); // ADD THIS LINE
 
       try {
         const profileData: any = {
@@ -236,6 +248,7 @@ function SignupContent() {
       } catch (error) {
         console.error('Error completing Google signup:', error);
         alert('Failed to complete signup. Please try again.');
+        setIsCompletingGoogleSignup(false); // ADD THIS LINE
         return;
       }
     }
@@ -338,6 +351,17 @@ function SignupContent() {
             />
           </div>
 
+          {/* Back Button - Show only when not on first step */}
+          {currentStep > 0 && (
+            <button
+              onClick={handleBack}
+              className="flex items-center gap-2 px-4 py-2 bg-[#CB9729] text-white rounded-full hover:bg-[#B8861F] mb-4 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="text-sm font-medium">Back</span>
+            </button>
+          )}
+
           {/* Progress Stepper */}
           {selectedUserType && (
             <ProgressStepper steps={currentSteps} currentStep={currentStep} />
@@ -352,6 +376,7 @@ function SignupContent() {
             showConfirmPassword={showConfirmPassword}
             isLoadingOTP={isLoadingOTP}
             isGoogleUser={isGoogleUser}
+            isCompletingGoogleSignup={isCompletingGoogleSignup}
             onFormDataChange={setFormData}
             onUserTypeSelect={setSelectedUserType}
             onContinue={handleContinue}

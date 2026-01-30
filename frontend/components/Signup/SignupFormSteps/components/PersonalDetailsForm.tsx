@@ -48,6 +48,7 @@ export default function PersonalDetailsForm({
   const [errors, setErrors] = useState({
     fullName: '',
     dateOfBirth: '',
+    email: '',
     password: '',
     confirmPassword: '',
   });
@@ -224,6 +225,27 @@ export default function PersonalDetailsForm({
     return '';
   };
 
+  const validateEmail = (email: string): string => {
+    if (!email) {
+      return 'Email or username is required';
+    }
+
+    // If it contains @, validate as email
+    if (email.includes('@')) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email.trim())) {
+        return 'Please enter a valid email address';
+      }
+    } else {
+      // Validate as username
+      if (email.trim().length < 6) {
+        return 'Username must be at least 6 characters';
+      }
+    }
+
+    return '';
+  };
+
   const validatePassword = (password: string): string => {
     if (!password) {
       return 'Password is required';
@@ -290,6 +312,15 @@ export default function PersonalDetailsForm({
     }
   };
 
+  const handleEmailChange = (value: string) => {
+    onFormDataChange({ ...formData, email: value });
+    if (value) {
+      setErrors(prev => ({ ...prev, email: validateEmail(value) }));
+    } else {
+      setErrors(prev => ({ ...prev, email: '' }));
+    }
+  };
+
   const handlePasswordChange = (value: string) => {
     onFormDataChange({ ...formData, password: value });
     if (value) {
@@ -326,6 +357,7 @@ export default function PersonalDetailsForm({
     // Only validate name if not a Google user
     const nameError = isGoogleUser ? '' : validateName(formData.fullName);
     const dobError = validateDOB(formData.dateOfBirth);
+    const emailError = isGoogleUser ? '' : validateEmail(formData.email);
 
     // Only validate passwords for non-Google users
     const passwordError = isGoogleUser
@@ -338,11 +370,12 @@ export default function PersonalDetailsForm({
     setErrors({
       fullName: nameError,
       dateOfBirth: dobError,
+      email: emailError,
       password: passwordError,
       confirmPassword: confirmPasswordError,
     });
 
-    if (nameError || dobError || passwordError || confirmPasswordError) {
+    if (nameError || dobError || emailError || passwordError || confirmPasswordError) {
       return;
     }
 
@@ -569,21 +602,19 @@ export default function PersonalDetailsForm({
               <input
                 type="text"
                 value={formData.email}
-                onChange={e =>
-                  onFormDataChange({ ...formData, email: e.target.value })
-                }
-                className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
+                onChange={e => handleEmailChange(e.target.value)}
+                className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
+                  errors.email
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300'
+                }`}
                 placeholder="Enter email or username (min 6 characters)"
               />
               <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             </div>
-            {formData.email &&
-              !formData.email.includes('@') &&
-              formData.email.length < 6 && (
-                <p className="mt-1 text-xs text-red-600">
-                  Username must be at least 6 characters
-                </p>
-              )}
+            {errors.email && (
+              <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+            )}
           </div>
         )}
 

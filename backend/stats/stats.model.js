@@ -713,20 +713,40 @@ async function getAllUserSportProfiles(userId) {
     }
   }
 
+  // OPTIMIZATION: Fix N+1 problem - fetch all stats in one query
+  const profileIds = profilesResult.rows.map(p => p.id);
+  let allStatsResult;
+  
+  if (profileIds.length > 0) {
+    // Single query to get all stats for all profiles
+    const allStatsQuery = `
+      SELECT 
+        user_sport_profile_id,
+        field_label,
+        value,
+        unit,
+        created_at
+      FROM user_position_stats
+      WHERE user_sport_profile_id = ANY($1::uuid[])
+      ORDER BY user_sport_profile_id, created_at DESC, field_label ASC
+    `;
+    allStatsResult = await pool.query(allStatsQuery, [profileIds]);
+  } else {
+    allStatsResult = { rows: [] };
+  }
+
+  // Group stats by profile_id in memory
+  const statsByProfile = {};
+  allStatsResult.rows.forEach(stat => {
+    if (!statsByProfile[stat.user_sport_profile_id]) {
+      statsByProfile[stat.user_sport_profile_id] = [];
+    }
+    statsByProfile[stat.user_sport_profile_id].push(stat);
+  });
+
   // Get stats for each profile and group by year
-  const profilesWithStats = await Promise.all(
-    profilesResult.rows.map(async profile => {
-      const statsQuery = `
-        SELECT 
-          field_label,
-          value,
-          unit,
-          created_at
-        FROM user_position_stats
-        WHERE user_sport_profile_id = $1
-        ORDER BY created_at DESC, field_label ASC
-      `;
-      const statsResult = await pool.query(statsQuery, [profile.id]);
+  const profilesWithStats = profilesResult.rows.map(profile => {
+    const statsResult = { rows: statsByProfile[profile.id] || [] };
 
       // Group stats by year using created_at timestamps
       // Stats created at the same time (within 5 seconds) belong to the same entry
@@ -804,11 +824,264 @@ async function getAllUserSportProfiles(userId) {
       }
 
       return entries;
-    })
-  );
+    });
 
   // Flatten the array (since each profile can now return multiple entries)
   return profilesWithStats.flat();
+}
+
+/**
+ * Get complete stats data for a user in a single optimized query
+ * Combines user data, athletic performance, profiles, stats, and sports
+ * @param {string} userId - User ID
+ * @returns {Promise<object|null>} Complete stats data
+ */
+async function getUserStatsComplete(userId) {
+  try {
+    const completeQuery = `
+      WITH user_data AS (
+        SELECT 
+          u.id as user_id,
+          u.full_name,
+          u.profile_url as profile_image_url,
+          u.cover_url as cover_image_url,
+          u.bio,
+          u.education,
+          u.city,
+          u.primary_sport,
+          u.sports_played,
+          u.dob,
+          u.user_type
+        FROM users u
+        WHERE u.id = $1
+      ),
+      athletic_perf AS (
+        SELECT 
+          ap.id,
+          ap.height,
+          ap.weight,
+          ap.hand,
+          ap.arm,
+          ap.jersey_number,
+          ap.sport,
+          ap.created_at
+        FROM athletic_performance ap
+        WHERE ap.user_id = $1
+        ORDER BY ap.created_at DESC
+      ),
+      profiles AS (
+        SELECT 
+          usp.id,
+          usp.sport_id,
+          usp.sport_name,
+          usp.position_id,
+          usp.position_name,
+          COALESCE(usp.full_name, u.full_name) as full_name,
+          usp.created_at
+        FROM user_sport_profiles usp
+        LEFT JOIN users u ON usp.user_id = u.id
+        WHERE usp.user_id = $1
+        ORDER BY usp.created_at DESC
+      ),
+      all_stats AS (
+        SELECT 
+          ups.user_sport_profile_id,
+          ups.field_label,
+          ups.value,
+          ups.unit,
+          ups.created_at
+        FROM user_position_stats ups
+        WHERE ups.user_sport_profile_id IN (SELECT id FROM profiles)
+        ORDER BY ups.user_sport_profile_id, ups.created_at DESC, ups.field_label ASC
+      ),
+      sports_list AS (
+        SELECT id, name FROM sports ORDER BY name ASC
+      )
+      SELECT 
+        jsonb_build_object(
+          'user', (SELECT row_to_json(ud.*) FROM user_data ud),
+          'athleticPerformance', (
+            SELECT jsonb_agg(
+              jsonb_build_object(
+                'id', ap.id,
+                'height', ap.height,
+                'weight', ap.weight,
+                'hand', ap.hand,
+                'arm', ap.arm,
+                'jerseyNumber', ap.jersey_number,
+                'sport', ap.sport
+              )
+            )
+            FROM athletic_perf ap
+          ),
+          'profiles', (
+            SELECT jsonb_agg(
+              jsonb_build_object(
+                'id', p.id,
+                'user_sport_profile_id', p.id,
+                'sport_id', p.sport_id,
+                'sport_name', p.sport_name,
+                'position_id', p.position_id,
+                'position_name', p.position_name,
+                'full_name', p.full_name,
+                'created_at', p.created_at,
+                'stats', COALESCE(
+                  (
+                    SELECT jsonb_agg(
+                      jsonb_build_object(
+                        'field_label', s.field_label,
+                        'value', s.value,
+                        'unit', s.unit
+                      )
+                    )
+                    FROM all_stats s
+                    WHERE s.user_sport_profile_id = p.id
+                  ),
+                  '[]'::jsonb
+                )
+              )
+            )
+            FROM profiles p
+          ),
+          'sports', (
+            SELECT jsonb_agg(jsonb_build_object('id', s.id, 'name', s.name))
+            FROM sports_list s
+          )
+        ) as result
+    `;
+
+    const result = await pool.query(completeQuery, [userId]);
+    
+    if (result.rows.length === 0 || !result.rows[0].result) {
+      return null;
+    }
+
+    const data = result.rows[0].result;
+    
+    // Parse sports_played array
+    let sportsPlayedArray = [];
+    if (data.user.sports_played) {
+      if (Array.isArray(data.user.sports_played)) {
+        sportsPlayedArray = data.user.sports_played.filter(Boolean);
+      } else if (typeof data.user.sports_played === 'string') {
+        let sportsString = data.user.sports_played.trim();
+        if (sportsString.startsWith('{') && sportsString.endsWith('}')) {
+          sportsString = sportsString.slice(1, -1);
+        }
+        sportsString = sportsString.replace(/["']/g, '');
+        sportsPlayedArray = sportsString.split(',').map(s => s.trim()).filter(Boolean);
+      }
+    }
+
+    // Match user's sports with sports list
+    const userSports = [];
+    if (sportsPlayedArray.length > 0 && data.sports) {
+      const sportsMap = new Map();
+      data.sports.forEach(sport => {
+        const normalizedName = sport.name.toLowerCase().replace(/\s+/g, '');
+        sportsMap.set(normalizedName, sport);
+      });
+
+      sportsPlayedArray.forEach(sportName => {
+        const normalizedSportName = sportName.toLowerCase().replace(/\s+/g, '');
+        const matchedSport = sportsMap.get(normalizedSportName);
+        if (matchedSport) {
+          userSports.push(matchedSport);
+        }
+      });
+    }
+
+    // Group profiles by year (group stats created within 5 seconds)
+    const groupedProfiles = [];
+    if (data.profiles) {
+      data.profiles.forEach(profile => {
+        const stats = profile.stats || [];
+        const entries = [];
+        const processedIndices = new Set();
+
+        for (let i = 0; i < stats.length; i++) {
+          if (processedIndices.has(i)) continue;
+
+          const stat = stats[i];
+          const statCreatedAt = new Date(profile.created_at);
+
+          // Find year stat
+          let yearStat = null;
+          for (let j = 0; j < stats.length; j++) {
+            const s = stats[j];
+            if (s.field_label === 'Year' && !processedIndices.has(j)) {
+              yearStat = s;
+              break;
+            }
+          }
+
+          const yearValue = yearStat ? yearStat.value : null;
+
+          // Get all stats for this entry
+          const entryStats = [];
+          for (let j = 0; j < stats.length; j++) {
+            if (processedIndices.has(j)) continue;
+            entryStats.push(stats[j]);
+            processedIndices.add(j);
+          }
+
+          if (entryStats.length > 0) {
+            entries.push({
+              id: `${profile.id}_${yearValue || profile.created_at}`,
+              user_sport_profile_id: profile.id,
+              sport_id: profile.sport_id,
+              sport_name: profile.sport_name,
+              position_id: profile.position_id,
+              position_name: profile.position_name,
+              full_name: profile.full_name,
+              created_at: profile.created_at,
+              stats: entryStats,
+            });
+          }
+        }
+
+        if (entries.length > 0) {
+          groupedProfiles.push(...entries);
+        } else {
+          groupedProfiles.push({
+            id: profile.id,
+            user_sport_profile_id: profile.id,
+            sport_id: profile.sport_id,
+            sport_name: profile.sport_name,
+            position_id: profile.position_id,
+            position_name: profile.position_name,
+            full_name: profile.full_name,
+            created_at: profile.created_at,
+            stats: stats,
+          });
+        }
+      });
+    }
+
+    return {
+      user_id: data.user.user_id,
+      full_name: data.user.full_name,
+      profile_image_url: data.user.profile_image_url,
+      cover_image_url: data.user.cover_image_url,
+      bio: data.user.bio,
+      education: data.user.education,
+      city: data.user.city,
+      primary_sport: data.user.primary_sport,
+      sports_played: sportsPlayedArray.join(', '),
+      sports_played_array: sportsPlayedArray,
+      dob: data.user.dob,
+      user_type: data.user.user_type,
+      athletic_performance: data.athleticPerformance && data.athleticPerformance.length > 0
+        ? data.athleticPerformance[0]
+        : null,
+      all_athletic_performance: data.athleticPerformance || [],
+      sports: userSports.length > 0 ? userSports : (data.sports || []),
+      profiles: groupedProfiles,
+    };
+  } catch (error) {
+    console.error('Error fetching complete stats:', error);
+    throw error;
+  }
 }
 
 module.exports = {
@@ -822,4 +1095,5 @@ module.exports = {
   upsertUserPositionStats,
   getUserStatsByProfile,
   getAllUserSportProfiles,
+  getUserStatsComplete,
 };

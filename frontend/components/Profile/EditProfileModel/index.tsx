@@ -881,16 +881,20 @@ export default function EditProfileModal({
                       <span className="font-semibold text-gray-900 sm:w-32 md:w-40 sm:text-right">
                         Sports Played
                       </span>
-                      <span className="hidden sm:inline mx-2 md:mx-3">:</span>
+                      <span className="hidden sm:inline mx-2 md:mx-3 dark:text-gray-900">
+                        :
+                      </span>
                       <span className="text-gray-700 wrap-break-word">
                         {sportsPlayed || '—'}
                       </span>
                     </div>
                     <div className="text-xs sm:text-xs md:text-sm flex flex-col sm:flex-row gap-1 sm:gap-0">
                       <span className="font-semibold text-gray-900 sm:w-32 md:w-40 sm:text-right">
-                        Primary Sports
+                        Primary Sport
                       </span>
-                      <span className="hidden sm:inline mx-2 md:mx-3">:</span>
+                      <span className="hidden sm:inline mx-2 md:mx-3 dark:text-gray-900">
+                        :
+                      </span>
                       <span className="text-gray-700 wrap-break-word">
                         {primarySport || '—'}
                       </span>

@@ -334,4 +334,48 @@ router.get(
   statsController.getAllUserSportProfiles
 );
 
+/**
+ * @swagger
+ * /api/user/{userId}/stats-complete:
+ *   get:
+ *     summary: Get complete stats data for a user (optimized)
+ *     description: |
+ *       Optimized endpoint that returns ALL stats page data in a single database query.
+ *       Combines: user data, athletic performance, sport profiles, stats, and sports list.
+ *       Reduces database queries from 6+N to 1.
+ *     tags: [Stats]
+ *     security: []
+ *     parameters:
+ *       - in: path
+ *         name: userId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: Complete stats data retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 user:
+ *                   type: object
+ *                 athleticPerformance:
+ *                   type: object
+ *                 allAthleticPerformance:
+ *                   type: array
+ *                 sports:
+ *                   type: array
+ *                 profiles:
+ *                   type: array
+ */
+router.get(
+  '/user/:userId/stats-complete',
+  statsController.getUserStatsComplete
+);
+
 module.exports = router;

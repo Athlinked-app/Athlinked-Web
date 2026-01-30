@@ -6,7 +6,7 @@ import RightSideBar from '@/components/RightSideBar';
 import Header from '@/components/Header';
 import Post, { type PostData } from '@/components/Post';
 import { Search as SearchIcon, X, Play, Bookmark } from 'lucide-react';
-import { getResourceUrl } from '@/utils/api';
+import { apiRequest, getResourceUrl, getToken } from '@/utils/api';
 import { API_BASE_URL } from '@/utils/config';
 import CampDetailsPopup from '@/components/opportunities/CampDetailsPopup';
 import OpportunityDetailsPopup from '@/components/opportunities/CampDetailsPopup/OpportunityDetailsPopup';
@@ -705,10 +705,12 @@ export default function SearchPage() {
           const transformedResults: SearchResult[] = await Promise.all(
             filteredUsers.map(async (user: any) => {
               let isFollowing = false;
-              if (currentUserId) {
+              // Only check follow status when logged in (token + current user available)
+              if (currentUserId && getToken()) {
                 try {
-                  const isFollowingResponse = await fetch(
-                    `${API_BASE_URL}/api/network/is-following/${user.id}?follower_id=${currentUserId}`
+                  const isFollowingResponse = await apiRequest(
+                    `/network/is-following/${user.id}?follower_id=${currentUserId}`,
+                    { method: 'GET' }
                   );
                   if (isFollowingResponse.ok) {
                     const isFollowingData = await isFollowingResponse.json();
@@ -884,21 +886,20 @@ export default function SearchPage() {
     userId: string,
     isCurrentlyFollowing: boolean
   ) => {
-    if (!currentUserId) {
+    const token = getToken();
+
+    if (!currentUserId || !token) {
       alert('You must be logged in to follow users');
       return;
     }
 
     try {
       const endpoint = isCurrentlyFollowing
-        ? `${API_BASE_URL}/api/network/unfollow/${userId}`
-        : `${API_BASE_URL}/api/network/follow/${userId}`;
+        ? `/network/unfollow/${userId}`
+        : `/network/follow/${userId}`;
 
-      const response = await fetch(endpoint, {
+      const response = await apiRequest(endpoint, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           user_id: currentUserId,
         }),
@@ -907,13 +908,23 @@ export default function SearchPage() {
       const result = await response.json();
 
       if (result.success) {
+        const newIsFollowing = !isCurrentlyFollowing;
         setSearchResults(prevResults =>
           prevResults.map(person =>
             person.id === userId
-              ? { ...person, isFollowing: !isCurrentlyFollowing }
+              ? { ...person, isFollowing: newIsFollowing }
               : person
           )
         );
+
+        // Notify other components (e.g. RightSideBar) to update immediately
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('athlinked:follow-changed', {
+              detail: { userId, isFollowing: newIsFollowing },
+            })
+          );
+        }
       } else {
         alert(
           result.message ||

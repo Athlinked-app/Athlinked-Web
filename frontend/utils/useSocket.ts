@@ -31,7 +31,7 @@ export function initializeSocket(): Socket | null {
   }
 
   console.log('Initializing WebSocket connection to:', API_BASE_URL);
-  
+
   try {
     globalSocket = io(API_BASE_URL, {
       transports: ['websocket', 'polling'], // Fallback to polling if websocket fails
@@ -53,13 +53,23 @@ export function initializeSocket(): Socket | null {
         try {
           if (globalSocket && globalSocket.connected && currentUserId) {
             console.log('Emitting userId event...');
-            globalSocket.emit('userId', { userId: currentUserId }, (response: any) => {
-              if (response && response.error) {
-                console.error('❌ Error response from userId event:', response.error);
-              } else {
-                console.log('✅ userId sent successfully, response:', response);
+            globalSocket.emit(
+              'userId',
+              { userId: currentUserId },
+              (response: any) => {
+                if (response && response.error) {
+                  console.error(
+                    '❌ Error response from userId event:',
+                    response.error
+                  );
+                } else {
+                  console.log(
+                    '✅ userId sent successfully, response:',
+                    response
+                  );
+                }
               }
-            });
+            );
           } else {
             console.warn('⚠️ Socket not ready when trying to send userId', {
               socketExists: !!globalSocket,
@@ -81,13 +91,30 @@ export function initializeSocket(): Socket | null {
     return null;
   }
 
-  globalSocket.on('disconnect', (reason) => {
+  globalSocket.on('disconnect', reason => {
     console.log('❌ Socket disconnected:', reason);
   });
 
   globalSocket.on('connect_error', (error: any) => {
+    // Ignore empty error objects - they're often false positives from socket.io
+    if (!error) {
+      return;
+    }
+
+    // Check if it's an empty object
+    if (typeof error === 'object' && Object.keys(error).length === 0) {
+      // Silently ignore empty error objects
+      return;
+    }
+
     // Only log if error has meaningful content
-    if (error && (error.message || error.description || error.type || error.code || typeof error === 'string')) {
+    if (
+      error.message ||
+      error.description ||
+      error.type ||
+      error.code ||
+      typeof error === 'string'
+    ) {
       console.error('❌ Socket connection error:', error);
       if (typeof error === 'string') {
         console.error('Error string:', error);
@@ -103,12 +130,28 @@ export function initializeSocket(): Socket | null {
         });
       }
     }
-    // Ignore empty error objects - they're often false positives from socket.io
   });
 
   globalSocket.on('error', (error: any) => {
+    // Ignore empty error objects - they're often false positives from socket.io
+    if (!error) {
+      return;
+    }
+
+    // Check if it's an empty object
+    if (typeof error === 'object' && Object.keys(error).length === 0) {
+      // Silently ignore empty error objects
+      return;
+    }
+
     // Only log if error has meaningful content
-    if (error && (error.message || error.description || error.type || typeof error === 'string')) {
+    if (
+      error.message ||
+      error.description ||
+      error.type ||
+      error.code ||
+      typeof error === 'string'
+    ) {
       console.error('❌ Socket error event:', error);
       if (typeof error === 'string') {
         console.error('Error string:', error);
@@ -124,7 +167,6 @@ export function initializeSocket(): Socket | null {
         });
       }
     }
-    // Ignore empty error objects - they're often false positives from socket.io
   });
 
   return globalSocket;
@@ -137,13 +179,13 @@ export function getSocket(): Socket | null {
   if (!globalSocket) {
     return initializeSocket();
   }
-  
+
   // If socket exists but not connected, try to reconnect
   if (!globalSocket.connected) {
     console.log('Socket exists but not connected, attempting to reconnect...');
     globalSocket.connect();
   }
-  
+
   return globalSocket;
 }
 
