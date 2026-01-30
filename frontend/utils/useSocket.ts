@@ -30,17 +30,30 @@ export function initializeSocket(): Socket | null {
     globalSocket.removeAllListeners();
   }
 
-  console.log('Initializing WebSocket connection to:', API_BASE_URL);
+  const socketUrl =
+    typeof API_BASE_URL === 'string' && API_BASE_URL.trim()
+      ? API_BASE_URL.trim()
+      : null;
+  if (!socketUrl) {
+    console.warn('Socket URL (NEXT_PUBLIC_API_URL) is not set');
+    return null;
+  }
+
+  console.log('Initializing WebSocket connection to:', socketUrl);
 
   try {
-    globalSocket = io(API_BASE_URL, {
-      transports: ['websocket', 'polling'], // Fallback to polling if websocket fails
+    globalSocket = io(socketUrl, {
+      path: '/socket.io',
+      transports: ['polling', 'websocket'], // polling first for proxies that don't support WebSocket upgrade
       autoConnect: true,
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 10,
       timeout: 20000,
       forceNew: false,
+      withCredentials: true,
+      secure: socketUrl.startsWith('https'),
     });
 
     // Store userId in closure for use in event handlers

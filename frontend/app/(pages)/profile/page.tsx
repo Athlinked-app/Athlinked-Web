@@ -918,7 +918,7 @@ function ProfileContent() {
   const offset = circumference - (currentCompletion / 100) * circumference;
 
   return (
-    <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
+    <div className=" bg-[#D4D4D4] ">
       <Header
         userName={currentUser?.full_name}
         userProfileUrl={getProfileUrl(currentUser?.profile_url)}
@@ -1592,7 +1592,7 @@ function ProfileContent() {
                     >
                       Article
                     </button>
-                    <button
+                    {/* <button
                       onClick={() => setActiveSaveFilter('opportunities')}
                       className={`px-4 py-2 rounded-lg font-medium text-xs whitespace-nowrap transition-colors ${
                         activeSaveFilter === 'opportunities'
@@ -1601,7 +1601,7 @@ function ProfileContent() {
                       }`}
                     >
                       Opportunities
-                    </button>
+                    </button> */}
                   </div>
                   {activeSaveFilter === 'posts' && (
                     <MySavePost

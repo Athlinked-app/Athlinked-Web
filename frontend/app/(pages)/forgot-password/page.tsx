@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import SignupHero from '@/components/Signup/SignupHero';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { API_BASE_URL } from '@/utils/config';
-
+import Link from 'next/link';
 function ForgotPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -179,13 +179,14 @@ function ForgotPasswordContent() {
             <span className="text-sm">Back</span>
           </button>
 
-          {/* Logo */}
           <div className="flex items-center mb-6 sm:mb-8">
-            <img
-              src="/assets/Signup/logo.png"
-              alt="ATHLINKED"
-              className="h-8 sm:h-10 w-auto"
-            />
+            <Link href="/" className="cursor-pointer">
+              <img
+                src="/assets/Signup/logo.png"
+                alt="ATHLINKED"
+                className="h-8 sm:h-10 w-auto"
+              />
+            </Link>
           </div>
 
           {/* Title */}
