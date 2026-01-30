@@ -21,6 +21,35 @@ const socialPlatforms = [
   'Others',
 ];
 
+const URL_ERROR_MSG = 'Accept only URL. ';
+
+/** Only accepts URLs that start with http://, https://, or www. */
+function isValidUrlFormat(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  const lower = trimmed.toLowerCase();
+  const hasValidPrefix =
+    lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('www.');
+  if (!hasValidPrefix) return false;
+  try {
+    const toParse = lower.startsWith('www.') ? `https://${trimmed}` : trimmed;
+    new URL(toParse);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Normalize URL for save: ensure www. has https:// */
+function normalizeUrlForSave(value: string): string {
+  const trimmed = value.trim();
+  const lower = trimmed.toLowerCase();
+  if (lower.startsWith('www.') && !lower.startsWith('http')) {
+    return `https://${trimmed}`;
+  }
+  return trimmed;
+}
+
 export default function SocialHandlePopup({
   open,
   onClose,
@@ -28,6 +57,7 @@ export default function SocialHandlePopup({
 }: SocialHandlePopupProps) {
   const [selectedPlatform, setSelectedPlatform] = useState('');
   const [url, setUrl] = useState('');
+  const [urlError, setUrlError] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -53,15 +83,19 @@ export default function SocialHandlePopup({
   if (!open) return null;
 
   const handleSubmit = () => {
-    if (selectedPlatform && url.trim()) {
-      onSave({
-        platform: selectedPlatform,
-        url: url.trim(),
-      });
-      setSelectedPlatform('');
-      setUrl('');
-      onClose();
+    setUrlError('');
+    if (!selectedPlatform || !url.trim()) return;
+    if (!isValidUrlFormat(url)) {
+      setUrlError(URL_ERROR_MSG);
+      return;
     }
+    onSave({
+      platform: selectedPlatform,
+      url: normalizeUrlForSave(url),
+    });
+    setSelectedPlatform('');
+    setUrl('');
+    onClose();
   };
 
   const handlePlatformSelect = (platform: string) => {
@@ -147,10 +181,21 @@ export default function SocialHandlePopup({
             <input
               type="text"
               value={url}
-              onChange={e => setUrl(e.target.value)}
+              onChange={e => {
+                setUrl(e.target.value);
+                if (urlError) setUrlError('');
+              }}
+              onBlur={() => {
+                if (url.trim() && !isValidUrlFormat(url)) {
+                  setUrlError(URL_ERROR_MSG);
+                } else {
+                  setUrlError('');
+                }
+              }}
               placeholder="Social Handle URL"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black placeholder:text-gray-400"
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black placeholder:text-gray-400 ${urlError ? 'border-red-500' : 'border-gray-300'}`}
             />
+            {urlError && <p className="mt-1 text-xs text-red-600">{urlError}</p>}
           </div>
         </div>
 

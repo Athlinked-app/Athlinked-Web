@@ -1329,7 +1329,8 @@ export default function ClipsPage() {
           className="flex-1 relative bg-black md:bg-gray-200 overflow-hidden"
           style={{ height: 'calc(100vh - 73px)' }}
         >
-          <div className="absolute inset-0  flex flex-col items-center justify-start right-0 lg:right-[calc(350px+1rem)] xl:right-[calc(380px+1rem)] 2xl:right-[calc(500px+1rem)]">
+          
+          <div className="absolute inset-0 flex flex-col items-center justify-start right-0 lg:right-[calc(350px+1rem)] xl:right-[calc(380px+1rem)] 2xl:right-[calc(500px+1rem)]">
             {reels.length > 0 && (
               <div className="w-full ">
                 <div className="w-full flex items-center justify-center px-2 sm:px-3 md:px-4 lg:px-6">
@@ -1370,11 +1371,12 @@ export default function ClipsPage() {
             <div
               ref={scrollContainerRef}
               onWheel={handleWheelScroll}
-              className={`w-full flex-1 ${reels.length > 0 ? 'overflow-y-scroll snap-y snap-mandatory hide-scrollbar' : 'overflow-hidden'}`}
+              className={`w-full flex-1 min-h-0 ${reels.length > 0 ? 'overflow-y-scroll snap-y snap-mandatory hide-scrollbar' : 'overflow-hidden relative grid place-items-center'}`}
               style={{
                 scrollBehavior: 'smooth',
                 scrollSnapType: reels.length > 0 ? 'y mandatory' : 'none',
                 WebkitOverflowScrolling: 'touch',
+                ...(reels.length === 0 ? { minHeight: '100%' } : {}),
               }}
             >
               {reels.length > 0 ? (
@@ -1643,29 +1645,51 @@ export default function ClipsPage() {
                   </div>
                 ))
               ) : (
-                <div className="flex items-center justify-center w-full h-full">
-                  <div className="text-center text-black dark:text-white">
-                    <p className="text-sm sm:text-base md:text-lg mb-1 sm:mb-2">
-                      No videos yet
-                    </p>
-                    <p className="text-xs sm:text-sm mb-3 sm:mb-4">
-                      Use the Create button to add your first video
-                    </p>
-                    <button
-                      onClick={() => setShowUploadModal(true)}
-                      className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-3 sm:px-4 py-1.5 sm:py-2 flex items-center gap-1.5 sm:gap-2 shadow-lg transition-colors mx-auto"
-                    >
-                      <img
-                        src="/assets/Clips/upload.png"
-                        alt="Upload"
-                        className="w-4 h-4 sm:w-5 sm:h-5"
-                      />
-                      <span className="text-xs sm:text-sm font-medium">
-                        Create
-                      </span>
-                    </button>
-                  </div>
+                <div>
+                <div className="md:hidden text-center text-white md:text-black  w-full max-w-sm px-4">
+                  <p className="text-sm sm:text-base md:text-lg mb-1 sm:mb-2">
+                    No videos yet
+                  </p>
+                  <p className="text-xs sm:text-sm mb-3 sm:mb-4">
+                    Use the Create button to add your first video
+                  </p>
+                  <button
+                    onClick={() => setShowUploadModal(true)}
+                    className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-3 sm:px-4 py-1.5 sm:py-2 inline-flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg transition-colors"
+                  >
+                    <img
+                      src="/assets/Clips/upload.png"
+                      alt="Upload"
+                      className="w-4 h-4 sm:w-5 sm:h-5"
+                    />
+                    <span className="text-xs sm:text-sm font-medium">
+                      Create
+                    </span>
+                  </button>
                 </div>
+                      <div className="hidden md:block absolute top-36 left-26  xl:top-44 xl:left-56 2xl:top-56 2xl:left-[50%] text-center text-white md:text-black  w-full max-w-sm px-4">
+                      <p className="text-sm sm:text-base md:text-lg mb-1 sm:mb-2">
+                        No videos yet
+                      </p>
+                      <p className="text-xs sm:text-sm mb-3 sm:mb-4">
+                        Use the Create button to add your first video
+                      </p>
+                      <button
+                        onClick={() => setShowUploadModal(true)}
+                        className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-3 sm:px-4 py-1.5 sm:py-2 inline-flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg transition-colors"
+                      >
+                        <img
+                          src="/assets/Clips/upload.png"
+                          alt="Upload"
+                          className="w-4 h-4 sm:w-5 sm:h-5"
+                        />
+                        <span className="text-xs sm:text-sm font-medium">
+                          Create
+                        </span>
+                      </button>
+                    </div>
+                </div>
+                
               )}
             </div>
           </div>
