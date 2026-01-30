@@ -391,7 +391,7 @@ router.get('/my-children/activities', authenticateToken, signupController.getChi
  *               $ref: '#/components/schemas/Error'
  */
 router.delete(
-  '/delete-account',
+  '/Savedount',
   authenticateToken,
   signupController.deleteAccount
 );

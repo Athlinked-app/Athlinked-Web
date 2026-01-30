@@ -3,7 +3,6 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import SignupHero from '@/components/Signup/SignupHero';
 import ProgressStepper from '@/components/Signup/ProgressStepper';
@@ -344,7 +343,6 @@ function SignupContent() {
       {/* Right Side - Sign Up Form */}
       <div className="w-full md:w-1/2 xl:w-3/5 flex items-center justify-center bg-gray-100 p-4 sm:p-6 md:p-8 md:min-h-screen">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-6 sm:p-8 lg:p-10 xl:p-12 my-6 md:my-0">
-   
           <div className="flex items-center mb-6 sm:mb-8">
             <Link href="/" className="cursor-pointer">
               <img

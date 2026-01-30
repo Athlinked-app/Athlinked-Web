@@ -29,7 +29,9 @@ function isValidUrlFormat(value: string): boolean {
   if (!trimmed) return false;
   const lower = trimmed.toLowerCase();
   const hasValidPrefix =
-    lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('www.');
+    lower.startsWith('http://') ||
+    lower.startsWith('https://') ||
+    lower.startsWith('www.');
   if (!hasValidPrefix) return false;
   try {
     const toParse = lower.startsWith('www.') ? `https://${trimmed}` : trimmed;
@@ -195,7 +197,9 @@ export default function SocialHandlePopup({
               placeholder="Social Handle URL"
               className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-black placeholder:text-gray-400 ${urlError ? 'border-red-500' : 'border-gray-300'}`}
             />
-            {urlError && <p className="mt-1 text-xs text-red-600">{urlError}</p>}
+            {urlError && (
+              <p className="mt-1 text-xs text-red-600">{urlError}</p>
+            )}
           </div>
         </div>
 

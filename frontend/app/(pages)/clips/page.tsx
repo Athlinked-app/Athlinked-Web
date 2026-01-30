@@ -346,11 +346,9 @@ export default function ClipsPage() {
           const playPromise = audio.play();
           if (playPromise !== undefined) {
             playPromisesRef.current[reelId] = playPromise;
-            playPromise
-              .catch(handlePlayRejection)
-              .finally(() => {
-                playPromisesRef.current[reelId] = null;
-              });
+            playPromise.catch(handlePlayRejection).finally(() => {
+              playPromisesRef.current[reelId] = null;
+            });
           }
         }
       }
@@ -398,11 +396,9 @@ export default function ClipsPage() {
             const playPromise = audio.play();
             if (playPromise !== undefined) {
               playPromisesRef.current[reel.id] = playPromise;
-              playPromise
-                .catch(handlePlayRejection)
-                .finally(() => {
-                  playPromisesRef.current[reel.id] = null;
-                });
+              playPromise.catch(handlePlayRejection).finally(() => {
+                playPromisesRef.current[reel.id] = null;
+              });
             }
           } else {
             // Cancel any pending play promise before pausing
@@ -433,11 +429,9 @@ export default function ClipsPage() {
         const playPromise = firstAudio.play();
         if (playPromise !== undefined) {
           playPromisesRef.current[reels[0].id] = playPromise;
-          playPromise
-            .catch(handlePlayRejection)
-            .finally(() => {
-              playPromisesRef.current[reels[0].id] = null;
-            });
+          playPromise.catch(handlePlayRejection).finally(() => {
+            playPromisesRef.current[reels[0].id] = null;
+          });
         }
       }
     }
@@ -533,11 +527,9 @@ export default function ClipsPage() {
         const playPromise = audio.play();
         if (playPromise !== undefined) {
           playPromisesRef.current[currentReel.id] = playPromise;
-          playPromise
-            .catch(handlePlayRejection)
-            .finally(() => {
-              playPromisesRef.current[currentReel.id] = null;
-            });
+          playPromise.catch(handlePlayRejection).finally(() => {
+            playPromisesRef.current[currentReel.id] = null;
+          });
         }
       }
     }
@@ -876,11 +868,9 @@ export default function ClipsPage() {
         const playPromise = audio.play();
         if (playPromise !== undefined) {
           playPromisesRef.current[reelId] = playPromise;
-          playPromise
-            .catch(handlePlayRejection)
-            .finally(() => {
-              playPromisesRef.current[reelId] = null;
-            });
+          playPromise.catch(handlePlayRejection).finally(() => {
+            playPromisesRef.current[reelId] = null;
+          });
         }
         setPausedReels(prev => ({ ...prev, [reelId]: false }));
       } else {
@@ -1329,7 +1319,6 @@ export default function ClipsPage() {
           className="flex-1 relative bg-black md:bg-gray-200 overflow-hidden"
           style={{ height: 'calc(100vh - 73px)' }}
         >
-          
           <div className="absolute inset-0 flex flex-col items-center justify-start right-0 lg:right-[calc(350px+1rem)] xl:right-[calc(380px+1rem)] 2xl:right-[calc(500px+1rem)]">
             {reels.length > 0 && (
               <div className="w-full ">
@@ -1338,18 +1327,18 @@ export default function ClipsPage() {
                     className="w-full  sm:max-w-[320px] md:max-w-[400px] lg:max-w-[480px] xl:max-w-[700px] 2xl:max-w-[1000px]     [@media(min-width:1920px)]:max-w-[1800px]
     [@media(min-width:2560px)]:max-w-[2000px] bg-black rounded-t-lg py-6 flex items-center justify-between md:px-8"
                   >
-                    <div className='flex items-center gap-2'>
-                    <button
-                      type="button"
-                      onClick={() => setMobileMenuOpen(true)}
-                      className="md:hidden p-1.5 rounded-lg text-white hover:bg-white/10 focus:outline-none"
-                      aria-label="Open menu"
-                    >
-                      <Menu className="w-6 h-6" />
-                    </button>
-                    <span className="text-white font-semibold text-lg sm:text-lg xl:text-xl">
-                      Clips
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setMobileMenuOpen(true)}
+                        className="md:hidden p-1.5 rounded-lg text-white hover:bg-white/10 focus:outline-none"
+                        aria-label="Open menu"
+                      >
+                        <Menu className="w-6 h-6" />
+                      </button>
+                      <span className="text-white font-semibold text-lg sm:text-lg xl:text-xl">
+                        Clips
+                      </span>
                     </div>
                     <button
                       onClick={() => setShowUploadModal(true)}
@@ -1646,50 +1635,49 @@ export default function ClipsPage() {
                 ))
               ) : (
                 <div>
-                <div className="md:hidden text-center text-white md:text-black  w-full max-w-sm px-4">
-                  <p className="text-sm sm:text-base md:text-lg mb-1 sm:mb-2">
-                    No videos yet
-                  </p>
-                  <p className="text-xs sm:text-sm mb-3 sm:mb-4">
-                    Use the Create button to add your first video
-                  </p>
-                  <button
-                    onClick={() => setShowUploadModal(true)}
-                    className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-3 sm:px-4 py-1.5 sm:py-2 inline-flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg transition-colors"
-                  >
-                    <img
-                      src="/assets/Clips/upload.png"
-                      alt="Upload"
-                      className="w-4 h-4 sm:w-5 sm:h-5"
-                    />
-                    <span className="text-xs sm:text-sm font-medium">
-                      Create
-                    </span>
-                  </button>
+                  <div className="md:hidden text-center text-white md:text-black  w-full max-w-sm px-4">
+                    <p className="text-sm sm:text-base md:text-lg mb-1 sm:mb-2">
+                      No videos yet
+                    </p>
+                    <p className="text-xs sm:text-sm mb-3 sm:mb-4">
+                      Use the Create button to add your first video
+                    </p>
+                    <button
+                      onClick={() => setShowUploadModal(true)}
+                      className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-3 sm:px-4 py-1.5 sm:py-2 inline-flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg transition-colors"
+                    >
+                      <img
+                        src="/assets/Clips/upload.png"
+                        alt="Upload"
+                        className="w-4 h-4 sm:w-5 sm:h-5"
+                      />
+                      <span className="text-xs sm:text-sm font-medium">
+                        Create
+                      </span>
+                    </button>
+                  </div>
+                  <div className="hidden md:block absolute top-36 left-26  xl:top-44 xl:left-56 2xl:top-56 2xl:left-[50%] text-center text-white md:text-black  w-full max-w-sm px-4">
+                    <p className="text-sm sm:text-base md:text-lg mb-1 sm:mb-2">
+                      No videos yet
+                    </p>
+                    <p className="text-xs sm:text-sm mb-3 sm:mb-4">
+                      Use the Create button to add your first video
+                    </p>
+                    <button
+                      onClick={() => setShowUploadModal(true)}
+                      className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-3 sm:px-4 py-1.5 sm:py-2 inline-flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg transition-colors"
+                    >
+                      <img
+                        src="/assets/Clips/upload.png"
+                        alt="Upload"
+                        className="w-4 h-4 sm:w-5 sm:h-5"
+                      />
+                      <span className="text-xs sm:text-sm font-medium">
+                        Create
+                      </span>
+                    </button>
+                  </div>
                 </div>
-                      <div className="hidden md:block absolute top-36 left-26  xl:top-44 xl:left-56 2xl:top-56 2xl:left-[50%] text-center text-white md:text-black  w-full max-w-sm px-4">
-                      <p className="text-sm sm:text-base md:text-lg mb-1 sm:mb-2">
-                        No videos yet
-                      </p>
-                      <p className="text-xs sm:text-sm mb-3 sm:mb-4">
-                        Use the Create button to add your first video
-                      </p>
-                      <button
-                        onClick={() => setShowUploadModal(true)}
-                        className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-3 sm:px-4 py-1.5 sm:py-2 inline-flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg transition-colors"
-                      >
-                        <img
-                          src="/assets/Clips/upload.png"
-                          alt="Upload"
-                          className="w-4 h-4 sm:w-5 sm:h-5"
-                        />
-                        <span className="text-xs sm:text-sm font-medium">
-                          Create
-                        </span>
-                      </button>
-                    </div>
-                </div>
-                
               )}
             </div>
           </div>

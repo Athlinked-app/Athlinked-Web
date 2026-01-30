@@ -386,7 +386,6 @@ export default function NetworkPage() {
         </div>
 
         <div className="flex-1 flex gap-3 overflow-y-auto px-2 md:px-0">
-       
           <div className="flex-1 bg-white rounded-xl md:p-6">
             {/* Followers/Followings Section */}
             <div className="mb-8">

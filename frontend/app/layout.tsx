@@ -4,7 +4,6 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import './globals.css';
 import AuthProvider from '@/components/Auth/AuthProvider';
 
-
 const geistSans = Geist({
   variable: '--font-geist-sans',
   subsets: ['latin'],
@@ -51,10 +50,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={manrope.className}>
-        <GoogleOAuthWrapper>
-          {children}
-      
-        </GoogleOAuthWrapper>
+        <GoogleOAuthWrapper>{children}</GoogleOAuthWrapper>
       </body>
     </html>
   );
