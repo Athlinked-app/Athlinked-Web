@@ -71,7 +71,7 @@ function getHref(id: string): string {
       return '/notifications';
     case 'settings':
       return '/settings';
- 
+
     default:
       return '#';
   }
@@ -99,7 +99,6 @@ export default function HamburgerMenu({ isOpen, onClose }: HamburgerMenuProps) {
     '/messages': 'message',
     '/notifications': 'notifications',
     '/settings': 'settings',
-  
   };
   const activeItem =
     pathToActiveId[pathname] ??

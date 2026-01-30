@@ -2178,7 +2178,7 @@ function MessagesPageContent() {
                     </div>
                   )}
 
-                  <div className="flex  items-center gap-2">
+                  <div className="flex  mb-20 md:mb-0 items-center gap-2">
                     <EmojiPicker onEmojiSelect={handleEmojiSelect} />
                     <GIFPicker onGIFSelect={handleGIFSelect} />
                     <input

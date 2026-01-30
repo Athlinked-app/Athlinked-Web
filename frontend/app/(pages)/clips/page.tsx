@@ -1311,10 +1311,10 @@ export default function ClipsPage() {
   return (
     <div className="flex flex-col min-h-screen bg-black md:bg-gray-200 pb-16 md:pb-0">
       <div className="hidden md:block">
-      <Header
-        userName={currentUser?.full_name}
-        userProfileUrl={getProfileUrl(currentUser?.profile_url)}
-      />
+        <Header
+          userName={currentUser?.full_name}
+          userProfileUrl={getProfileUrl(currentUser?.profile_url)}
+        />
       </div>
 
       {/* Content Area with Navigation and Main Content */}
@@ -1323,7 +1323,7 @@ export default function ClipsPage() {
         <div className="hidden md:flex">
           <NavigationBar activeItem="clips" />
         </div>
- 
+
         {/* Main Content Area - Scrollable Reels with Comments */}
         <div
           className="flex-1 relative bg-black md:bg-gray-200 overflow-hidden"
@@ -1543,7 +1543,9 @@ export default function ClipsPage() {
                             className="sm:w-4 sm:h-4 md:w-5 md:h-5"
                           />
                           <span className="text-[9px] sm:text-[10px] md:text-xs font-medium">
-                            {reel.commentCount ?? selectedReel?.comments?.length ?? 0}
+                            {reel.commentCount ??
+                              selectedReel?.comments?.length ??
+                              0}
                           </span>
                         </button>
 
@@ -2021,343 +2023,346 @@ export default function ClipsPage() {
             </div>
           )}
 
-      {/* Mobile Comments Popup (uses same content as desktop sidebar) */}
-      {showCommentsModal && (
-        <div className="fixed inset-0 z-40 lg:hidden flex items-center justify-center px-3 sm:px-4">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setShowCommentsModal(false)}
-          />
-          <div className="relative w-full max-w-md max-h-[80vh] bg-white  shadow-xl flex flex-col">
-            {/* Header */}
-            <div className="p-3 border-b border-gray-200 flex items-center justify-between shrink-0">
-              <h2 className="text-sm sm:text-base font-semibold text-black">
-                Comments
-              </h2>
-              <button
-                type="button"
+          {/* Mobile Comments Popup (uses same content as desktop sidebar) */}
+          {showCommentsModal && (
+            <div className="fixed inset-0 z-40 lg:hidden flex items-center justify-center px-3 sm:px-4">
+              <div
+                className="absolute inset-0 bg-black/50"
                 onClick={() => setShowCommentsModal(false)}
-                className="text-xs sm:text-sm text-gray-500 hover:text-black"
-              >
-                X
-              </button>
-            </div>
+              />
+              <div className="relative w-full max-w-md max-h-[80vh] bg-white  shadow-xl flex flex-col">
+                {/* Header */}
+                <div className="p-3 border-b border-gray-200 flex items-center justify-between shrink-0">
+                  <h2 className="text-sm sm:text-base font-semibold text-black">
+                    Comments
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => setShowCommentsModal(false)}
+                    className="text-xs sm:text-sm text-gray-500 hover:text-black"
+                  >
+                    X
+                  </button>
+                </div>
 
-            {/* Comments List (same logic as desktop sidebar) */}
-            <div className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-3 sm:space-y-4 relative">
-              {selectedReel ? (
-                selectedReel.comments &&
-                Array.isArray(selectedReel.comments) &&
-                selectedReel.comments.length > 0 ? (
-                  <>
-                    {selectedReel.comments.map(comment => (
-                      <div
-                        key={comment.id}
-                        className="flex gap-2 sm:gap-2.5 md:gap-3"
-                      >
-                        <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-gray-300 overflow-hidden shrink-0 flex items-center justify-center">
-                          {comment.authorAvatar ? (
-                            <img
-                              src={comment.authorAvatar}
-                              alt={comment.author}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-black font-semibold text-xs">
-                              {comment.author
-                                .split(' ')
-                                .map(word => word[0])
-                                .join('')
-                                .toUpperCase()
-                                .slice(0, 2)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="mb-0.5 sm:mb-1">
-                            <span className="font-semibold text-black text-xs sm:text-sm truncate block">
-                              {comment.author}
-                            </span>
-                          </div>
-                          <p className="text-xs sm:text-sm text-black mb-1 sm:mb-2 wrap-break-word">
-                            {comment.text}
-                          </p>
-                          <div className="flex items-center gap-2 sm:gap-3 md:gap-4 text-[10px] sm:text-xs text-black">
-                            <button
-                              onClick={() =>
-                                selectedReel &&
-                                handleReplyClick(selectedReel.id, comment.id)
-                              }
-                              className="hover:text-black"
-                            >
-                              Reply
-                            </button>
-                            {comment.hasReplies && (
-                              <button
-                                onClick={() => toggleReplies(comment.id)}
-                                className="hover:text-black"
-                              >
-                                {showReplies[comment.id]
-                                  ? `Hide replies (${comment.replies?.length || 0})`
-                                  : `View replies (${comment.replies?.length || 0})`}
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Replies */}
-                          {showReplies[comment.id] &&
-                            comment.replies &&
-                            comment.replies.length > 0 && (
-                              <div className="mt-2 sm:mt-3 ml-2 sm:ml-3 md:ml-4 space-y-2 sm:space-y-3 border-l-2 border-gray-300 pl-2 sm:pl-3 md:pl-4">
-                                {comment.replies.map(reply => (
-                                  <div
-                                    key={reply.id}
-                                    className="flex gap-1.5 sm:gap-2"
+                {/* Comments List (same logic as desktop sidebar) */}
+                <div className="flex-1 overflow-y-auto p-2 sm:p-3 space-y-3 sm:space-y-4 relative">
+                  {selectedReel ? (
+                    selectedReel.comments &&
+                    Array.isArray(selectedReel.comments) &&
+                    selectedReel.comments.length > 0 ? (
+                      <>
+                        {selectedReel.comments.map(comment => (
+                          <div
+                            key={comment.id}
+                            className="flex gap-2 sm:gap-2.5 md:gap-3"
+                          >
+                            <div className="w-8 h-8 sm:w-9 sm:h-9 md:w-10 md:h-10 rounded-full bg-gray-300 overflow-hidden shrink-0 flex items-center justify-center">
+                              {comment.authorAvatar ? (
+                                <img
+                                  src={comment.authorAvatar}
+                                  alt={comment.author}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <span className="text-black font-semibold text-xs">
+                                  {comment.author
+                                    .split(' ')
+                                    .map(word => word[0])
+                                    .join('')
+                                    .toUpperCase()
+                                    .slice(0, 2)}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="mb-0.5 sm:mb-1">
+                                <span className="font-semibold text-black text-xs sm:text-sm truncate block">
+                                  {comment.author}
+                                </span>
+                              </div>
+                              <p className="text-xs sm:text-sm text-black mb-1 sm:mb-2 wrap-break-word">
+                                {comment.text}
+                              </p>
+                              <div className="flex items-center gap-2 sm:gap-3 md:gap-4 text-[10px] sm:text-xs text-black">
+                                <button
+                                  onClick={() =>
+                                    selectedReel &&
+                                    handleReplyClick(
+                                      selectedReel.id,
+                                      comment.id
+                                    )
+                                  }
+                                  className="hover:text-black"
+                                >
+                                  Reply
+                                </button>
+                                {comment.hasReplies && (
+                                  <button
+                                    onClick={() => toggleReplies(comment.id)}
+                                    className="hover:text-black"
                                   >
-                                    <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-gray-300 overflow-hidden shrink-0 flex items-center justify-center">
-                                      {reply.authorAvatar ? (
-                                        <img
-                                          src={reply.authorAvatar}
-                                          alt={reply.author}
-                                          className="w-full h-full object-cover"
-                                        />
-                                      ) : (
-                                        <span className="text-black font-semibold text-xs">
-                                          {reply.author
+                                    {showReplies[comment.id]
+                                      ? `Hide replies (${comment.replies?.length || 0})`
+                                      : `View replies (${comment.replies?.length || 0})`}
+                                  </button>
+                                )}
+                              </div>
+
+                              {/* Replies */}
+                              {showReplies[comment.id] &&
+                                comment.replies &&
+                                comment.replies.length > 0 && (
+                                  <div className="mt-2 sm:mt-3 ml-2 sm:ml-3 md:ml-4 space-y-2 sm:space-y-3 border-l-2 border-gray-300 pl-2 sm:pl-3 md:pl-4">
+                                    {comment.replies.map(reply => (
+                                      <div
+                                        key={reply.id}
+                                        className="flex gap-1.5 sm:gap-2"
+                                      >
+                                        <div className="w-6 h-6 sm:w-7 sm:h-7 md:w-8 md:h-8 rounded-full bg-gray-300 overflow-hidden shrink-0 flex items-center justify-center">
+                                          {reply.authorAvatar ? (
+                                            <img
+                                              src={reply.authorAvatar}
+                                              alt={reply.author}
+                                              className="w-full h-full object-cover"
+                                            />
+                                          ) : (
+                                            <span className="text-black font-semibold text-xs">
+                                              {reply.author
+                                                .split(' ')
+                                                .map(word => word[0])
+                                                .join('')
+                                                .toUpperCase()
+                                                .slice(0, 2)}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <div className="mb-0.5 sm:mb-1 flex items-center gap-1 flex-wrap">
+                                            <span className="font-semibold text-black text-[10px] sm:text-xs truncate">
+                                              {reply.author}
+                                            </span>
+                                            {reply.parent_username && (
+                                              <>
+                                                <span className="text-gray-500 text-[10px] sm:text-xs">
+                                                  replying to
+                                                </span>
+                                                <span className="font-semibold text-[#CB9729] text-[10px] sm:text-xs truncate">
+                                                  {reply.parent_username}
+                                                </span>
+                                              </>
+                                            )}
+                                          </div>
+                                          <p className="text-[10px] sm:text-xs text-black wrap-break-word">
+                                            {reply.text}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+
+                              {/* Reply Input */}
+                              {selectedReel &&
+                                replyingTo[selectedReel.id] === comment.id && (
+                                  <div className="mt-2 sm:mt-3 ml-2 sm:ml-3 md:ml-4 flex items-center gap-1.5 sm:gap-2">
+                                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-300 overflow-hidden shrink-0 flex items-center justify-center">
+                                      {userData?.full_name ? (
+                                        <span className="text-black font-semibold text-[10px] sm:text-xs">
+                                          {userData.full_name
                                             .split(' ')
                                             .map(word => word[0])
                                             .join('')
                                             .toUpperCase()
                                             .slice(0, 2)}
                                         </span>
+                                      ) : (
+                                        <span className="text-black font-semibold text-[10px] sm:text-xs">
+                                          U
+                                        </span>
                                       )}
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="mb-0.5 sm:mb-1 flex items-center gap-1 flex-wrap">
-                                        <span className="font-semibold text-black text-[10px] sm:text-xs truncate">
-                                          {reply.author}
-                                        </span>
-                                        {reply.parent_username && (
-                                          <>
-                                            <span className="text-gray-500 text-[10px] sm:text-xs">
-                                              replying to
-                                            </span>
-                                            <span className="font-semibold text-[#CB9729] text-[10px] sm:text-xs truncate">
-                                              {reply.parent_username}
-                                            </span>
-                                          </>
-                                        )}
-                                      </div>
-                                      <p className="text-[10px] sm:text-xs text-black wrap-break-word">
-                                        {reply.text}
-                                      </p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                          {/* Reply Input */}
-                          {selectedReel &&
-                            replyingTo[selectedReel.id] === comment.id && (
-                              <div className="mt-2 sm:mt-3 ml-2 sm:ml-3 md:ml-4 flex items-center gap-1.5 sm:gap-2">
-                                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gray-300 overflow-hidden shrink-0 flex items-center justify-center">
-                                  {userData?.full_name ? (
-                                    <span className="text-black font-semibold text-[10px] sm:text-xs">
-                                      {userData.full_name
-                                        .split(' ')
-                                        .map(word => word[0])
-                                        .join('')
-                                        .toUpperCase()
-                                        .slice(0, 2)}
-                                    </span>
-                                  ) : (
-                                    <span className="text-black font-semibold text-[10px] sm:text-xs">
-                                      U
-                                    </span>
-                                  )}
-                                </div>
-                                <input
-                                  type="text"
-                                  placeholder={`Reply to ${comment.author}...`}
-                                  value={
-                                    replyTexts[
-                                      `${selectedReel.id}-${comment.id}`
-                                    ] || ''
-                                  }
-                                  onChange={e =>
-                                    setReplyTexts(prev => ({
-                                      ...prev,
-                                      [`${selectedReel.id}-${comment.id}`]:
-                                        e.target.value,
-                                    }))
-                                  }
-                                  className="flex-1 px-2 sm:px-3 py-1 sm:py-1.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 text-[10px] sm:text-xs text-black"
-                                  onKeyDown={e => {
-                                    if (
-                                      e.key === 'Enter' &&
-                                      !e.shiftKey &&
-                                      selectedReel
-                                    ) {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      handleAddReply(
-                                        selectedReel.id,
-                                        comment.id
-                                      );
-                                    }
-                                  }}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={e => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    if (selectedReel) {
-                                      handleAddReply(
-                                        selectedReel.id,
-                                        comment.id
-                                      );
-                                    }
-                                  }}
-                                  disabled={
-                                    !replyTexts[
-                                      `${selectedReel.id}-${comment.id}`
-                                    ]?.trim()
-                                  }
-                                  className="p-1 sm:p-1.5 bg-[#CB9729] text-white rounded-full hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  <Send
-                                    size={12}
-                                    className="sm:w-3.5 sm:h-3.5"
-                                  />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={e => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    if (selectedReel) {
-                                      setReplyingTo(prev => ({
-                                        ...prev,
-                                        [selectedReel.id]: null,
-                                      }));
-                                      setReplyTexts(prev => {
-                                        const newState = { ...prev };
-                                        delete newState[
+                                    <input
+                                      type="text"
+                                      placeholder={`Reply to ${comment.author}...`}
+                                      value={
+                                        replyTexts[
                                           `${selectedReel.id}-${comment.id}`
-                                        ];
-                                        return newState;
-                                      });
-                                    }
-                                  }}
-                                  className="text-[10px] sm:text-xs text-gray-500 hover:text-black px-1 sm:px-2"
-                                >
-                                  Cancel
-                                </button>
-                              </div>
-                            )}
-                        </div>
+                                        ] || ''
+                                      }
+                                      onChange={e =>
+                                        setReplyTexts(prev => ({
+                                          ...prev,
+                                          [`${selectedReel.id}-${comment.id}`]:
+                                            e.target.value,
+                                        }))
+                                      }
+                                      className="flex-1 px-2 sm:px-3 py-1 sm:py-1.5 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 text-[10px] sm:text-xs text-black"
+                                      onKeyDown={e => {
+                                        if (
+                                          e.key === 'Enter' &&
+                                          !e.shiftKey &&
+                                          selectedReel
+                                        ) {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          handleAddReply(
+                                            selectedReel.id,
+                                            comment.id
+                                          );
+                                        }
+                                      }}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={e => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (selectedReel) {
+                                          handleAddReply(
+                                            selectedReel.id,
+                                            comment.id
+                                          );
+                                        }
+                                      }}
+                                      disabled={
+                                        !replyTexts[
+                                          `${selectedReel.id}-${comment.id}`
+                                        ]?.trim()
+                                      }
+                                      className="p-1 sm:p-1.5 bg-[#CB9729] text-white rounded-full hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                      <Send
+                                        size={12}
+                                        className="sm:w-3.5 sm:h-3.5"
+                                      />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={e => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        if (selectedReel) {
+                                          setReplyingTo(prev => ({
+                                            ...prev,
+                                            [selectedReel.id]: null,
+                                          }));
+                                          setReplyTexts(prev => {
+                                            const newState = { ...prev };
+                                            delete newState[
+                                              `${selectedReel.id}-${comment.id}`
+                                            ];
+                                            return newState;
+                                          });
+                                        }
+                                      }}
+                                      className="text-[10px] sm:text-xs text-gray-500 hover:text-black px-1 sm:px-2"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                )}
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-black">
+                        <MessageSquare
+                          size={32}
+                          className="sm:w-10 sm:h-10 md:w-12 md:h-12 mb-2 sm:mb-3 md:mb-4 opacity-50"
+                        />
+                        <p className="text-xs sm:text-sm">No comments yet</p>
+                        <p className="text-[10px] sm:text-xs mt-1">
+                          Be the first to comment!
+                        </p>
                       </div>
-                    ))}
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-black">
-                    <MessageSquare
-                      size={32}
-                      className="sm:w-10 sm:h-10 md:w-12 md:h-12 mb-2 sm:mb-3 md:mb-4 opacity-50"
-                    />
-                    <p className="text-xs sm:text-sm">No comments yet</p>
-                    <p className="text-[10px] sm:text-xs mt-1">
-                      Be the first to comment!
-                    </p>
-                  </div>
-                )
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full text-black">
-                  <MessageSquare
-                    size={32}
-                    className="sm:w-10 sm:h-10 md:w-12 md:h-12 mb-2 sm:mb-3 md:mb-4 opacity-50"
-                  />
-                  <p className="text-xs sm:text-sm">
-                    Select a clip to view comments
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Comment Input (same as desktop, adjusted padding) */}
-            <div className="p-2 sm:p-3 border-t border-gray-200 shrink-0">
-              <div className="flex items-center gap-2 sm:gap-2.5">
-                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gray-300 overflow-hidden shrink-0 flex items-center justify-center border border-gray-200">
-                  {currentUser?.profile_url &&
-                  currentUser.profile_url.trim() !== '' ? (
-                    <img
-                      src={getProfileUrl(currentUser.profile_url)}
-                      alt={currentUser.full_name || 'User'}
-                      className="w-full h-full object-cover"
-                    />
+                    )
                   ) : (
-                    <span className="text-black font-semibold text-[10px] sm:text-xs">
-                      {currentUser?.full_name
-                        ? currentUser.full_name
-                            .split(' ')
-                            .map(word => word[0])
-                            .join('')
-                            .toUpperCase()
-                            .slice(0, 2)
-                        : userData?.full_name
-                          ? userData.full_name
-                              .split(' ')
-                              .map(word => word[0])
-                              .join('')
-                              .toUpperCase()
-                              .slice(0, 2)
-                          : 'U'}
-                    </span>
+                    <div className="flex flex-col items-center justify-center h-full text-black">
+                      <MessageSquare
+                        size={32}
+                        className="sm:w-10 sm:h-10 md:w-12 md:h-12 mb-2 sm:mb-3 md:mb-4 opacity-50"
+                      />
+                      <p className="text-xs sm:text-sm">
+                        Select a clip to view comments
+                      </p>
+                    </div>
                   )}
                 </div>
-                <input
-                  type="text"
-                  placeholder="Write your comment here.."
-                  value={commentTexts[selectedReel?.id || ''] || ''}
-                  onChange={e =>
-                    setCommentTexts(prev => ({
-                      ...prev,
-                      [selectedReel?.id || '']: e.target.value,
-                    }))
-                  }
-                  className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 text-xs sm:text-sm text-black"
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && !e.shiftKey && selectedReel) {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleAddComment(selectedReel.id);
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={e => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    if (selectedReel) {
-                      handleAddComment(selectedReel.id);
-                    }
-                  }}
-                  disabled={!commentTexts[selectedReel?.id || '']?.trim()}
-                  className="p-1.5 sm:p-2 bg-[#CB9729] text-white rounded-full hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Send
-                    size={14}
-                    className="sm:w-4 sm:h-4 md:w-[18px] md:h-[18px]"
-                  />
-                </button>
+
+                {/* Comment Input (same as desktop, adjusted padding) */}
+                <div className="p-2 sm:p-3 border-t border-gray-200 shrink-0">
+                  <div className="flex items-center gap-2 sm:gap-2.5">
+                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gray-300 overflow-hidden shrink-0 flex items-center justify-center border border-gray-200">
+                      {currentUser?.profile_url &&
+                      currentUser.profile_url.trim() !== '' ? (
+                        <img
+                          src={getProfileUrl(currentUser.profile_url)}
+                          alt={currentUser.full_name || 'User'}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-black font-semibold text-[10px] sm:text-xs">
+                          {currentUser?.full_name
+                            ? currentUser.full_name
+                                .split(' ')
+                                .map(word => word[0])
+                                .join('')
+                                .toUpperCase()
+                                .slice(0, 2)
+                            : userData?.full_name
+                              ? userData.full_name
+                                  .split(' ')
+                                  .map(word => word[0])
+                                  .join('')
+                                  .toUpperCase()
+                                  .slice(0, 2)
+                              : 'U'}
+                        </span>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Write your comment here.."
+                      value={commentTexts[selectedReel?.id || ''] || ''}
+                      onChange={e =>
+                        setCommentTexts(prev => ({
+                          ...prev,
+                          [selectedReel?.id || '']: e.target.value,
+                        }))
+                      }
+                      className="flex-1 px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 text-xs sm:text-sm text-black"
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && !e.shiftKey && selectedReel) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleAddComment(selectedReel.id);
+                        }
+                      }}
+                    />
+                    <button
+                      type="button"
+                      onClick={e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if (selectedReel) {
+                          handleAddComment(selectedReel.id);
+                        }
+                      }}
+                      disabled={!commentTexts[selectedReel?.id || '']?.trim()}
+                      className="p-1.5 sm:p-2 bg-[#CB9729] text-white rounded-full hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Send
+                        size={14}
+                        className="sm:w-4 sm:h-4 md:w-[18px] md:h-[18px]"
+                      />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
           {/* Navigation Arrows - Below the comments box on the left side */}
           {reels.length > 0 && (
