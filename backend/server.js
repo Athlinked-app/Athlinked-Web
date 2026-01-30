@@ -34,15 +34,28 @@ const PORT = process.env.PORT || 3001;
 
 const server = http.createServer(app);
 
+// Socket.IO CORS: allow same origins as Express (needed for deployed frontend)
+const socketAllowedOrigins = [
+  'http://localhost:3000',
+  'https://athlinked-api.randomw.dev',
+  'https://athlinked.randomw.dev',
+  process.env.FRONTEND_URL,
+  process.env.CLIENT_URL,
+]
+  .filter(Boolean)
+  .map((o) => (typeof o === 'string' ? o.replace(/\/$/, '') : o));
+
 const io = new Server(server, {
   cors: {
-    origin: process.env.FRONTEND_URL || '*',
+    origin: socketAllowedOrigins.length > 0 ? socketAllowedOrigins : true,
     methods: ['GET', 'POST'],
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
   },
-  transports: ['websocket', 'polling'],
+  transports: ['polling', 'websocket'], // polling first for proxies that don't upgrade WebSocket
   allowEIO3: true,
+  pingTimeout: 60000,
+  pingInterval: 25000,
 });
 
 io.on('connection', socket => {
@@ -163,21 +176,31 @@ io.on('connection', socket => {
         
         // Continue with notification logic (either Firebase is initialized OR we're in debug mode)
         
-        // Query fcm_tokens table for receiver's tokens
+        // Query fcm_tokens for receiver's tokens only (do not notify the sender on their own device)
         console.log('🔍 Querying fcm_tokens table for receiverId:', receiverId);
-        const tokensQuery = `
+        const receiverTokensQuery = `
           SELECT token, platform
           FROM fcm_tokens
           WHERE user_id = $1
           ORDER BY updated_at DESC
         `;
-        const tokensResult = await pool.query(tokensQuery, [receiverId]);
-        const tokens = tokensResult.rows.map(row => row.token);
-        const platforms = tokensResult.rows.map(row => row.platform);
-        
+        const tokensResult = await pool.query(receiverTokensQuery, [receiverId]);
+        let receiverRows = tokensResult.rows || [];
+
+        // Exclude any tokens that also belong to the sender (same device = don't push to sender)
+        const senderTokensResult = await pool.query(
+          'SELECT token FROM fcm_tokens WHERE user_id = $1',
+          [senderId]
+        );
+        const senderTokenSet = new Set((senderTokensResult.rows || []).map(r => r.token));
+        receiverRows = receiverRows.filter(row => !senderTokenSet.has(row.token));
+
+        const tokens = receiverRows.map(row => row.token);
+        const platforms = receiverRows.map(row => row.platform);
+
         console.log('📊 Token query result:', {
-          rowCount: tokensResult.rows.length,
-          tokensFound: tokens.length,
+          receiverTokenCount: (tokensResult.rows || []).length,
+          afterExcludingSender: tokens.length,
           platforms: platforms
         });
         
@@ -561,8 +584,12 @@ io.on('connection', socket => {
             console.log('✅ All notifications sent successfully!');
           }
         } else {
-          console.log('⚠️ No tokens found for receiver:', receiverId);
-          console.log('💡 Make sure the receiver has registered their FCM token via /api/save-fcm-token');
+          if ((tokensResult.rows || []).length > 0) {
+            console.log('🔕 Skipping push: receiver tokens are all on sender\'s device(s) - only external recipients get notified');
+          } else {
+            console.log('⚠️ No tokens found for receiver:', receiverId);
+            console.log('💡 Make sure the receiver has registered their FCM token via /api/save-fcm-token');
+          }
         }
       } catch (notificationError) {
         // Don't fail the message send if notification fails
