@@ -1645,7 +1645,8 @@ export default function ClipsPage() {
                   </div>
                 ))
               ) : (
-                <div className="text-center text-white md:text-black  w-full max-w-sm px-4">
+                <div>
+                <div className="md:hidden text-center text-white md:text-black  w-full max-w-sm px-4">
                   <p className="text-sm sm:text-base md:text-lg mb-1 sm:mb-2">
                     No videos yet
                   </p>
@@ -1666,6 +1667,29 @@ export default function ClipsPage() {
                     </span>
                   </button>
                 </div>
+                      <div className="hidden md:block absolute top-36 left-26  xl:top-44 xl:left-56 2xl:top-56 2xl:left-[50%] text-center text-white md:text-black  w-full max-w-sm px-4">
+                      <p className="text-sm sm:text-base md:text-lg mb-1 sm:mb-2">
+                        No videos yet
+                      </p>
+                      <p className="text-xs sm:text-sm mb-3 sm:mb-4">
+                        Use the Create button to add your first video
+                      </p>
+                      <button
+                        onClick={() => setShowUploadModal(true)}
+                        className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-full px-3 sm:px-4 py-1.5 sm:py-2 inline-flex items-center justify-center gap-1.5 sm:gap-2 shadow-lg transition-colors"
+                      >
+                        <img
+                          src="/assets/Clips/upload.png"
+                          alt="Upload"
+                          className="w-4 h-4 sm:w-5 sm:h-5"
+                        />
+                        <span className="text-xs sm:text-sm font-medium">
+                          Create
+                        </span>
+                      </button>
+                    </div>
+                </div>
+                
               )}
             </div>
           </div>
