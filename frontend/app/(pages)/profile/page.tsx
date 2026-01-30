@@ -1350,7 +1350,7 @@ function ProfileContent() {
                         : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
-                    My Save
+                    Saved
                     {activeTab === 'mysave' && (
                       <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
                     )}
@@ -1558,7 +1558,7 @@ function ProfileContent() {
               {activeTab === 'mysave' && (
                 <div className="w-full bg-white rounded-lg px-4 lg:px-6">
                   <h2 className="text-lg font-bold text-gray-900 mb-4">
-                    My Save
+                    Saved
                   </h2>
 
                   <div className="flex gap-3 mb-6 overflow-x-auto">
@@ -1948,7 +1948,7 @@ function ProfileContent() {
                           : 'text-gray-600'
                       }`}
                     >
-                      My Saves
+                      Saveds
                       {activeTab === 'mysave' && (
                         <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]"></div>
                       )}
@@ -1957,7 +1957,7 @@ function ProfileContent() {
                 )}
               </div>
 
-              {/* Mobile Sub-tabs for Activity/My Saves */}
+              {/* Mobile Sub-tabs for Activity/Saveds */}
               {(activeTab === 'activity' || activeTab === 'mysave') && (
                 <div className="flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-hide">
                   {activeTab === 'activity' ? (

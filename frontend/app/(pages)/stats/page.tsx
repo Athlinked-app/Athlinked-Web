@@ -849,8 +849,8 @@ export default function StatsPage() {
               {/* Football Stats Section */}
 
               {/* Action Bar */}
-              <div className="flex items-center gap-4">
-                <h2 className="text-lg font-medium text-black mb-4">
+              <div className="flex items-center gap-4 mb-4">
+                <h2 className="text-lg font-medium  text-black w-37.5 flex-shrink-0">
                   {getSportDisplayName(activeSport)} Stats
                 </h2>
                 <div className="flex-1 relative hidden md:block">
@@ -864,11 +864,11 @@ export default function StatsPage() {
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-black"
                   />
                 </div>
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                   <select
                     value={selectedPosition}
                     onChange={e => setSelectedPosition(e.target.value)}
-                    className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-yellow-500 min-w-[180px] text-black"
+                    className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-yellow-500 w-[180px] text-black"
                   >
                     <option value="" className="text-black">
                       All Positions
@@ -900,7 +900,7 @@ export default function StatsPage() {
                 </div>
 
                 {/* Desktop Edit/Add in same row */}
-                <div className="hidden lg:flex items-center gap-3 ml-2">
+                <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
                   <button
                     onClick={() => {
                       if (currentProfiles.length > 0) {
