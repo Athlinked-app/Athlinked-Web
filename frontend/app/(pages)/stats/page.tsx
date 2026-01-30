@@ -602,7 +602,6 @@ export default function StatsPage() {
     return stat.value + (stat.unit ? ` ${stat.unit}` : '');
   };
 
-
   const _getRawValueForField = (
     profile: UserSportProfile,
     fieldLabel: string
@@ -612,7 +611,6 @@ export default function StatsPage() {
     return stat.value;
   };
 
-  
   const handleEditProfile = async (profile: UserSportProfile, year: string) => {
     setEditingProfile(profile);
     setEditingYear(year);
@@ -1106,7 +1104,6 @@ export default function StatsPage() {
                   </>
                 )}
               </div>
-
             </main>
           </div>
         </div>

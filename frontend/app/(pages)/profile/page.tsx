@@ -916,6 +916,7 @@ function ProfileContent() {
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (currentCompletion / 100) * circumference;
+
   return (
     <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
       <Header
@@ -1688,10 +1689,9 @@ function ProfileContent() {
         {/* Mobile View - Full width with mobile-specific design */}
         <div className="flex md:hidden flex-1 flex-col overflow-hidden">
           {/* Mobile Profile Card */}
-          <div className="bg-white rounded-t-3xl flex-1 overflow-y-auto">
-            {/* Cover Image with Olympic Rings */}
+          <div className="bg-white rounded-t-3xl flex-1 overflow-y-auto overflow-x-hidden">
             {/* Cover Image */}
-            <div className="relative h-32 bg-gray-100">
+            <div className="relative h-32 bg-gray-100 flex-shrink-0">
               {profileData?.coverImage ? (
                 <img
                   src={
@@ -1709,7 +1709,7 @@ function ProfileContent() {
             </div>
 
             {/* Profile Picture with completion badge */}
-            <div className="relative px-4 -mt-12 pb-4">
+            <div className="relative px-4 pb-4" style={{ marginTop: '-3rem' }}>
               <div className="relative inline-block">
                 {/* Circular Progress Ring */}
                 <svg
@@ -1777,7 +1777,7 @@ function ProfileContent() {
                     ? viewUser?.full_name || 'User'
                     : profileData?.fullName || currentUser?.full_name || 'User'}
                 </h1>
-                <p className="text-sm text-black  font-bold capitalize">
+                <p className="text-sm text-black font-bold capitalize">
                   {profileUserType}
                 </p>
                 <div className="flex items-center gap-4 mt-2 text-xs lg:text-sm text-black font-medium">
@@ -1795,8 +1795,8 @@ function ProfileContent() {
 
               {/* Sports Played Section */}
               {sportsPlayed && (
-                <div className="mt-4 flex rounded-lg ">
-                  <div className="text-xs text-gray-500 ">Sports Played :</div>
+                <div className="mt-4 flex rounded-lg">
+                  <div className="text-xs text-gray-500">Sports Played :</div>
                   <div className="text-xs font-medium ml-1 text-gray-900">
                     {sportsPlayed}
                   </div>
@@ -1805,21 +1805,20 @@ function ProfileContent() {
 
               {/* Primary Sport Section */}
               {profileData?.primarySport && (
-                <div className="mt-3 flex rounded-lg ">
-                  <p className="text-xs text-gray-500 ">Primary Sport :</p>
-                  <p className="text-xs font-medium ml-1  text-gray-900">
+                <div className="mt-3 flex rounded-lg">
+                  <p className="text-xs text-gray-500">Primary Sport :</p>
+                  <p className="text-xs font-medium ml-1 text-gray-900">
                     {profileData.primarySport}
                   </p>
                 </div>
               )}
 
               {/* Action Buttons */}
-              {/* Action Buttons */}
               <div className="flex gap-3 mt-6">
                 {isViewingOwnProfile ? (
                   <button
                     onClick={() => setShowEditProfile(true)}
-                    className="w-6/12  bg-[#CB9729] text-white py-3 rounded-lg font-medium text-sm flex items-start justify-center gap-2"
+                    className="w-6/12 bg-[#CB9729] text-white py-3 rounded-lg font-medium text-sm flex items-center justify-center gap-2"
                   >
                     <svg
                       className="w-4 h-4"
@@ -1847,7 +1846,6 @@ function ProfileContent() {
               </div>
 
               {/* Stats Row for Athletes */}
-
               {isAthlete && athleticAndPerformance.length > 0 && (
                 <div className="mt-6 px-0 py-3 flex justify-between items-center">
                   {athleticAndPerformance[0]?.height && (
@@ -1901,12 +1899,20 @@ function ProfileContent() {
                   )}
                 </div>
               )}
+
               {/* Mobile Tabs */}
-              {/* Mobile Tabs */}
-              <div className="flex items-start justify-between border-b border-gray-200 mt-6 -mx-6 px-6 gap-1">
+              <div
+                className="flex items-start justify-between border-b border-gray-200 mt-6 overflow-x-auto"
+                style={{
+                  marginLeft: '-1rem',
+                  marginRight: '-1rem',
+                  paddingLeft: '1rem',
+                  paddingRight: '1rem',
+                }}
+              >
                 <button
                   onClick={() => setActiveTab('profile')}
-                  className={`px-3 py-3 font-medium text-sm transition-colors relative ${
+                  className={`px-3 py-3 font-medium text-sm transition-colors relative flex-shrink-0 ${
                     activeTab === 'profile' ? 'text-[#CB9729]' : 'text-gray-600'
                   }`}
                 >
@@ -1918,10 +1924,10 @@ function ProfileContent() {
 
                 {isViewingOwnProfile && (
                   <>
-                    <div className="h-6 w-px bg-gray-300"></div>
+                    <div className="h-6 w-px bg-gray-300 flex-shrink-0"></div>
                     <button
                       onClick={() => setActiveTab('activity')}
-                      className={`px-3 py-3 font-medium text-sm transition-colors relative ${
+                      className={`px-3 py-3 font-medium text-sm transition-colors relative flex-shrink-0 ${
                         activeTab === 'activity'
                           ? 'text-[#CB9729]'
                           : 'text-gray-600'
@@ -1933,10 +1939,10 @@ function ProfileContent() {
                       )}
                     </button>
 
-                    <div className="h-6 w-px bg-gray-300"></div>
+                    <div className="h-6 w-px bg-gray-300 flex-shrink-0"></div>
                     <button
                       onClick={() => setActiveTab('mysave')}
-                      className={`px-3 py-3 font-medium text-sm transition-colors relative ${
+                      className={`px-3 py-3 font-medium text-sm transition-colors relative flex-shrink-0 ${
                         activeTab === 'mysave'
                           ? 'text-[#CB9729]'
                           : 'text-gray-600'
@@ -1953,12 +1959,12 @@ function ProfileContent() {
 
               {/* Mobile Sub-tabs for Activity/My Saves */}
               {(activeTab === 'activity' || activeTab === 'mysave') && (
-                <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+                <div className="flex gap-2 mt-4 overflow-x-auto pb-2 scrollbar-hide">
                   {activeTab === 'activity' ? (
                     <>
                       <button
                         onClick={() => setActiveFilter('posts')}
-                        className={`px-4 py-2 rounded-sm font-medium text-xs whitespace-nowrap ${
+                        className={`px-4 py-2 rounded-sm font-medium text-xs whitespace-nowrap flex-shrink-0 ${
                           activeFilter === 'posts'
                             ? 'bg-gray-900 text-white'
                             : 'bg-gray-100 text-gray-700'
@@ -1968,7 +1974,7 @@ function ProfileContent() {
                       </button>
                       <button
                         onClick={() => setActiveFilter('clips')}
-                        className={`px-4 py-2 rounded-sm font-medium text-xs whitespace-nowrap ${
+                        className={`px-4 py-2 rounded-sm font-medium text-xs whitespace-nowrap flex-shrink-0 ${
                           activeFilter === 'clips'
                             ? 'bg-gray-900 text-white'
                             : 'bg-gray-100 text-gray-700'
@@ -1978,7 +1984,7 @@ function ProfileContent() {
                       </button>
                       <button
                         onClick={() => setActiveFilter('article')}
-                        className={`px-4 py-2 rounded-sm font-medium text-xs whitespace-nowrap ${
+                        className={`px-4 py-2 rounded-sm font-medium text-xs whitespace-nowrap flex-shrink-0 ${
                           activeFilter === 'article'
                             ? 'bg-gray-900 text-white'
                             : 'bg-gray-100 text-gray-700'
@@ -1988,20 +1994,20 @@ function ProfileContent() {
                       </button>
                       <button
                         onClick={() => setActiveFilter('event')}
-                        className={`px-4 py-2 rounded-sm font-medium text-xs whitespace-nowrap ${
+                        className={`px-4 py-2 rounded-sm font-medium text-xs whitespace-nowrap flex-shrink-0 ${
                           activeFilter === 'event'
                             ? 'bg-gray-900 text-white'
                             : 'bg-gray-100 text-gray-700'
                         }`}
                       >
-                        Opportunities
+                        Events
                       </button>
                     </>
                   ) : (
                     <>
                       <button
                         onClick={() => setActiveSaveFilter('posts')}
-                        className={`px-4 py-2 rounded-sm font-medium text-xs whitespace-nowrap ${
+                        className={`px-4 py-2 rounded-sm font-medium text-xs whitespace-nowrap flex-shrink-0 ${
                           activeSaveFilter === 'posts'
                             ? 'bg-gray-900 text-white'
                             : 'bg-gray-100 text-gray-700'
@@ -2011,7 +2017,7 @@ function ProfileContent() {
                       </button>
                       <button
                         onClick={() => setActiveSaveFilter('clips')}
-                        className={`px-4 py-2 rounded-sm font-medium text-xs whitespace-nowrap ${
+                        className={`px-4 py-2 rounded-sm font-medium text-xs whitespace-nowrap flex-shrink-0 ${
                           activeSaveFilter === 'clips'
                             ? 'bg-gray-900 text-white'
                             : 'bg-gray-100 text-gray-700'
@@ -2021,7 +2027,7 @@ function ProfileContent() {
                       </button>
                       <button
                         onClick={() => setActiveSaveFilter('article')}
-                        className={`px-4 py-2 rounded-sm font-medium text-xs whitespace-nowrap ${
+                        className={`px-4 py-2 rounded-sm font-medium text-xs whitespace-nowrap flex-shrink-0 ${
                           activeSaveFilter === 'article'
                             ? 'bg-gray-900 text-white'
                             : 'bg-gray-100 text-gray-700'
@@ -2031,7 +2037,7 @@ function ProfileContent() {
                       </button>
                       <button
                         onClick={() => setActiveSaveFilter('opportunities')}
-                        className={`px-4 py-2 rounded-sm font-medium text-xs whitespace-nowrap ${
+                        className={`px-4 py-2 rounded-sm font-medium text-xs whitespace-nowrap flex-shrink-0 ${
                           activeSaveFilter === 'opportunities'
                             ? 'bg-gray-900 text-white'
                             : 'bg-gray-100 text-gray-700'
@@ -2045,7 +2051,7 @@ function ProfileContent() {
               )}
 
               {/* Mobile Content */}
-              <div className="mt-6  pb-20">
+              <div className="mt-6 pb-20">
                 {activeTab === 'profile' && (
                   <div className="space-y-4">
                     <AboutMe bio={userBio || profileData?.bio || ''} />
