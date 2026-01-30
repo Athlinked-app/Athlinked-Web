@@ -9,6 +9,7 @@ import ShareModal from '@/components/Share/ShareModal';
 import SaveModal from '@/components/Save/SaveModal';
 import type { PostData } from '@/components/Post';
 import { getResourceUrl } from '@/utils/config';
+import HamburgerMenu from '@/components/Hamburgermenu';
 // This page reads search params and user auth data on the client.
 // Mark it as fully dynamic so Next.js doesn't try to prerender it
 // and complain about missing Suspense boundaries for useSearchParams.
@@ -26,6 +27,7 @@ import {
   Trash2,
   MoreVertical,
   Bookmark,
+  Menu,
 } from 'lucide-react';
 
 interface UserData {
@@ -61,6 +63,7 @@ interface Reel {
 
 export default function ClipsPage() {
   const searchParams = useSearchParams();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const clipIdFromQuery =
     searchParams.get('clipId') ||
     searchParams.get('clip_id') ||
@@ -313,6 +316,16 @@ export default function ClipsPage() {
   };
 
   const [reels, setReels] = useState<Reel[]>([]);
+
+  // Suppress NotAllowedError (browser blocks play() until user interaction); no need to log.
+  const handlePlayRejection = (err: unknown) => {
+    if (err && typeof err === 'object' && 'name' in err) {
+      const name = (err as { name?: string }).name;
+      if (name === 'AbortError' || name === 'NotAllowedError') return;
+    }
+    console.error('Error playing audio:', err);
+  };
+
   useEffect(() => {
     const initialMuted: { [key: string]: boolean } = {};
     reels.forEach(reel => {
@@ -334,11 +347,7 @@ export default function ClipsPage() {
           if (playPromise !== undefined) {
             playPromisesRef.current[reelId] = playPromise;
             playPromise
-              .catch(err => {
-                if (err.name !== 'AbortError') {
-                  console.error('Error playing audio:', err);
-                }
-              })
+              .catch(handlePlayRejection)
               .finally(() => {
                 playPromisesRef.current[reelId] = null;
               });
@@ -390,11 +399,7 @@ export default function ClipsPage() {
             if (playPromise !== undefined) {
               playPromisesRef.current[reel.id] = playPromise;
               playPromise
-                .catch(err => {
-                  if (err.name !== 'AbortError') {
-                    console.error('Error playing audio:', err);
-                  }
-                })
+                .catch(handlePlayRejection)
                 .finally(() => {
                   playPromisesRef.current[reel.id] = null;
                 });
@@ -429,11 +434,7 @@ export default function ClipsPage() {
         if (playPromise !== undefined) {
           playPromisesRef.current[reels[0].id] = playPromise;
           playPromise
-            .catch(err => {
-              if (err.name !== 'AbortError') {
-                console.error('Error playing audio:', err);
-              }
-            })
+            .catch(handlePlayRejection)
             .finally(() => {
               playPromisesRef.current[reels[0].id] = null;
             });
@@ -484,11 +485,7 @@ export default function ClipsPage() {
             if (!mutedReels[currentReel.id]) {
               audio.volume = 1;
             }
-            audio.play().catch(err => {
-              if (err.name !== 'AbortError') {
-                console.error('Error playing audio after interaction:', err);
-              }
-            });
+            audio.play().catch(handlePlayRejection);
           }
         }
       }
@@ -537,11 +534,7 @@ export default function ClipsPage() {
         if (playPromise !== undefined) {
           playPromisesRef.current[currentReel.id] = playPromise;
           playPromise
-            .catch(err => {
-              if (err.name !== 'AbortError') {
-                console.error('Error playing audio:', err);
-              }
-            })
+            .catch(handlePlayRejection)
             .finally(() => {
               playPromisesRef.current[currentReel.id] = null;
             });
@@ -884,11 +877,7 @@ export default function ClipsPage() {
         if (playPromise !== undefined) {
           playPromisesRef.current[reelId] = playPromise;
           playPromise
-            .catch(err => {
-              if (err.name !== 'AbortError') {
-                console.error('Error playing audio:', err);
-              }
-            })
+            .catch(handlePlayRejection)
             .finally(() => {
               playPromisesRef.current[reelId] = null;
             });
@@ -1346,11 +1335,21 @@ export default function ClipsPage() {
                 <div className="w-full flex items-center justify-center px-2 sm:px-3 md:px-4 lg:px-6">
                   <div
                     className="w-full  sm:max-w-[320px] md:max-w-[400px] lg:max-w-[480px] xl:max-w-[700px] 2xl:max-w-[1000px]     [@media(min-width:1920px)]:max-w-[1800px]
-    [@media(min-width:2560px)]:max-w-[2000px] bg-black rounded-t-lg py-6 flex items-center justify-between px-8"
+    [@media(min-width:2560px)]:max-w-[2000px] bg-black rounded-t-lg py-6 flex items-center justify-between md:px-8"
                   >
-                    <span className="text-white font-semibold text-sm sm:text-lg xl:text-xl">
+                    <div className='flex items-center gap-2'>
+                    <button
+                      type="button"
+                      onClick={() => setMobileMenuOpen(true)}
+                      className="md:hidden p-1.5 rounded-lg text-white hover:bg-white/10 focus:outline-none"
+                      aria-label="Open menu"
+                    >
+                      <Menu className="w-6 h-6" />
+                    </button>
+                    <span className="text-white font-semibold text-lg sm:text-lg xl:text-xl">
                       Clips
                     </span>
+                    </div>
                     <button
                       onClick={() => setShowUploadModal(true)}
                       className="bg-[#CB9729] hover:bg-yellow-600 text-white rounded-md border-2 border-[#DBB669] px-3 py-1.5 sm:px-4 sm:py-2 flex items-center gap-1.5 sm:gap-2 shadow-lg transition-colors"
@@ -1392,7 +1391,8 @@ export default function ClipsPage() {
     [@media(min-width:1920px)]:max-w-[1800px]
     [@media(min-width:2560px)]:max-w-[2000px]
 
-    aspect-[7/12]
+    aspect-[8/12]
+  
     md:aspect-[11/12]
     2xl:aspect-[12/12]
     [@media(min-width:1920px)]:aspect-[16/12]
@@ -1413,7 +1413,7 @@ export default function ClipsPage() {
                           }
                         }}
                         src={reel.videoUrl}
-                        className="w-full h-full md:h-[80%] 2xl:h-[90%] object-top  mt-30 md:mt-0 "
+                        className="w-full h-full md:h-[80%] 2xl:h-[90%] object-top  mt-10 md:mt-0 "
                         playsInline
                         loop
                         preload="auto"
@@ -1421,7 +1421,7 @@ export default function ClipsPage() {
                       />
 
                       <div
-                        className="absolute bottom-8 sm:bottom-10 md:bottom-12 lg:bottom-14 xl:bottom-20 2xl:bottom-32 [@media(min-width:1920px)]:bottom-16 [@media(min-width:2560px)]:bottom-48 left-0 right-0 p-1.5 sm:p-2 md:p-3 lg:p-4 z-10 w-76 md:w-96 2xl:w-[80%]"
+                        className="absolute bottom-20 sm:bottom-10 md:bottom-12 lg:bottom-14 xl:bottom-20 2xl:bottom-32 [@media(min-width:1920px)]:bottom-16 [@media(min-width:2560px)]:bottom-48 left-0 right-0 p-1.5 sm:p-2 md:p-3 lg:p-4 z-10 w-76 md:w-96 2xl:w-[80%]"
                         style={{ pointerEvents: 'none' }}
                       >
                         <div
@@ -1506,7 +1506,7 @@ export default function ClipsPage() {
                       </div>
 
                       <div
-                        className="absolute right-1.5 sm:right-2 md:right-3 lg:right-4 bottom-2 sm:bottom-28 md:bottom-32 lg:bottom-36 xl:bottom-20 2xl:bottom-30 [@media(min-width:1920px)]:bottom-10 [@media(min-width:2560px)]:bottom-48 flex flex-col items-center gap-2 sm:gap-2.5 md:gap-3 lg:gap-4 xl:gap-5"
+                        className="absolute right-1.5 sm:right-2 md:right-3 lg:right-4 bottom-12 sm:bottom-28 md:bottom-32 lg:bottom-36 xl:bottom-20 2xl:bottom-30 [@media(min-width:1920px)]:bottom-10 [@media(min-width:2560px)]:bottom-48 flex flex-col items-center gap-2 sm:gap-2.5 md:gap-3 lg:gap-4 xl:gap-5"
                         style={{ pointerEvents: 'auto' }}
                       >
                         <button
@@ -1644,7 +1644,7 @@ export default function ClipsPage() {
                 ))
               ) : (
                 <div className="flex items-center justify-center w-full h-full">
-                  <div className="text-center text-black">
+                  <div className="text-center text-black dark:text-white">
                     <p className="text-sm sm:text-base md:text-lg mb-1 sm:mb-2">
                       No videos yet
                     </p>
@@ -2459,6 +2459,11 @@ export default function ClipsPage() {
           isSaved={savedClips[savedClipId] || false}
         />
       )}
+
+      <HamburgerMenu
+        isOpen={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+      />
     </div>
   );
 }
