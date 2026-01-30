@@ -66,8 +66,19 @@ export default function ShareModal({
         socketRef.current.disconnect();
       }
 
-      const socket = io(API_BASE_URL, {
-        transports: ['websocket'],
+      const socketUrl =
+        typeof API_BASE_URL === 'string' && API_BASE_URL.trim()
+          ? API_BASE_URL.trim()
+          : null;
+      if (!socketUrl) {
+        reject(new Error('Socket URL not configured'));
+        return;
+      }
+      const socket = io(socketUrl, {
+        path: '/socket.io',
+        transports: ['polling', 'websocket'],
+        withCredentials: true,
+        secure: socketUrl.startsWith('https'),
       });
 
       const timeout = setTimeout(() => {
