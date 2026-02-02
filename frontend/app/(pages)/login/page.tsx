@@ -12,6 +12,7 @@ import GoogleSignInButton from '@/components/Signup/GoogleSignInButton';
 // Allowed redirect paths after login (internal app routes only; exclude auth pages)
 const PUBLIC_AUTH_PATHS = ['/login', '/signup', '/parent-signup', '/forgot-password', '/', '/landing'];
 
+
 function getSafeRedirect(redirect: string | null): string {
   if (!redirect || typeof redirect !== 'string') return '/home';
   const path = redirect.startsWith('/') ? redirect : '/' + redirect;
@@ -23,6 +24,7 @@ function getSafeRedirect(redirect: string | null): string {
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+
   // Support both ?redirect= and ?returnUrl= for post-login destination
   const redirectParam = searchParams.get('redirect');
   const returnUrlParam = searchParams.get('returnUrl');
@@ -30,6 +32,7 @@ function LoginPageContent() {
     getSafeRedirect(redirectParam) !== '/home'
       ? getSafeRedirect(redirectParam)
       : getSafeRedirect(returnUrlParam ? decodeURIComponent(returnUrlParam) : null);
+
 
   const [identifier, setIdentifier] = useState(''); // Can be email or username
   const [password, setPassword] = useState('');
@@ -556,4 +559,6 @@ export default function LoginPage() {
     </Suspense>
   );
 }
+
  
+
