@@ -34,10 +34,12 @@ export default function AuthProvider({
         const token = getToken();
         const refreshToken = getRefreshToken();
 
-        // If no tokens at all, redirect to login with hard redirect
+        // If no tokens at all, redirect to login with intended path for post-login redirect
         if (!token && !refreshToken) {
           if (typeof window !== 'undefined') {
-            window.location.href = '/login';
+            const redirectUrl =
+              '/login?redirect=' + encodeURIComponent(pathname);
+            window.location.href = redirectUrl;
           }
           return;
         }
@@ -69,13 +71,17 @@ export default function AuthProvider({
             // Refresh failed, user needs to login - use hard redirect
             console.log('Session expired, redirecting to login');
             if (typeof window !== 'undefined') {
-              window.location.href = '/login';
+              const redirectUrl =
+                '/login?redirect=' + encodeURIComponent(pathname);
+              window.location.href = redirectUrl;
             }
           }
         } else {
-          // No refresh token, redirect to login with hard redirect
+          // No refresh token, redirect to login with intended path
           if (typeof window !== 'undefined') {
-            window.location.href = '/login';
+            const redirectUrl =
+              '/login?redirect=' + encodeURIComponent(pathname);
+            window.location.href = redirectUrl;
           }
         }
       } catch (error) {

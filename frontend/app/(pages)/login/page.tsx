@@ -1,15 +1,27 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import SignupHero from '@/components/Signup/SignupHero';
 import { isAuthenticated } from '@/utils/auth';
 import GoogleSignInButton from '@/components/Signup/GoogleSignInButton';
 
-export default function LoginPage() {
+// Allowed redirect paths after login (internal app routes only; exclude auth pages)
+const PUBLIC_AUTH_PATHS = ['/login', '/signup', '/parent-signup', '/forgot-password', '/', '/landing'];
+function getSafeRedirect(redirect: string | null): string {
+  if (!redirect || typeof redirect !== 'string') return '/home';
+  const path = redirect.startsWith('/') ? redirect : '/' + redirect;
+  const isPublic = PUBLIC_AUTH_PATHS.some(p => path === p || path.startsWith(p + '/'));
+  if (isPublic) return '/home';
+  return path;
+}
+
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = getSafeRedirect(searchParams.get('redirect'));
   const [identifier, setIdentifier] = useState(''); // Can be email or username
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -31,11 +43,11 @@ export default function LoginPage() {
     }
 
     if (isAuthenticated()) {
-      router.push('/home');
+      router.push(redirectTo);
     } else {
       setCheckingAuth(false);
     }
-  }, [router]);
+  }, [router, redirectTo]);
 
   const validatePassword = (password: string): string => {
     if (!password) {
@@ -167,7 +179,7 @@ export default function LoginPage() {
         );
       }
 
-      router.push('/home');
+      router.push(redirectTo);
     } catch (error) {
       console.error('Login error:', error);
       setError('Failed to connect to server. Please try again.');
@@ -223,7 +235,7 @@ export default function LoginPage() {
         localStorage.setItem('userEmail', data.user.email);
       }
 
-      router.push('/home');
+      router.push(redirectTo);
       return;
     }
 
@@ -498,5 +510,31 @@ export default function LoginPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function LoginPageFallback() {
+  return (
+    <div className="flex min-h-screen flex-col md:flex-row">
+      <SignupHero />
+      <div className="w-full md:w-1/2 xl:w-2/5 flex items-center justify-center bg-gray-100 p-4 sm:p-6 md:p-8 md:min-h-screen">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-6 sm:p-8 lg:p-10 xl:p-12 my-6 md:my-0">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mb-4"></div>
+              <p className="text-black">Loading...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageFallback />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
