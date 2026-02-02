@@ -726,13 +726,9 @@ export default function EditProfileModal({
 
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 sm:gap-3 md:gap-4  px-2 sm:px-4 md:px-6 lg:px-8">
             <div className="flex-1 min-w-0">
-              <input
-                type="text"
-                value={fullName}
-                onChange={e => setFullName(e.target.value)}
-                placeholder="Full Name"
-                className="text-base sm:text-lg md:text-md lg:text-lg font-medium text-black  w-full border-none focus:outline-none focus:ring-0 bg-transparent placeholder:text-gray-400"
-              />
+              <p className="text-base sm:text-lg md:text-md lg:text-lg font-medium text-black w-full cursor-default">
+                {fullName || userData?.full_name || ''}
+              </p>
               <p className="text-sm sm:text-xs md:text-sm text-gray-600 mb-2 sm:mb-2">
                 {(() => {
                   const userType =
@@ -765,7 +761,12 @@ export default function EditProfileModal({
                     followers
                   </span>
                 </div>
-                {(age || userData?.age) && (
+                {(() => {
+                  const userType =
+                    fetchedUserData?.user_type || userData?.user_type;
+                  const hasAge = age || userData?.age;
+                  return userType === 'athlete' && hasAge;
+                })() && (
                   <div className="flex items-center gap-1 sm:gap-1.5">
                     <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 md:w-4 md:h-4 shrink-0" />
                     <span className="whitespace-nowrap text-xs sm:text-xs md:text-sm">
