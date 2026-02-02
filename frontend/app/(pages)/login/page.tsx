@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useState, useEffect } from 'react';
@@ -10,6 +11,8 @@ import GoogleSignInButton from '@/components/Signup/GoogleSignInButton';
 
 // Allowed redirect paths after login (internal app routes only; exclude auth pages)
 const PUBLIC_AUTH_PATHS = ['/login', '/signup', '/parent-signup', '/forgot-password', '/', '/landing'];
+
+
 function getSafeRedirect(redirect: string | null): string {
   if (!redirect || typeof redirect !== 'string') return '/home';
   const path = redirect.startsWith('/') ? redirect : '/' + redirect;
@@ -21,7 +24,16 @@ function getSafeRedirect(redirect: string | null): string {
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectTo = getSafeRedirect(searchParams.get('redirect'));
+
+  // Support both ?redirect= and ?returnUrl= for post-login destination
+  const redirectParam = searchParams.get('redirect');
+  const returnUrlParam = searchParams.get('returnUrl');
+  const redirectTo =
+    getSafeRedirect(redirectParam) !== '/home'
+      ? getSafeRedirect(redirectParam)
+      : getSafeRedirect(returnUrlParam ? decodeURIComponent(returnUrlParam) : null);
+
+
   const [identifier, setIdentifier] = useState(''); // Can be email or username
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -39,7 +51,7 @@ function LoginPageContent() {
     if (justLoggedOut) {
       localStorage.removeItem('justLoggedOut');
       setCheckingAuth(false);
-      return; // Don't redirect if user just logged out
+      return;
     }
 
     if (isAuthenticated()) {
@@ -286,6 +298,15 @@ function LoginPageContent() {
             Welcome Back
           </h1>
           <p className="text-black mb-8">Sign in to your account to continue</p>
+
+          {/* Show message if redirected from a shared link */}
+          {redirectTo !== '/home' && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-600">
+                Please log in to view this content
+              </p>
+            </div>
+          )}
 
           {/* Error Message */}
           {error && (
@@ -538,3 +559,6 @@ export default function LoginPage() {
     </Suspense>
   );
 }
+
+ 
+
