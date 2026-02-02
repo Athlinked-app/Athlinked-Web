@@ -565,8 +565,13 @@ export default function EditProfileModal({
     // Basic Profile Information (3 sections)
     if (fullName && fullName.trim() !== '') completed++;
     if (profileImagePreview) completed++;
-    if ((location && location.trim() !== '') || (age && age.trim() !== ''))
-      completed++;
+    // For athletes: count location OR age; for other user types: count location only (ignore age)
+    if (isAthlete) {
+      if ((location && location.trim() !== '') || (age && age.trim() !== ''))
+        completed++;
+    } else {
+      if (location && location.trim() !== '') completed++;
+    }
 
     // Profile Sections (9 sections, but athletic performance only for athletes)
     if (profileSections?.bio && profileSections.bio.trim() !== '') completed++;
