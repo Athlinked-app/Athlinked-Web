@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
@@ -18,7 +18,7 @@ function getSafeRedirect(redirect: string | null): string {
   return path;
 }
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = getSafeRedirect(searchParams.get('redirect'));
@@ -510,5 +510,31 @@ export default function LoginPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function LoginPageFallback() {
+  return (
+    <div className="flex min-h-screen flex-col md:flex-row">
+      <SignupHero />
+      <div className="w-full md:w-1/2 xl:w-2/5 flex items-center justify-center bg-gray-100 p-4 sm:p-6 md:p-8 md:min-h-screen">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-6 sm:p-8 lg:p-10 xl:p-12 my-6 md:my-0">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mb-4"></div>
+              <p className="text-black">Loading...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageFallback />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
