@@ -62,6 +62,7 @@ export default function OpportunitiesPage() {
   const [currentUser, setCurrentUser] = useState<{
     full_name?: string;
     profile_url?: string;
+    user_type?: string;
   } | null>(null);
 
   const staticOpportunities: OpportunityItem[] = [
@@ -313,10 +314,7 @@ export default function OpportunitiesPage() {
         }
 
         if (data.success && data.user) {
-          setCurrentUser({
-            full_name: data.user.full_name,
-            profile_url: data.user.profile_url,
-          });
+          setCurrentUser(data.user);
         }
       } catch (error) {
         console.error('Error fetching current user:', error);
@@ -479,6 +477,28 @@ export default function OpportunitiesPage() {
     }
     return profileUrl;
   };
+
+  // Opportunities page is only available for athletes
+  if (currentUser && currentUser.user_type !== 'athlete') {
+    return (
+      <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
+        <Header
+          userName={currentUser?.full_name}
+          userProfileUrl={getProfileUrl(currentUser?.profile_url)}
+        />
+        <main className="flex flex-1 w-full mt-5 overflow-hidden">
+          <div className="hidden md:flex px-6">
+            <NavigationBar activeItem="opportunities" />
+          </div>
+          <div className="flex-1 flex flex-col px-4 overflow-hidden min-w-0 items-center justify-center">
+            <p className="text-gray-600">
+              This page is only available for athlete
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-200">
