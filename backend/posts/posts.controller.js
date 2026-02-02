@@ -91,6 +91,15 @@ async function getPostById(req, res) {
     const { postId } = req.params;
     const viewerUserId = req.user?.id || null;
 
+    // REQUIRE AUTHENTICATION FOR VIEWING INDIVIDUAL POSTS
+    if (!viewerUserId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+        requiresAuth: true
+      });
+    }
+
     const result = await postsService.getPostByIdService(postId, viewerUserId);
     if (!result.success || !result.post) {
       return res.status(404).json({

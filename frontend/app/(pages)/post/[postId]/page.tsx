@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/Header';
 import NavigationBar from '@/components/NavigationBar';
@@ -18,6 +18,7 @@ interface CurrentUser {
 
 export default function SinglePostPage() {
   const params = useParams();
+  const router = useRouter();
   const postId = params?.postId as string | undefined;
 
   const [post, setPost] = useState<PostData | null>(null);
@@ -25,11 +26,31 @@ export default function SinglePostPage() {
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = () => {
+      if (!isAuthenticated()) {
+        // Redirect to login with return URL
+        const returnUrl = encodeURIComponent(window.location.pathname);
+        router.push(`/login?returnUrl=${returnUrl}`);
+        return false;
+      }
+      setAuthChecked(true);
+      return true;
+    };
+
+    checkAuth();
+  }, [router]);
 
   useEffect(() => {
-    if (!postId) {
-      setLoading(false);
-      setError('Invalid post');
+    // Don't fetch post until auth is checked
+    if (!authChecked || !postId) {
+      if (!postId) {
+        setLoading(false);
+        setError('Invalid post');
+      }
       return;
     }
 
@@ -41,7 +62,18 @@ export default function SinglePostPage() {
           success: boolean;
           post?: any;
           message?: string;
+          requiresAuth?: boolean;
         }>(`/posts/${postId}`);
+
+        // Handle auth requirement from backend
+        if (
+          data.requiresAuth ||
+          (!data.success && data.message === 'Authentication required')
+        ) {
+          const returnUrl = encodeURIComponent(window.location.pathname);
+          router.push(`/login?returnUrl=${returnUrl}`);
+          return;
+        }
 
         if (data.success && data.post) {
           const p = data.post;
@@ -73,8 +105,16 @@ export default function SinglePostPage() {
           setError('Post not found');
           setPost(null);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching post:', err);
+
+        // Handle 401 errors by redirecting to login
+        if (err?.status === 401 || err?.response?.status === 401) {
+          const returnUrl = encodeURIComponent(window.location.pathname);
+          router.push(`/login?returnUrl=${returnUrl}`);
+          return;
+        }
+
         setError('Post not found');
         setPost(null);
       } finally {
@@ -83,10 +123,11 @@ export default function SinglePostPage() {
     };
 
     fetchPost();
-  }, [postId]);
+  }, [postId, authChecked, router]);
 
   useEffect(() => {
-    if (!isAuthenticated()) return;
+    if (!isAuthenticated() || !authChecked) return;
+
     const fetchCurrentUser = async () => {
       try {
         const userIdentifier = localStorage.getItem('userEmail');
@@ -115,7 +156,7 @@ export default function SinglePostPage() {
       }
     };
     fetchCurrentUser();
-  }, []);
+  }, [authChecked]);
 
   const getProfileUrl = (profileUrl?: string | null): string | undefined => {
     if (!profileUrl || profileUrl.trim() === '') return undefined;
@@ -145,7 +186,7 @@ export default function SinglePostPage() {
     );
   }
 
-  if (loading) {
+  if (!authChecked || loading) {
     return (
       <div className="h-screen bg-[#D4D4D4] flex flex-col">
         <Header

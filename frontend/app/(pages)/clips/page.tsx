@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import NavigationBar from '@/components/NavigationBar';
 import Header from '@/components/Header';
 import FileUploadModal from '@/components/Clips/FileUploadModal';
@@ -10,6 +10,8 @@ import SaveModal from '@/components/Save/SaveModal';
 import type { PostData } from '@/components/Post';
 import { getResourceUrl } from '@/utils/config';
 import HamburgerMenu from '@/components/Hamburgermenu';
+import { isAuthenticated } from '@/utils/auth';
+
 // This page reads search params and user auth data on the client.
 // Mark it as fully dynamic so Next.js doesn't try to prerender it
 // and complain about missing Suspense boundaries for useSearchParams.
@@ -63,6 +65,7 @@ interface Reel {
 
 export default function ClipsPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const clipIdFromQuery =
     searchParams.get('clipId') ||
@@ -75,6 +78,7 @@ export default function ClipsPage() {
     profile_url?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [authChecked, setAuthChecked] = useState(false);
   const [currentReelIndex, setCurrentReelIndex] = useState(0);
   const [mutedReels, setMutedReels] = useState<{ [key: string]: boolean }>({});
   const [likedReels, setLikedReels] = useState<{ [key: string]: boolean }>({});
@@ -127,6 +131,24 @@ export default function ClipsPage() {
   const fetchingCommentsRef = useRef<string | null>(null);
   // Debounce timer for scroll-based comment fetching
   const commentFetchTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Check authentication on mount
+  useEffect(() => {
+    const checkAuth = () => {
+      if (!isAuthenticated()) {
+        // Redirect to login with return URL (including query params for clip ID)
+        const returnUrl = encodeURIComponent(
+          window.location.pathname + window.location.search
+        );
+        router.push(`/login?returnUrl=${returnUrl}`);
+        return false;
+      }
+      setAuthChecked(true);
+      return true;
+    };
+
+    checkAuth();
+  }, [router]);
 
   // Close the 3-dots menu when clicking outside
   useEffect(() => {
@@ -536,6 +558,9 @@ export default function ClipsPage() {
   }, [reels, currentReelIndex, pausedReels, mutedReels, userHasInteracted]);
 
   useEffect(() => {
+    // Don't fetch user data until auth is checked
+    if (!authChecked) return;
+
     const fetchUserData = async () => {
       try {
         const { getCurrentUserId, getCurrentUser } =
@@ -584,16 +609,16 @@ export default function ClipsPage() {
     };
 
     fetchUserData();
-  }, []);
+  }, [authChecked]);
 
   // Get display name
   const _displayName = userData?.full_name?.split(' ')[0] || 'User';
 
   // Check saved clips status on mount and when reels change
   useEffect(() => {
-    const checkSavedStatus = async () => {
-      if (!currentUserId || reels.length === 0) return;
+    if (!currentUserId || reels.length === 0 || !authChecked) return;
 
+    const checkSavedStatus = async () => {
       try {
         const { apiGet } = await import('@/utils/api');
         const savedMap: { [key: string]: boolean } = {};
@@ -629,7 +654,7 @@ export default function ClipsPage() {
     };
 
     checkSavedStatus();
-  }, [reels, currentUserId]);
+  }, [reels, currentUserId, authChecked]);
 
   // Toggle save clip
   const handleSaveClip = async (clipId: string) => {
@@ -1152,10 +1177,10 @@ export default function ClipsPage() {
   };
 
   useEffect(() => {
-    if (!loading && userData) {
+    if (!loading && userData && authChecked) {
       fetchClips();
     }
-  }, [loading, userData]);
+  }, [loading, userData, authChecked]);
 
   // If navigated from Messages with ?clipId=..., jump to that clip
   useEffect(() => {
@@ -1264,10 +1289,13 @@ export default function ClipsPage() {
 
   const selectedReel = reels.find(r => r.id === selectedReelId) || null;
 
-  if (loading) {
+  if (!authChecked || loading) {
     return (
       <div className="flex min-h-screen bg-gray-200 items-center justify-center">
-        <div className="text-black">Loading...</div>
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mb-4" />
+          <p className="text-black">Loading...</p>
+        </div>
       </div>
     );
   }
