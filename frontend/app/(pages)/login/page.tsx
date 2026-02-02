@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
@@ -8,9 +9,28 @@ import SignupHero from '@/components/Signup/SignupHero';
 import { isAuthenticated } from '@/utils/auth';
 import GoogleSignInButton from '@/components/Signup/GoogleSignInButton';
 
+// Allowed redirect paths after login (internal app routes only; exclude auth pages)
+const PUBLIC_AUTH_PATHS = ['/login', '/signup', '/parent-signup', '/forgot-password', '/', '/landing'];
+
+function getSafeRedirect(redirect: string | null): string {
+  if (!redirect || typeof redirect !== 'string') return '/home';
+  const path = redirect.startsWith('/') ? redirect : '/' + redirect;
+  const isPublic = PUBLIC_AUTH_PATHS.some(p => path === p || path.startsWith(p + '/'));
+  if (isPublic) return '/home';
+  return path;
+}
+
 function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  // Support both ?redirect= and ?returnUrl= for post-login destination
+  const redirectParam = searchParams.get('redirect');
+  const returnUrlParam = searchParams.get('returnUrl');
+  const redirectTo =
+    getSafeRedirect(redirectParam) !== '/home'
+      ? getSafeRedirect(redirectParam)
+      : getSafeRedirect(returnUrlParam ? decodeURIComponent(returnUrlParam) : null);
+
   const [identifier, setIdentifier] = useState(''); // Can be email or username
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -21,15 +41,6 @@ function LoginPageContent() {
   const [showPasswordChangedToast, setShowPasswordChangedToast] =
     useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [returnUrl, setReturnUrl] = useState<string | null>(null);
-
-  // Get returnUrl from query params on mount
-  useEffect(() => {
-    const urlParam = searchParams.get('returnUrl');
-    if (urlParam) {
-      setReturnUrl(decodeURIComponent(urlParam));
-    }
-  }, [searchParams]);
 
   // Redirect if already authenticated (unless just logged out)
   useEffect(() => {
@@ -37,20 +48,15 @@ function LoginPageContent() {
     if (justLoggedOut) {
       localStorage.removeItem('justLoggedOut');
       setCheckingAuth(false);
-      return; // Don't redirect if user just logged out
+      return;
     }
 
     if (isAuthenticated()) {
-      // If there's a return URL, redirect there, otherwise go to home
-      if (returnUrl) {
-        router.push(returnUrl);
-      } else {
-        router.push('/home');
-      }
+      router.push(redirectTo);
     } else {
       setCheckingAuth(false);
     }
-  }, [router, returnUrl]);
+  }, [router, redirectTo]);
 
   const validatePassword = (password: string): string => {
     if (!password) {
@@ -182,12 +188,7 @@ function LoginPageContent() {
         );
       }
 
-      // Redirect to returnUrl if it exists, otherwise go to home
-      if (returnUrl) {
-        router.push(returnUrl);
-      } else {
-        router.push('/home');
-      }
+      router.push(redirectTo);
     } catch (error) {
       console.error('Login error:', error);
       setError('Failed to connect to server. Please try again.');
@@ -243,12 +244,7 @@ function LoginPageContent() {
         localStorage.setItem('userEmail', data.user.email);
       }
 
-      // Redirect to returnUrl if it exists, otherwise go to home
-      if (returnUrl) {
-        router.push(returnUrl);
-      } else {
-        router.push('/home');
-      }
+      router.push(redirectTo);
       return;
     }
 
@@ -301,7 +297,7 @@ function LoginPageContent() {
           <p className="text-black mb-8">Sign in to your account to continue</p>
 
           {/* Show message if redirected from a shared link */}
-          {returnUrl && (
+          {redirectTo !== '/home' && (
             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-600">
                 Please log in to view this content
@@ -535,8 +531,7 @@ function LoginPageContent() {
   );
 }
 
-// Loading fallback component
-function LoginLoadingFallback() {
+function LoginPageFallback() {
   return (
     <div className="flex min-h-screen flex-col md:flex-row">
       <SignupHero />
@@ -554,11 +549,11 @@ function LoginLoadingFallback() {
   );
 }
 
-// Main component wrapped in Suspense
 export default function LoginPage() {
   return (
-    <Suspense fallback={<LoginLoadingFallback />}>
+    <Suspense fallback={<LoginPageFallback />}>
       <LoginPageContent />
     </Suspense>
   );
 }
+ 
