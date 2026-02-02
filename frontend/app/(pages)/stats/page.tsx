@@ -59,6 +59,7 @@ export default function StatsPage() {
   const [activeSport, setActiveSport] = useState('football');
   const [userData, setUserData] = useState<UserData | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAddStatsModal, setShowAddStatsModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -142,6 +143,7 @@ export default function StatsPage() {
           return;
         }
 
+        setCurrentUser(initialData.user);
         userId = initialData.user.id;
         setUserId(userId);
 
@@ -745,6 +747,28 @@ export default function StatsPage() {
     return (
       <div className="flex min-h-screen bg-gray-200 items-center justify-center">
         <div className="text-black">Loading...</div>
+      </div>
+    );
+  }
+
+  // Stats page is only available for athletes
+  if (currentUser && currentUser.user_type !== 'athlete') {
+    return (
+      <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
+        <Header
+          userName={currentUser?.full_name}
+          userProfileUrl={getProfileUrl(currentUser?.profile_url)}
+        />
+        <main className="flex flex-1 w-full mt-5 overflow-hidden">
+          <div className="hidden md:flex px-6">
+            <NavigationBar activeItem="stats" userName={currentUser?.full_name || ''} />
+          </div>
+          <div className="flex-1 flex flex-col px-4 overflow-hidden min-w-0 items-center justify-center">
+            <p className="text-gray-600">
+              This page is only available for athlete
+            </p>
+          </div>
+        </main>
       </div>
     );
   }
