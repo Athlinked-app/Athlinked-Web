@@ -1795,8 +1795,8 @@ function ProfileContent() {
 
               {/* Sports Played Section */}
               {sportsPlayed && (
-                <div className="mt-4 flex rounded-lg">
-                  <div className="text-xs text-gray-500">Sports Played :</div>
+                <div className="mt-4 flex rounded-lg ">
+                  <div className="text-xs text-gray-500 ">Sports Played :</div>
                   <div className="text-xs font-medium ml-1 text-gray-900">
                     {sportsPlayed}
                   </div>
