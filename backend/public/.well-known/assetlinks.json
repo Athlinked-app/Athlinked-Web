@@ -5,7 +5,10 @@
       "namespace": "android_app",
       "package_name": "ai.randomwalk.athlinked",
       "sha256_cert_fingerprints": [
-        "3B:26:86:26:23:0A:DA:C5:79:E4:FC:CC:29:87:3E:DF:BF:B2:DA:56:28:A0:F3:CD:17:AA:80:41:61:75:4A:B7"
+        "3B:26:86:26:23:0A:DA:C5:79:E4:FC:CC:29:87:3E:DF:BF:B2:DA:56:28:A0:F3:CD:17:AA:80:41:61:75:4A:B7" ,
+        "6F:C7:50:67:2A:77:9D:26:B3:2F:16:17:BF:E6:7B:F2:C6:30:9E:BA:F3:C7:BE:B9:E1:39:FC:8F:93:1D:C1:25" ,
+        "C4:F0:A4:D5:87:9B:97:D1:5B:99:F4:98:AE:8C:8E:5D:66:69:50:06:91:77:5B:AD:60:33:32:C5:DE:5B:BC:3B" ,
+        "8A:23:11:88:DF:FC:30:68:07:E1:EB:C4:BF:6B:25:B2:6F:B3:19:E9:B1:16:D5:0C:E4:A1:65:61:75:6B:07:31"
       ]
     }
   }
