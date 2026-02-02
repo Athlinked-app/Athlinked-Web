@@ -71,6 +71,7 @@ export default function ClipsPage() {
     searchParams.get('clipId') ||
     searchParams.get('clip_id') ||
     searchParams.get('clip');
+
   const [userData, setUserData] = useState<UserData | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<{
@@ -133,14 +134,15 @@ export default function ClipsPage() {
   const commentFetchTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check authentication on mount
+  // Check authentication on mount
   useEffect(() => {
     const checkAuth = () => {
       if (!isAuthenticated()) {
-        // Redirect to login with return URL (including query params for clip ID)
+        // Use window.location.href instead of router.push to preserve query params
         const returnUrl = encodeURIComponent(
           window.location.pathname + window.location.search
         );
-        router.push(`/login?returnUrl=${returnUrl}`);
+        window.location.href = `/login?returnUrl=${returnUrl}`;
         return false;
       }
       setAuthChecked(true);
@@ -149,7 +151,6 @@ export default function ClipsPage() {
 
     checkAuth();
   }, [router]);
-
   // Close the 3-dots menu when clicking outside
   useEffect(() => {
     const openIds = Object.keys(showDeleteMenu).filter(
@@ -998,6 +999,15 @@ export default function ClipsPage() {
   };
 
   const fetchClips = async () => {
+    // DON'T fetch the feed if we're viewing a specific clip
+    if (clipIdFromQuery) {
+      console.log(
+        '🟢 SKIPPING fetchClips because clipIdFromQuery is present:',
+        clipIdFromQuery
+      );
+      return;
+    }
+
     try {
       // Reset the fetched comments cache when clips are refreshed
       fetchedCommentsRef.current.clear();
@@ -1176,28 +1186,66 @@ export default function ClipsPage() {
     }
   };
 
+  const fetchSingleClip = async (clipId: string) => {
+    try {
+      fetchedCommentsRef.current.clear();
+
+      const { apiGet } = await import('@/utils/api');
+
+      const data = await apiGet<{ success: boolean; clip?: any }>(
+        `/clips/${clipId}`
+      );
+
+      if (data.success && data.clip) {
+        const fallbackName = userData?.full_name?.split(' ')[0] || 'User';
+
+        // Transform single clip to frontend format
+        const transformedClip: Reel = {
+          id: data.clip.id,
+          videoUrl: data.clip.video_url?.startsWith('http')
+            ? data.clip.video_url
+            : getResourceUrl(data.clip.video_url) || data.clip.video_url,
+          author: data.clip.username || fallbackName,
+          authorAvatar:
+            getProfileUrl(
+              data.clip.user_profile_url ||
+                data.clip.author_profile_url ||
+                data.clip.profile_url
+            ) || null,
+          caption: data.clip.description || '',
+          timestamp: data.clip.created_at,
+          likes: data.clip.like_count || 0,
+          shares: data.clip.share_count || data.clip.shares || 0,
+          commentCount: data.clip.comment_count || 0,
+          comments: [],
+          user_id: data.clip.user_id,
+        };
+
+        setReels([transformedClip]);
+        setLikedReels({ [transformedClip.id]: !!data.clip.is_liked });
+        setSelectedReelId(transformedClip.id);
+      } else {
+        // If clip not found, fall back to fetching full feed
+        await fetchClips();
+      }
+    } catch (error) {
+      console.error('Error fetching single clip:', error);
+      // Fall back to fetching full feed on error
+      await fetchClips();
+    }
+  };
+
   useEffect(() => {
     if (!loading && userData && authChecked) {
-      fetchClips();
+      if (clipIdFromQuery) {
+        // If there's a clipId in the URL, fetch that specific clip
+        fetchSingleClip(clipIdFromQuery);
+      } else {
+        // Otherwise fetch the entire feed
+        fetchClips();
+      }
     }
-  }, [loading, userData, authChecked]);
-
-  // If navigated from Messages with ?clipId=..., jump to that clip
-  useEffect(() => {
-    if (!clipIdFromQuery || didScrollToClipParamRef.current) return;
-    if (!reels.length) return;
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    const idx = reels.findIndex(r => String(r.id) === String(clipIdFromQuery));
-    if (idx < 0) return;
-
-    didScrollToClipParamRef.current = true;
-    const reelHeight = container.clientHeight;
-    container.scrollTo({ top: idx * reelHeight, behavior: 'smooth' });
-    setCurrentReelIndex(idx);
-    setSelectedReelId(reels[idx].id);
-  }, [clipIdFromQuery, reels]);
+  }, [loading, userData, authChecked]); // REMOVED clipIdFromQuery from dependencies
 
   // If clips feed doesn't include avatar URL, fetch it from profile endpoint (same data used elsewhere)
   useEffect(() => {

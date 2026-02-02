@@ -677,10 +677,36 @@ async function getSavedClipsService(userId, limit = 50) {
     throw error;
   }
 }
+/**
+ * Get a single clip by ID
+ * @param {string} clipId - Clip UUID
+ * @param {string} viewerUserId - Viewer user ID for privacy filtering
+ * @returns {Promise<object>} Service result with clip data
+ */
+async function getClipByIdService(clipId, viewerUserId = null) {
+  try {
+    const clip = await clipsModel.getClipById(clipId);
+    if (!clip) return { success: false, clip: null };
+
+    // Convert S3 keys to presigned URLs
+    if (clip.user_profile_url) {
+      clip.user_profile_url = await convertKeyToPresignedUrl(clip.user_profile_url);
+    }
+    if (clip.video_url) {
+      clip.video_url = await convertKeyToPresignedUrl(clip.video_url);
+    }
+
+    return { success: true, clip };
+  } catch (error) {
+    console.error('Get clip by id service error:', error);
+    throw error;
+  }
+}
 
 module.exports = {
   createClipService,
   getClipsFeedService,
+  getClipByIdService,
   addCommentService,
   replyToCommentService,
   getClipCommentsService,
