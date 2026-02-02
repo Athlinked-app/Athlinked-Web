@@ -777,7 +777,7 @@ export default function EditProfileModal({
             </div>
 
             {/* Right Column - Action Buttons and Sports Information */}
-            <div className="flex flex-col items-start md:items-end  gap-2 w-full md:w-auto absolute right-20 bottom-[20px]">
+            <div className="flex flex-col items-start md:items-end  gap-0 w-full md:w-auto absolute md:right-6 lg:right-6 bottom-[20px]">
               <div className="flex flex-wrap gap-2 sm:gap-2.5 md:gap-3 w-full md:w-auto">
                 {/* Show Edit Profile button only if viewing own profile */}
                 {(() => {
@@ -877,14 +877,14 @@ export default function EditProfileModal({
                   fetchedUserData?.user_type || userData?.user_type;
                 return userType === 'athlete' ? (
                   <div className="space-y-0.5 sm:space-y-1 mt-1 sm:mt-2 w-full md:w-auto">
-                    <div className="text-xs sm:text-xs md:text-sm flex flex-col sm:flex-row gap-1 sm:gap-0">
+                    <div className="text-xs sm:text-xs md:text-sm flex flex-col sm:flex-row  gap-1 sm:gap-0">
                       <span className="font-semibold text-gray-900 sm:w-32 md:w-40 sm:text-right">
                         Sports Played
                       </span>
                       <span className="hidden sm:inline mx-2 md:mx-3 dark:text-gray-900">
                         :
                       </span>
-                      <span className="text-gray-700 wrap-break-word">
+                      <span className="text-gray-700 wrap-break-word  md:max-w-[330px] lg:max-w-[400px]">
                         {sportsPlayed || '—'}
                       </span>
                     </div>
