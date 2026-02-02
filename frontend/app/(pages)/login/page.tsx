@@ -1,15 +1,27 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import SignupHero from '@/components/Signup/SignupHero';
 import { isAuthenticated } from '@/utils/auth';
 import GoogleSignInButton from '@/components/Signup/GoogleSignInButton';
 
+// Allowed redirect paths after login (internal app routes only; exclude auth pages)
+const PUBLIC_AUTH_PATHS = ['/login', '/signup', '/parent-signup', '/forgot-password', '/', '/landing'];
+function getSafeRedirect(redirect: string | null): string {
+  if (!redirect || typeof redirect !== 'string') return '/home';
+  const path = redirect.startsWith('/') ? redirect : '/' + redirect;
+  const isPublic = PUBLIC_AUTH_PATHS.some(p => path === p || path.startsWith(p + '/'));
+  if (isPublic) return '/home';
+  return path;
+}
+
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = getSafeRedirect(searchParams.get('redirect'));
   const [identifier, setIdentifier] = useState(''); // Can be email or username
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -31,11 +43,11 @@ export default function LoginPage() {
     }
 
     if (isAuthenticated()) {
-      router.push('/home');
+      router.push(redirectTo);
     } else {
       setCheckingAuth(false);
     }
-  }, [router]);
+  }, [router, redirectTo]);
 
   const validatePassword = (password: string): string => {
     if (!password) {
@@ -167,7 +179,7 @@ export default function LoginPage() {
         );
       }
 
-      router.push('/home');
+      router.push(redirectTo);
     } catch (error) {
       console.error('Login error:', error);
       setError('Failed to connect to server. Please try again.');
@@ -223,7 +235,7 @@ export default function LoginPage() {
         localStorage.setItem('userEmail', data.user.email);
       }
 
-      router.push('/home');
+      router.push(redirectTo);
       return;
     }
 
