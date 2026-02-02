@@ -390,10 +390,44 @@ async function getSavedClips(req, res) {
     });
   }
 }
+/**
+ * Controller to handle get single clip by ID
+ */
+async function getClipById(req, res) {
+  try {
+    const { clipId } = req.params;
+    const viewerUserId = req.user?.id || null;
+
+    // REQUIRE AUTHENTICATION FOR VIEWING INDIVIDUAL CLIPS
+    if (!viewerUserId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+        requiresAuth: true
+      });
+    }
+
+    const result = await clipsService.getClipByIdService(clipId, viewerUserId);
+    if (!result.success || !result.clip) {
+      return res.status(404).json({
+        success: false,
+        message: 'Clip not found',
+      });
+    }
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Get clip by id controller error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
 
 module.exports = {
   createClip,
   getClipsFeed,
+  getClipById,
   addComment,
   replyToComment,
   getClipComments,

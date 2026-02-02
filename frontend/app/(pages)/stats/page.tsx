@@ -761,7 +761,10 @@ export default function StatsPage() {
         />
         <main className="flex flex-1 w-full mt-5 overflow-hidden">
           <div className="hidden md:flex px-6">
-            <NavigationBar activeItem="stats" userName={currentUser?.full_name || ''} />
+            <NavigationBar
+              activeItem="stats"
+              userName={currentUser?.full_name || ''}
+            />
           </div>
           <div className="flex-1 flex flex-col px-4 overflow-hidden min-w-0 items-center justify-center">
             <p className="text-gray-600">
