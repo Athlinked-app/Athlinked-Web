@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import SignupHero from '@/components/Signup/SignupHero';
 import { isAuthenticated } from '@/utils/auth';
 import GoogleSignInButton from '@/components/Signup/GoogleSignInButton';
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [identifier, setIdentifier] = useState(''); // Can be email or username
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -20,6 +21,15 @@ export default function LoginPage() {
   const [showPasswordChangedToast, setShowPasswordChangedToast] =
     useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [returnUrl, setReturnUrl] = useState<string | null>(null);
+
+  // Get returnUrl from query params on mount
+  useEffect(() => {
+    const urlParam = searchParams.get('returnUrl');
+    if (urlParam) {
+      setReturnUrl(decodeURIComponent(urlParam));
+    }
+  }, [searchParams]);
 
   // Redirect if already authenticated (unless just logged out)
   useEffect(() => {
@@ -31,11 +41,16 @@ export default function LoginPage() {
     }
 
     if (isAuthenticated()) {
-      router.push('/home');
+      // If there's a return URL, redirect there, otherwise go to home
+      if (returnUrl) {
+        router.push(returnUrl);
+      } else {
+        router.push('/home');
+      }
     } else {
       setCheckingAuth(false);
     }
-  }, [router]);
+  }, [router, returnUrl]);
 
   const validatePassword = (password: string): string => {
     if (!password) {
@@ -167,7 +182,12 @@ export default function LoginPage() {
         );
       }
 
-      router.push('/home');
+      // Redirect to returnUrl if it exists, otherwise go to home
+      if (returnUrl) {
+        router.push(returnUrl);
+      } else {
+        router.push('/home');
+      }
     } catch (error) {
       console.error('Login error:', error);
       setError('Failed to connect to server. Please try again.');
@@ -223,7 +243,12 @@ export default function LoginPage() {
         localStorage.setItem('userEmail', data.user.email);
       }
 
-      router.push('/home');
+      // Redirect to returnUrl if it exists, otherwise go to home
+      if (returnUrl) {
+        router.push(returnUrl);
+      } else {
+        router.push('/home');
+      }
       return;
     }
 
@@ -274,6 +299,15 @@ export default function LoginPage() {
             Welcome Back
           </h1>
           <p className="text-black mb-8">Sign in to your account to continue</p>
+
+          {/* Show message if redirected from a shared link */}
+          {returnUrl && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-600">
+                Please log in to view this content
+              </p>
+            </div>
+          )}
 
           {/* Error Message */}
           {error && (
@@ -498,5 +532,33 @@ export default function LoginPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// Loading fallback component
+function LoginLoadingFallback() {
+  return (
+    <div className="flex min-h-screen flex-col md:flex-row">
+      <SignupHero />
+      <div className="w-full md:w-1/2 xl:w-2/5 flex items-center justify-center bg-gray-100 p-4 sm:p-6 md:p-8 md:min-h-screen">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-6 sm:p-8 lg:p-10 xl:p-12 my-6 md:my-0">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mb-4"></div>
+              <p className="text-black">Loading...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Main component wrapped in Suspense
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginLoadingFallback />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

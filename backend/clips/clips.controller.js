@@ -80,6 +80,15 @@ async function getClipsFeed(req, res) {
     const limit = parseInt(req.query.limit, 10) || 10;
     const viewerUserId = req.user?.id || null; // Get from auth middleware (optional)
 
+    // REQUIRE AUTHENTICATION FOR VIEWING CLIPS FEED
+    if (!viewerUserId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+        requiresAuth: true
+      });
+    }
+
     const result = await clipsService.getClipsFeedService(page, limit, viewerUserId);
 
     return res.status(200).json(result);
