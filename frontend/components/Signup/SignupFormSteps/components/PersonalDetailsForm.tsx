@@ -356,7 +356,10 @@ export default function PersonalDetailsForm({
   const handleContinueClick = () => {
     // Only validate name if not a Google user
     const nameError = isGoogleUser ? '' : validateName(formData.fullName);
-    const dobError = validateDOB(formData.dateOfBirth);
+    const dobError =
+      selectedUserType === 'athlete'
+        ? validateDOB(formData.dateOfBirth)
+        : '';
     const emailError = isGoogleUser ? '' : validateEmail(formData.email);
 
     // Only validate passwords for non-Google users
@@ -451,26 +454,28 @@ export default function PersonalDetailsForm({
           </div>
         )}
 
-        {/* Date of Birth - WITH CALENDAR PICKER */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Date of birth
-          </label>
-          <input
-            type="date"
-            value={formatDateForInput(formData.dateOfBirth)}
-            onChange={e => handleDOBChange(e.target.value)}
-            max={new Date().toISOString().split('T')[0]}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 bg-white ${
-              errors.dateOfBirth
-                ? 'border-red-500 focus:ring-red-500'
-                : 'border-gray-300'
-            }`}
-          />
-          {errors.dateOfBirth && (
-            <p className="mt-1 text-xs text-red-600">{errors.dateOfBirth}</p>
-          )}
-        </div>
+        {/* Date of Birth - Only for Athlete */}
+        {selectedUserType === 'athlete' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Date of birth
+            </label>
+            <input
+              type="date"
+              value={formatDateForInput(formData.dateOfBirth)}
+              onChange={e => handleDOBChange(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 bg-white ${
+                errors.dateOfBirth
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-gray-300'
+              }`}
+            />
+            {errors.dateOfBirth && (
+              <p className="mt-1 text-xs text-red-600">{errors.dateOfBirth}</p>
+            )}
+          </div>
+        )}
 
         {/* Sports Played - Only for Athlete */}
         {selectedUserType === 'athlete' && (

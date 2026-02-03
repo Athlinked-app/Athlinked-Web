@@ -553,19 +553,15 @@ export default function EditProfileModal({
       .slice(0, 2);
   };
 
-  // Calculate completion percentage based on all profile sections
-  // This recalculates on every render when any field changes
+
   const calculateCompletion = () => {
     let completed = 0;
     const isAthlete = userData?.user_type === 'athlete';
-    // For athletes: 12 sections (includes athletic performance)
-    // For other user types: 11 sections (excludes athletic performance)
-    const totalSections = isAthlete ? 12 : 11;
 
-    // Basic Profile Information (3 sections)
+    const totalSections = isAthlete ? 12 : 11;
     if (fullName && fullName.trim() !== '') completed++;
     if (profileImagePreview) completed++;
-    // For athletes: count location OR age; for other user types: count location only (ignore age)
+
     if (isAthlete) {
       if ((location && location.trim() !== '') || (age && age.trim() !== ''))
         completed++;
