@@ -635,11 +635,21 @@ async function getCommentsByPostIdService(postId) {
 
     const comments = await postsModel.getCommentsByPostId(postId);
     
-    // Convert user_profile_url S3 keys to presigned URLs in comments
+    // Convert user_profile_url S3 keys to presigned URLs in comments and replies
     const commentsWithPresignedUrls = await Promise.all(
       comments.map(async (comment) => {
         if (comment.user_profile_url) {
           comment.user_profile_url = await convertKeyToPresignedUrl(comment.user_profile_url);
+        }
+        if (comment.replies && Array.isArray(comment.replies)) {
+          comment.replies = await Promise.all(
+            comment.replies.map(async (reply) => {
+              if (reply.user_profile_url) {
+                reply.user_profile_url = await convertKeyToPresignedUrl(reply.user_profile_url);
+              }
+              return reply;
+            })
+          );
         }
         return comment;
       })
