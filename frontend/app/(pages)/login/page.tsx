@@ -49,10 +49,29 @@ function LoginPageContent() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [identifierError, setIdentifierError] = useState('');
   const [showDeletedAccountToast, setShowDeletedAccountToast] = useState(false);
   const [showPasswordChangedToast, setShowPasswordChangedToast] =
     useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Basic email format: local@domain.tld
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const validateIdentifier = (value: string): string => {
+    if (!value || !value.trim()) {
+      return 'Email or username is required';
+    }
+    const trimmed = value.trim();
+    // If it contains @, treat as email and validate format
+    if (trimmed.includes('@')) {
+      if (!EMAIL_REGEX.test(trimmed)) {
+        return 'Please enter a correct email address';
+      }
+    }
+    // Username: allow non-empty (no format strictness)
+    return '';
+  };
 
   // Redirect if already authenticated (unless just logged out)
   useEffect(() => {
@@ -114,8 +133,15 @@ function LoginPageContent() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIdentifierError('');
     setShowPasswordChangedToast(false); // Reset toast state
     setShowDeletedAccountToast(false); // Reset deleted account toast
+
+    const identifierValidationError = validateIdentifier(identifier);
+    if (identifierValidationError) {
+      setIdentifierError(identifierValidationError);
+      return;
+    }
 
     // Validate password before submitting
     const passwordValidationError = validatePassword(password);
@@ -340,12 +366,35 @@ function LoginPageContent() {
                 id="identifier"
                 type="text"
                 value={identifier}
-                onChange={e => setIdentifier(e.target.value)}
+                onChange={e => {
+                  const value = e.target.value;
+                  setIdentifier(value);
+                  // Validate in real time when typing email (contains @)
+                  if (value.trim().includes('@')) {
+                    setIdentifierError(validateIdentifier(value));
+                  } else {
+                    setIdentifierError('');
+                  }
+                }}
+                onBlur={() => {
+                  if (identifier.trim()) {
+                    setIdentifierError(validateIdentifier(identifier));
+                  } else {
+                    setIdentifierError('');
+                  }
+                }}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-black"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-black ${
+                  identifierError
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300'
+                }`}
                 placeholder="Enter your email or username"
                 disabled={loading}
               />
+              {identifierError && (
+                <p className="mt-1 text-xs text-red-600">{identifierError}</p>
+              )}
             </div>
 
             {/* Password Field */}
