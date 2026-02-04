@@ -12,11 +12,13 @@ interface SignupFormStepsProps {
   isLoadingOTP?: boolean;
   isGoogleUser?: boolean;
   isCompletingGoogleSignup?: boolean;
+  signupError?: string;
   onFormDataChange: (data: any) => void;
   onUserTypeSelect: (type: string) => void;
   onContinue: () => void;
   onTogglePassword: () => void;
   onToggleConfirmPassword: () => void;
+  onClearError?: () => void;
   onGoogleSignIn?: (userData: any) => void;
 }
 
@@ -29,11 +31,13 @@ export default function SignupFormSteps({
   isLoadingOTP = false,
   isGoogleUser = false,
   isCompletingGoogleSignup = false,
+  signupError = '',
   onFormDataChange,
   onUserTypeSelect,
   onContinue,
   onTogglePassword,
   onToggleConfirmPassword,
+  onClearError,
   onGoogleSignIn,
 }: SignupFormStepsProps) {
   // Step 0: Join as - User Type Selection
@@ -58,10 +62,12 @@ export default function SignupFormSteps({
         showConfirmPassword={showConfirmPassword}
         isLoadingOTP={isLoadingOTP}
         isGoogleUser={isGoogleUser}
+        signupError={signupError}
         onFormDataChange={onFormDataChange}
         onContinue={onContinue}
         onTogglePassword={onTogglePassword}
         onToggleConfirmPassword={onToggleConfirmPassword}
+        onClearError={onClearError}
       />
     );
   }

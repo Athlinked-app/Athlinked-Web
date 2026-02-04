@@ -1,6 +1,5 @@
 import { User, Mail, Eye, EyeOff, Building2, Briefcase } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-import { apiGet } from '@/utils/api';
 
 interface PersonalDetailsFormProps {
   selectedUserType: string;
@@ -9,10 +8,12 @@ interface PersonalDetailsFormProps {
   showConfirmPassword: boolean;
   isLoadingOTP?: boolean;
   isGoogleUser?: boolean;
+  signupError?: string;
   onFormDataChange: (data: any) => void;
   onContinue: () => void;
   onTogglePassword: () => void;
   onToggleConfirmPassword: () => void;
+  onClearError?: () => void;
 }
 
 interface Sport {
@@ -27,10 +28,12 @@ export default function PersonalDetailsForm({
   showConfirmPassword,
   isLoadingOTP = false,
   isGoogleUser = false,
+  signupError = '',
   onFormDataChange,
   onContinue,
   onTogglePassword,
   onToggleConfirmPassword,
+  onClearError,
 }: PersonalDetailsFormProps) {
   const [sports, setSports] = useState<Sport[]>([]);
   const [loadingSports, setLoadingSports] = useState(false);
@@ -53,6 +56,12 @@ export default function PersonalDetailsForm({
     password: '',
     confirmPassword: '',
   });
+
+  useEffect(() => {
+    if (signupError) {
+      console.log('PersonalDetailsForm received signupError:', signupError);
+    }
+  }, [signupError]);
 
   useEffect(() => {
     if (selectedUserType === 'athlete') {
@@ -247,67 +256,7 @@ export default function PersonalDetailsForm({
     return '';
   };
 
-  // Server-side existence check (debounced)
-  useEffect(() => {
-    if (isGoogleUser) return; // skip for google users
-
-    const emailValue = formData.email?.trim();
-    if (!emailValue) return;
-
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      try {
-        // If input contains @, check by email
-        if (emailValue.includes('@')) {
-          try {
-            const data = await apiGet(`/signup/user/${encodeURIComponent(emailValue)}`);
-            if (cancelled) return;
-            if (data && data.user) {
-              const userType = data.user.user_type;
-              if (userType === 'parent' && selectedUserType === 'athlete') {
-                setErrors(prev => ({ ...prev, email: 'This email is registered as a parent' }));
-              } else {
-                setErrors(prev => ({ ...prev, email: 'Email already registered' }));
-              }
-            }
-          } catch (err: any) {
-            // apiGet throws for 404 - user not found => clear server-related error
-            if (err.status === 404) {
-              // Only keep client-side validation result
-              const clientErr = validateEmail(emailValue);
-              setErrors(prev => ({ ...prev, email: clientErr }));
-            } else {
-              // For other errors, log and don't block user
-              console.error('Error checking email existence:', err);
-            }
-          }
-        } else {
-          // username check
-          try {
-            const data = await apiGet(`/signup/user-by-username/${encodeURIComponent(emailValue)}`);
-            if (cancelled) return;
-            if (data && data.user) {
-              setErrors(prev => ({ ...prev, email: 'Username already taken' }));
-            }
-          } catch (err: any) {
-            if (err.status === 404) {
-              const clientErr = validateEmail(emailValue);
-              setErrors(prev => ({ ...prev, email: clientErr }));
-            } else {
-              console.error('Error checking username existence:', err);
-            }
-          }
-        }
-      } catch (e) {
-        console.error('Unexpected error while validating email:', e);
-      }
-    }, 500);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [formData.email, selectedUserType, isGoogleUser]);
+  
 
   const validatePassword = (password: string): string => {
     if (!password) {
@@ -377,6 +326,10 @@ export default function PersonalDetailsForm({
 
   const handleEmailChange = (value: string) => {
     onFormDataChange({ ...formData, email: value });
+    // Clear signup error when user changes email
+    if (onClearError) {
+      onClearError();
+    }
     if (value) {
       setErrors(prev => ({ ...prev, email: validateEmail(value) }));
     } else {
@@ -417,18 +370,12 @@ export default function PersonalDetailsForm({
 
   // Validate all fields before continuing
   const handleContinueClick = () => {
+    // If there's a signup error from previous attempt, clear it first
+    // User can try again with different email
+    
     // Only validate name if not a Google user
     const nameError = isGoogleUser ? '' : validateName(formData.fullName);
     const dobError = validateDOB(formData.dateOfBirth);
-
-    // Preserve any server-side email error (set by debounced check). If present, it should block progression.
-    const serverEmailError = errors.email || '';
-    const clientEmailError = isGoogleUser ? '' : validateEmail(formData.email);
-    const emailError = serverEmailError || clientEmailError;
-    const dobError =
-      selectedUserType === 'athlete'
-        ? validateDOB(formData.dateOfBirth)
-        : '';
     const emailError = isGoogleUser ? '' : validateEmail(formData.email);
 
     // Only validate passwords for non-Google users
@@ -447,13 +394,7 @@ export default function PersonalDetailsForm({
       confirmPassword: confirmPasswordError,
     });
 
-    if (
-      nameError ||
-      dobError ||
-      emailError ||
-      passwordError ||
-      confirmPasswordError
-    ) {
+    if (nameError || dobError || emailError || passwordError || confirmPasswordError) {
       return;
     }
 
@@ -719,7 +660,7 @@ export default function PersonalDetailsForm({
                 value={formData.email}
                 onChange={e => handleEmailChange(e.target.value)}
                 className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
-                  errors.email
+                  errors.email || signupError
                     ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300'
                 }`}
@@ -727,7 +668,10 @@ export default function PersonalDetailsForm({
               />
               <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             </div>
-            {errors.email && (
+            {signupError && (
+              <p className="mt-1 text-xs text-red-600">{signupError}</p>
+            )}
+            {!signupError && errors.email && (
               <p className="mt-1 text-xs text-red-600">{errors.email}</p>
             )}
           </div>
