@@ -295,81 +295,91 @@ export default function RightSideBar({
       : 'People you may know';
 
   return (
-    <div className="hidden lg:block w-64 xl:w-72 2xl:w-80 bg-white border-l border-gray-200 overflow-y-auto rounded-lg rounded-scrollbar transition-all duration-300">
-      {/* Header */}
-      <div className="p-2 sm:p-3 md:p-4 border-b border-gray-200">
-        <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 truncate">
-          {title}
-        </h2>
-      </div>
+    <>
+      <div className="hidden lg:block w-64 xl:w-72 2xl:w-80 bg-white border-l border-gray-200 overflow-y-auto rounded-lg rounded-scrollbar transition-all duration-300 right-sidebar-scroll">
+        {/* Header */}
+        <div className="p-2 sm:p-3 md:p-4 border-b border-gray-200">
+          <h2 className="text-sm sm:text-base md:text-lg font-semibold text-gray-900 truncate">
+            {title}
+          </h2>
+        </div>
 
-      {/* People List */}
-      <div className="divide-y divide-gray-200">
-        {loading ? (
-          <div className="p-3 sm:p-4 text-center text-gray-500 text-xs sm:text-sm">
-            Loading...
-          </div>
-        ) : people.length === 0 ? (
-          <div className="p-3 sm:p-4 text-center text-gray-500 text-xs sm:text-sm">
-            {searchResults ? 'No results found' : 'No users found'}
-          </div>
-        ) : (
-          people.map(person => (
-            <div
-              key={person.id}
-              className="p-2 sm:p-3 md:p-4 hover:bg-gray-50 transition-colors"
-            >
-              <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3">
-                {/* Avatar and Info - Clickable */}
-                <div
-                  onClick={() => router.push(`/profile?userId=${person.id}`)}
-                  className="flex items-center gap-2 sm:gap-2.5 md:gap-3 flex-1 min-w-0 cursor-pointer"
-                >
-                  {/* Avatar */}
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-200 shrink-0 overflow-hidden flex items-center justify-center">
-                    {person.avatar ? (
-                      <img
-                        src={person.avatar}
-                        alt={person.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-gray-600 font-semibold text-xs sm:text-sm">
-                        {getInitials(person.name)}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5 truncate">
-                      {person.role}
-                    </p>
-                    <p className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
-                      {person.name}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Follow Button */}
-                <button
-                  onClick={e => {
-                    e.stopPropagation();
-                    handleFollow(person.id, person.isFollowing);
-                  }}
-                  className={`px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-full border transition-colors shrink-0 ${
-                    person.isFollowing
-                      ? 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  {person.isFollowing ? 'Following' : 'Follow'}
-                </button>
-              </div>
+        {/* People List */}
+        <div className="divide-y divide-gray-200">
+          {loading ? (
+            <div className="p-3 sm:p-4 text-center text-gray-500 text-xs sm:text-sm">
+              Loading...
             </div>
-          ))
-        )}
+          ) : people.length === 0 ? (
+            <div className="p-3 sm:p-4 text-center text-gray-500 text-xs sm:text-sm">
+              {searchResults ? 'No results found' : 'No users found'}
+            </div>
+          ) : (
+            people.map(person => (
+              <div
+                key={person.id}
+                className="p-2 sm:p-3 md:p-4 hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-2 sm:gap-2.5 md:gap-3">
+                  {/* Avatar and Info - Clickable */}
+                  <div
+                    onClick={() => router.push(`/profile?userId=${person.id}`)}
+                    className="flex items-center gap-2 sm:gap-2.5 md:gap-3 flex-1 min-w-0 cursor-pointer"
+                  >
+                    {/* Avatar */}
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full bg-gray-200 shrink-0 overflow-hidden flex items-center justify-center">
+                      {person.avatar ? (
+                        <img
+                          src={person.avatar}
+                          alt={person.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-gray-600 font-semibold text-xs sm:text-sm">
+                          {getInitials(person.name)}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] sm:text-xs text-gray-500 mb-0.5 truncate">
+                        {person.role}
+                      </p>
+                      <p className="text-xs sm:text-sm font-semibold text-gray-900 truncate">
+                        {person.name}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Follow Button */}
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleFollow(person.id, person.isFollowing);
+                    }}
+                    className={`px-2 sm:px-3 md:px-4 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded-full border transition-colors shrink-0 ${
+                      person.isFollowing
+                        ? 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {person.isFollowing ? 'Following' : 'Follow'}
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
-    </div>
+      <style jsx>{`
+        .right-sidebar-scroll {
+          scrollbar-width: none; /* Firefox */
+        }
+        .right-sidebar-scroll::-webkit-scrollbar {
+          display: none; /* Chrome, Safari, Edge */
+        }
+      `}</style>
+    </>
   );
 }

@@ -1,24 +1,77 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
 import SignupHero from '@/components/Signup/SignupHero';
 import { isAuthenticated } from '@/utils/auth';
 import GoogleSignInButton from '@/components/Signup/GoogleSignInButton';
 
-export default function LoginPage() {
+// Allowed redirect paths after login (internal app routes only; exclude auth pages)
+const PUBLIC_AUTH_PATHS = [
+  '/login',
+  '/signup',
+  '/parent-signup',
+  '/forgot-password',
+  '/',
+  '/landing',
+];
+
+function getSafeRedirect(redirect: string | null): string {
+  if (!redirect || typeof redirect !== 'string') return '/home';
+  const path = redirect.startsWith('/') ? redirect : '/' + redirect;
+  const isPublic = PUBLIC_AUTH_PATHS.some(
+    p => path === p || path.startsWith(p + '/')
+  );
+  if (isPublic) return '/home';
+  return path;
+}
+
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Support both ?redirect= and ?returnUrl= for post-login destination
+  const redirectParam = searchParams.get('redirect');
+  const returnUrlParam = searchParams.get('returnUrl');
+
+  const redirectTo =
+    getSafeRedirect(redirectParam) !== '/home'
+      ? getSafeRedirect(redirectParam)
+      : getSafeRedirect(
+          returnUrlParam ? decodeURIComponent(returnUrlParam) : null
+        );
+
   const [identifier, setIdentifier] = useState(''); // Can be email or username
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [identifierError, setIdentifierError] = useState('');
   const [showDeletedAccountToast, setShowDeletedAccountToast] = useState(false);
   const [showPasswordChangedToast, setShowPasswordChangedToast] =
     useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+
+  // Basic email format: local@domain.tld
+  const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  const validateIdentifier = (value: string): string => {
+    if (!value || !value.trim()) {
+      return 'Email or username is required';
+    }
+    const trimmed = value.trim();
+    // If it contains @, treat as email and validate format
+    if (trimmed.includes('@')) {
+      if (!EMAIL_REGEX.test(trimmed)) {
+        return 'Please enter a correct email address';
+      }
+    }
+    // Username: allow non-empty (no format strictness)
+    return '';
+  };
 
   // Redirect if already authenticated (unless just logged out)
   useEffect(() => {
@@ -26,15 +79,15 @@ export default function LoginPage() {
     if (justLoggedOut) {
       localStorage.removeItem('justLoggedOut');
       setCheckingAuth(false);
-      return; // Don't redirect if user just logged out
+      return;
     }
 
     if (isAuthenticated()) {
-      router.push('/home');
+      router.push(redirectTo);
     } else {
       setCheckingAuth(false);
     }
-  }, [router]);
+  }, [router, redirectTo]);
 
   const validatePassword = (password: string): string => {
     if (!password) {
@@ -80,8 +133,15 @@ export default function LoginPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIdentifierError('');
     setShowPasswordChangedToast(false); // Reset toast state
     setShowDeletedAccountToast(false); // Reset deleted account toast
+
+    const identifierValidationError = validateIdentifier(identifier);
+    if (identifierValidationError) {
+      setIdentifierError(identifierValidationError);
+      return;
+    }
 
     // Validate password before submitting
     const passwordValidationError = validatePassword(password);
@@ -166,7 +226,7 @@ export default function LoginPage() {
         );
       }
 
-      router.push('/home');
+      router.push(redirectTo);
     } catch (error) {
       console.error('Login error:', error);
       setError('Failed to connect to server. Please try again.');
@@ -222,7 +282,7 @@ export default function LoginPage() {
         localStorage.setItem('userEmail', data.user.email);
       }
 
-      router.push('/home');
+      router.push(redirectTo);
       return;
     }
 
@@ -257,12 +317,15 @@ export default function LoginPage() {
       <div className="w-full md:w-1/2 xl:w-2/5 flex items-center justify-center bg-gray-100 p-4 sm:p-6 md:p-8 md:min-h-screen">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-6 sm:p-8 lg:p-10 xl:p-12 my-6 md:my-0">
           {/* Logo */}
+          {/* Logo */}
           <div className="flex items-center mb-6 sm:mb-8">
-            <img
-              src="/assets/Signup/logo.png"
-              alt="ATHLINKED"
-              className="h-8 sm:h-10 w-auto"
-            />
+            <Link href="/" className="cursor-pointer">
+              <img
+                src="/assets/Signup/logo.png"
+                alt="ATHLINKED"
+                className="h-8 sm:h-10 w-auto"
+              />
+            </Link>
           </div>
 
           {/* Title */}
@@ -270,6 +333,15 @@ export default function LoginPage() {
             Welcome Back
           </h1>
           <p className="text-black mb-8">Sign in to your account to continue</p>
+
+          {/* Show message if redirected from a shared link */}
+          {redirectTo !== '/home' && (
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-600">
+                Please log in to view this content
+              </p>
+            </div>
+          )}
 
           {/* Error Message */}
           {error && (
@@ -294,12 +366,35 @@ export default function LoginPage() {
                 id="identifier"
                 type="text"
                 value={identifier}
-                onChange={e => setIdentifier(e.target.value)}
+                onChange={e => {
+                  const value = e.target.value;
+                  setIdentifier(value);
+                  // Validate in real time when typing email (contains @)
+                  if (value.trim().includes('@')) {
+                    setIdentifierError(validateIdentifier(value));
+                  } else {
+                    setIdentifierError('');
+                  }
+                }}
+                onBlur={() => {
+                  if (identifier.trim()) {
+                    setIdentifierError(validateIdentifier(identifier));
+                  } else {
+                    setIdentifierError('');
+                  }
+                }}
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-black"
+                className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-black ${
+                  identifierError
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300'
+                }`}
                 placeholder="Enter your email or username"
                 disabled={loading}
               />
+              {identifierError && (
+                <p className="mt-1 text-xs text-red-600">{identifierError}</p>
+              )}
             </div>
 
             {/* Password Field */}
@@ -494,5 +589,31 @@ export default function LoginPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function LoginPageFallback() {
+  return (
+    <div className="flex min-h-screen flex-col md:flex-row">
+      <SignupHero />
+      <div className="w-full md:w-1/2 xl:w-2/5 flex items-center justify-center bg-gray-100 p-4 sm:p-6 md:p-8 md:min-h-screen">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-6 sm:p-8 lg:p-10 xl:p-12 my-6 md:my-0">
+          <div className="flex items-center justify-center py-8">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mb-4"></div>
+              <p className="text-black">Loading...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageFallback />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }

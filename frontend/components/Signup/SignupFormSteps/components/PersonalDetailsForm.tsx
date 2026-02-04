@@ -1,5 +1,6 @@
 import { User, Mail, Eye, EyeOff, Building2, Briefcase } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import { apiGet } from '@/utils/api';
 
 interface PersonalDetailsFormProps {
   selectedUserType: string;
@@ -246,6 +247,68 @@ export default function PersonalDetailsForm({
     return '';
   };
 
+  // Server-side existence check (debounced)
+  useEffect(() => {
+    if (isGoogleUser) return; // skip for google users
+
+    const emailValue = formData.email?.trim();
+    if (!emailValue) return;
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        // If input contains @, check by email
+        if (emailValue.includes('@')) {
+          try {
+            const data = await apiGet(`/signup/user/${encodeURIComponent(emailValue)}`);
+            if (cancelled) return;
+            if (data && data.user) {
+              const userType = data.user.user_type;
+              if (userType === 'parent' && selectedUserType === 'athlete') {
+                setErrors(prev => ({ ...prev, email: 'This email is registered as a parent' }));
+              } else {
+                setErrors(prev => ({ ...prev, email: 'Email already registered' }));
+              }
+            }
+          } catch (err: any) {
+            // apiGet throws for 404 - user not found => clear server-related error
+            if (err.status === 404) {
+              // Only keep client-side validation result
+              const clientErr = validateEmail(emailValue);
+              setErrors(prev => ({ ...prev, email: clientErr }));
+            } else {
+              // For other errors, log and don't block user
+              console.error('Error checking email existence:', err);
+            }
+          }
+        } else {
+          // username check
+          try {
+            const data = await apiGet(`/signup/user-by-username/${encodeURIComponent(emailValue)}`);
+            if (cancelled) return;
+            if (data && data.user) {
+              setErrors(prev => ({ ...prev, email: 'Username already taken' }));
+            }
+          } catch (err: any) {
+            if (err.status === 404) {
+              const clientErr = validateEmail(emailValue);
+              setErrors(prev => ({ ...prev, email: clientErr }));
+            } else {
+              console.error('Error checking username existence:', err);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Unexpected error while validating email:', e);
+      }
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [formData.email, selectedUserType, isGoogleUser]);
+
   const validatePassword = (password: string): string => {
     if (!password) {
       return 'Password is required';
@@ -357,6 +420,15 @@ export default function PersonalDetailsForm({
     // Only validate name if not a Google user
     const nameError = isGoogleUser ? '' : validateName(formData.fullName);
     const dobError = validateDOB(formData.dateOfBirth);
+
+    // Preserve any server-side email error (set by debounced check). If present, it should block progression.
+    const serverEmailError = errors.email || '';
+    const clientEmailError = isGoogleUser ? '' : validateEmail(formData.email);
+    const emailError = serverEmailError || clientEmailError;
+    const dobError =
+      selectedUserType === 'athlete'
+        ? validateDOB(formData.dateOfBirth)
+        : '';
     const emailError = isGoogleUser ? '' : validateEmail(formData.email);
 
     // Only validate passwords for non-Google users
@@ -375,7 +447,13 @@ export default function PersonalDetailsForm({
       confirmPassword: confirmPasswordError,
     });
 
-    if (nameError || dobError || emailError || passwordError || confirmPasswordError) {
+    if (
+      nameError ||
+      dobError ||
+      emailError ||
+      passwordError ||
+      confirmPasswordError
+    ) {
       return;
     }
 
@@ -384,6 +462,41 @@ export default function PersonalDetailsForm({
 
   return (
     <>
+      <style jsx global>{`
+        input[type='date']::-webkit-datetime-edit-fields-wrapper {
+          padding: 0;
+        }
+
+        input[type='date']::-webkit-datetime-edit-text {
+          color: #111827;
+          padding: 0 2px;
+        }
+
+        input[type='date']::-webkit-datetime-edit-month-field,
+        input[type='date']::-webkit-datetime-edit-day-field,
+        input[type='date']::-webkit-datetime-edit-year-field {
+          color: #111827;
+          background-color: transparent !important;
+        }
+
+        input[type='date']::-webkit-datetime-edit-month-field:focus,
+        input[type='date']::-webkit-datetime-edit-day-field:focus,
+        input[type='date']::-webkit-datetime-edit-year-field:focus {
+          background-color: transparent !important;
+          outline: none !important;
+          color: #111827 !important;
+        }
+
+        input[type='date']::selection,
+        input[type='date']::-moz-selection {
+          background-color: transparent !important;
+          color: inherit !important;
+        }
+
+        input[type='date']::-webkit-calendar-picker-indicator {
+          cursor: pointer;
+        }
+      `}</style>
       <div className="space-y-4 mb-6">
         {/* Full Name - HIDE for Google users */}
         {!isGoogleUser && (
@@ -410,26 +523,28 @@ export default function PersonalDetailsForm({
           </div>
         )}
 
-        {/* Date of Birth - WITH CALENDAR PICKER */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Date of birth
-          </label>
-          <input
-            type="date"
-            value={formatDateForInput(formData.dateOfBirth)}
-            onChange={e => handleDOBChange(e.target.value)}
-            max={new Date().toISOString().split('T')[0]}
-            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 bg-white ${
-              errors.dateOfBirth
-                ? 'border-red-500 focus:ring-red-500'
-                : 'border-gray-300'
-            }`}
-          />
-          {errors.dateOfBirth && (
-            <p className="mt-1 text-xs text-red-600">{errors.dateOfBirth}</p>
-          )}
-        </div>
+        {/* Date of Birth - Only for Athlete */}
+        {selectedUserType === 'athlete' && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Date of birth
+            </label>
+            <input
+              type="date"
+              value={formatDateForInput(formData.dateOfBirth)}
+              onChange={e => handleDOBChange(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 bg-white ${
+                errors.dateOfBirth
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-gray-300'
+              }`}
+            />
+            {errors.dateOfBirth && (
+              <p className="mt-1 text-xs text-red-600">{errors.dateOfBirth}</p>
+            )}
+          </div>
+        )}
 
         {/* Sports Played - Only for Athlete */}
         {selectedUserType === 'athlete' && (
@@ -723,7 +838,7 @@ export default function PersonalDetailsForm({
       </button>
       <div className="text-center text-xs sm:text-sm text-gray-600">
         <span className="text-gray-700">Already have an account? </span>
-        <a href="#" className="text-[#CB9729] font-medium hover:underline">
+        <a href="/login" className="text-[#CB9729] font-medium hover:underline">
           Sign in
         </a>
       </div>

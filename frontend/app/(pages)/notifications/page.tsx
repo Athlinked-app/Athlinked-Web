@@ -278,7 +278,7 @@ export default function NotificationsPage() {
           <NavigationBar activeItem="notifications" />
         </div>
 
-        <div className="flex-1 flex gap-3 overflow-y-auto">
+        <div className="flex-1 flex gap-3 overflow-y-auto px-2">
           {/* Main Content */}
           <div className="flex-1 bg-white rounded-xl p-6">
             {/* Tabs Section */}
@@ -354,7 +354,7 @@ export default function NotificationsPage() {
                         }`}
                       >
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-yellow-400 overflow-hidden flex items-center justify-center">
+                          <div className="md:w-12 md:h-12 w-12 h-8 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-yellow-400 overflow-hidden flex items-center justify-center">
                             <span className="text-white font-semibold text-sm">
                               {getInitials(notification.actorFullName)}
                             </span>

@@ -279,7 +279,7 @@ export default function OTPVerification({
 
       <div className="text-center text-xs sm:text-sm text-gray-600">
         <span className="text-gray-700">Already have an account? </span>
-        <a href="#" className="text-[#CB9729] font-medium hover:underline">
+        <a href="/login" className="text-[#CB9729] font-medium hover:underline">
           Sign in
         </a>
       </div>

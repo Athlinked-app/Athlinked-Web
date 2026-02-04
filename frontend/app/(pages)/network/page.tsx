@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
@@ -28,6 +29,7 @@ interface ConnectionRequest {
 }
 
 export default function NetworkPage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<
     'followers' | 'following' | 'invitations'
   >('followers');
@@ -383,9 +385,8 @@ export default function NetworkPage() {
           <NavigationBar activeItem="network" />
         </div>
 
-        <div className="flex-1 flex gap-3 overflow-y-auto">
-          {/* Main Content */}
-          <div className="flex-1 bg-white rounded-xl p-6">
+        <div className="flex-1 flex gap-3 overflow-y-auto px-2 md:px-0">
+          <div className="flex-1 bg-white rounded-xl md:p-6">
             {/* Followers/Followings Section */}
             <div className="mb-8">
               <div className="flex border-b border-gray-200 mb-6">
@@ -446,7 +447,16 @@ export default function NetworkPage() {
                           key={request.id}
                           className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                         >
-                          <div className="flex items-center gap-3">
+                          <div
+                            className="flex items-center gap-3 cursor-pointer"
+                            onClick={() =>
+                              router.push(
+                                `/profile?userId=${encodeURIComponent(
+                                  request.user_id
+                                )}`
+                              )
+                            }
+                          >
                             <div className="w-12 h-12 rounded-full bg-gray-300 overflow-hidden flex items-center justify-center">
                               {profileUrl ? (
                                 <img
@@ -507,7 +517,14 @@ export default function NetworkPage() {
                         key={user.id}
                         className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                       >
-                        <div className="flex items-center gap-3">
+                        <div
+                          className="flex items-center gap-3 cursor-pointer"
+                          onClick={() =>
+                            router.push(
+                              `/profile?userId=${encodeURIComponent(user.id)}`
+                            )
+                          }
+                        >
                           <div className="w-12 h-12 rounded-full bg-gray-300 overflow-hidden flex items-center justify-center">
                             {profileUrl ? (
                               <img

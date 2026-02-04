@@ -220,6 +220,25 @@ async function getPostsFeedService(page = 1, limit = 50, viewerUserId = null, po
   }
 }
 
+async function getPostByIdService(postId, viewerUserId = null) {
+  try {
+    const post = await postsModel.getPostById(postId);
+    if (!post) return { success: false, post: null };
+
+    if (post.user_profile_url) {
+      post.user_profile_url = await convertKeyToPresignedUrl(post.user_profile_url);
+    }
+    if (post.media_url) {
+      post.media_url = await convertKeyToPresignedUrl(post.media_url);
+    }
+
+    return { success: true, post };
+  } catch (error) {
+    console.error('Get post by id service error:', error);
+    throw error;
+  }
+}
+
 async function checkLikeStatusService(postId, userId) {
   try {
     const isLiked = await postsModel.checkLikeStatus(postId, userId);
@@ -616,11 +635,21 @@ async function getCommentsByPostIdService(postId) {
 
     const comments = await postsModel.getCommentsByPostId(postId);
     
-    // Convert user_profile_url S3 keys to presigned URLs in comments
+    // Convert user_profile_url S3 keys to presigned URLs in comments and replies
     const commentsWithPresignedUrls = await Promise.all(
       comments.map(async (comment) => {
         if (comment.user_profile_url) {
           comment.user_profile_url = await convertKeyToPresignedUrl(comment.user_profile_url);
+        }
+        if (comment.replies && Array.isArray(comment.replies)) {
+          comment.replies = await Promise.all(
+            comment.replies.map(async (reply) => {
+              if (reply.user_profile_url) {
+                reply.user_profile_url = await convertKeyToPresignedUrl(reply.user_profile_url);
+              }
+              return reply;
+            })
+          );
         }
         return comment;
       })
@@ -744,6 +773,7 @@ async function getSavedPostsService(userId, limit = 50) {
 module.exports = {
   createPostService,
   getPostsFeedService,
+  getPostByIdService,
   checkLikeStatusService,
   likePostService,
   unlikePostService,

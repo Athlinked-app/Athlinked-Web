@@ -330,12 +330,12 @@ export default function Landing() {
         userProfileUrl={getProfileUrl(currentUser?.profile_url)}
       />
 
-      <main className="flex flex-1 w-full mt-5 overflow-hidden ">
+      <main className="flex flex-1 w-full mt-2 md:mt-5 overflow-hidden ">
         <div className="hidden md:flex px-3 ">
           <NavigationBar activeItem="home" />
         </div>
 
-        <div className="flex-1 flex flex-col  gap-4 overflow-hidden min-w-0">
+        <div className="flex-1 flex flex-col  gap-2 lg:gap-4 overflow-hidden min-w-0">
           <div className="shrink-0">
             <HomeHerosection
               userProfileUrl={getProfileUrl(currentUser?.profile_url)}
@@ -344,7 +344,7 @@ export default function Landing() {
             />
           </div>
 
-          <div className="flex-1 overflow-y-auto pr-2 min-h-0">
+          <div className="flex-1 overflow-y-auto pr-2 min-h-0 hide-scrollbar">
             <div className="flex flex-col gap-4 pb-4">
               {loading ? (
                 <div className="text-center py-8 text-black bg-white rounded-xl border border-gray-200">

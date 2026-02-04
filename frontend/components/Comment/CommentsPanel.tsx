@@ -342,27 +342,40 @@ export default function CommentsPanel({
                     comment.replies &&
                     comment.replies.length > 0 && (
                       <div className="ml-11 mt-2 space-y-3 border-l-2 border-gray-200 pl-4">
-                        {comment.replies.map(reply => (
+                        {comment.replies.map(reply => {
+                          const replyAvatarUrl =
+                            reply.user_profile_url?.trim() &&
+                            (reply.user_profile_url.startsWith('http')
+                              ? reply.user_profile_url
+                              : getResourceUrl(reply.user_profile_url) ||
+                                reply.user_profile_url);
+                          return (
                           <div key={reply.id} className="flex gap-3">
                             <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
-                              {reply.user_profile_url &&
-                              reply.user_profile_url.trim() !== '' ? (
+                              {replyAvatarUrl ? (
                                 <img
-                                  src={
-                                    reply.user_profile_url.startsWith('http')
-                                      ? reply.user_profile_url
-                                      : getResourceUrl(
-                                          reply.user_profile_url
-                                        ) || reply.user_profile_url
-                                  }
+                                  src={replyAvatarUrl}
                                   alt={reply.username}
                                   className="w-full h-full object-cover"
+                                  onError={e => {
+                                    e.currentTarget.style.display = 'none';
+                                    const fallback = e.currentTarget.nextElementSibling;
+                                    if (fallback instanceof HTMLElement) fallback.style.display = 'flex';
+                                  }}
                                 />
-                              ) : (
-                                <span className="text-gray-600 font-semibold text-xs">
-                                  {getInitials(reply.username)}
-                                </span>
-                              )}
+                              ) : null}
+                              <span
+                                className="text-gray-600 font-semibold text-xs"
+                                style={{
+                                  display: replyAvatarUrl ? 'none' : 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '100%',
+                                  height: '100%',
+                                }}
+                              >
+                                {getInitials(reply.username)}
+                              </span>
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="bg-gray-50 rounded-lg p-2">
@@ -387,7 +400,8 @@ export default function CommentsPanel({
                               </div>
                             </div>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
 
