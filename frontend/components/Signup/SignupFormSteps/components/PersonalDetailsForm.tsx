@@ -1,5 +1,6 @@
 import { User, Mail, Eye, EyeOff, Building2, Briefcase } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import { apiGet } from '@/utils/api';
 
 interface PersonalDetailsFormProps {
   selectedUserType: string;
@@ -246,6 +247,68 @@ export default function PersonalDetailsForm({
     return '';
   };
 
+  // Server-side existence check (debounced)
+  useEffect(() => {
+    if (isGoogleUser) return; // skip for google users
+
+    const emailValue = formData.email?.trim();
+    if (!emailValue) return;
+
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        // If input contains @, check by email
+        if (emailValue.includes('@')) {
+          try {
+            const data = await apiGet(`/signup/user/${encodeURIComponent(emailValue)}`);
+            if (cancelled) return;
+            if (data && data.user) {
+              const userType = data.user.user_type;
+              if (userType === 'parent' && selectedUserType === 'athlete') {
+                setErrors(prev => ({ ...prev, email: 'This email is registered as a parent' }));
+              } else {
+                setErrors(prev => ({ ...prev, email: 'Email already registered' }));
+              }
+            }
+          } catch (err: any) {
+            // apiGet throws for 404 - user not found => clear server-related error
+            if (err.status === 404) {
+              // Only keep client-side validation result
+              const clientErr = validateEmail(emailValue);
+              setErrors(prev => ({ ...prev, email: clientErr }));
+            } else {
+              // For other errors, log and don't block user
+              console.error('Error checking email existence:', err);
+            }
+          }
+        } else {
+          // username check
+          try {
+            const data = await apiGet(`/signup/user-by-username/${encodeURIComponent(emailValue)}`);
+            if (cancelled) return;
+            if (data && data.user) {
+              setErrors(prev => ({ ...prev, email: 'Username already taken' }));
+            }
+          } catch (err: any) {
+            if (err.status === 404) {
+              const clientErr = validateEmail(emailValue);
+              setErrors(prev => ({ ...prev, email: clientErr }));
+            } else {
+              console.error('Error checking username existence:', err);
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Unexpected error while validating email:', e);
+      }
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [formData.email, selectedUserType, isGoogleUser]);
+
   const validatePassword = (password: string): string => {
     if (!password) {
       return 'Password is required';
@@ -356,6 +419,12 @@ export default function PersonalDetailsForm({
   const handleContinueClick = () => {
     // Only validate name if not a Google user
     const nameError = isGoogleUser ? '' : validateName(formData.fullName);
+    const dobError = validateDOB(formData.dateOfBirth);
+
+    // Preserve any server-side email error (set by debounced check). If present, it should block progression.
+    const serverEmailError = errors.email || '';
+    const clientEmailError = isGoogleUser ? '' : validateEmail(formData.email);
+    const emailError = serverEmailError || clientEmailError;
     const dobError =
       selectedUserType === 'athlete'
         ? validateDOB(formData.dateOfBirth)
