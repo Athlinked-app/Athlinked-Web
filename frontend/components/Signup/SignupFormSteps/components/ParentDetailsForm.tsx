@@ -1,5 +1,5 @@
 import { User, Mail } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { apiGet } from '@/utils/api';
 
 interface ParentDetailsFormProps {
@@ -17,75 +17,7 @@ export default function ParentDetailsForm({
   isCompletingGoogleSignup = false,
   onContinue,
 }: ParentDetailsFormProps) {
-  const [errors, setErrors] = useState({ parentName: '', parentEmail: '' });
-
-  const validateEmailFormat = (email: string) => {
-    if (!email) return 'Email is required';
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) return 'Please enter a valid email address';
-    return '';
-  };
-
-  // Debounced server-side check to prevent using an athlete email as parent email
-  useEffect(() => {
-    const value = formData.parentEmail?.trim();
-    if (!value) {
-      setErrors(prev => ({ ...prev, parentEmail: '' }));
-      return;
-    }
-
-    const clientErr = validateEmailFormat(value);
-    if (clientErr) {
-      setErrors(prev => ({ ...prev, parentEmail: clientErr }));
-      return;
-    }
-
-    let cancelled = false;
-    const timer = setTimeout(async () => {
-      try {
-        const data = await apiGet(`/signup/user/${encodeURIComponent(value)}`);
-        if (cancelled) return;
-        if (data && data.user) {
-          // If email belongs to an athlete, block it from being used as parent email
-          if (data.user.user_type === 'athlete') {
-            setErrors(prev => ({ ...prev, parentEmail: 'This email is registered as an athlete and cannot be used as a parent email' }));
-            return;
-          }
-          // If it's a parent already, inform user
-          if (data.user.user_type === 'parent') {
-            setErrors(prev => ({ ...prev, parentEmail: 'This email is already registered as a parent' }));
-            return;
-          }
-          // For other user types (coach/org), treat as already registered
-          setErrors(prev => ({ ...prev, parentEmail: 'This email is already registered' }));
-        }
-      } catch (err: any) {
-        if (err.status === 404) {
-          // Not found - clear server error
-          setErrors(prev => ({ ...prev, parentEmail: '' }));
-        } else {
-          console.error('Error checking parent email:', err);
-        }
-      }
-    }, 500);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [formData.parentEmail]);
-
-  const handleContinue = () => {
-    const nameErr = formData.parentName && formData.parentName.trim().length > 0 ? '' : 'Parent name is required';
-    const emailErr = errors.parentEmail || validateEmailFormat(formData.parentEmail || '');
-
-    setErrors({ parentName: nameErr, parentEmail: emailErr });
-
-    if (nameErr || emailErr) return;
-
-    onContinue();
-  };
-
+  const [parentEmailError, setParentEmailError] = useState<string>('');
   return (
     <>
       <div className="space-y-4 mb-6">
@@ -100,13 +32,10 @@ export default function ParentDetailsForm({
               onChange={e =>
                 onFormDataChange({ ...formData, parentName: e.target.value })
               }
-              className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${errors.parentName ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'}`}
+              className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
             />
             <User className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           </div>
-          {errors.parentName && (
-            <p className="mt-1 text-xs text-red-600">{errors.parentName}</p>
-          )}
         </div>
 
         <div>
@@ -117,21 +46,67 @@ export default function ParentDetailsForm({
             <input
               type="email"
               value={formData.parentEmail}
-              onChange={e =>
-                onFormDataChange({ ...formData, parentEmail: e.target.value })
-              }
-              className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${errors.parentEmail ? 'border-red-500 focus:ring-red-500' : 'border-gray-300'}`}
+              onChange={e => {
+                onFormDataChange({ ...formData, parentEmail: e.target.value });
+                setParentEmailError(''); // Clear error on change
+              }}
+              className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
+                parentEmailError
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-gray-300'
+              }`}
             />
             <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           </div>
-          {errors.parentEmail && (
-            <p className="mt-1 text-xs text-red-600">{errors.parentEmail}</p>
+          {parentEmailError && (
+            <p className="mt-1 text-xs text-red-600">{parentEmailError}</p>
           )}
         </div>
       </div>
 
       <button
-        onClick={handleContinue}
+        onClick={async () => {
+          // Validate parent email before proceeding
+          const email = formData.parentEmail?.trim();
+          if (!email) {
+            setParentEmailError('Parent email is required');
+            return;
+          }
+
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email)) {
+            setParentEmailError('Please enter a valid email address');
+            return;
+          }
+
+          // Check if parent email is already registered as athlete
+          try {
+            const data = await apiGet(`/signup/user/${encodeURIComponent(email)}`);
+            if (data && data.user) {
+              if (data.user.user_type === 'athlete') {
+                setParentEmailError('This email is registered as an athlete and cannot be used as a parent email');
+                return;
+              }
+              if (data.user.user_type === 'parent') {
+                setParentEmailError('This email is already registered as a parent');
+                return;
+              }
+              setParentEmailError('This email is already registered');
+              return;
+            }
+          } catch (err: any) {
+            if (err.status !== 404) {
+              console.error('Error validating parent email:', err);
+              setParentEmailError('Unable to validate email. Please try again.');
+              return;
+            }
+            // 404 means email not found, which is good
+          }
+
+          // Email is valid, proceed to next step
+          setParentEmailError('');
+          onContinue();
+        }}
         disabled={isLoadingOTP || isCompletingGoogleSignup}
         className="w-full bg-[#CB9729] text-gray-800 font-medium py-3 rounded-lg transition-all mb-4 text-sm sm:text-base flex items-center justify-center gap-2 disabled:opacity-70"
       >

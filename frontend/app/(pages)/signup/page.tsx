@@ -21,6 +21,7 @@ function SignupContent() {
   const [isGoogleUser, setIsGoogleUser] = useState(false);
   const [isCompletingGoogleSignup, setIsCompletingGoogleSignup] =
     useState(false);
+  const [signupError, setSignupError] = useState<string>('');
   useEffect(() => {
     if (isAuthenticated()) {
       router.push('/home');
@@ -260,9 +261,15 @@ function SignupContent() {
       (selectedUserType === 'athlete' && currentStep === 2) ||
       (selectedUserType !== 'athlete' && currentStep === 1)
     ) {
-      // Validate email/username
+      // Validate email/username for non-athletes or parent email for athletes
       if (!formData.email || !formData.email.trim()) {
         alert('Email or username is required');
+        return;
+      }
+
+      // For athletes on parent details step, validate parent email
+      if (selectedUserType === 'athlete' && !formData.parentEmail) {
+        alert('Parent email is required');
         return;
       }
 
@@ -307,14 +314,24 @@ function SignupContent() {
         });
 
         const data = await response.json();
+        
+        console.log('Signup response:', {
+          status: response.status,
+          ok: response.ok,
+          data: data,
+        });
 
-        if (!data.success) {
-          alert(data.message || 'Failed to send OTP. Please try again.');
+        if (!response.ok || !data.success) {
+          const errorMsg = data.message || 'Failed to send OTP. Please try again.';
+          console.log('Setting signup error:', errorMsg);
+          setSignupError(errorMsg);
           setIsLoadingOTP(false);
           return;
         }
 
-        // OTP sent successfully, proceed to OTP verification step
+        // OTP sent successfully, clear error and proceed to next step
+        console.log('Signup successful, proceeding to next step');
+        setSignupError('');
         if (currentStep < currentSteps.length - 1) {
           setCurrentStep(currentStep + 1);
         }
@@ -328,7 +345,8 @@ function SignupContent() {
         return;
       }
     } else {
-      // Not moving to OTP step, just advance
+      // For athletes on Personal Details (step 1), just advance to Parent Details
+      // For non-athletes on other steps, just advance
       if (currentStep < currentSteps.length - 1) {
         setCurrentStep(currentStep + 1);
       }
@@ -379,6 +397,7 @@ function SignupContent() {
             isLoadingOTP={isLoadingOTP}
             isGoogleUser={isGoogleUser}
             isCompletingGoogleSignup={isCompletingGoogleSignup}
+            signupError={signupError}
             onFormDataChange={setFormData}
             onUserTypeSelect={setSelectedUserType}
             onContinue={handleContinue}
@@ -386,6 +405,7 @@ function SignupContent() {
             onToggleConfirmPassword={() =>
               setShowConfirmPassword(!showConfirmPassword)
             }
+            onClearError={() => setSignupError('')}
             onGoogleSignIn={handleGoogleSignIn}
           />
         </div>
