@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import NavigationBar from '@/components/NavigationBar';
 import RightSideBar from '@/components/RightSideBar';
 import Header from '@/components/Header';
@@ -54,6 +55,7 @@ interface OpportunityItem {
 }
 
 export default function SearchPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [searchPosts, setSearchPosts] = useState<PostData[]>([]);
@@ -662,7 +664,6 @@ export default function SearchPage() {
     }
     return profileUrl;
   };
-
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
 
@@ -679,182 +680,184 @@ export default function SearchPage() {
     const searchLower = query.toLowerCase();
 
     try {
-      // Fetch all content types in parallel
+      // Import apiGet for authenticated requests
+      const { apiGet } = await import('@/utils/api');
+
+      // Fetch all content types in parallel with authentication
       const [usersResponse, postsResponse, clipsResponse, articlesResponse] =
         await Promise.all([
-          fetch(`${API_BASE_URL}/api/signup/users?limit=100`).catch(() => null),
-          fetch(`${API_BASE_URL}/api/posts?page=1&limit=100`).catch(() => null),
-          fetch(`${API_BASE_URL}/api/clips?page=1&limit=100`).catch(() => null),
-          fetch(`${API_BASE_URL}/api/articles`).catch(() => null),
+          apiGet<{ success: boolean; users?: any[] }>(
+            '/signup/users?limit=100'
+          ).catch(() => null),
+          apiGet<{ success: boolean; posts?: any[] }>(
+            '/posts?page=1&limit=100'
+          ).catch(() => null),
+          apiGet<{ success: boolean; clips?: any[] }>(
+            '/clips?page=1&limit=100'
+          ).catch(() => null),
+          apiGet<{ success: boolean; articles?: any[] }>('/articles').catch(
+            () => null
+          ),
         ]);
 
       // Process users
-      if (usersResponse && usersResponse.ok) {
-        const data = await usersResponse.json();
-        if (data.success && data.users) {
-          const filteredUsers = data.users.filter((user: any) => {
-            const fullName = (user.full_name || '').toLowerCase();
-            const username = (user.username || '').toLowerCase();
+      if (usersResponse && usersResponse.success && usersResponse.users) {
+        const filteredUsers = usersResponse.users.filter((user: any) => {
+          const fullName = (user.full_name || '').toLowerCase();
+          const username = (user.username || '').toLowerCase();
 
-            return (
-              user.id !== currentUserId &&
-              (fullName.includes(searchLower) || username.includes(searchLower))
-            );
-          });
-
-          const transformedResults: SearchResult[] = await Promise.all(
-            filteredUsers.map(async (user: any) => {
-              let isFollowing = false;
-              // Only check follow status when logged in (token + current user available)
-              if (currentUserId && getToken()) {
-                try {
-                  const isFollowingResponse = await apiRequest(
-                    `/network/is-following/${user.id}?follower_id=${currentUserId}`,
-                    { method: 'GET' }
-                  );
-                  if (isFollowingResponse.ok) {
-                    const isFollowingData = await isFollowingResponse.json();
-                    if (isFollowingData.success) {
-                      isFollowing = isFollowingData.isFollowing;
-                    }
-                  }
-                } catch (error) {
-                  console.error(
-                    `Error checking follow status for ${user.id}:`,
-                    error
-                  );
-                }
-              }
-
-              return {
-                id: user.id,
-                name: user.full_name || 'User',
-                role: user.user_type
-                  ? user.user_type.charAt(0).toUpperCase() +
-                    user.user_type.slice(1).toLowerCase()
-                  : 'User',
-                avatar: getProfileUrl(user.profile_url) || null,
-                isFollowing,
-              };
-            })
+          return (
+            user.id !== currentUserId &&
+            (fullName.includes(searchLower) || username.includes(searchLower))
           );
-          setSearchResults(transformedResults);
-        } else {
-          setSearchResults([]);
-        }
+        });
+
+        const transformedResults: SearchResult[] = await Promise.all(
+          filteredUsers.map(async (user: any) => {
+            let isFollowing = false;
+            // Only check follow status when logged in (token + current user available)
+            if (currentUserId && getToken()) {
+              try {
+                const isFollowingResponse = await apiRequest(
+                  `/network/is-following/${user.id}?follower_id=${currentUserId}`,
+                  { method: 'GET' }
+                );
+                if (isFollowingResponse.ok) {
+                  const isFollowingData = await isFollowingResponse.json();
+                  if (isFollowingData.success) {
+                    isFollowing = isFollowingData.isFollowing;
+                  }
+                }
+              } catch (error) {
+                console.error(
+                  `Error checking follow status for ${user.id}:`,
+                  error
+                );
+              }
+            }
+
+            return {
+              id: user.id,
+              name: user.full_name || 'User',
+              role: user.user_type
+                ? user.user_type.charAt(0).toUpperCase() +
+                  user.user_type.slice(1).toLowerCase()
+                : 'User',
+              avatar: getProfileUrl(user.profile_url) || null,
+              isFollowing,
+            };
+          })
+        );
+        setSearchResults(transformedResults);
       } else {
         setSearchResults([]);
       }
 
       // Process posts
-      if (postsResponse && postsResponse.ok) {
-        const data = await postsResponse.json();
-        if (data.success && data.posts) {
-          const filteredPosts: PostData[] = data.posts
-            .filter((post: any) => {
-              const username = (post.username || '').toLowerCase();
-              const caption = (post.caption || '').toLowerCase();
-              return (
-                username.includes(searchLower) || caption.includes(searchLower)
-              );
-            })
-            .map((post: any) => ({
-              id: post.id,
-              username: post.username || 'User',
-              user_profile_url: post.user_profile_url || null,
-              user_id: post.user_id,
-              post_type: post.post_type,
-              caption: post.caption,
-              media_url: post.media_url,
-              article_title: post.article_title,
-              article_body: post.article_body,
-              event_title: post.event_title,
-              event_date: post.event_date,
-              event_location: post.event_location,
-              like_count: post.like_count || 0,
-              comment_count: post.comment_count || 0,
-              save_count: post.save_count || 0,
-              created_at: post.created_at,
-            }));
-          setSearchPosts(filteredPosts);
-        } else {
-          setSearchPosts([]);
-        }
+      if (postsResponse && postsResponse.success && postsResponse.posts) {
+        const filteredPosts: PostData[] = postsResponse.posts
+          .filter((post: any) => {
+            const username = (post.username || '').toLowerCase();
+            const caption = (post.caption || '').toLowerCase();
+            const articleTitle = (post.article_title || '').toLowerCase();
+            const eventTitle = (post.event_title || '').toLowerCase();
+
+            return (
+              username.includes(searchLower) ||
+              caption.includes(searchLower) ||
+              articleTitle.includes(searchLower) ||
+              eventTitle.includes(searchLower)
+            );
+          })
+          .map((post: any) => ({
+            id: post.id,
+            username: post.username || 'User',
+            user_profile_url: post.user_profile_url || null,
+            user_id: post.user_id,
+            post_type: post.post_type,
+            caption: post.caption,
+            media_url: post.media_url,
+            article_title: post.article_title,
+            article_body: post.article_body,
+            event_title: post.event_title,
+            event_date: post.event_date,
+            event_location: post.event_location,
+            event_type: post.event_type,
+            like_count: post.like_count || 0,
+            comment_count: post.comment_count || 0,
+            save_count: post.save_count || 0,
+            created_at: post.created_at,
+          }));
+        setSearchPosts(filteredPosts);
       } else {
         setSearchPosts([]);
       }
 
       // Process clips
-      if (clipsResponse && clipsResponse.ok) {
-        const data = await clipsResponse.json();
-        if (data.success && data.clips) {
-          const filteredClips: ClipResult[] = data.clips
-            .filter((clip: any) => {
-              const username = (clip.username || '').toLowerCase();
-              const description = (clip.description || '').toLowerCase();
-              return (
-                username.includes(searchLower) ||
-                description.includes(searchLower)
-              );
-            })
-            .map((clip: any) => ({
-              id: clip.id,
-              user_id: clip.user_id,
-              username: clip.username || 'User',
-              user_profile_url: clip.user_profile_url || null,
-              video_url: clip.video_url,
-              description: clip.description,
-              like_count: clip.like_count || 0,
-              comment_count: clip.comment_count || 0,
-              created_at: clip.created_at,
-            }));
-          setSearchClips(filteredClips);
-        } else {
-          setSearchClips([]);
-        }
+      if (clipsResponse && clipsResponse.success && clipsResponse.clips) {
+        const filteredClips: ClipResult[] = clipsResponse.clips
+          .filter((clip: any) => {
+            const username = (clip.username || '').toLowerCase();
+            const description = (clip.description || '').toLowerCase();
+            return (
+              username.includes(searchLower) ||
+              description.includes(searchLower)
+            );
+          })
+          .map((clip: any) => ({
+            id: clip.id,
+            user_id: clip.user_id,
+            username: clip.username || 'User',
+            user_profile_url: clip.user_profile_url || null,
+            video_url: clip.video_url,
+            description: clip.description,
+            like_count: clip.like_count || 0,
+            comment_count: clip.comment_count || 0,
+            created_at: clip.created_at,
+          }));
+        setSearchClips(filteredClips);
       } else {
         setSearchClips([]);
       }
 
       // Process articles
-      if (articlesResponse && articlesResponse.ok) {
-        const data = await articlesResponse.json();
-        if (data.success && data.articles) {
-          const filteredArticles: PostData[] = data.articles
-            .filter((article: any) => {
-              const username = (article.username || '').toLowerCase();
-              const title = (article.title || '').toLowerCase();
-              const body = (article.body || '').toLowerCase();
-              return (
-                username.includes(searchLower) ||
-                title.includes(searchLower) ||
-                body.includes(searchLower)
-              );
-            })
-            .map((article: any) => ({
-              id: article.id,
-              username: article.username || 'User',
-              user_profile_url: article.user_profile_url || null,
-              user_id: article.user_id,
-              post_type: 'article',
-              caption: article.body ? article.body.substring(0, 200) : null,
-              media_url: article.image_url || null,
-              article_title: article.title,
-              article_body: article.body,
-              like_count: article.like_count || 0,
-              comment_count: article.comment_count || 0,
-              save_count: article.save_count || 0,
-              created_at: article.created_at,
-            }));
-          setSearchArticles(filteredArticles);
-        } else {
-          setSearchArticles([]);
-        }
+      if (
+        articlesResponse &&
+        articlesResponse.success &&
+        articlesResponse.articles
+      ) {
+        const filteredArticles: PostData[] = articlesResponse.articles
+          .filter((article: any) => {
+            const username = (article.username || '').toLowerCase();
+            const title = (article.title || '').toLowerCase();
+            const body = (article.body || '').toLowerCase();
+            return (
+              username.includes(searchLower) ||
+              title.includes(searchLower) ||
+              body.includes(searchLower)
+            );
+          })
+          .map((article: any) => ({
+            id: article.id,
+            username: article.username || 'User',
+            user_profile_url: article.user_profile_url || null,
+            user_id: article.user_id,
+            post_type: 'article',
+            caption: article.body ? article.body.substring(0, 200) : null,
+            media_url: article.image_url || null,
+            article_title: article.title,
+            article_body: article.body,
+            like_count: article.like_count || 0,
+            comment_count: article.comment_count || 0,
+            save_count: article.save_count || 0,
+            created_at: article.created_at,
+          }));
+        setSearchArticles(filteredArticles);
       } else {
         setSearchArticles([]);
       }
 
-      // Filter opportunities
+      // Filter opportunities (no change needed here)
       const allOpportunities = [...staticOpportunities, ...scrapedCamps];
       const filteredOpportunities = allOpportunities.filter(opp => {
         const title = (opp.title || '').toLowerCase();
@@ -1038,9 +1041,16 @@ export default function SearchPage() {
           {searchResults.map(person => (
             <div
               key={person.id}
-              className="p-4 hover:bg-gray-50 transition-colors"
+              className="p-4 hover:bg-gray-50 transition-colors flex items-center gap-3"
             >
-              <div className="flex items-center gap-3">
+              <div
+                className="flex flex-1 items-center gap-3 min-w-0 cursor-pointer"
+                onClick={() =>
+                  router.push(
+                    `/profile?userId=${encodeURIComponent(person.id)}`
+                  )
+                }
+              >
                 <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
                   {person.avatar ? (
                     <img
@@ -1060,17 +1070,20 @@ export default function SearchPage() {
                   </p>
                   <p className="text-xs text-gray-500">{person.role}</p>
                 </div>
-                <button
-                  onClick={() => handleFollow(person.id, person.isFollowing)}
-                  className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors flex-shrink-0 ${
-                    person.isFollowing
-                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                  }`}
-                >
-                  {person.isFollowing ? 'Following' : 'Follow'}
-                </button>
               </div>
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  handleFollow(person.id, person.isFollowing);
+                }}
+                className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors flex-shrink-0 ${
+                  person.isFollowing
+                    ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {person.isFollowing ? 'Following' : 'Follow'}
+              </button>
             </div>
           ))}
         </div>
@@ -1229,9 +1242,16 @@ export default function SearchPage() {
                 {searchResults.map(person => (
                   <div
                     key={person.id}
-                    className="p-4 hover:bg-gray-50 transition-colors"
+                    className="p-4 hover:bg-gray-50 transition-colors flex items-center gap-3"
                   >
-                    <div className="flex items-center gap-3">
+                    <div
+                      className="flex flex-1 items-center gap-3 min-w-0 cursor-pointer"
+                      onClick={() =>
+                        router.push(
+                          `/profile?userId=${encodeURIComponent(person.id)}`
+                        )
+                      }
+                    >
                       <div className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
                         {person.avatar ? (
                           <img
@@ -1251,19 +1271,20 @@ export default function SearchPage() {
                         </p>
                         <p className="text-xs text-gray-500">{person.role}</p>
                       </div>
-                      <button
-                        onClick={() =>
-                          handleFollow(person.id, person.isFollowing)
-                        }
-                        className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors flex-shrink-0 ${
-                          person.isFollowing
-                            ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        {person.isFollowing ? 'Following' : 'Follow'}
-                      </button>
                     </div>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleFollow(person.id, person.isFollowing);
+                      }}
+                      className={`px-6 py-2 text-sm font-medium rounded-lg transition-colors flex-shrink-0 ${
+                        person.isFollowing
+                          ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {person.isFollowing ? 'Following' : 'Follow'}
+                    </button>
                   </div>
                 ))}
               </div>
@@ -1568,10 +1589,10 @@ export default function SearchPage() {
           <NavigationBar activeItem="search" />
         </div>
         <div className="flex-1 flex flex-col  overflow-hidden min-w-0">
-          <div className="flex-1 overflow-y-auto pr-3 min-h-0">
+          <div className="flex-1 overflow-y-auto md:pr-3 min-h-0 px-2 md:px-0">
             <div className="flex flex-col gap-4 pb-4">
               {/* Search Header */}
-              <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="bg-white rounded-lg shadow-sm p-6 ">
                 <h1 className="text-2xl font-bold text-gray-900 mb-4">
                   Search
                 </h1>

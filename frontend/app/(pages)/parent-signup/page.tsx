@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import SignupHero from '@/components/Signup/SignupHero';
 import { Eye, EyeOff } from 'lucide-react';
 import { API_BASE_URL } from '@/utils/config';
-
+import Link from 'next/link';
 function ParentSignupContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -154,11 +154,13 @@ function ParentSignupContent() {
         <div className="w-full max-w-md bg-white rounded-2xl shadow-sm p-6 sm:p-8 lg:p-10 xl:p-12 my-6 md:my-0">
           {/* Logo */}
           <div className="flex items-center mb-6 sm:mb-8">
-            <img
-              src="/assets/Signup/logo.png"
-              alt="ATHLINKED"
-              className="h-8 sm:h-10 w-auto"
-            />
+            <Link href="/" className="cursor-pointer">
+              <img
+                src="/assets/Signup/logo.png"
+                alt="ATHLINKED"
+                className="h-8 sm:h-10 w-auto"
+              />
+            </Link>
           </div>
 
           {/* Title */}

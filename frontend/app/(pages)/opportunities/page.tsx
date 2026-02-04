@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Bookmark } from 'lucide-react';
+import { X, Bookmark, ChevronLeft } from 'lucide-react';
 import NavigationBar from '@/components/NavigationBar';
 import Header from '@/components/Header';
 import CampDetailsPopup from '@/components/opportunities/CampDetailsPopup';
@@ -62,6 +62,7 @@ export default function OpportunitiesPage() {
   const [currentUser, setCurrentUser] = useState<{
     full_name?: string;
     profile_url?: string;
+    user_type?: string;
   } | null>(null);
 
   const staticOpportunities: OpportunityItem[] = [
@@ -313,10 +314,7 @@ export default function OpportunitiesPage() {
         }
 
         if (data.success && data.user) {
-          setCurrentUser({
-            full_name: data.user.full_name,
-            profile_url: data.user.profile_url,
-          });
+          setCurrentUser(data.user);
         }
       } catch (error) {
         console.error('Error fetching current user:', error);
@@ -480,6 +478,28 @@ export default function OpportunitiesPage() {
     return profileUrl;
   };
 
+  // Opportunities page is only available for athletes
+  if (currentUser && currentUser.user_type !== 'athlete') {
+    return (
+      <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
+        <Header
+          userName={currentUser?.full_name}
+          userProfileUrl={getProfileUrl(currentUser?.profile_url)}
+        />
+        <main className="flex flex-1 w-full mt-5 overflow-hidden">
+          <div className="hidden md:flex px-6">
+            <NavigationBar activeItem="opportunities" />
+          </div>
+          <div className="flex-1 flex flex-col px-4 overflow-hidden min-w-0 items-center justify-center">
+            <p className="text-gray-600">
+              This page is only available for athlete
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-200">
       <Header
@@ -487,13 +507,14 @@ export default function OpportunitiesPage() {
         userProfileUrl={getProfileUrl(currentUser?.profile_url)}
       />
 
-      <div className="flex p-5 flex-1">
-        <NavigationBar activeItem="opportunities" />
-
-        <div className="flex-1 bg-white mt-0 ml-5 mr-5 mb-5 rounded-xl flex flex-col h-[1200px] overflow-y-auto">
+      <div className="flex p-3 md:p-5 flex-1">
+        <div className="hidden md:flex">
+          <NavigationBar activeItem="opportunities" />
+        </div>
+        <div className="flex-1 bg-white mt-0 md:ml-5 md:mr-5 md:mb-5 rounded-xl flex flex-col md:h-[620px] overflow-y-auto">
           <div className="border-b border-gray-200">
-            <div className="max-w-7xl mx-auto px-6">
-              <div className="flex gap-8">
+            <div className="md:max-w-7xl mx-auto md:px-6 px-0">
+              <div className="flex md:gap-8 gap-2">
                 <button
                   onClick={() => setActiveTab('all')}
                   className={`py-4 px-2 text-base font-medium relative transition-colors ${
@@ -516,7 +537,7 @@ export default function OpportunitiesPage() {
                       : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
-                  Tryouts & Camp
+                  Trial
                   {/* ({allOpportunities.filter(item => item.type === 'tryouts').length}) */}
                   {activeTab === 'tryouts' && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#CB9729]" />
@@ -554,7 +575,13 @@ export default function OpportunitiesPage() {
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto">
+          <div
+            className={`flex-1 overflow-y-auto ${
+              selectedOpportunity && selectedOpportunity.type !== 'tryouts'
+                ? 'hidden md:block'
+                : ''
+            }`}
+          >
             <div className="max-w-7xl mx-auto p-6">
               {loadingCamps && (
                 <div className="text-center py-8">
@@ -620,8 +647,18 @@ export default function OpportunitiesPage() {
         </div>
 
         {selectedOpportunity && selectedOpportunity.type !== 'tryouts' && (
-          <div className="w-80 bg-white ml-5 mb-5 rounded-xl p-6 overflow-y-auto">
-            {/* Update this section - around line 572-585 */}
+          <div className="w-full md:w-80 bg-white md:ml-5 mb-5 mt-4 md:mt-0 rounded-xl p-6 overflow-y-auto">
+            {/* Mobile back button */}
+            <button
+              type="button"
+              className="mb-4 flex items-center gap-2 text-gray-600 hover:text-black md:hidden"
+              onClick={() => setSelectedOpportunity(null)}
+            >
+              <ChevronLeft className="w-5 h-5" />
+              <span className="text-sm font-medium">Back</span>
+            </button>
+
+            {/* Header */}
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-200">
               <div className="w-12 h-12 rounded-full bg-blue-100 overflow-hidden flex-shrink-0">
                 <img

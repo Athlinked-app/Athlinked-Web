@@ -80,6 +80,28 @@ router.post(
   uploadToS3Middleware,
   clipsController.createClip
 );
+/**
+ * @swagger
+ * /api/clips/{clipId}:
+ *   get:
+ *     summary: Get a single clip by ID
+ *     description: Retrieve a single clip by ID (requires auth for shared links)
+ *     tags: [Clips]
+ *     security: []
+ *     parameters:
+ *       - in: path
+ *         name: clipId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Clip ID (UUID)
+ *     responses:
+ *       200:
+ *         description: Clip retrieved successfully
+ *       404:
+ *         description: Clip not found
+ */
+router.get('/:clipId', optionalAuth, clipsController.getClipById);
 
 /**
  * @swagger

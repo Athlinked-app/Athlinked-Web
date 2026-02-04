@@ -57,6 +57,7 @@ export default function ManageResourcesPage() {
   const [currentUser, setCurrentUser] = useState<{
     full_name?: string;
     profile_url?: string;
+    user_type?: string;
   } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [resourceToDelete, setResourceToDelete] = useState<string | null>(null);
@@ -86,10 +87,7 @@ export default function ManageResourcesPage() {
 
         if (data.success && data.user) {
           setCurrentUserId(data.user.id);
-          setCurrentUser({
-            full_name: data.user.full_name,
-            profile_url: data.user.profile_url,
-          });
+          setCurrentUser(data.user);
         }
       } catch (error) {
         console.error('Error fetching current user ID:', error);
@@ -533,6 +531,28 @@ export default function ManageResourcesPage() {
     return profileUrl;
   };
 
+  // Resources page is only available for athletes
+  if (currentUser && currentUser.user_type !== 'athlete') {
+    return (
+      <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
+        <Header
+          userName={currentUser?.full_name}
+          userProfileUrl={getProfileUrl(currentUser?.profile_url)}
+        />
+        <main className="flex flex-1 w-full mt-5 overflow-hidden">
+          <div className="hidden md:flex px-6">
+            <NavigationBar activeItem="resource" />
+          </div>
+          <div className="flex-1 flex flex-col px-4 overflow-hidden min-w-0 items-center justify-center">
+            <p className="text-gray-600">
+              This page is only available for athlete
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
       <Header
@@ -546,7 +566,7 @@ export default function ManageResourcesPage() {
           <NavigationBar activeItem="resource" />
         </div>
 
-        <div className="flex-1 flex overflow-y-auto">
+        <div className="flex-1 flex overflow-y-auto px-2 md:px-0">
           <div className="flex-1 bg-white rounded-xl flex flex-col">
             {/* Tabs Navigation */}
             <div className="border-b border-gray-200">

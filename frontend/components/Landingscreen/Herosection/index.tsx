@@ -19,12 +19,12 @@ export default function Herosection() {
 
       <div className="flex items-center gap-4">
         <Link href="/login">
-          <button className="px-4 py-3 text-sm bg-[#CB9729] hover:bg-white hover:border-2 hover:border-[#CB9729] hover:text-[#CB9729] text-white font-bold rounded-md transition-colors">
+          <button className="px-4 py-3 text-sm bg-[#CB9729] hover:bg-white hover:border-2 hover:border-[#CB9729] hover:text-[#CB9729] text-white font-bold border-[#CB9729] rounded-md transition-colors">
             Sign in
           </button>
         </Link>
         <Link href="/signup">
-          <button className="px-4 py-3 text-sm bg-white  text-[#525252] hover:bg-[#CB9729] hover:text-white hover:border-0 font-bold rounded-md border-2 border-[#A3A3A3] transition-colors">
+          <button className="px-4 py-3 text-sm bg-white  text-[#525252] hover:bg-[#CB9729] hover:text-white hover:border-2 font-bold rounded-md border-2 hover:border-[#CB9729] border-[#A3A3A3] transition-colors">
             Sign up
           </button>
         </Link>

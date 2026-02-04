@@ -86,6 +86,37 @@ async function getPostsFeed(req, res) {
   }
 }
 
+async function getPostById(req, res) {
+  try {
+    const { postId } = req.params;
+    const viewerUserId = req.user?.id || null;
+
+    // REQUIRE AUTHENTICATION FOR VIEWING INDIVIDUAL POSTS
+    if (!viewerUserId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
+        requiresAuth: true
+      });
+    }
+
+    const result = await postsService.getPostByIdService(postId, viewerUserId);
+    if (!result.success || !result.post) {
+      return res.status(404).json({
+        success: false,
+        message: 'Post not found',
+      });
+    }
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Get post by id controller error:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Internal server error',
+    });
+  }
+}
+
 async function checkLikeStatus(req, res) {
   try {
     const postId = req.params.postId;
@@ -469,6 +500,7 @@ async function getSavedPosts(req, res) {
 module.exports = {
   createPost,
   getPostsFeed,
+  getPostById,
   checkLikeStatus,
   likePost,
   unlikePost,

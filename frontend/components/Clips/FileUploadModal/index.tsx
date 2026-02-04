@@ -108,7 +108,7 @@ export default function FileUploadModal({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+        className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 md:p-0"
         onClick={handleClose}
       >
         {/* Modal */}
@@ -169,7 +169,7 @@ export default function FileUploadModal({
                     onClick={handleBrowseClick}
                   >
                     <div className="text-4xl mb-3">🏔️</div>
-                    <p className="text-base font-medium text-gray-700 mb-1">
+                    <p className="text-sm md:text-base font-medium text-gray-700 mb-1">
                       Drag and drop your files
                     </p>
                     <p className="text-xs text-gray-500 mb-3">

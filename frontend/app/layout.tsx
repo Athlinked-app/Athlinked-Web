@@ -50,7 +50,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={manrope.className}>
-        <GoogleOAuthWrapper>{children}</GoogleOAuthWrapper>
+        <GoogleOAuthWrapper>
+          <AuthProvider>{children}</AuthProvider>
+        </GoogleOAuthWrapper>
       </body>
     </html>
   );

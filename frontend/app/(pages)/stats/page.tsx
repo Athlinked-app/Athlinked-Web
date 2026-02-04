@@ -59,6 +59,7 @@ export default function StatsPage() {
   const [activeSport, setActiveSport] = useState('football');
   const [userData, setUserData] = useState<UserData | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [showAddStatsModal, setShowAddStatsModal] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -142,6 +143,7 @@ export default function StatsPage() {
           return;
         }
 
+        setCurrentUser(initialData.user);
         userId = initialData.user.id;
         setUserId(userId);
 
@@ -602,7 +604,6 @@ export default function StatsPage() {
     return stat.value + (stat.unit ? ` ${stat.unit}` : '');
   };
 
-  // Get raw value for a field (without unit) - used for editing
   const _getRawValueForField = (
     profile: UserSportProfile,
     fieldLabel: string
@@ -612,7 +613,6 @@ export default function StatsPage() {
     return stat.value;
   };
 
-  // Handle edit profile
   const handleEditProfile = async (profile: UserSportProfile, year: string) => {
     setEditingProfile(profile);
     setEditingYear(year);
@@ -751,8 +751,33 @@ export default function StatsPage() {
     );
   }
 
+  // Stats page is only available for athletes
+  if (currentUser && currentUser.user_type !== 'athlete') {
+    return (
+      <div className="h-screen bg-[#D4D4D4] flex flex-col overflow-hidden">
+        <Header
+          userName={currentUser?.full_name}
+          userProfileUrl={getProfileUrl(currentUser?.profile_url)}
+        />
+        <main className="flex flex-1 w-full mt-5 overflow-hidden">
+          <div className="hidden md:flex px-6">
+            <NavigationBar
+              activeItem="stats"
+              userName={currentUser?.full_name || ''}
+            />
+          </div>
+          <div className="flex-1 flex flex-col px-4 overflow-hidden min-w-0 items-center justify-center">
+            <p className="text-gray-600">
+              This page is only available for athlete
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col min-h-screen bg-gray-200">
+    <div className="flex flex-col min-h-screen bg-gray-200  md:pb-0">
       {/* Header Component */}
       <Header
         userName={userData?.full_name}
@@ -760,7 +785,7 @@ export default function StatsPage() {
       />
 
       {/* Content Area with Navigation and Main Content */}
-      <div className="flex flex-1 overflow-hidden mt-5 overflow-hidden ">
+      <div className="flex flex-1 overflow-hidden md:mt-5 overflow-hidden ">
         {/* Navigation Sidebar */}
         <div className="hidden md:flex px-3 ">
           <NavigationBar
@@ -770,8 +795,8 @@ export default function StatsPage() {
         </div>
         {/* Main Content Area */}
 
-        <div className="flex-1 flex flex-col pr-3 gap-4 overflow-hidden min-w-0">
-          <div className="bg-[#CB9729] rounded-lg p-5 flex items-center justify-between shadow-sm">
+        <div className="flex-1 flex flex-col md:pr-3 gap-4 overflow-hidden min-w-0 ">
+          <div className="bg-[#CB9729]  md:rounded-lg p-3 md:p-5 flex items-center justify-between shadow-sm">
             <div className="flex items-center gap-6">
               <div className="w-24 h-24 rounded-full bg-white overflow-hidden border-2 border-white shadow-md flex items-center justify-center">
                 {getProfileUrl(userData?.profile_url) ? (
@@ -787,7 +812,7 @@ export default function StatsPage() {
                 )}
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white mb-1">
+                <h1 className="text-xl md:text-3xl font-bold text-white mb-1">
                   {displayName}
                 </h1>
                 <p className="text-white text-base">
@@ -798,7 +823,7 @@ export default function StatsPage() {
               </div>
             </div>
             <div className="text-white mr-44">
-              <div className="grid grid-cols-2 gap-x-32 gap-y-2 text-lg font-semibold">
+              <div className="grid grid-cols-2  gap-x-20 md:gap-x-32 gap-y-2 text-sm md:text-lg font-semibold">
                 {athleticPerformance?.height ? (
                   <div>Height: {athleticPerformance.height}</div>
                 ) : (
@@ -822,7 +847,7 @@ export default function StatsPage() {
               </div>
             </div>
           </div>
-          <div className="flex-1 flex flex-col bg-white overflow-auto rounded-lg">
+          <div className="flex-1 flex flex-col bg-white overflow-auto rounded-lg ">
             <main className="flex-1 p-6 bg-white">
               {/* Sport Tabs */}
               <div className="flex mb-6 border-b border-gray-200">
@@ -851,11 +876,11 @@ export default function StatsPage() {
               {/* Football Stats Section */}
 
               {/* Action Bar */}
-              <div className="flex items-center gap-4">
-                <h2 className="text-lg font-medium text-black mb-4">
+              <div className="flex items-center gap-4 mb-4">
+                <h2 className="text-lg font-medium  text-black w-37.5 flex-shrink-0">
                   {getSportDisplayName(activeSport)} Stats
                 </h2>
-                <div className="flex-1 relative">
+                <div className="flex-1 relative hidden md:block">
                   <Search
                     className="absolute left-3 top-1/2 transform -translate-y-1/2 text-black"
                     size={20}
@@ -866,11 +891,11 @@ export default function StatsPage() {
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-black"
                   />
                 </div>
-                <div className="relative">
+                <div className="relative flex-shrink-0">
                   <select
                     value={selectedPosition}
                     onChange={e => setSelectedPosition(e.target.value)}
-                    className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-yellow-500 min-w-[180px] text-black"
+                    className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-yellow-500 w-[180px] text-black"
                   >
                     <option value="" className="text-black">
                       All Positions
@@ -900,6 +925,41 @@ export default function StatsPage() {
                     size={20}
                   />
                 </div>
+
+                {/* Desktop Edit/Add in same row */}
+                <div className="hidden lg:flex items-center gap-3 flex-shrink-0">
+                  <button
+                    onClick={() => {
+                      if (currentProfiles.length > 0) {
+                        const firstProfile = currentProfiles[0];
+                        const year = getYearForProfile(firstProfile);
+                        handleEditProfile(firstProfile, year);
+                      } else {
+                        alert('No stats data to edit. Please add data first.');
+                      }
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-black text-sm"
+                  >
+                    <Edit size={16} />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingProfile(null);
+                      setEditingYear('');
+                      setFormData({ year: '', position: '' });
+                      setAvailableFields([]);
+                      setShowAddStatsModal(true);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-yellow-600 transition-colors text-sm"
+                  >
+                    <Plus size={16} />
+                    <span>Add Data</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-3 mb-4 flex gap-3 lg:hidden">
                 <button
                   onClick={() => {
                     // If there are profiles, allow editing the first one (or selected one)
@@ -911,7 +971,7 @@ export default function StatsPage() {
                       alert('No stats data to edit. Please add data first.');
                     }
                   }}
-                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-black"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 transition-colors text-black text-sm"
                 >
                   <Edit size={18} />
                   <span>Edit</span>
@@ -924,15 +984,15 @@ export default function StatsPage() {
                     setAvailableFields([]);
                     setShowAddStatsModal(true);
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-yellow-600 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-yellow-600 transition-colors text-sm"
                 >
                   <Plus size={18} />
                   <span>Add Data</span>
                 </button>
               </div>
 
-              {/* Statistics Table */}
-              <div className="overflow-x-auto">
+              {/* Statistics Table / Cards */}
+              <div className="overflow-x-auto mt-2">
                 {loadingStats ? (
                   <div className="p-6 text-center text-black">
                     Loading stats...
@@ -944,65 +1004,131 @@ export default function StatsPage() {
                     to add your first stats entry.
                   </div>
                 ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse">
-                      <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
-                            Year
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
-                            Position
-                          </th>
-                          {allFieldLabels.map(fieldLabel => (
-                            <th
-                              key={fieldLabel}
-                              className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap min-w-[150px]"
-                            >
-                              {fieldLabel}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {currentProfiles.map(profile => {
-                          const year = getYearForProfile(profile);
-                          return (
-                            <tr
-                              key={`${profile.id}-${year}`}
-                              className="hover:bg-gray-50 transition-colors"
-                            >
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
-                                {year || '—'}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
-                                <div className="flex items-center gap-2">
-                                  <span>{profile.position_name}</span>
-                                  <button
-                                    onClick={() =>
-                                      handleEditProfile(profile, year)
-                                    }
-                                    className="p-1 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
-                                    title="Edit this row"
-                                  >
-                                    <Edit size={14} className="text-gray-600" />
-                                  </button>
-                                </div>
-                              </td>
+                  <>
+                    {/* Mobile: vertical cards */}
+                    <div className="md:hidden space-y-4">
+                      {currentProfiles.map(profile => {
+                        const year = getYearForProfile(profile);
+                        return (
+                          <div
+                            key={`${profile.id}-${year}-mobile`}
+                            className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
+                          >
+                            <div className="flex items-center justify-between mb-3">
+                              <div>
+                                <p className="text-[11px] text-gray-500">
+                                  Year
+                                </p>
+                                <p className="text-sm font-semibold text-black">
+                                  {year || '—'}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-[11px] text-gray-500">
+                                  Position
+                                </p>
+                                <p className="text-sm font-semibold text-black">
+                                  {profile.position_name}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="border-t border-gray-200 pt-3 space-y-2">
                               {allFieldLabels.map(fieldLabel => (
-                                <td
+                                <div
                                   key={fieldLabel}
-                                  className="px-6 py-4 whitespace-nowrap text-sm text-black"
+                                  className="flex items-center justify-between text-sm"
                                 >
-                                  {getValueForField(profile, fieldLabel) || '—'}
-                                </td>
+                                  <span className="text-gray-600 mr-4">
+                                    {fieldLabel}
+                                  </span>
+                                  <span className="text-black font-medium text-right">
+                                    {getValueForField(profile, fieldLabel) ||
+                                      '—'}
+                                  </span>
+                                </div>
                               ))}
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                            </div>
+
+                            <div className="mt-3 flex justify-end">
+                              <button
+                                onClick={() => handleEditProfile(profile, year)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-gray-300 text-xs text-black hover:bg-gray-50 transition-colors"
+                              >
+                                <Edit size={14} />
+                                <span>Edit</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Desktop: table */}
+                    <div className="hidden md:block overflow-x-auto">
+                      <table className="w-full border-collapse">
+                        <thead className="bg-gray-50 border-b border-gray-200">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
+                              Year
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap">
+                              Position
+                            </th>
+                            {allFieldLabels.map(fieldLabel => (
+                              <th
+                                key={fieldLabel}
+                                className="px-6 py-3 text-left text-xs font-semibold text-black uppercase tracking-wider whitespace-nowrap min-w-[150px]"
+                              >
+                                {fieldLabel}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {currentProfiles.map(profile => {
+                            const year = getYearForProfile(profile);
+                            return (
+                              <tr
+                                key={`${profile.id}-${year}`}
+                                className="hover:bg-gray-50 transition-colors"
+                              >
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-black">
+                                  {year || '—'}
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-black">
+                                  <div className="flex items-center gap-2">
+                                    <span>{profile.position_name}</span>
+                                    <button
+                                      onClick={() =>
+                                        handleEditProfile(profile, year)
+                                      }
+                                      className="p-1 rounded hover:bg-gray-200 transition-colors flex-shrink-0"
+                                      title="Edit this row"
+                                    >
+                                      <Edit
+                                        size={14}
+                                        className="text-gray-600"
+                                      />
+                                    </button>
+                                  </div>
+                                </td>
+                                {allFieldLabels.map(fieldLabel => (
+                                  <td
+                                    key={fieldLabel}
+                                    className="px-6 py-4 whitespace-nowrap text-sm text-black"
+                                  >
+                                    {getValueForField(profile, fieldLabel) ||
+                                      '—'}
+                                  </td>
+                                ))}
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
                 )}
               </div>
             </main>
@@ -1012,7 +1138,7 @@ export default function StatsPage() {
 
       {/* Add Stats Modal */}
       {showAddStatsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-end">
+        <div className="fixed inset-0 z-50 flex items-center justify-end pb-16 md:pb-0">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => {
