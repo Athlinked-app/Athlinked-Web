@@ -6,9 +6,16 @@
         "appID": "34YA6LC5AU.com.athlinked",
         "paths": [
           "/forgot-password*",
+          "/reset-password*",
+          "/parent-signup*",
+          "/verify-email*",
           "/profile*",
           "/post*",
-          "/event*"
+          "/event*",
+          "/search*",
+          "/home*",
+          "/settings*",
+          "/notifications*"
         ]
       }
     ]
