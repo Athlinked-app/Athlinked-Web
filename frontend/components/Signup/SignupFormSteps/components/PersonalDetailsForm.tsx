@@ -237,19 +237,29 @@ export default function PersonalDetailsForm({
 
   const validateEmail = (email: string): string => {
     if (!email) {
-      return 'Email or username is required';
+      return selectedUserType === 'athlete' 
+        ? 'Email or username is required' 
+        : 'Email is required';
     }
 
-    // If it contains @, validate as email
-    if (email.includes('@')) {
+    // For coach and parent, always require valid email format
+    if (selectedUserType === 'coach' || selectedUserType === 'parent') {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email.trim())) {
         return 'Please enter a valid email address';
       }
     } else {
-      // Validate as username
-      if (email.trim().length < 6) {
-        return 'Username must be at least 6 characters';
+      // For athlete: If it contains @, validate as email, otherwise validate as username
+      if (email.includes('@')) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) {
+          return 'Please enter a valid email address';
+        }
+      } else {
+        // Validate as username
+        if (email.trim().length < 6) {
+          return 'Username must be at least 6 characters';
+        }
       }
     }
 
@@ -652,7 +662,7 @@ export default function PersonalDetailsForm({
         {!isGoogleUser && (
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email/Username
+              {selectedUserType === 'athlete' ? 'Email/Username' : 'Email'}
             </label>
             <div className="relative">
               <input
@@ -664,7 +674,9 @@ export default function PersonalDetailsForm({
                     ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300'
                 }`}
-                placeholder="Enter email or username (min 6 characters)"
+                placeholder={selectedUserType === 'athlete' 
+                  ? "Enter email or username (min 6 characters)" 
+                  : "Enter your email address"}
               />
               <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             </div>
