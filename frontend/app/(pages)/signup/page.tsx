@@ -314,7 +314,7 @@ function SignupContent() {
         });
 
         const data = await response.json();
-        
+
         console.log('Signup response:', {
           status: response.status,
           ok: response.ok,
@@ -322,7 +322,8 @@ function SignupContent() {
         });
 
         if (!response.ok || !data.success) {
-          const errorMsg = data.message || 'Failed to send OTP. Please try again.';
+          const errorMsg =
+            data.message || 'Failed to send OTP. Please try again.';
           console.log('Setting signup error:', errorMsg);
           setSignupError(errorMsg);
           setIsLoadingOTP(false);

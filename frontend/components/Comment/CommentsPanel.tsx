@@ -350,56 +350,58 @@ export default function CommentsPanel({
                               : getResourceUrl(reply.user_profile_url) ||
                                 reply.user_profile_url);
                           return (
-                          <div key={reply.id} className="flex gap-3">
-                            <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
-                              {replyAvatarUrl ? (
-                                <img
-                                  src={replyAvatarUrl}
-                                  alt={reply.username}
-                                  className="w-full h-full object-cover"
-                                  onError={e => {
-                                    e.currentTarget.style.display = 'none';
-                                    const fallback = e.currentTarget.nextElementSibling;
-                                    if (fallback instanceof HTMLElement) fallback.style.display = 'flex';
+                            <div key={reply.id} className="flex gap-3">
+                              <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
+                                {replyAvatarUrl ? (
+                                  <img
+                                    src={replyAvatarUrl}
+                                    alt={reply.username}
+                                    className="w-full h-full object-cover"
+                                    onError={e => {
+                                      e.currentTarget.style.display = 'none';
+                                      const fallback =
+                                        e.currentTarget.nextElementSibling;
+                                      if (fallback instanceof HTMLElement)
+                                        fallback.style.display = 'flex';
+                                    }}
+                                  />
+                                ) : null}
+                                <span
+                                  className="text-gray-600 font-semibold text-xs"
+                                  style={{
+                                    display: replyAvatarUrl ? 'none' : 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '100%',
+                                    height: '100%',
                                   }}
-                                />
-                              ) : null}
-                              <span
-                                className="text-gray-600 font-semibold text-xs"
-                                style={{
-                                  display: replyAvatarUrl ? 'none' : 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: '100%',
-                                  height: '100%',
-                                }}
-                              >
-                                {getInitials(reply.username)}
-                              </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="bg-gray-50 rounded-lg p-2">
-                                <div className="flex items-center gap-1 mb-1">
-                                  <p className="font-semibold text-xs text-gray-900">
-                                    {reply.username}
+                                >
+                                  {getInitials(reply.username)}
+                                </span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="bg-gray-50 rounded-lg p-2">
+                                  <div className="flex items-center gap-1 mb-1">
+                                    <p className="font-semibold text-xs text-gray-900">
+                                      {reply.username}
+                                    </p>
+                                    {reply.parent_username && (
+                                      <>
+                                        <span className="text-xs text-gray-500">
+                                          replying to
+                                        </span>
+                                        <p className="font-semibold text-xs text-[#CB9729]">
+                                          {reply.parent_username}
+                                        </p>
+                                      </>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-gray-700 break-words">
+                                    {reply.comment}
                                   </p>
-                                  {reply.parent_username && (
-                                    <>
-                                      <span className="text-xs text-gray-500">
-                                        replying to
-                                      </span>
-                                      <p className="font-semibold text-xs text-[#CB9729]">
-                                        {reply.parent_username}
-                                      </p>
-                                    </>
-                                  )}
                                 </div>
-                                <p className="text-xs text-gray-700 break-words">
-                                  {reply.comment}
-                                </p>
                               </div>
                             </div>
-                          </div>
                           );
                         })}
                       </div>

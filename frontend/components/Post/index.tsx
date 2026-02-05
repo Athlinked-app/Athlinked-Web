@@ -125,7 +125,7 @@ export default function Post({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showArticleModal, setShowArticleModal] = useState(false);
 
-    useEffect(() => {
+  useEffect(() => {
     setCommentCount(post.comment_count);
   }, [post.comment_count]);
 

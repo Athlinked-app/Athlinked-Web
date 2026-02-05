@@ -256,8 +256,6 @@ export default function PersonalDetailsForm({
     return '';
   };
 
-  
-
   const validatePassword = (password: string): string => {
     if (!password) {
       return 'Password is required';
@@ -372,7 +370,7 @@ export default function PersonalDetailsForm({
   const handleContinueClick = () => {
     // If there's a signup error from previous attempt, clear it first
     // User can try again with different email
-    
+
     // Only validate name if not a Google user
     const nameError = isGoogleUser ? '' : validateName(formData.fullName);
     const dobError = validateDOB(formData.dateOfBirth);
@@ -394,7 +392,13 @@ export default function PersonalDetailsForm({
       confirmPassword: confirmPasswordError,
     });
 
-    if (nameError || dobError || emailError || passwordError || confirmPasswordError) {
+    if (
+      nameError ||
+      dobError ||
+      emailError ||
+      passwordError ||
+      confirmPasswordError
+    ) {
       return;
     }
 
