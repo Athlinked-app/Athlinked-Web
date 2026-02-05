@@ -15,6 +15,7 @@ interface Clip {
   shares: number;
   commentCount: number;
   user_id?: string;
+  user_type?: string;
 }
 
 interface MySaveClipsProps {
@@ -68,6 +69,7 @@ export default function MySaveClips({
             shares: 0,
             commentCount: clip.comment_count || 0,
             user_id: clip.user_id ?? clip.userId ?? clip.user?.id,
+            user_type: clip.user_type || clip.user?.user_type,
           }));
           setClips(transformedClips);
         } else {
@@ -191,7 +193,10 @@ export default function MySaveClips({
                         {selectedClip.author}
                       </p>
                       <p className="text-sm text-gray-500">
-                        {selectedClip.timestamp}
+                        {selectedClip.user_type
+                          ? selectedClip.user_type.charAt(0).toUpperCase() +
+                            selectedClip.user_type.slice(1).toLowerCase()
+                          : 'Athlete'}
                       </p>
                     </div>
                   </div>

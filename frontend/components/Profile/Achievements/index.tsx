@@ -342,7 +342,7 @@ export default function Achievements({
                     {achievement.dateAwarded && (
                       <p className="text-sm text-gray-600 mb-1">
                         <span className="font-medium">Date Awarded:</span>{' '}
-                        {achievement.dateAwarded}
+                        {achievement.dateAwarded.split('T')[0]}
                       </p>
                     )}
                     {achievement.location && (

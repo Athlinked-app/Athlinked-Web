@@ -385,11 +385,11 @@ export default function NetworkPage() {
           <NavigationBar activeItem="network" />
         </div>
 
-        <div className="flex-1 flex gap-3 overflow-y-auto px-2 md:px-0">
-          <div className="flex-1 bg-white rounded-xl md:p-6">
+        <div className="flex-1 flex gap-3 overflow-hidden px-2 md:px-0">
+          <div className="flex-1 bg-white rounded-xl md:p-6 flex flex-col overflow-hidden">
             {/* Followers/Followings Section */}
-            <div className="mb-8">
-              <div className="flex border-b border-gray-200 mb-6">
+            <div className="flex flex-col flex-1 overflow-hidden">
+              <div className="flex border-b border-gray-200 mb-6 flex-shrink-0">
                 <button
                   onClick={() => setActiveTab('followers')}
                   className={`px-6 py-3 font-medium text-base relative ${
@@ -431,6 +431,7 @@ export default function NetworkPage() {
                 </button>
               </div>
 
+              <div className="flex-1 overflow-y-auto scrollbar-hide">
               {loading ? (
                 <div className="text-center py-8 text-black">Loading...</div>
               ) : activeTab === 'invitations' ? (
@@ -567,6 +568,7 @@ export default function NetworkPage() {
                   })}
                 </div>
               )}
+              </div>
             </div>
           </div>
 
