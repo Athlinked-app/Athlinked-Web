@@ -135,10 +135,15 @@ export default function Post({
             comments?: any[];
           }>(`/posts/${post.id}/comments`);
           if (data.success && data.comments) {
-            const parentComments = data.comments.filter(
-              (c: any) => !c.parent_comment_id
-            );
-            setCommentCount(parentComments.length);
+            // Count all comments including replies
+            let totalCount = data.comments.length;
+            // Also count nested replies
+            data.comments.forEach((c: any) => {
+              if (c.replies && Array.isArray(c.replies)) {
+                totalCount += c.replies.length;
+              }
+            });
+            setCommentCount(totalCount);
           } else {
             // Use fallback count if API doesn't return success
             setCommentCount(post.comment_count);
@@ -291,10 +296,15 @@ export default function Post({
           comments?: any[];
         }>(`/posts/${post.id}/comments`);
         if (data.success && data.comments) {
-          const parentComments = data.comments.filter(
-            (c: any) => !c.parent_comment_id
-          );
-          setCommentCount(parentComments.length);
+          // Count all comments including replies
+          let totalCount = data.comments.length;
+          // Also count nested replies
+          data.comments.forEach((c: any) => {
+            if (c.replies && Array.isArray(c.replies)) {
+              totalCount += c.replies.length;
+            }
+          });
+          setCommentCount(totalCount);
         }
       } catch (apiError: any) {
         // Silently handle errors - this is a non-critical feature
