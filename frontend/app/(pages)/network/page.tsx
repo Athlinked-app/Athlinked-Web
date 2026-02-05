@@ -432,29 +432,103 @@ export default function NetworkPage() {
               </div>
 
               <div className="flex-1 overflow-y-auto scrollbar-hide">
-              {loading ? (
-                <div className="text-center py-8 text-black">Loading...</div>
-              ) : activeTab === 'invitations' ? (
-                invitations.length === 0 ? (
+                {loading ? (
+                  <div className="text-center py-8 text-black">Loading...</div>
+                ) : activeTab === 'invitations' ? (
+                  invitations.length === 0 ? (
+                    <div className="text-center py-8 text-black">
+                      No pending invitations
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {invitations.map(request => {
+                        const profileUrl = getProfileUrl(request.profile_url);
+                        return (
+                          <div
+                            key={request.id}
+                            className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                          >
+                            <div
+                              className="flex items-center gap-3 cursor-pointer"
+                              onClick={() =>
+                                router.push(
+                                  `/profile?userId=${encodeURIComponent(
+                                    request.user_id
+                                  )}`
+                                )
+                              }
+                            >
+                              <div className="w-12 h-12 rounded-full bg-gray-300 overflow-hidden flex items-center justify-center">
+                                {profileUrl ? (
+                                  <img
+                                    src={profileUrl}
+                                    alt={request.full_name || 'User'}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <span className="text-black font-semibold text-sm">
+                                    {getInitials(request.full_name || 'User')}
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-medium text-black">
+                                  {request.full_name || 'User'}
+                                </div>
+                                <div className="text-sm text-black">
+                                  {request.user_type
+                                    ? request.user_type
+                                        .charAt(0)
+                                        .toUpperCase() +
+                                      request.user_type.slice(1).toLowerCase()
+                                    : 'User'}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() =>
+                                  handleAcceptInvitation(request.id)
+                                }
+                                className="px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-yellow-600 transition-colors font-medium text-sm"
+                              >
+                                Accept
+                              </button>
+                              <button
+                                onClick={() =>
+                                  handleRejectInvitation(request.id)
+                                }
+                                className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )
+                ) : currentList.length === 0 ? (
                   <div className="text-center py-8 text-black">
-                    No pending invitations
+                    No {activeTab === 'followers' ? 'followers' : 'followings'}{' '}
+                    yet
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {invitations.map(request => {
-                      const profileUrl = getProfileUrl(request.profile_url);
+                    {currentList.map(user => {
+                      const isFollowing = followStatuses[user.id] || false;
+                      const profileUrl = getProfileUrl(user.profile_url);
+
                       return (
                         <div
-                          key={request.id}
+                          key={user.id}
                           className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                         >
                           <div
                             className="flex items-center gap-3 cursor-pointer"
                             onClick={() =>
                               router.push(
-                                `/profile?userId=${encodeURIComponent(
-                                  request.user_id
-                                )}`
+                                `/profile?userId=${encodeURIComponent(user.id)}`
                               )
                             }
                           >
@@ -462,112 +536,44 @@ export default function NetworkPage() {
                               {profileUrl ? (
                                 <img
                                   src={profileUrl}
-                                  alt={request.full_name || 'User'}
+                                  alt={getDisplayName(user)}
                                   className="w-full h-full object-cover"
                                 />
                               ) : (
                                 <span className="text-black font-semibold text-sm">
-                                  {getInitials(request.full_name || 'User')}
+                                  {getInitials(user.full_name || 'User')}
                                 </span>
                               )}
                             </div>
                             <div>
                               <div className="font-medium text-black">
-                                {request.full_name || 'User'}
+                                {user.full_name || 'User'}
                               </div>
                               <div className="text-sm text-black">
-                                {request.user_type
-                                  ? request.user_type.charAt(0).toUpperCase() +
-                                    request.user_type.slice(1).toLowerCase()
+                                {user.user_type
+                                  ? user.user_type.charAt(0).toUpperCase() +
+                                    user.user_type.slice(1).toLowerCase()
                                   : 'User'}
                               </div>
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleAcceptInvitation(request.id)}
-                              className="px-4 py-2 bg-[#CB9729] text-white rounded-lg hover:bg-yellow-600 transition-colors font-medium text-sm"
-                            >
-                              Accept
-                            </button>
-                            <button
-                              onClick={() => handleRejectInvitation(request.id)}
-                              className="px-4 py-2 bg-gray-200 text-black rounded-lg hover:bg-gray-300 transition-colors font-medium text-sm"
-                            >
-                              Reject
-                            </button>
-                          </div>
+                          <button
+                            onClick={() =>
+                              handleFollowToggle(user.id, isFollowing)
+                            }
+                            className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                              isFollowing
+                                ? 'bg-gray-200 text-black hover:bg-gray-300'
+                                : 'bg-[#CB9729] text-white hover:bg-yellow-600'
+                            }`}
+                          >
+                            {isFollowing ? 'Following' : 'Follow'}
+                          </button>
                         </div>
                       );
                     })}
                   </div>
-                )
-              ) : currentList.length === 0 ? (
-                <div className="text-center py-8 text-black">
-                  No {activeTab === 'followers' ? 'followers' : 'followings'}{' '}
-                  yet
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {currentList.map(user => {
-                    const isFollowing = followStatuses[user.id] || false;
-                    const profileUrl = getProfileUrl(user.profile_url);
-
-                    return (
-                      <div
-                        key={user.id}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        <div
-                          className="flex items-center gap-3 cursor-pointer"
-                          onClick={() =>
-                            router.push(
-                              `/profile?userId=${encodeURIComponent(user.id)}`
-                            )
-                          }
-                        >
-                          <div className="w-12 h-12 rounded-full bg-gray-300 overflow-hidden flex items-center justify-center">
-                            {profileUrl ? (
-                              <img
-                                src={profileUrl}
-                                alt={getDisplayName(user)}
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <span className="text-black font-semibold text-sm">
-                                {getInitials(user.full_name || 'User')}
-                              </span>
-                            )}
-                          </div>
-                          <div>
-                            <div className="font-medium text-black">
-                              {user.full_name || 'User'}
-                            </div>
-                            <div className="text-sm text-black">
-                              {user.user_type
-                                ? user.user_type.charAt(0).toUpperCase() +
-                                  user.user_type.slice(1).toLowerCase()
-                                : 'User'}
-                            </div>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() =>
-                            handleFollowToggle(user.id, isFollowing)
-                          }
-                          className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                            isFollowing
-                              ? 'bg-gray-200 text-black hover:bg-gray-300'
-                              : 'bg-[#CB9729] text-white hover:bg-yellow-600'
-                          }`}
-                        >
-                          {isFollowing ? 'Following' : 'Follow'}
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                )}
               </div>
             </div>
           </div>

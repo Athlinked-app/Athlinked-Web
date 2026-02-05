@@ -22,118 +22,125 @@ class GoogleAuthController {
           message: 'Google ID and email are required',
         });
       }
+let user = await googleAuthService.findUserByGoogleId(google_id);
 
-      let user = await googleAuthService.findUserByGoogleId(google_id);
+if (user) {
+  if (!user.user_type) {
+    // User exists but no user_type set
+    if (flow === 'login') {
+      // LOGIN: User exists but incomplete profile
+      return res.json({
+        success: false,
+        message:
+          'Your account setup is incomplete. Please complete signup first.',
+      });
+    }
+    // SIGNUP: Continue with signup flow
+    return res.json({
+      success: true,
+      needs_user_type: true,
+      google_id: user.google_id,
+      email: user.email,
+      full_name: user.full_name,
+      profile_picture: user.profile_picture,
+    });
+  }
 
-      if (user) {
-        if (!user.user_type) {
-          // User exists but no user_type set
-          if (flow === 'login') {
-            // LOGIN: User exists but incomplete profile
-            return res.json({
-              success: false,
-              message:
-                'Your account setup is incomplete. Please complete signup first.',
-            });
-          }
-          // SIGNUP: Continue with signup flow
-          return res.json({
-            success: true,
-            needs_user_type: true,
-            google_id: user.google_id,
-            email: user.email,
-            full_name: user.full_name,
-            profile_picture: user.profile_picture,
-          });
-        }
+  // NEW: User exists with complete profile
+  // If on signup page, reject with error
+  if (flow === 'signup') {
+    return res.json({
+      success: false,
+      message: 'An account with this email already exists. Please login instead.',
+    });
+  }
 
-        // User exists with complete profile - log them in
-        const { accessToken, refreshToken } =
-          await refreshTokensService.createTokenPair(
-            {
-              id: user.id,
-              email: user.email,
-              username: user.username,
-              user_type: user.user_type,
-            },
-            req.headers['user-agent'],
-            req.ip
-          );
+  // LOGIN: User exists with complete profile - log them in
+  const { accessToken, refreshToken } =
+    await refreshTokensService.createTokenPair(
+      {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        user_type: user.user_type,
+      },
+      req.headers['user-agent'],
+      req.ip
+    );
 
-        return res.json({
-          success: true,
-          needs_user_type: false,
-          token: accessToken,
-          accessToken,
-          refreshToken,
-          user: {
-            id: user.id,
-            email: user.email,
-            full_name: user.full_name,
-            user_type: user.user_type,
-            profile_picture: user.profile_picture,
-            google_id: user.google_id,
-          },
-        });
-      }
-
+  return res.json({
+    success: true,
+    needs_user_type: false,
+    token: accessToken,
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      user_type: user.user_type,
+      profile_picture: user.profile_picture,
+      google_id: user.google_id,
+    },
+  });
+}
       // User not found by google_id, check by email
-      const existingUser = await googleAuthService.findUserByEmail(email);
+     // User not found by google_id, check by email
+const existingUser = await googleAuthService.findUserByEmail(email);
 
-      if (existingUser) {
-        user = await googleAuthService.linkGoogleAccount(
-          existingUser.id,
-          google_id,
-          profile_picture
-        );
+if (existingUser) {
+  // NEW: If flow is NOT 'login', it means user is on signup page
+  // So we should NOT allow them to link account - show error instead
+  if (flow !== 'login') {
+    return res.json({
+      success: false,
+      message: 'An account with this email already exists. Please login instead.',
+    });
+  }
 
-        if (!user.user_type) {
-          if (flow === 'login') {
-            return res.json({
-              success: false,
-              message:
-                'Your account setup is incomplete. Please complete signup first.',
-            });
-          }
-          return res.json({
-            success: true,
-            needs_user_type: true,
-            google_id: user.google_id,
-            email: user.email,
-            full_name: user.full_name,
-            profile_picture: user.profile_picture,
-          });
-        }
+  // LOGIN flow: Link Google account to existing user
+  user = await googleAuthService.linkGoogleAccount(
+    existingUser.id,
+    google_id,
+    profile_picture
+  );
 
-        const { accessToken, refreshToken } =
-          await refreshTokensService.createTokenPair(
-            {
-              id: user.id,
-              email: user.email,
-              username: user.username,
-              user_type: user.user_type,
-            },
-            req.headers['user-agent'],
-            req.ip
-          );
+  if (!user.user_type) {
+    return res.json({
+      success: false,
+      message:
+        'Your account setup is incomplete. Please complete signup first.',
+    });
+  }
 
-        return res.json({
-          success: true,
-          needs_user_type: false,
-          token: accessToken,
-          accessToken,
-          refreshToken,
-          user: {
-            id: user.id,
-            email: user.email,
-            full_name: user.full_name,
-            user_type: user.user_type,
-            profile_picture: user.profile_picture,
-            google_id: user.google_id,
-          },
-        });
-      }
+  const { accessToken, refreshToken } =
+    await refreshTokensService.createTokenPair(
+      {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        user_type: user.user_type,
+      },
+      req.headers['user-agent'],
+      req.ip
+    );
 
+  return res.json({
+    success: true,
+    needs_user_type: false,
+    token: accessToken,
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.id,
+      email: user.email,
+      full_name: user.full_name,
+      user_type: user.user_type,
+      profile_picture: user.profile_picture,
+      google_id: user.google_id,
+    },
+  });
+}
       //   NEW: User doesn't exist at all
      //   NEW: User doesn't exist at all
 if (flow === 'login') {

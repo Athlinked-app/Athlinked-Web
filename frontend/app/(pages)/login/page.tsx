@@ -161,27 +161,28 @@ function LoginPageContent() {
 
       const data = await response.json();
       console.log('Login response:', data); // Debug log
-
       if (!data.success) {
-        // Check if account was recently deleted
+        // Check if account was deleted
         if (
-          data.message === 'ACCOUNT_DELETED_RECENTLY' ||
-          data.error?.includes('deleted recently')
+          data.message === 'ACCOUNT_DELETED' ||
+          data.error?.includes('deleted')
         ) {
           setShowDeletedAccountToast(true);
           setLoading(false);
-          // Auto-hide toast after 5 seconds
           setTimeout(() => {
             setShowDeletedAccountToast(false);
           }, 5000);
           return;
         }
 
-        // Check if password was changed recently (show toast in addition to error message)
-        console.log(
-          'passwordChangedRecently flag:',
-          data.passwordChangedRecently
-        ); // Debug log
+        // Check if account doesn't exist (NEW)
+        if (data.message === 'ACCOUNT_NOT_FOUND') {
+          setError(
+            'No account found with this email/username. Please sign up to create an account.'
+          );
+          setLoading(false);
+          return;
+        }
 
         // Always show the error message
         setError(
@@ -193,7 +194,6 @@ function LoginPageContent() {
         if (data.passwordChangedRecently === true) {
           console.log('Setting password changed toast to true');
           setShowPasswordChangedToast(true);
-          // Auto-hide toast after 7 seconds
           setTimeout(() => {
             setShowPasswordChangedToast(false);
           }, 7000);

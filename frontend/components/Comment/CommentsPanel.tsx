@@ -274,13 +274,13 @@ export default function CommentsPanel({
                   <div className="flex gap-3 ">
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
                       {comment.user_profile_url &&
-                        comment.user_profile_url.trim() !== '' ? (
+                      comment.user_profile_url.trim() !== '' ? (
                         <img
                           src={
                             comment.user_profile_url.startsWith('http')
                               ? comment.user_profile_url
                               : getResourceUrl(comment.user_profile_url) ||
-                              comment.user_profile_url
+                                comment.user_profile_url
                           }
                           alt={comment.username}
                           className="w-full h-full object-cover "
@@ -330,7 +330,7 @@ export default function CommentsPanel({
                             (reply.user_profile_url.startsWith('http')
                               ? reply.user_profile_url
                               : getResourceUrl(reply.user_profile_url) ||
-                              reply.user_profile_url);
+                                reply.user_profile_url);
                           return (
                             <div key={reply.id} className="flex gap-3">
                               <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
@@ -544,8 +544,7 @@ export default function CommentsPanel({
                     if (!symbol) return;
                     setCommentText(prev => `${prev}${symbol}`);
                   }}
-                  onClickOutside={() => {
-                  }}
+                  onClickOutside={() => {}}
                   theme="light"
                 />
               </div>
@@ -555,7 +554,8 @@ export default function CommentsPanel({
             type="button"
             onClick={() => setShowEmojiPicker(prev => !prev)}
             className="p-2 bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors shrink-0"
-            aria-label="Toggle emoji picker"  >
+            aria-label="Toggle emoji picker"
+          >
             <Smile className="w-5 h-5" />
           </button>
           <button
@@ -563,7 +563,8 @@ export default function CommentsPanel({
             onClick={e => handleAddComment(e)}
             disabled={!commentText.trim() || isLoading}
             className="p-2 bg-[#CB9729] text-white rounded-full hover:bg-[#b78322] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-            aria-label="Send comment">
+            aria-label="Send comment"
+          >
             <Send className="w-5 h-5" />
           </button>
         </div>
