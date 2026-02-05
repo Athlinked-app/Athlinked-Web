@@ -81,14 +81,20 @@ export default function ParentDetailsForm({
 
           // Check if parent email is already registered as athlete
           try {
-            const data = await apiGet(`/signup/user/${encodeURIComponent(email)}`);
+            const data = await apiGet(
+              `/signup/user/${encodeURIComponent(email)}`
+            );
             if (data && data.user) {
               if (data.user.user_type === 'athlete') {
-                setParentEmailError('This email is registered as an athlete and cannot be used as a parent email');
+                setParentEmailError(
+                  'This email is registered as an athlete and cannot be used as a parent email'
+                );
                 return;
               }
               if (data.user.user_type === 'parent') {
-                setParentEmailError('This email is already registered as a parent');
+                setParentEmailError(
+                  'This email is already registered as a parent'
+                );
                 return;
               }
               setParentEmailError('This email is already registered');
@@ -97,7 +103,9 @@ export default function ParentDetailsForm({
           } catch (err: any) {
             if (err.status !== 404) {
               console.error('Error validating parent email:', err);
-              setParentEmailError('Unable to validate email. Please try again.');
+              setParentEmailError(
+                'Unable to validate email. Please try again.'
+              );
               return;
             }
             // 404 means email not found, which is good

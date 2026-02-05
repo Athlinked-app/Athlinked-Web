@@ -341,8 +341,10 @@ export default function CommentsPanel({
                                     className="w-full h-full object-cover"
                                     onError={e => {
                                       e.currentTarget.style.display = 'none';
-                                      const fallback = e.currentTarget.nextElementSibling;
-                                      if (fallback instanceof HTMLElement) fallback.style.display = 'flex';
+                                      const fallback =
+                                        e.currentTarget.nextElementSibling;
+                                      if (fallback instanceof HTMLElement)
+                                        fallback.style.display = 'flex';
                                     }}
                                   />
                                 ) : null}
