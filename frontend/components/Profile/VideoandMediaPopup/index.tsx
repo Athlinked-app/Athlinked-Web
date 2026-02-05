@@ -41,6 +41,7 @@ export default function VideoAndMediaPopup({
     showVerifiedMediaProfileDropdown,
     setShowVerifiedMediaProfileDropdown,
   ] = useState(false);
+  const [linkError, setLinkError] = useState('');
 
   const videoStatusRef = useRef<HTMLDivElement>(null);
   const verifiedMediaProfileRef = useRef<HTMLDivElement>(null);
@@ -88,8 +89,22 @@ export default function VideoAndMediaPopup({
       return; // Don't save if required fields are empty
     }
 
+    // Validate URL starts with http:// or https://
+    const trimmedLink = highlightVideoLink.trim();
+    if (
+      !trimmedLink.startsWith('http://') &&
+      !trimmedLink.startsWith('https://')
+    ) {
+      setLinkError("The URL doesn't exist");
+      return;
+    }
+    setLinkError('');
+
+    // Use trimmed link for saving
+    const validLink = trimmedLink;
+
     onSave({
-      highlightVideoLink,
+      highlightVideoLink: validLink,
       videoStatus,
       verifiedMediaProfile,
     });
@@ -100,7 +115,7 @@ export default function VideoAndMediaPopup({
     onClose();
   };
 
-  // Check if all required fields are filled
+  // Check if all required fields are filled (URL validation happens on save)
   const isFormValid =
     highlightVideoLink.trim() && videoStatus && verifiedMediaProfile;
 
@@ -193,13 +208,23 @@ export default function VideoAndMediaPopup({
             <input
               type="url"
               value={highlightVideoLink}
-              onChange={e => setHighlightVideoLink(e.target.value)}
+              onChange={e => {
+                setHighlightVideoLink(e.target.value);
+                setLinkError('');
+              }}
               placeholder="https://youtube.com/watch?v=..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900"
+              className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CB9729] text-gray-900 ${
+                linkError ? 'border-red-500' : 'border-gray-300'
+              }`}
             />
-            <p className="mt-1 text-xs text-gray-500">
-              Enter a YouTube, HUDL, or Vimeo link to your highlight video
-            </p>
+            {linkError ? (
+              <p className="mt-1 text-xs text-red-500">{linkError}</p>
+            ) : (
+              <p className="mt-1 text-xs text-gray-500">
+                Enter a YouTube, HUDL, or Vimeo link (must start with http:// or
+                https://)
+              </p>
+            )}
           </div>
 
           {/* Video Status */}

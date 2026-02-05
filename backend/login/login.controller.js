@@ -27,8 +27,16 @@ async function login(req, res) {
       return res.status(403).json({
         success: false,
         message: 'ACCOUNT_DELETED',
-        error:
-          'This account has been deleted. Please contact support if you believe this is an error.',
+        error: 'This account has been deleted.',
+      });
+    }
+
+    // Check if account doesn't exist
+    if (error.message === 'ACCOUNT_NOT_FOUND') {
+      return res.status(404).json({
+        success: false,
+        message: 'ACCOUNT_NOT_FOUND',
+        error: 'No account found with this email/username. Please sign up.',
       });
     }
 

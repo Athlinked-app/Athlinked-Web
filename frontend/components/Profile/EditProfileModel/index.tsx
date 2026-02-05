@@ -553,7 +553,6 @@ export default function EditProfileModal({
       .slice(0, 2);
   };
 
-
   const calculateCompletion = () => {
     let completed = 0;
     const isAthlete = userData?.user_type === 'athlete';

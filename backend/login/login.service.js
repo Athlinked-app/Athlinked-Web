@@ -27,79 +27,76 @@ async function loginService(emailOrUsername, password, req = null) {
 
     const normalizedInput = emailOrUsername.toLowerCase().trim();
     
-    // SECURITY: Check if account was deleted FIRST (before checking users table)
-    // This prevents login even if user somehow still exists in users table
-    const deletedAccount = await deletedAccountsModel.findDeletedAccountByEmailOrUsername(normalizedInput);
-    
-    if (deletedAccount) {
-      // Account was deleted - reject login regardless of when it was deleted
-      throw new Error('ACCOUNT_DELETED');
-    }
-
+    // STEP 1: Check users table ONLY (fast, single query)
     let user;
-
-    // Check if input is email or username
     if (isEmail(normalizedInput)) {
       user = await loginModel.findByEmail(normalizedInput);
     } else {
       user = await loginModel.findByUsername(normalizedInput);
     }
 
-    // If user not found, return generic error (don't reveal if account exists)
-    if (!user) {
-      throw new Error('Invalid email/username or password');
-    }
+    // STEP 2: If user EXISTS in users table → Login directly (ignore deleted_accounts)
+    if (user) {
+      // Compare password
+      const isPasswordValid = await comparePassword(password, user.password);
 
-    // Compare provided password with hashed password
-    const isPasswordValid = await comparePassword(password, user.password);
+      if (!isPasswordValid) {
+        // Check old password
+        const oldPasswordData = getOldPassword(user.id);
+        let isOldPassword = false;
 
-    if (!isPasswordValid) {
-      // Check if the provided password matches the old password hash
-      const oldPasswordData = getOldPassword(user.id);
-      let isOldPassword = false;
+        if (oldPasswordData) {
+          isOldPassword = await comparePassword(
+            password,
+            oldPasswordData.oldPasswordHash
+          );
+        }
 
-      if (oldPasswordData) {
-        isOldPassword = await comparePassword(
-          password,
-          oldPasswordData.oldPasswordHash
+        const error = new Error('Invalid email/username or password');
+        if (isOldPassword) {
+          error.passwordChangedRecently = true;
+        }
+        throw error;
+      }
+
+      // Success - generate tokens
+      const { password: _, ...userWithoutPassword } = user;
+
+      const userData = {
+        id: userWithoutPassword.id,
+        email: userWithoutPassword.email,
+        username: userWithoutPassword.username || null,
+        full_name: userWithoutPassword.full_name,
+        user_type: userWithoutPassword.user_type,
+        primary_sport: userWithoutPassword.primary_sport || null,
+      };
+
+      const { accessToken, refreshToken } =
+        await refreshTokensService.createTokenPair(
+          userData,
+          req?.headers['user-agent'] || null,
+          req?.ip || null
         );
-      }
 
-      // Create error with flag indicating if old password was used
-      const error = new Error('Invalid email/username or password');
-      if (isOldPassword) {
-        error.passwordChangedRecently = true;
-      }
-      throw error;
+      return {
+        success: true,
+        message: 'Login successful',
+        accessToken,
+        refreshToken,
+        user: userData,
+      };
     }
 
-    // Return user data without password
-    const { password: _, ...userWithoutPassword } = user;
+    // STEP 3: User NOT in users table → Check if account was deleted
+    const deletedAccount = await deletedAccountsModel.findDeletedAccountByEmailOrUsername(normalizedInput);
+    
+    if (deletedAccount) {
+      throw new Error('ACCOUNT_DELETED');
+    }
 
-    const userData = {
-      id: userWithoutPassword.id,
-      email: userWithoutPassword.email,
-      username: userWithoutPassword.username || null,
-      full_name: userWithoutPassword.full_name,
-      user_type: userWithoutPassword.user_type,
-      primary_sport: userWithoutPassword.primary_sport || null,
-    };
+    // STEP 4: Not found anywhere → Need to sign up
+    throw new Error('ACCOUNT_NOT_FOUND');
 
-    // Generate access and refresh tokens
-    const { accessToken, refreshToken } =
-      await refreshTokensService.createTokenPair(
-        userData,
-        req?.headers['user-agent'] || null,
-        req?.ip || null
-      );
-
-    return {
-      success: true,
-      message: 'Login successful',
-      accessToken,
-      refreshToken,
-      user: userData,
-    };
   } catch (error) {
     console.error('Login service error:', error.message);
     throw error;

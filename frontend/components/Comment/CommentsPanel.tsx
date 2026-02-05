@@ -1,5 +1,4 @@
 'use client';
-
 import { useState, useEffect, useRef } from 'react';
 import { X, Send, Smile } from 'lucide-react';
 import Picker from '@emoji-mart/react';
@@ -7,7 +6,6 @@ import data from '@emoji-mart/data';
 import type { PostData } from '../Post';
 import MentionInputField from '../Mention/MentionInputField';
 import { getResourceUrl } from '@/utils/config';
-
 export interface CommentData {
   id: string;
   post_id: string;
@@ -19,7 +17,6 @@ export interface CommentData {
   parent_username?: string | null;
   replies?: CommentData[];
 }
-
 interface CommentsPanelProps {
   post: PostData;
   currentUserProfileUrl?: string;
@@ -28,7 +25,6 @@ interface CommentsPanelProps {
   onClose: () => void;
   onCommentAdded?: () => void;
 }
-
 export default function CommentsPanel({
   post,
   currentUserProfileUrl,
@@ -68,8 +64,6 @@ export default function CommentsPanel({
       commentsEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [comments]);
-
-  // Close emoji picker when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -100,7 +94,6 @@ export default function CommentsPanel({
         comments?: CommentData[];
       }>(`/posts/${post.id}/comments`);
       if (data.success && data.comments) {
-        // Backend already returns comments with nested replies
         setComments(data.comments);
       }
     } catch (error) {
@@ -109,13 +102,10 @@ export default function CommentsPanel({
   };
 
   const organizeComments = (allComments: CommentData[]) => {
-    // Backend already returns comments with nested replies structure
-    // Just return them as-is
     return allComments;
   };
 
   const getRepliesCount = (commentId: string) => {
-    // Find the comment and count its nested replies
     const comment = comments.find(c => c.id === commentId);
     return comment?.replies?.length || 0;
   };
@@ -191,8 +181,6 @@ export default function CommentsPanel({
       const requestBody: any = {
         comment: replyText.trim(),
       };
-
-      // Add user_id if available (some backends might need it)
       if (currentUserId) {
         requestBody.user_id = currentUserId;
       }
@@ -255,7 +243,6 @@ export default function CommentsPanel({
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-white">
-      {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-200 shrink-0">
         <h2 className="text-xl font-semibold text-gray-900">Comments</h2>
         <button
@@ -267,8 +254,6 @@ export default function CommentsPanel({
           <X className="w-5 h-5 text-gray-600" />
         </button>
       </div>
-
-      {/* Comments List */}
       <div
         className="flex-1 overflow-y-auto p-4"
         style={{ scrollbarWidth: 'thin' }}
@@ -286,7 +271,6 @@ export default function CommentsPanel({
 
               return (
                 <div key={comment.id}>
-                  {/* Parent Comment */}
                   <div className="flex gap-3 ">
                     <div className="w-8 h-8 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
                       {comment.user_profile_url &&
@@ -336,8 +320,6 @@ export default function CommentsPanel({
                       </div>
                     </div>
                   </div>
-
-                  {/* Replies */}
                   {isShowingReplies &&
                     comment.replies &&
                     comment.replies.length > 0 && (
@@ -350,62 +332,62 @@ export default function CommentsPanel({
                               : getResourceUrl(reply.user_profile_url) ||
                                 reply.user_profile_url);
                           return (
-                          <div key={reply.id} className="flex gap-3">
-                            <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
-                              {replyAvatarUrl ? (
-                                <img
-                                  src={replyAvatarUrl}
-                                  alt={reply.username}
-                                  className="w-full h-full object-cover"
-                                  onError={e => {
-                                    e.currentTarget.style.display = 'none';
-                                    const fallback = e.currentTarget.nextElementSibling;
-                                    if (fallback instanceof HTMLElement) fallback.style.display = 'flex';
+                            <div key={reply.id} className="flex gap-3">
+                              <div className="w-7 h-7 rounded-full overflow-hidden bg-gray-200 border border-gray-200 shrink-0 flex items-center justify-center">
+                                {replyAvatarUrl ? (
+                                  <img
+                                    src={replyAvatarUrl}
+                                    alt={reply.username}
+                                    className="w-full h-full object-cover"
+                                    onError={e => {
+                                      e.currentTarget.style.display = 'none';
+                                      const fallback =
+                                        e.currentTarget.nextElementSibling;
+                                      if (fallback instanceof HTMLElement)
+                                        fallback.style.display = 'flex';
+                                    }}
+                                  />
+                                ) : null}
+                                <span
+                                  className="text-gray-600 font-semibold text-xs"
+                                  style={{
+                                    display: replyAvatarUrl ? 'none' : 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '100%',
+                                    height: '100%',
                                   }}
-                                />
-                              ) : null}
-                              <span
-                                className="text-gray-600 font-semibold text-xs"
-                                style={{
-                                  display: replyAvatarUrl ? 'none' : 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: '100%',
-                                  height: '100%',
-                                }}
-                              >
-                                {getInitials(reply.username)}
-                              </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="bg-gray-50 rounded-lg p-2">
-                                <div className="flex items-center gap-1 mb-1">
-                                  <p className="font-semibold text-xs text-gray-900">
-                                    {reply.username}
+                                >
+                                  {getInitials(reply.username)}
+                                </span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="bg-gray-50 rounded-lg p-2">
+                                  <div className="flex items-center gap-1 mb-1">
+                                    <p className="font-semibold text-xs text-gray-900">
+                                      {reply.username}
+                                    </p>
+                                    {reply.parent_username && (
+                                      <>
+                                        <span className="text-xs text-gray-500">
+                                          replying to
+                                        </span>
+                                        <p className="font-semibold text-xs text-[#CB9729]">
+                                          {reply.parent_username}
+                                        </p>
+                                      </>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-gray-700 break-words">
+                                    {reply.comment}
                                   </p>
-                                  {reply.parent_username && (
-                                    <>
-                                      <span className="text-xs text-gray-500">
-                                        replying to
-                                      </span>
-                                      <p className="font-semibold text-xs text-[#CB9729]">
-                                        {reply.parent_username}
-                                      </p>
-                                    </>
-                                  )}
                                 </div>
-                                <p className="text-xs text-gray-700 break-words">
-                                  {reply.comment}
-                                </p>
                               </div>
                             </div>
-                          </div>
                           );
                         })}
                       </div>
                     )}
-
-                  {/* Reply Input */}
                   {isReplying && (
                     <div
                       className="ml-11 mt-2"
@@ -490,8 +472,6 @@ export default function CommentsPanel({
           </div>
         )}
       </div>
-
-      {/* Add Comment Input */}
       <div
         className="border-t border-gray-200 p-4 shrink-0 w-full"
         onClick={e => e.stopPropagation()}
@@ -551,7 +531,6 @@ export default function CommentsPanel({
                 disabled={isLoading}
               />
             )}
-
             {showEmojiPicker && (
               <div
                 ref={emojiPickerRef}
@@ -564,17 +543,13 @@ export default function CommentsPanel({
                     const symbol = emoji?.native || emoji?.unified || '';
                     if (!symbol) return;
                     setCommentText(prev => `${prev}${symbol}`);
-                    // Keep picker open - don't close it
                   }}
-                  onClickOutside={() => {
-                    // This will be handled by our useEffect
-                  }}
+                  onClickOutside={() => {}}
                   theme="light"
                 />
               </div>
             )}
           </div>
-
           <button
             type="button"
             onClick={() => setShowEmojiPicker(prev => !prev)}
@@ -583,7 +558,6 @@ export default function CommentsPanel({
           >
             <Smile className="w-5 h-5" />
           </button>
-
           <button
             type="button"
             onClick={e => handleAddComment(e)}
