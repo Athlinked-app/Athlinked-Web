@@ -91,7 +91,10 @@ export default function VideoAndMediaPopup({
 
     // Validate URL starts with http:// or https://
     const trimmedLink = highlightVideoLink.trim();
-    if (!trimmedLink.startsWith('http://') && !trimmedLink.startsWith('https://')) {
+    if (
+      !trimmedLink.startsWith('http://') &&
+      !trimmedLink.startsWith('https://')
+    ) {
       setLinkError("The URL doesn't exist");
       return;
     }
@@ -218,7 +221,8 @@ export default function VideoAndMediaPopup({
               <p className="mt-1 text-xs text-red-500">{linkError}</p>
             ) : (
               <p className="mt-1 text-xs text-gray-500">
-                Enter a YouTube, HUDL, or Vimeo link (must start with http:// or https://)
+                Enter a YouTube, HUDL, or Vimeo link (must start with http:// or
+                https://)
               </p>
             )}
           </div>
