@@ -1630,7 +1630,7 @@ export default function SearchPage() {
 
               {/* Search Filters */}
               <div className="bg-white rounded-lg shadow-sm p-4">
-                <div className="flex gap-2 overflow-x-auto">
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide">
                   {filters.map(filter => (
                     <button
                       key={filter.id}
