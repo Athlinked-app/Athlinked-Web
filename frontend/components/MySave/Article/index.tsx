@@ -119,7 +119,7 @@ export default function MySaveArticle({
                   src={thumbnailUrl}
                   alt={article.article_title || 'Article image'}
                   fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="object-contain group-hover:scale-105 transition-transform duration-300"
                   unoptimized
                 />
               ) : (

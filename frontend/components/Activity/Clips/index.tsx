@@ -26,6 +26,7 @@ interface Clip {
   commentCount: number;
   comments?: Comment[];
   user_id?: string;
+  user_type?: string;
 }
 
 interface ClipsProps {
@@ -79,6 +80,7 @@ export default function Clips({
             commentCount: clip.comment_count || 0,
             comments: [],
             user_id: clip.user_id ?? clip.userId ?? clip.user?.id,
+            user_type: clip.user_type || clip.user?.user_type,
           }));
           setClips(transformedClips);
         } else {

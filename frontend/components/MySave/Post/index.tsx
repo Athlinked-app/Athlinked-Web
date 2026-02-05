@@ -89,6 +89,53 @@ export default function MySavePost({
     return getResourceUrl(mediaUrl) || mediaUrl;
   };
 
+  // When opening a saved post, fetch the latest data (including like_count)
+  const handlePostClick = async (post: PostData) => {
+    try {
+      const data = await apiGet<{
+        success: boolean;
+        post?: any;
+        message?: string;
+      }>(`/posts/${post.id}`);
+
+      if (data.success && data.post) {
+        const p = data.post;
+        const transformed: PostData = {
+          id: p.id,
+          username: p.username || post.username || 'User',
+          user_profile_url:
+            p.user_profile_url && p.user_profile_url.trim() !== ''
+              ? p.user_profile_url
+              : post.user_profile_url || null,
+          user_id: p.user_id ?? post.user_id,
+          user_type: p.user_type || post.user_type,
+          post_type: p.post_type || post.post_type,
+          caption: p.caption ?? post.caption,
+          media_url: p.media_url ?? post.media_url,
+          article_title: p.article_title ?? post.article_title,
+          article_body: p.article_body ?? post.article_body,
+          event_title: p.event_title ?? post.event_title,
+          event_date: p.event_date ?? post.event_date,
+          event_location: p.event_location ?? post.event_location,
+          event_type: p.event_type ?? post.event_type,
+          image_url: p.image_url ?? post.image_url,
+          description: p.description ?? post.description,
+          like_count: p.like_count ?? post.like_count ?? 0,
+          comment_count: p.comment_count ?? post.comment_count ?? 0,
+          save_count: p.save_count ?? post.save_count,
+          created_at: p.created_at ?? post.created_at,
+        };
+        setSelectedPost(transformed);
+      } else {
+        // Fallback to existing post data if API fails
+        setSelectedPost(post);
+      }
+    } catch (_error) {
+      // On any error, just open with existing (possibly slightly stale) data
+      setSelectedPost(post);
+    }
+  };
+
   if (loading || savedPostsLoading) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -117,7 +164,7 @@ export default function MySavePost({
           return (
             <div
               key={post.id}
-              onClick={() => setSelectedPost(post)}
+              onClick={() => handlePostClick(post)}
               className="relative aspect-square cursor-pointer group overflow-hidden rounded-lg bg-gray-100 hover:opacity-90 transition-opacity"
             >
               {thumbnailUrl ? (
@@ -143,7 +190,7 @@ export default function MySavePost({
                         src={thumbnailUrl}
                         alt={post.caption || post.event_title || 'Post image'}
                         fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="object-contain group-hover:scale-105 transition-transform duration-300"
                         unoptimized
                       />
                       {isEvent && (
