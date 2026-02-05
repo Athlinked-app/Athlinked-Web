@@ -125,40 +125,44 @@ export default function Post({
   const [isDeleting, setIsDeleting] = useState(false);
   const [showArticleModal, setShowArticleModal] = useState(false);
 
-  useEffect(() => {
-    const fetchCommentCount = async () => {
-      try {
-        const { apiGet } = await import('@/utils/api');
-        try {
-          const data = await apiGet<{
-            success: boolean;
-            comments?: any[];
-          }>(`/posts/${post.id}/comments`);
-          if (data.success && data.comments) {
-            const parentComments = data.comments.filter(
-              (c: any) => !c.parent_comment_id
-            );
-            setCommentCount(parentComments.length);
-          } else {
-            // Use fallback count if API doesn't return success
-            setCommentCount(post.comment_count);
-          }
-        } catch (apiError: any) {
-          // Silently handle errors - use fallback count from post data
-          // This is a non-critical feature and errors are expected for some user types
-          setCommentCount(post.comment_count);
-          return; // Exit early to prevent error propagation
-        }
-      } catch (error: any) {
-        // Outer catch - completely silent error handling
-        // Use fallback count from post data
-        setCommentCount(post.comment_count);
-        return;
-      }
-    };
+    useEffect(() => {
+    setCommentCount(post.comment_count);
+  }, [post.comment_count]);
 
-    fetchCommentCount();
-  }, [post.id, post.comment_count]);
+  // useEffect(() => {
+  //   const fetchCommentCount = async () => {
+  //     try {
+  //       const { apiGet } = await import('@/utils/api');
+  //       try {
+  //         const data = await apiGet<{
+  //           success: boolean;
+  //           comments?: any[];
+  //         }>(`/posts/${post.id}/comments`);
+  //         if (data.success && data.comments) {
+  //           const parentComments = data.comments.filter(
+  //             (c: any) => !c.parent_comment_id
+  //           );
+  //           setCommentCount(parentComments.length);
+  //         } else {
+  //           // Use fallback count if API doesn't return success
+  //           setCommentCount(post.comment_count);
+  //         }
+  //       } catch (apiError: any) {
+  //         // Silently handle errors - use fallback count from post data
+  //         // This is a non-critical feature and errors are expected for some user types
+  //         setCommentCount(post.comment_count);
+  //         return; // Exit early to prevent error propagation
+  //       }
+  //     } catch (error: any) {
+  //       // Outer catch - completely silent error handling
+  //       // Use fallback count from post data
+  //       setCommentCount(post.comment_count);
+  //       return;
+  //     }
+  //   };
+
+  //   fetchCommentCount();
+  // }, [post.id, post.comment_count]);
 
   useEffect(() => {
     const checkSavedStatus = async () => {

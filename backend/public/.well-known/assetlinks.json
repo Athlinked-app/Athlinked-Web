@@ -3,7 +3,7 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "ai.randomwalk.athlinked",
+      "package_name": "com.athlinked",
       "sha256_cert_fingerprints": [
         "3B:26:86:26:23:0A:DA:C5:79:E4:FC:CC:29:87:3E:DF:BF:B2:DA:56:28:A0:F3:CD:17:AA:80:41:61:75:4A:B7" ,
         "6F:C7:50:67:2A:77:9D:26:B3:2F:16:17:BF:E6:7B:F2:C6:30:9E:BA:F3:C7:BE:B9:E1:39:FC:8F:93:1D:C1:25" ,
