@@ -1,4 +1,6 @@
 import { User, Mail } from 'lucide-react';
+import { useState } from 'react';
+import { apiGet } from '@/utils/api';
 
 interface ParentDetailsFormProps {
   formData: any;
@@ -15,6 +17,7 @@ export default function ParentDetailsForm({
   isCompletingGoogleSignup = false,
   onContinue,
 }: ParentDetailsFormProps) {
+  const [parentEmailError, setParentEmailError] = useState<string>('');
   return (
     <>
       <div className="space-y-4 mb-6">
@@ -43,18 +46,67 @@ export default function ParentDetailsForm({
             <input
               type="email"
               value={formData.parentEmail}
-              onChange={e =>
-                onFormDataChange({ ...formData, parentEmail: e.target.value })
-              }
-              className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900"
+              onChange={e => {
+                onFormDataChange({ ...formData, parentEmail: e.target.value });
+                setParentEmailError(''); // Clear error on change
+              }}
+              className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
+                parentEmailError
+                  ? 'border-red-500 focus:ring-red-500'
+                  : 'border-gray-300'
+              }`}
             />
             <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           </div>
+          {parentEmailError && (
+            <p className="mt-1 text-xs text-red-600">{parentEmailError}</p>
+          )}
         </div>
       </div>
 
       <button
-        onClick={onContinue}
+        onClick={async () => {
+          // Validate parent email before proceeding
+          const email = formData.parentEmail?.trim();
+          if (!email) {
+            setParentEmailError('Parent email is required');
+            return;
+          }
+
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(email)) {
+            setParentEmailError('Please enter a valid email address');
+            return;
+          }
+
+          // Check if parent email is already registered as athlete
+          try {
+            const data = await apiGet(`/signup/user/${encodeURIComponent(email)}`);
+            if (data && data.user) {
+              if (data.user.user_type === 'athlete') {
+                setParentEmailError('This email is registered as an athlete and cannot be used as a parent email');
+                return;
+              }
+              if (data.user.user_type === 'parent') {
+                setParentEmailError('This email is already registered as a parent');
+                return;
+              }
+              setParentEmailError('This email is already registered');
+              return;
+            }
+          } catch (err: any) {
+            if (err.status !== 404) {
+              console.error('Error validating parent email:', err);
+              setParentEmailError('Unable to validate email. Please try again.');
+              return;
+            }
+            // 404 means email not found, which is good
+          }
+
+          // Email is valid, proceed to next step
+          setParentEmailError('');
+          onContinue();
+        }}
         disabled={isLoadingOTP || isCompletingGoogleSignup}
         className="w-full bg-[#CB9729] text-gray-800 font-medium py-3 rounded-lg transition-all mb-4 text-sm sm:text-base flex items-center justify-center gap-2 disabled:opacity-70"
       >

@@ -235,15 +235,15 @@ async function createPost(postData, client = null) {
 async function getPostsFeed(page = 1, limit = 50, viewerUserId = null, postType = null) {
   const offset = (page - 1) * limit;
   
-  // If no viewer is authenticated, return empty array (strict privacy)
   if (!viewerUserId) {
     return [];
   }
 
-  // Build query with optional post_type filter
   const query = `
     SELECT DISTINCT
       p.*,
+      -- FIX: Calculate actual comment count dynamically
+      (SELECT COUNT(*)::int FROM post_comments WHERE post_id = p.id) as comment_count,
       COALESCE(u.profile_url, p.user_profile_url) as user_profile_url,
       COALESCE(u.full_name, p.username) as username,
       COALESCE(p.user_type, u.user_type, 'athlete') as user_type,
@@ -257,13 +257,10 @@ async function getPostsFeed(page = 1, limit = 50, viewerUserId = null, postType 
     WHERE p.is_active = true
       ${postType ? 'AND p.post_type = $4' : ''}
       AND (
-        -- User sees their own posts
         p.user_id = $1
         OR
-        -- Posts from featured users are visible to everyone
         u.is_featured = true
         OR
-        -- User follows the post author (direct follow)
         EXISTS (
           SELECT 1 
           FROM user_follows uf 
@@ -271,7 +268,6 @@ async function getPostsFeed(page = 1, limit = 50, viewerUserId = null, postType 
             AND uf.following_id = p.user_id
         )
         OR
-        -- User is connected to the post author (connections count as follows)
         EXISTS (
           SELECT 1 
           FROM user_connections uc 
@@ -299,6 +295,8 @@ async function getPostById(postId) {
   const query = `
     SELECT 
       p.*,
+      -- FIX: Calculate actual comment count dynamically
+      (SELECT COUNT(*)::int FROM post_comments WHERE post_id = p.id) as comment_count,
       COALESCE(u.profile_url, p.user_profile_url) as user_profile_url,
       COALESCE(u.full_name, p.username) as username,
       COALESCE(p.user_type, u.user_type, 'athlete') as user_type

@@ -8,10 +8,12 @@ interface PersonalDetailsFormProps {
   showConfirmPassword: boolean;
   isLoadingOTP?: boolean;
   isGoogleUser?: boolean;
+  signupError?: string;
   onFormDataChange: (data: any) => void;
   onContinue: () => void;
   onTogglePassword: () => void;
   onToggleConfirmPassword: () => void;
+  onClearError?: () => void;
 }
 
 interface Sport {
@@ -26,10 +28,12 @@ export default function PersonalDetailsForm({
   showConfirmPassword,
   isLoadingOTP = false,
   isGoogleUser = false,
+  signupError = '',
   onFormDataChange,
   onContinue,
   onTogglePassword,
   onToggleConfirmPassword,
+  onClearError,
 }: PersonalDetailsFormProps) {
   const [sports, setSports] = useState<Sport[]>([]);
   const [loadingSports, setLoadingSports] = useState(false);
@@ -52,6 +56,12 @@ export default function PersonalDetailsForm({
     password: '',
     confirmPassword: '',
   });
+
+  useEffect(() => {
+    if (signupError) {
+      console.log('PersonalDetailsForm received signupError:', signupError);
+    }
+  }, [signupError]);
 
   useEffect(() => {
     if (selectedUserType === 'athlete') {
@@ -246,6 +256,8 @@ export default function PersonalDetailsForm({
     return '';
   };
 
+  
+
   const validatePassword = (password: string): string => {
     if (!password) {
       return 'Password is required';
@@ -314,6 +326,10 @@ export default function PersonalDetailsForm({
 
   const handleEmailChange = (value: string) => {
     onFormDataChange({ ...formData, email: value });
+    // Clear signup error when user changes email
+    if (onClearError) {
+      onClearError();
+    }
     if (value) {
       setErrors(prev => ({ ...prev, email: validateEmail(value) }));
     } else {
@@ -354,12 +370,12 @@ export default function PersonalDetailsForm({
 
   // Validate all fields before continuing
   const handleContinueClick = () => {
+    // If there's a signup error from previous attempt, clear it first
+    // User can try again with different email
+    
     // Only validate name if not a Google user
     const nameError = isGoogleUser ? '' : validateName(formData.fullName);
-    const dobError =
-      selectedUserType === 'athlete'
-        ? validateDOB(formData.dateOfBirth)
-        : '';
+    const dobError = validateDOB(formData.dateOfBirth);
     const emailError = isGoogleUser ? '' : validateEmail(formData.email);
 
     // Only validate passwords for non-Google users
@@ -378,13 +394,7 @@ export default function PersonalDetailsForm({
       confirmPassword: confirmPasswordError,
     });
 
-    if (
-      nameError ||
-      dobError ||
-      emailError ||
-      passwordError ||
-      confirmPasswordError
-    ) {
+    if (nameError || dobError || emailError || passwordError || confirmPasswordError) {
       return;
     }
 
@@ -650,7 +660,7 @@ export default function PersonalDetailsForm({
                 value={formData.email}
                 onChange={e => handleEmailChange(e.target.value)}
                 className={`w-full px-4 py-3 pr-10 border rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-gray-900 ${
-                  errors.email
+                  errors.email || signupError
                     ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300'
                 }`}
@@ -658,7 +668,10 @@ export default function PersonalDetailsForm({
               />
               <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             </div>
-            {errors.email && (
+            {signupError && (
+              <p className="mt-1 text-xs text-red-600">{signupError}</p>
+            )}
+            {!signupError && errors.email && (
               <p className="mt-1 text-xs text-red-600">{errors.email}</p>
             )}
           </div>

@@ -35,6 +35,9 @@ async function startSignupService(userData) {
       emailToSendOTP = input.toLowerCase();
       const existingUser = await signupModel.findByEmail(emailToSendOTP);
       if (existingUser) {
+        if (existingUser.user_type === 'parent') {
+          throw new Error('Email registered as parent');
+        }
         throw new Error('Email already registered');
       }
 
@@ -67,6 +70,15 @@ async function startSignupService(userData) {
           username: username,
           _isUsernameSignup: true,
         };
+
+    // If parent_email is provided, verify it's not an athlete
+    if (userData.parent_email) {
+      const parentEmailToCheck = userData.parent_email.toLowerCase().trim();
+      const existingParent = await signupModel.findByEmail(parentEmailToCheck);
+      if (existingParent && existingParent.user_type === 'athlete') {
+        throw new Error('Parent email is registered as an athlete');
+      }
+    }
 
     const otp = startOTPFlow(otpData);
 

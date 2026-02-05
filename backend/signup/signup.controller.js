@@ -31,6 +31,18 @@ async function startSignup(req, res) {
         message: error.message,
       });
     }
+    if (error.message === 'Email registered as parent') {
+      return res.status(409).json({
+        success: false,
+        message: error.message,
+      });
+    }
+    if (error.message === 'Parent email is registered as an athlete') {
+      return res.status(409).json({
+        success: false,
+        message: error.message,
+      });
+    }
 
     if (error.message.includes('SMTP') || error.message.includes('email')) {
       return res.status(500).json({
@@ -92,6 +104,12 @@ async function verifyOtp(req, res) {
     }
 
     if (error.message === 'Email already registered') {
+      return res.status(409).json({
+        success: false,
+        message: error.message,
+      });
+    }
+    if (error.message === 'Email registered as parent') {
       return res.status(409).json({
         success: false,
         message: error.message,
