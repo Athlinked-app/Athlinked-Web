@@ -241,19 +241,43 @@ async function getPostsFeed(page = 1, limit = 50, viewerUserId = null, postType 
 
   const query = `
     SELECT DISTINCT
-      p.*,
+      p.id,
+      p.user_id,
+      p.username,
+      p.user_profile_url,
+      p.user_type,
+      p.post_type,
+      p.caption,
+      p.media_url,
+      p.article_title,
+      p.article_body,
+      p.event_title,
+      p.event_date,
+      p.event_location,
+      p.event_type,
+      p.is_active,
+      p.created_at,
+      -- FIX: Dynamic like count
+      (SELECT COUNT(*)::int FROM post_likes WHERE post_id = p.id) as like_count,
       -- FIX: Calculate actual comment count dynamically
       (SELECT COUNT(*)::int FROM post_comments WHERE post_id = p.id) as comment_count,
+      -- FIX: Dynamic save count
+      (SELECT COUNT(*)::int FROM post_saves WHERE post_id = p.id) as save_count,
       COALESCE(u.profile_url, p.user_profile_url) as user_profile_url,
       COALESCE(u.full_name, p.username) as username,
       COALESCE(p.user_type, u.user_type, 'athlete') as user_type,
       CASE 
         WHEN ps.post_id IS NOT NULL THEN true 
         ELSE false 
-      END as is_saved
+      END as is_saved,
+      CASE 
+        WHEN pl.post_id IS NOT NULL THEN true 
+        ELSE false 
+      END as is_liked
     FROM posts p
     LEFT JOIN users u ON p.user_id = u.id
     LEFT JOIN post_saves ps ON p.id = ps.post_id AND ps.user_id = $1
+    LEFT JOIN post_likes pl ON p.id = pl.post_id AND pl.user_id = $1
     WHERE p.is_active = true
       ${postType ? 'AND p.post_type = $4' : ''}
       AND (
@@ -294,9 +318,28 @@ async function getPostsFeed(page = 1, limit = 50, viewerUserId = null, postType 
 async function getPostById(postId) {
   const query = `
     SELECT 
-      p.*,
+      p.id,
+      p.user_id,
+      p.username,
+      p.user_profile_url,
+      p.user_type,
+      p.post_type,
+      p.caption,
+      p.media_url,
+      p.article_title,
+      p.article_body,
+      p.event_title,
+      p.event_date,
+      p.event_location,
+      p.event_type,
+      p.is_active,
+      p.created_at,
+      -- FIX: Dynamic like count
+      (SELECT COUNT(*)::int FROM post_likes WHERE post_id = p.id) as like_count,
       -- FIX: Calculate actual comment count dynamically
       (SELECT COUNT(*)::int FROM post_comments WHERE post_id = p.id) as comment_count,
+      -- FIX: Dynamic save count
+      (SELECT COUNT(*)::int FROM post_saves WHERE post_id = p.id) as save_count,
       COALESCE(u.profile_url, p.user_profile_url) as user_profile_url,
       COALESCE(u.full_name, p.username) as username,
       COALESCE(p.user_type, u.user_type, 'athlete') as user_type
@@ -329,8 +372,8 @@ async function likePost(postId, userId, client = null) {
     'SELECT * FROM post_likes WHERE post_id = $1 AND user_id = $2';
   const insertLikeQuery =
     'INSERT INTO post_likes (post_id, user_id) VALUES ($1, $2)';
-  const updateCountQuery =
-    'UPDATE posts SET like_count = like_count + 1 WHERE id = $1 RETURNING like_count';
+  const getCountQuery =
+    'SELECT COUNT(*)::int as like_count FROM post_likes WHERE post_id = $1';
 
   try {
     const dbClient = client || pool;
@@ -341,9 +384,9 @@ async function likePost(postId, userId, client = null) {
     }
 
     await dbClient.query(insertLikeQuery, [postId, userId]);
-    const updateResult = await dbClient.query(updateCountQuery, [postId]);
+    const countResult = await dbClient.query(getCountQuery, [postId]);
 
-    return { like_count: updateResult.rows[0].like_count };
+    return { like_count: countResult.rows[0].like_count };
   } catch (error) {
     console.error('Error liking post:', error);
     throw error;
@@ -353,16 +396,16 @@ async function likePost(postId, userId, client = null) {
 async function unlikePost(postId, userId, client = null) {
   const deleteLikeQuery =
     'DELETE FROM post_likes WHERE post_id = $1 AND user_id = $2';
-  const updateCountQuery =
-    'UPDATE posts SET like_count = GREATEST(like_count - 1, 0) WHERE id = $1 RETURNING like_count';
+  const getCountQuery =
+    'SELECT COUNT(*)::int as like_count FROM post_likes WHERE post_id = $1';
 
   try {
     const dbClient = client || pool;
 
     await dbClient.query(deleteLikeQuery, [postId, userId]);
-    const updateResult = await dbClient.query(updateCountQuery, [postId]);
+    const countResult = await dbClient.query(getCountQuery, [postId]);
 
-    return { like_count: updateResult.rows[0].like_count };
+    return { like_count: countResult.rows[0].like_count };
   } catch (error) {
     console.error('Error unliking post:', error);
     throw error;
