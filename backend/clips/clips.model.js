@@ -144,7 +144,7 @@ async function getClipsFeed(page = 1, limit = 10, viewerUserId = null) {
         OR EXISTS (
           SELECT 1 
           FROM user_follows uf 
-          WHERE if.follower_id = $1 
+          WHERE uf.follower_id = $1 
             AND uf.following_id = c.user_id
         )
         OR EXISTS (
