@@ -1564,7 +1564,7 @@ export default function ClipsPage() {
                             handleLike(reel.id);
                           }}
                           disabled={likingInProgress[reel.id]}
-                          className="flex flex-col items-center gap-0.5 sm:gap-1 text-white hover:scale-110 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="flex flex-col items-center gap-0.5 sm:gap-1 text-white hover:scale-110 transition-transform"
                         >
                           <Heart
                             size={16}
