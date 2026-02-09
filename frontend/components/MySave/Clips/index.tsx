@@ -122,23 +122,23 @@ export default function MySaveClips({
               author: comment.username || 'User',
               authorAvatar:
                 comment.user_profile_url &&
-                comment.user_profile_url.trim() !== ''
+                  comment.user_profile_url.trim() !== ''
                   ? comment.user_profile_url
                   : null,
               text: comment.comment,
               hasReplies: comment.replies && comment.replies.length > 0,
               replies: comment.replies
                 ? comment.replies.map((reply: any) => ({
-                    id: reply.id,
-                    author: reply.username || 'User',
-                    authorAvatar:
-                      reply.user_profile_url &&
+                  id: reply.id,
+                  author: reply.username || 'User',
+                  authorAvatar:
+                    reply.user_profile_url &&
                       reply.user_profile_url.trim() !== ''
-                        ? reply.user_profile_url
-                        : null,
-                    text: reply.comment,
-                    parent_username: reply.parent_username || null,
-                  }))
+                      ? reply.user_profile_url
+                      : null,
+                  text: reply.comment,
+                  parent_username: reply.parent_username || null,
+                }))
                 : [],
             })
           );
@@ -209,10 +209,10 @@ export default function MySaveClips({
           setSelectedClip(prev =>
             prev
               ? {
-                  ...prev,
-                  comments: transformedComments,
-                  commentCount: transformedComments.length,
-                }
+                ...prev,
+                comments: transformedComments,
+                commentCount: transformedComments.length,
+              }
               : null
           );
         }
@@ -410,7 +410,9 @@ export default function MySaveClips({
                           {selectedClip.author}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {selectedClip.timestamp}
+                          {selectedClip.timestamp
+                            ? new Date(selectedClip.timestamp).toLocaleDateString('en-CA')
+                            : 'Unknown date'}
                         </p>
                       </div>
                     </div>

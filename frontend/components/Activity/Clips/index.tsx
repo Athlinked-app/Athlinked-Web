@@ -119,14 +119,14 @@ export default function Clips({
             hasReplies: comment.replies && comment.replies.length > 0,
             replies: comment.replies
               ? comment.replies.map((reply: any) => ({
-                  id: reply.id,
-                  author: reply.username || 'User',
-                  authorAvatar: reply.user_profile_url && reply.user_profile_url.trim() !== ''
-                    ? reply.user_profile_url
-                    : null,
-                  text: reply.comment,
-                  parent_username: reply.parent_username || null,
-                }))
+                id: reply.id,
+                author: reply.username || 'User',
+                authorAvatar: reply.user_profile_url && reply.user_profile_url.trim() !== ''
+                  ? reply.user_profile_url
+                  : null,
+                text: reply.comment,
+                parent_username: reply.parent_username || null,
+              }))
               : [],
           }));
 
@@ -389,7 +389,9 @@ export default function Clips({
                           {selectedClip.author}
                         </p>
                         <p className="text-sm text-gray-500">
-                          {selectedClip.timestamp}
+                          {selectedClip.timestamp
+                            ? new Date(selectedClip.timestamp).toLocaleDateString('en-CA')
+                            : 'Unknown date'}
                         </p>
                       </div>
                     </div>
