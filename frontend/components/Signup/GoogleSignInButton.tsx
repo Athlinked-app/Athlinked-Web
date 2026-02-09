@@ -48,33 +48,41 @@ function GoogleSignInButtonInner({
         };
 
         // NEW: For login mode, call backend first to check if user exists
-        if (mode === 'login') {
-          try {
-            const response = await fetch(getApiUrl('/auth/google'), {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                google_id: googleData.google_id,
-                email: googleData.email,
-                full_name: googleData.full_name,
-                profile_picture: googleData.profile_picture,
-                email_verified: googleData.email_verified,
-                flow: 'login',
-              }),
-            });
+        // Call backend to check if user exists for BOTH login and signup
+        // Call backend to check if user exists for BOTH login and signup
+        try {
+          const response = await fetch(getApiUrl('/auth/google'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              google_id: googleData.google_id,
+              email: googleData.email,
+              full_name: googleData.full_name,
+              profile_picture: googleData.profile_picture,
+              email_verified: googleData.email_verified,
+              flow: mode, // Send 'login' or 'signup'
+            }),
+          });
 
-            const data = await response.json();
-            onSuccess(data);
-          } catch (error) {
-            console.error('Backend check failed:', error);
-            onError?.(error);
-            alert('Failed to sign in with Google. Please try again.');
+          const data = await response.json();
+
+          // NEW: Show alert if account already exists (for signup mode)
+          if (!data.success && mode === 'signup') {
+            alert(
+              data.message ||
+                'An account with this email already exists. Please login instead.'
+            );
+            setIsLoading(false);
+            return;
           }
-        } else {
-          // Signup mode: Just return Google data without backend check
-          onSuccess(googleData);
+
+          onSuccess(data);
+        } catch (error) {
+          console.error('Backend check failed:', error);
+          onError?.(error);
+          alert('Failed to sign in with Google. Please try again.');
         }
       } catch (error) {
         console.error('Google sign-in error:', error);

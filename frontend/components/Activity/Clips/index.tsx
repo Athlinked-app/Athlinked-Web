@@ -47,7 +47,9 @@ export default function Clips({
   const [selectedClip, setSelectedClip] = useState<Clip | null>(null);
   const [commentText, setCommentText] = useState('');
   const [replyTexts, setReplyTexts] = useState<{ [key: string]: string }>({});
-  const [showReplies, setShowReplies] = useState<{ [key: string]: boolean }>({});
+  const [showReplies, setShowReplies] = useState<{ [key: string]: boolean }>(
+    {}
+  );
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
   // Fetch clips for the current user (Activity tab)
@@ -133,14 +135,20 @@ export default function Clips({
           // Show all replies by default
           const newShowReplies: { [key: string]: boolean } = {};
           transformedComments.forEach(comment => {
-            if (comment.hasReplies && comment.replies && comment.replies.length > 0) {
+            if (
+              comment.hasReplies &&
+              comment.replies &&
+              comment.replies.length > 0
+            ) {
               newShowReplies[comment.id] = true;
             }
           });
           setShowReplies(newShowReplies);
 
           // Update selected clip with comments
-          setSelectedClip(prev => prev ? { ...prev, comments: transformedComments } : null);
+          setSelectedClip(prev =>
+            prev ? { ...prev, comments: transformedComments } : null
+          );
         }
       } catch (error) {
         console.error('Error fetching comments:', error);
@@ -170,21 +178,32 @@ export default function Clips({
           `/clips/${selectedClip.id}/comments`
         );
         if (data.success && data.comments) {
-          const transformedComments: Comment[] = data.comments.map((comment: any) => ({
-            id: comment.id,
-            author: comment.username || 'User',
-            authorAvatar: comment.user_profile_url || null,
-            text: comment.comment,
-            hasReplies: comment.replies && comment.replies.length > 0,
-            replies: comment.replies?.map((reply: any) => ({
-              id: reply.id,
-              author: reply.username || 'User',
-              authorAvatar: reply.user_profile_url || null,
-              text: reply.comment,
-              parent_username: reply.parent_username || null,
-            })) || [],
-          }));
-          setSelectedClip(prev => prev ? { ...prev, comments: transformedComments, commentCount: transformedComments.length } : null);
+          const transformedComments: Comment[] = data.comments.map(
+            (comment: any) => ({
+              id: comment.id,
+              author: comment.username || 'User',
+              authorAvatar: comment.user_profile_url || null,
+              text: comment.comment,
+              hasReplies: comment.replies && comment.replies.length > 0,
+              replies:
+                comment.replies?.map((reply: any) => ({
+                  id: reply.id,
+                  author: reply.username || 'User',
+                  authorAvatar: reply.user_profile_url || null,
+                  text: reply.comment,
+                  parent_username: reply.parent_username || null,
+                })) || [],
+            })
+          );
+          setSelectedClip(prev =>
+            prev
+              ? {
+                  ...prev,
+                  comments: transformedComments,
+                  commentCount: transformedComments.length,
+                }
+              : null
+          );
         }
       }
     } catch (error) {
@@ -219,21 +238,26 @@ export default function Clips({
           `/clips/${selectedClip.id}/comments`
         );
         if (data.success && data.comments) {
-          const transformedComments: Comment[] = data.comments.map((comment: any) => ({
-            id: comment.id,
-            author: comment.username || 'User',
-            authorAvatar: comment.user_profile_url || null,
-            text: comment.comment,
-            hasReplies: comment.replies && comment.replies.length > 0,
-            replies: comment.replies?.map((reply: any) => ({
-              id: reply.id,
-              author: reply.username || 'User',
-              authorAvatar: reply.user_profile_url || null,
-              text: reply.comment,
-              parent_username: reply.parent_username || null,
-            })) || [],
-          }));
-          setSelectedClip(prev => prev ? { ...prev, comments: transformedComments } : null);
+          const transformedComments: Comment[] = data.comments.map(
+            (comment: any) => ({
+              id: comment.id,
+              author: comment.username || 'User',
+              authorAvatar: comment.user_profile_url || null,
+              text: comment.comment,
+              hasReplies: comment.replies && comment.replies.length > 0,
+              replies:
+                comment.replies?.map((reply: any) => ({
+                  id: reply.id,
+                  author: reply.username || 'User',
+                  authorAvatar: reply.user_profile_url || null,
+                  text: reply.comment,
+                  parent_username: reply.parent_username || null,
+                })) || [],
+            })
+          );
+          setSelectedClip(prev =>
+            prev ? { ...prev, comments: transformedComments } : null
+          );
         }
       }
     } catch (error) {
@@ -402,13 +426,22 @@ export default function Clips({
 
                     <div className="flex items-center gap-6 text-gray-600">
                       <span className="flex items-center gap-1">
-                        <span className="font-semibold">{selectedClip.likes}</span> likes
+                        <span className="font-semibold">
+                          {selectedClip.likes}
+                        </span>{' '}
+                        likes
                       </span>
                       <span className="flex items-center gap-1">
-                        <span className="font-semibold">{getTotalCommentCount(selectedClip.comments)}</span> comments
+                        <span className="font-semibold">
+                          {getTotalCommentCount(selectedClip.comments)}
+                        </span>{' '}
+                        comments
                       </span>
                       <span className="flex items-center gap-1">
-                        <span className="font-semibold">{selectedClip.shares}</span> shares
+                        <span className="font-semibold">
+                          {selectedClip.shares}
+                        </span>{' '}
+                        shares
                       </span>
                     </div>
                   </div>
@@ -434,16 +467,29 @@ export default function Clips({
                         <div className="flex gap-2">
                           <div className="w-8 h-8 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
                             {comment.authorAvatar ? (
-                              <img src={comment.authorAvatar} alt={comment.author} className="w-full h-full object-cover" />
+                              <img
+                                src={comment.authorAvatar}
+                                alt={comment.author}
+                                className="w-full h-full object-cover"
+                              />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center text-gray-600 font-semibold text-xs">
-                                {comment.author.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                                {comment.author
+                                  .split(' ')
+                                  .map(w => w[0])
+                                  .join('')
+                                  .toUpperCase()
+                                  .slice(0, 2)}
                               </div>
                             )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm text-gray-900">{comment.author}</p>
-                            <p className="text-sm text-gray-700 break-words">{comment.text}</p>
+                            <p className="font-semibold text-sm text-gray-900">
+                              {comment.author}
+                            </p>
+                            <p className="text-sm text-gray-700 break-words">
+                              {comment.text}
+                            </p>
                             <div className="flex items-center gap-3 mt-1">
                               <button
                                 onClick={() => handleReplyClick(comment.id)}
@@ -456,38 +502,58 @@ export default function Clips({
                                   onClick={() => toggleReplies(comment.id)}
                                   className="text-xs text-gray-500 hover:text-gray-700"
                                 >
-                                  {showReplies[comment.id] ? 'Hide' : 'View'} replies ({comment.replies?.length || 0})
+                                  {showReplies[comment.id] ? 'Hide' : 'View'}{' '}
+                                  replies ({comment.replies?.length || 0})
                                 </button>
                               )}
                             </div>
 
                             {/* Replies */}
-                            {showReplies[comment.id] && comment.replies && comment.replies.length > 0 && (
-                              <div className="mt-3 ml-4 space-y-3 border-l-2 border-gray-300 pl-3">
-                                {comment.replies.map(reply => (
-                                  <div key={reply.id} className="flex gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
-                                      {reply.authorAvatar ? (
-                                        <img src={reply.authorAvatar} alt={reply.author} className="w-full h-full object-cover" />
-                                      ) : (
-                                        <div className="w-full h-full flex items-center justify-center text-gray-600 font-semibold text-xs">
-                                          {reply.author.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)}
-                                        </div>
-                                      )}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <p className="font-semibold text-xs text-gray-900">
-                                        {reply.author}
-                                        {reply.parent_username && (
-                                          <span className="text-gray-500 font-normal"> replying to <span className="text-yellow-600">@{reply.parent_username}</span></span>
+                            {showReplies[comment.id] &&
+                              comment.replies &&
+                              comment.replies.length > 0 && (
+                                <div className="mt-3 ml-4 space-y-3 border-l-2 border-gray-300 pl-3">
+                                  {comment.replies.map(reply => (
+                                    <div key={reply.id} className="flex gap-2">
+                                      <div className="w-6 h-6 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
+                                        {reply.authorAvatar ? (
+                                          <img
+                                            src={reply.authorAvatar}
+                                            alt={reply.author}
+                                            className="w-full h-full object-cover"
+                                          />
+                                        ) : (
+                                          <div className="w-full h-full flex items-center justify-center text-gray-600 font-semibold text-xs">
+                                            {reply.author
+                                              .split(' ')
+                                              .map(w => w[0])
+                                              .join('')
+                                              .toUpperCase()
+                                              .slice(0, 2)}
+                                          </div>
                                         )}
-                                      </p>
-                                      <p className="text-xs text-gray-700 break-words">{reply.text}</p>
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-xs text-gray-900">
+                                          {reply.author}
+                                          {reply.parent_username && (
+                                            <span className="text-gray-500 font-normal">
+                                              {' '}
+                                              replying to{' '}
+                                              <span className="text-yellow-600">
+                                                @{reply.parent_username}
+                                              </span>
+                                            </span>
+                                          )}
+                                        </p>
+                                        <p className="text-xs text-gray-700 break-words">
+                                          {reply.text}
+                                        </p>
+                                      </div>
                                     </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                                  ))}
+                                </div>
+                              )}
 
                             {/* Reply Input */}
                             {replyingTo === comment.id && (
@@ -496,8 +562,13 @@ export default function Clips({
                                   type="text"
                                   placeholder={`Reply to ${comment.author}...`}
                                   value={replyTexts[comment.id] || ''}
-                                  onChange={(e) => setReplyTexts(prev => ({ ...prev, [comment.id]: e.target.value }))}
-                                  onKeyDown={(e) => {
+                                  onChange={e =>
+                                    setReplyTexts(prev => ({
+                                      ...prev,
+                                      [comment.id]: e.target.value,
+                                    }))
+                                  }
+                                  onKeyDown={e => {
                                     if (e.key === 'Enter' && !e.shiftKey) {
                                       e.preventDefault();
                                       handleAddReply(comment.id);
@@ -545,10 +616,19 @@ export default function Clips({
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
                       {currentUserProfileUrl ? (
-                        <img src={currentUserProfileUrl} alt="You" className="w-full h-full object-cover" />
+                        <img
+                          src={currentUserProfileUrl}
+                          alt="You"
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-gray-600 font-semibold text-xs">
-                          {currentUsername?.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) || 'U'}
+                          {currentUsername
+                            ?.split(' ')
+                            .map(w => w[0])
+                            .join('')
+                            .toUpperCase()
+                            .slice(0, 2) || 'U'}
                         </div>
                       )}
                     </div>
@@ -556,8 +636,8 @@ export default function Clips({
                       type="text"
                       placeholder="Add a comment..."
                       value={commentText}
-                      onChange={(e) => setCommentText(e.target.value)}
-                      onKeyDown={(e) => {
+                      onChange={e => setCommentText(e.target.value)}
+                      onKeyDown={e => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                           e.preventDefault();
                           handleAddComment();

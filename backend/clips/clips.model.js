@@ -88,11 +88,11 @@ async function getClipsFeed(page = 1, limit = 10, viewerUserId = null) {
         c.user_id,
         c.video_url,
         c.description,
-        c.like_count,
+        (SELECT COUNT(*)::int FROM clip_likes WHERE clip_id = c.id) as like_count,
         c.share_count,
         -- FIX: Dynamic comment count
         (SELECT COUNT(*)::int FROM clip_comments WHERE clip_id = c.id) as comment_count,
-        c.save_count,
+        (SELECT COUNT(*)::int FROM clip_saves WHERE clip_id = c.id) as save_count,
         c.username,
         u.profile_url as user_profile_url,
         c.created_at
@@ -118,11 +118,11 @@ async function getClipsFeed(page = 1, limit = 10, viewerUserId = null) {
         c.user_id,
         c.video_url,
         c.description,
-        c.like_count,
+        (SELECT COUNT(*)::int FROM clip_likes WHERE clip_id = c.id) as like_count,
         c.share_count,
         -- FIX: Dynamic comment count
         (SELECT COUNT(*)::int FROM clip_comments WHERE clip_id = c.id) as comment_count,
-        c.save_count,
+        (SELECT COUNT(*)::int FROM clip_saves WHERE clip_id = c.id) as save_count,
         c.username,
         u.profile_url as user_profile_url,
         c.created_at,
@@ -212,11 +212,20 @@ async function getClipsFeed(page = 1, limit = 10, viewerUserId = null) {
  * Get clip by ID
  */
 async function getClipById(clipId) {
-  // FIX: Dynamic comment count calculation
+  // FIX: Dynamic counts calculation
   const query = `
     SELECT 
-      c.*, 
-      (SELECT COUNT(*)::int FROM clip_comments WHERE clip_id = c.id) as comment_count
+      c.id,
+      c.user_id,
+      c.video_url,
+      c.description,
+      (SELECT COUNT(*)::int FROM clip_likes WHERE clip_id = c.id) as like_count,
+      (SELECT COUNT(*)::int FROM clip_comments WHERE clip_id = c.id) as comment_count,
+      (SELECT COUNT(*)::int FROM clip_saves WHERE clip_id = c.id) as save_count,
+      c.share_count,
+      c.username,
+      c.user_profile_url,
+      c.created_at
     FROM clips c 
     WHERE c.id = $1
   `;
@@ -349,10 +358,10 @@ async function getClipsByUserId(userId, limit = 50, viewerUserId = null) {
       c.user_id,
       c.video_url,
       c.description,
-      c.like_count,
+      (SELECT COUNT(*)::int FROM clip_likes WHERE clip_id = c.id) as like_count,
       -- FIX: Dynamic comment count
       (SELECT COUNT(*)::int FROM clip_comments WHERE clip_id = c.id) as comment_count,
-      c.save_count,
+      (SELECT COUNT(*)::int FROM clip_saves WHERE clip_id = c.id) as save_count,
       c.username,
       u.profile_url as user_profile_url,
       c.created_at
@@ -565,8 +574,8 @@ async function likeClip(clipId, userId, client = null) {
     'SELECT * FROM clip_likes WHERE clip_id = $1 AND user_id = $2';
   const insertLikeQuery =
     'INSERT INTO clip_likes (clip_id, user_id) VALUES ($1, $2)';
-  const updateCountQuery =
-    'UPDATE clips SET like_count = like_count + 1 WHERE id = $1 RETURNING like_count';
+  const getCountQuery =
+    'SELECT COUNT(*)::int as like_count FROM clip_likes WHERE clip_id = $1';
 
   try {
     const dbClient = client || pool;
@@ -576,8 +585,8 @@ async function likeClip(clipId, userId, client = null) {
     }
 
     await dbClient.query(insertLikeQuery, [clipId, userId]);
-    const updateResult = await dbClient.query(updateCountQuery, [clipId]);
-    return { like_count: updateResult.rows[0].like_count };
+    const countResult = await dbClient.query(getCountQuery, [clipId]);
+    return { like_count: countResult.rows[0].like_count };
   } catch (error) {
     console.error('Error liking clip:', error);
     throw error;
@@ -587,14 +596,14 @@ async function likeClip(clipId, userId, client = null) {
 async function unlikeClip(clipId, userId, client = null) {
   const deleteLikeQuery =
     'DELETE FROM clip_likes WHERE clip_id = $1 AND user_id = $2';
-  const updateCountQuery =
-    'UPDATE clips SET like_count = GREATEST(like_count - 1, 0) WHERE id = $1 RETURNING like_count';
+  const getCountQuery =
+    'SELECT COUNT(*)::int as like_count FROM clip_likes WHERE clip_id = $1';
 
   try {
     const dbClient = client || pool;
     await dbClient.query(deleteLikeQuery, [clipId, userId]);
-    const updateResult = await dbClient.query(updateCountQuery, [clipId]);
-    return { like_count: updateResult.rows[0].like_count };
+    const countResult = await dbClient.query(getCountQuery, [clipId]);
+    return { like_count: countResult.rows[0].like_count };
   } catch (error) {
     console.error('Error unliking clip:', error);
     throw error;
