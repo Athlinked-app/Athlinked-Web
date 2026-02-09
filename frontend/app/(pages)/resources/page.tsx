@@ -587,7 +587,7 @@ export default function ManageResourcesPage() {
                   </button>
                   <button
                     onClick={() => setActiveTab('videos')}
-                    className={`px-6 py-4 text-md font-medium relative transition-colors border-r border-gray-300 ${
+                    className={`px-6  py-4 text-md font-medium relative transition-colors border-r pr-8 pl-2 border-gray-300 ${
                       activeTab === 'videos'
                         ? 'text-[#CB9729]'
                         : 'text-black hover:text-black'

@@ -22,9 +22,18 @@ export default function FileUploadModal({
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Maximum file size in bytes (50MB)
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB in bytes
+
   if (!isOpen) return null;
 
   const handleFileSelect = (file: File) => {
+    // Check file size first (50MB limit)
+    if (file.size > MAX_FILE_SIZE) {
+      alert('File size too large. Maximum size is 50MB');
+      return;
+    }
+
     // Allow ONLY videos (mp4/mov)
     const isAllowedVideoType =
       file &&
@@ -104,6 +113,15 @@ export default function FileUploadModal({
     onClose();
   };
 
+  // Helper function to format file size
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  };
+
   return (
     <>
       {/* Backdrop */}
@@ -141,19 +159,28 @@ export default function FileUploadModal({
                   Preview
                 </label>
                 {previewUrl ? (
-                  <div className="w-full aspect-[4/5] bg-black rounded-lg overflow-hidden max-h-96">
-                    {selectedFile?.type.startsWith('video/') ? (
-                      <video
-                        src={previewUrl}
-                        className="w-full h-full object-cover"
-                        controls
-                      />
-                    ) : (
-                      <img
-                        src={previewUrl}
-                        alt="Preview"
-                        className="w-full h-full object-cover"
-                      />
+                  <div className="w-full flex flex-col gap-2">
+                    <div className="w-full aspect-[4/5] bg-black rounded-lg overflow-hidden max-h-96">
+                      {selectedFile?.type.startsWith('video/') ? (
+                        <video
+                          src={previewUrl}
+                          className="w-full h-full object-cover"
+                          controls
+                        />
+                      ) : (
+                        <img
+                          src={previewUrl}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                        />
+                      )}
+                    </div>
+                    {/* File info */}
+                    {selectedFile && (
+                      <div className="text-xs text-gray-600">
+                        <p className="truncate">{selectedFile.name}</p>
+                        <p>Size: {formatFileSize(selectedFile.size)}</p>
+                      </div>
                     )}
                   </div>
                 ) : (
@@ -195,7 +222,7 @@ export default function FileUploadModal({
                   className="hidden"
                 />
                 <p className="text-xs text-gray-500 mt-2">
-                  *Supported formats: MP4, MOV
+                  *Supported formats: MP4, MOV (Max 50MB)
                 </p>
               </div>
 

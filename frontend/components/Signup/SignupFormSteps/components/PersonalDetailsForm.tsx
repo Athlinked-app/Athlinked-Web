@@ -237,8 +237,8 @@ export default function PersonalDetailsForm({
 
   const validateEmail = (email: string): string => {
     if (!email) {
-      return selectedUserType === 'athlete' 
-        ? 'Email or username is required' 
+      return selectedUserType === 'athlete'
+        ? 'Email or username is required'
         : 'Email is required';
     }
 
@@ -728,9 +728,11 @@ export default function PersonalDetailsForm({
                     ? 'border-red-500 focus:ring-red-500'
                     : 'border-gray-300'
                 }`}
-                placeholder={selectedUserType === 'athlete' 
-                  ? "Enter email or username (min 6 characters)" 
-                  : "Enter your email address"}
+                placeholder={
+                  selectedUserType === 'athlete'
+                    ? 'Enter email or username (min 6 characters)'
+                    : 'Enter your email address'
+                }
               />
               <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             </div>
