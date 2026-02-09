@@ -82,7 +82,7 @@ export default function ResourceModals({
       {/* Video Modal */}
       {selectedVideo && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
           onClick={onCloseVideoModal}
         >
           <button
@@ -92,7 +92,7 @@ export default function ResourceModals({
           >
             <X className="w-6 h-6 text-gray-600" />
           </button>
-          <div className="w-full max-w-6xl" onClick={e => e.stopPropagation()}>
+          <div className="w-full max-w-3xl" onClick={e => e.stopPropagation()}>
             <video
               src={selectedVideo}
               controls
