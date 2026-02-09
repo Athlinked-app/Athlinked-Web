@@ -468,7 +468,7 @@ async function sendConnectionRequest(requesterId, receiverId) {
     const id = uuidv4();
     const insertQuery = `
       INSERT INTO connection_requests (id, requester_id, receiver_id, status, created_at)
-      VALUES ($1, $2, $3, 'pending', NOW())
+      VALUES ($1, $2, $3, 'pending', CURRENT_TIMESTAMP AT TIME ZONE 'UTC')
       ON CONFLICT (requester_id, receiver_id) DO UPDATE
       SET status = 'pending', updated_at = NOW()
       RETURNING *
