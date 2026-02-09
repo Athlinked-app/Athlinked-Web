@@ -114,6 +114,7 @@ export default function Post({
     return iconMap[normalizedType] || Briefcase;
   };
   const [liked, setLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
   const [likeCount, setLikeCount] = useState(post.like_count);
   const [commentCount, setCommentCount] = useState(post.comment_count);
   const [showComments, setShowComments] = useState(false);
@@ -241,20 +242,25 @@ export default function Post({
       alert('Please log in to like posts');
       return;
     }
-
+  
+    // Prevent multiple simultaneous requests
+    if (isLiking) return;
+  
     const wasLiked = liked;
+    setIsLiking(true);
+    
     // Optimistic update
     setLiked(!liked);
     setLikeCount(prev => (liked ? prev - 1 : prev + 1));
-
+  
     try {
       const { apiPost } = await import('@/utils/api');
-
+  
       // Call like or unlike API based on current state
       const endpoint = wasLiked
         ? `/posts/${post.id}/unlike`
         : `/posts/${post.id}/like`;
-
+  
       const result = await apiPost<{
         success: boolean;
         like_count?: number;
@@ -262,7 +268,7 @@ export default function Post({
       }>(endpoint, {
         user_id: currentUserId,
       });
-
+  
       if (result.success) {
         // Update like count from API response
         if (result.like_count !== undefined) {
@@ -280,6 +286,8 @@ export default function Post({
       setLiked(wasLiked);
       setLikeCount(prev => (wasLiked ? prev + 1 : prev - 1));
       alert('Failed to update like status. Please try again.');
+    } finally {
+      setIsLiking(false);
     }
   };
 
@@ -828,21 +836,22 @@ export default function Post({
         </div>
 
         <div className="flex items-center justify-between gap-14 sm:gap-2">
-          <button
-            onClick={handleLike}
-            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md transition-colors flex-1 sm:flex-none ${
-              liked
-                ? 'text-[#CB9729] hover:bg-[#CB9729]/10'
-                : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            <ThumbsUp
-              className={`w-4 h-4 sm:w-5 sm:h-5 ${liked ? 'fill-current' : ''}`}
-            />
-            <span className="text-xs sm:text-sm font-medium hidden sm:inline">
-              Like
-            </span>
-          </button>
+        <button
+  onClick={handleLike}
+  disabled={isLiking}
+  className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-md transition-colors flex-1 sm:flex-none ${
+    liked
+      ? 'text-[#CB9729] hover:bg-[#CB9729]/10'
+      : 'text-gray-600 hover:bg-gray-50'
+  } disabled:opacity-50 `}
+>
+  <ThumbsUp
+    className={`w-4 h-4 sm:w-5 sm:h-5 ${liked ? 'fill-current' : ''}`}
+  />
+  <span className="text-xs sm:text-sm font-medium hidden sm:inline">
+    Like
+  </span>
+</button>
 
           <button
             onClick={handleComment}

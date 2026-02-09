@@ -221,10 +221,24 @@ export default function NotificationsPage() {
   };
 
   const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
+    // If the timestamp doesn't have timezone info, treat it as UTC
+    let date: Date;
+    
+    if (dateString.includes('Z') || dateString.includes('+') || dateString.includes('T')) {
+      // Already has timezone info
+      date = new Date(dateString);
+    } else {
+      // No timezone info, treat as UTC by appending 'Z'
+      date = new Date(dateString + 'Z');
+    }
+    
     const now = new Date();
     const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
+  
+    if (diffInSeconds < 0) {
+      return 'just now';
+    }
+    
     if (diffInSeconds < 60) {
       return 'just now';
     } else if (diffInSeconds < 3600) {
@@ -244,7 +258,6 @@ export default function NotificationsPage() {
       return `${months} month${months > 1 ? 's' : ''} ago`;
     }
   };
-
   const getInitials = (name: string) => {
     return name
       .split(' ')
@@ -344,54 +357,54 @@ export default function NotificationsPage() {
                   No notifications yet
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {currentList.map(notification => {
-                    return (
-                      <div
-                        key={notification.id}
-                        className={`flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${
-                          !notification.isRead ? 'bg-blue-50' : ''
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="md:w-12 md:h-12 w-12 h-8 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-yellow-400 overflow-hidden flex items-center justify-center">
-                            <span className="text-white font-semibold text-sm">
-                              {getInitials(notification.actorFullName)}
+                <div className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto scrollbar-hide">
+                {currentList.map(notification => {
+                  return (
+                    <div
+                      key={notification.id}
+                      className={`flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors ${
+                        !notification.isRead ? 'bg-blue-50' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="md:w-12 md:h-12 w-12 h-8 rounded-full bg-gradient-to-br from-purple-400 via-pink-400 to-yellow-400 overflow-hidden flex items-center justify-center">
+                          <span className="text-white font-semibold text-sm">
+                            {getInitials(notification.actorFullName)}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="font-medium text-black">
+                            {notification.message}{' '}
+                            <span className="text-sm text-gray-500">
+                              {formatTimeAgo(notification.createdAt)}
                             </span>
                           </div>
-                          <div>
-                            <div className="font-medium text-black">
-                              {notification.message}{' '}
-                              <span className="text-sm text-gray-500">
-                                {formatTimeAgo(notification.createdAt)}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleDelete(notification.id)}
-                            className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                            aria-label="Delete notification"
-                            title="Delete notification"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                          {!notification.isRead && (
-                            <button
-                              onClick={() => handleDismiss(notification.id)}
-                              className="text-gray-400 hover:text-gray-600 transition-colors p-1"
-                              aria-label="Mark as read"
-                              title="Mark as read"
-                            >
-                              <X size={18} />
-                            </button>
-                          )}
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleDelete(notification.id)}
+                          className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                          aria-label="Delete notification"
+                          title="Delete notification"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                        {!notification.isRead && (
+                          <button
+                            onClick={() => handleDismiss(notification.id)}
+                            className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+                            aria-label="Mark as read"
+                            title="Mark as read"
+                          >
+                            <X size={18} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
               )}
             </div>
           </div>
