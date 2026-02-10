@@ -83,7 +83,7 @@ export default function ResourceModals({
       {selectedVideo && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-          onClick={onCloseVideoModal}
+  
         >
           <button
             onClick={onCloseVideoModal}
