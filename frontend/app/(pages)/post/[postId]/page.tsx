@@ -242,7 +242,7 @@ export default function SinglePostPage() {
 
         <div className="flex-1 flex flex-col gap-2 lg:gap-4 overflow-hidden min-w-0">
           <div className="flex-1 overflow-y-auto pr-2 min-h-0">
-            <div className="flex flex-col gap-4 pb-4 max-w-2xl mx-auto">
+            <div className="flex flex-col gap-4 pb-4 mx-auto">
               <Post
                 post={post}
                 currentUserProfileUrl={getProfileUrl(currentUser?.profile_url)}
