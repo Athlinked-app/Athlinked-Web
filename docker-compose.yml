@@ -1,0 +1,21 @@
+services:
+  backend-server:
+    build: ./backend
+    container_name: athlinked-backend
+    env_file:
+      - ./backend/.env
+    # ADD THESE TWO LINES:
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    ports:
+      - "3001:3001"
+    restart: always
+
+  frontend-client:
+    build: ./frontend
+    container_name: athlinked-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend-server
